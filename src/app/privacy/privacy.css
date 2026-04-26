@@ -1,0 +1,252 @@
+/* From privacy.html — scoped to .privacy-route */
+
+.privacy-route {
+  --text-light: #6a6a6a;
+}
+
+.privacy-route .nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 14px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
+  transition: all 0.3s;
+}
+
+.privacy-route .nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.privacy-route .nav-logo-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.privacy-route .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.privacy-route .nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-mid);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.privacy-route .nav-link:hover {
+  color: var(--green);
+}
+
+.privacy-route .nav-link.active {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.privacy-route .nav-cta {
+  padding: 9px 22px;
+  background: var(--green);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.privacy-route .nav-cta:hover {
+  background: var(--green-dark);
+  transform: translateY(-1px);
+}
+
+.privacy-route .nav-login {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-mid);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.privacy-route .nav-login:hover {
+  color: var(--green);
+}
+
+.privacy-route .page-header {
+  padding: 130px 40px 50px;
+  text-align: center;
+  background: linear-gradient(180deg, var(--green-pale) 0%, var(--sand) 100%);
+}
+
+.privacy-route .page-header h1 {
+  font-family: var(--font-dm-serif), "DM Serif Display", serif;
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.privacy-route .page-header p {
+  font-size: 14px;
+  color: var(--text-hint);
+}
+
+.privacy-route .content {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 50px 24px 80px;
+}
+
+.privacy-route .content h2 {
+  font-family: var(--font-dm-serif), "DM Serif Display", serif;
+  font-size: 22px;
+  margin: 40px 0 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.privacy-route .content h2:first-of-type {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.privacy-route .content p {
+  font-size: 15px;
+  color: var(--text-mid);
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+
+.privacy-route .content ul {
+  list-style: none;
+  margin: 12px 0 18px;
+  padding: 0;
+}
+
+.privacy-route .content ul li {
+  font-size: 15px;
+  color: var(--text-mid);
+  line-height: 1.8;
+  padding: 4px 0 4px 24px;
+  position: relative;
+}
+
+.privacy-route .content ul li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 13px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-light);
+}
+
+.privacy-route .footer {
+  padding: 48px 40px 32px;
+  background: var(--green-dark);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.privacy-route .footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.privacy-route .footer-brand {
+  max-width: 260px;
+}
+
+.privacy-route .footer-brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.privacy-route .footer-brand-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.privacy-route .footer-col-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.privacy-route .footer-link {
+  display: block;
+  font-size: 13px;
+  padding: 3px 0;
+  transition: color 0.15s;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+}
+
+.privacy-route .footer-link:hover {
+  color: #fff;
+}
+
+.privacy-route .footer-bottom {
+  max-width: 1100px;
+  margin: 24px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .privacy-route .nav {
+    padding: 12px 20px;
+  }
+
+  .privacy-route .nav-links {
+    gap: 16px;
+  }
+
+  .privacy-route .page-header {
+    padding: 110px 20px 40px;
+  }
+
+  .privacy-route .page-header h1 {
+    font-size: 30px;
+  }
+
+  .privacy-route .content {
+    padding: 36px 16px 60px;
+  }
+
+  .privacy-route .footer-inner {
+    flex-direction: column;
+  }
+}
