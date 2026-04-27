@@ -117,7 +117,6 @@ CREATE TABLE scholarships
 
     deadline_date DATE DEFAULT NULL,
     is_priority BOOLEAN NOT NULL DEFAULT FALSE,
-    method TEXT DEFAULT NULL,
     application_fee FLOAT DEFAULT NULL,
     intakes TEXT DEFAULT NULL,
     other TEXT DEFAULT NULL,
@@ -387,7 +386,7 @@ CREATE TABLE advisor_sessions (
     help_with TEXT DEFAULT NULL,
 
     status advisor_session_status DEFAULT 'pending',
-    booked_at TIMESTAMP WITH TIME ZONE DEFAULT,
+    booked_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -439,7 +438,7 @@ CREATE TABLE applications_plans (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-)
+);
 
 CREATE TYPE application_curriculum_type AS ENUM ('ib', 'a_level', 'american','french', 'indian', 'national', 'other');
 CREATE TYPE application_status AS ENUM ('new', 'assigned', 'in_progress', 'blocked', 'submitted');
@@ -473,7 +472,7 @@ CREATE TABLE applications (
     awards TEXT DEFAULT NULL,
     additional_notes TEXT DEFAULT NULL,
 
-    status application_status DEFAULT 'pending',
+    status application_status DEFAULT 'new',
     assigned_to UUID DEFAULT NULL REFERENCES admins(id),
 
     submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
