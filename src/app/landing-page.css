@@ -1,9 +1,12 @@
 /* Extracted from landing_page.html — main landing + footer + responsive rules */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Must live in a layer: unlayered * reset overrides Tailwind @layer utilities (padding, etc.) */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 html {

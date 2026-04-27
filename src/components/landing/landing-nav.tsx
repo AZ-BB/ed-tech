@@ -94,10 +94,10 @@ export function LandingNav() {
         <a className="nav-link" href="#faq">
           FAQ
         </a>
-        <a className="nav-login" href="signup.html">
+        <a className="nav-login" href="/login">
           Log in
         </a>
-        <a className="nav-cta" href="signup.html">
+        <a className="nav-cta" href="/signup">
           Start your journey
         </a>
       </div>

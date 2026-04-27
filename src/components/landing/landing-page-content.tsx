@@ -20,7 +20,7 @@ export function LandingPageContent() {
               letter.
             </p>
             <div className="hero-ctas fade-up d4">
-              <a href="signup.html" style={{ textDecoration: "none" }}>
+              <a href="/signup" style={{ textDecoration: "none" }}>
                 <button type="button" className="btn-hero">
                   Start your journey{" "}
                   <svg
@@ -36,7 +36,7 @@ export function LandingPageContent() {
                   </svg>
                 </button>
               </a>
-              <a href="signup.html" style={{ textDecoration: "none" }}>
+              <a href="/login" style={{ textDecoration: "none" }}>
                 <button type="button" className="btn-ghost">
                   Log in
                 </button>
@@ -555,7 +555,7 @@ export function LandingPageContent() {
           <div className="cta-title serif">Start your journey today</div>
           <div className="cta-sub">Take the first step toward your future.</div>
           <div className="cta-btns">
-            <a href="signup.html" style={{ textDecoration: "none" }}>
+            <a href="/signup" style={{ textDecoration: "none" }}>
               <button type="button" className="btn-hero">
                 Sign up{" "}
                 <svg
@@ -571,9 +571,11 @@ export function LandingPageContent() {
                 </svg>
               </button>
             </a>
-            <button type="button" className="btn-ghost">
-              Log in
-            </button>
+            <a href="/login" style={{ textDecoration: "none" }}>
+              <button type="button" className="btn-ghost">
+                Log in
+              </button>
+            </a>
           </div>
         </div>
       </section>
