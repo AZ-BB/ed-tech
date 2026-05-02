@@ -12,6 +12,7 @@ type Props = {
   onSelect: (id: string) => void;
   savedIds: Set<string>;
   onToggleSave: (id: string) => void;
+  footer?: ReactNode;
 };
 
 export function ScholarshipCategorySection({
@@ -24,8 +25,9 @@ export function ScholarshipCategorySection({
   onSelect,
   savedIds,
   onToggleSave,
+  footer,
 }: Props) {
-  if (scholarships.length === 0) return null;
+  if (scholarships.length === 0 && !footer) return null;
 
   return (
     <section className="mb-7">
@@ -43,17 +45,20 @@ export function ScholarshipCategorySection({
           {count} available
         </span>
       </div>
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-        {scholarships.map((s) => (
-          <ScholarshipCard
-            key={s.id}
-            scholarship={s}
-            onOpenDetail={() => onSelect(s.id)}
-            saved={savedIds.has(s.id)}
-            onToggleSave={() => onToggleSave(s.id)}
-          />
-        ))}
-      </div>
+      {scholarships.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          {scholarships.map((s) => (
+            <ScholarshipCard
+              key={s.id}
+              scholarship={s}
+              onOpenDetail={() => onSelect(s.id)}
+              saved={savedIds.has(s.id)}
+              onToggleSave={() => onToggleSave(s.id)}
+            />
+          ))}
+        </div>
+      ) : null}
+      {footer}
     </section>
   );
 }

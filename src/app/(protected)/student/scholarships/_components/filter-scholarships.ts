@@ -47,32 +47,32 @@ export function filterScholarships(
   dest: string,
   cov: string,
 ): Scholarship[] {
+  const natN =
+    !nat?.trim() || nat.trim().toLowerCase() === "any"
+      ? "any"
+      : nat.trim().toLowerCase();
+  const destTrim = dest?.trim() ?? "";
+  const destN =
+    !destTrim || destTrim.toLowerCase() === "any" ? "any" : destTrim;
+  const covN =
+    !cov?.trim() || cov.trim().toLowerCase() === "any"
+      ? "any"
+      : cov.trim().toLowerCase();
+
   return list.filter((s) => {
-    if (nat !== "any" && !matchesNationality(nat, s.eligibleNationalities))
+    if (natN !== "any" && !matchesNationality(natN, s.eligibleNationalities))
       return false;
-    if (dest !== "any") {
+    if (destN !== "any") {
       const dests = s.destinations;
       if (
-        !dests.includes(dest) &&
+        !dests.includes(destN) &&
         !dests.includes("Global") &&
         !dests.includes("Multiple")
       ) {
         return false;
       }
     }
-    if (cov !== "any" && s.coverage !== cov) return false;
+    if (covN !== "any" && s.coverage !== covN) return false;
     return true;
   });
-}
-
-/** Same split as legacy HTML: GCC nationality-locked (≤3 codes) vs everything else */
-export function splitGovernmentInternational(filtered: Scholarship[]) {
-  const gov = filtered.filter(
-    (s) =>
-      s.eligibleNationalities.length <= 3 &&
-      s.eligibleNationalities.some((n) => gccSet.has(n)),
-  );
-  const govIds = new Set(gov.map((x) => x.id));
-  const other = filtered.filter((s) => !govIds.has(s.id));
-  return { gov, other };
 }

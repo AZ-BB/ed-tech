@@ -1,6 +1,7 @@
 /**
- * Upserts scholarship discovery rows from static JSON into `scholarships`
- * (`discovery_slug`, `discovery_payload`, plus mapped columns).
+ * Upserts scholarship discovery rows from static JSON into `scholarships`.
+ * Canonical UI fields are stored in `discovery_payload` (JSONB); core columns
+ * hold a denormalized subset for constraints and simple queries.
  *
  * Requires: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, and optionally DOTENV_CONFIG_PATH.
  *

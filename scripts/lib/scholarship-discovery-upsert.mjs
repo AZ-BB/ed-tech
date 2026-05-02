@@ -1,6 +1,6 @@
 /**
  * Maps discovery UI scholarship objects to `scholarships` table rows for upsert.
- * Used by JSON and XLSX seed scripts.
+ * Writes `discovery_payload` (full UI shape) plus core columns. Used by JSON and XLSX seed scripts.
  */
 
 export function mapScholarshipType(type) {

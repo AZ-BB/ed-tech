@@ -15,7 +15,7 @@ END $$;
 
 ALTER TABLE IF EXISTS public.academic_programs RENAME TO programs;
 
--- Student discovery UI reads `scholarships.discovery_payload` (JSON); seeds fill it.
+-- Student discovery: canonical catalog fields in `scholarships.discovery_payload` (JSONB); seeds upsert it.
 ALTER TABLE public.scholarships
   ADD COLUMN IF NOT EXISTS discovery_slug TEXT,
   ADD COLUMN IF NOT EXISTS discovery_payload JSONB;
