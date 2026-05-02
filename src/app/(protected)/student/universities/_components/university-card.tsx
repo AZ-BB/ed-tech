@@ -51,10 +51,10 @@ function formatAcceptance(rate: number | null): string {
 }
 
 function acceptanceTone(rate: number | null): string {
-    if (rate == null) return "text-[var(--text)]";
+    if (rate == null) return "text-[#1a1a1a]";
     if (rate < 40) return "text-[#C0392B]";
     if (rate < 70) return "text-[#E65100]";
-    return "text-[var(--green)]";
+    return "text-[#2D6A4F]";
 }
 
 function formatLocation(u: UniversityCardUniversity): string {
@@ -91,7 +91,7 @@ function UniversityCrest({ logoUrl }: { logoUrl: string | null }) {
     const showImg = Boolean(logoUrl && !broken);
 
     return (
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-light)] bg-[var(--green-bg)] p-1.5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#ece9e4] bg-[#E8F5EE] p-1.5">
             {showImg && logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- remote logos; domains vary
                 <img
@@ -201,13 +201,13 @@ function Stat({
     valueClassName?: string;
 }) {
     return (
-        <div className="flex min-h-9 flex-1 flex-col items-center justify-center px-1 py-0.5 text-center [&:not(:last-child)]:border-r [&:not(:last-child)]:border-[var(--border-light)]">
-            <div className="mb-0.5 flex items-center justify-center gap-0.5 text-[9.5px] font-medium tracking-[0.3px] text-[var(--text-hint)] uppercase">
+        <div className="flex min-h-9 flex-1 flex-col items-center justify-center px-1 py-0.5 text-center [&:not(:last-child)]:border-r [&:not(:last-child)]:border-[#ece9e4]">
+            <div className="mb-0.5 flex items-center justify-center gap-0.5 text-[9.5px] font-medium tracking-[0.3px] text-[#a0a0a0] uppercase">
                 {icon}
                 {label}
             </div>
             <div
-                className={`text-[11.5px] leading-tight font-semibold ${valueClassName ?? "text-[var(--text)]"}`}
+                className={`text-[11.5px] leading-tight font-semibold ${valueClassName ?? "text-[#1a1a1a]"}`}
             >
                 {value}
             </div>
@@ -220,7 +220,7 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
 
     return (
         <article
-            className="flex h-full cursor-pointer flex-col rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-6 transition-all hover:-translate-y-[3px] hover:border-[var(--border)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)]"
+            className="flex h-full cursor-pointer flex-col rounded-[16px] border border-[#ece9e4] bg-white p-6 transition-all hover:-translate-y-[3px] hover:border-[#e0deda] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)]"
             aria-labelledby={`uni-${u.id}-title`}
         >
             <div className="mb-3 flex items-start gap-3">
@@ -228,22 +228,22 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 <div className="min-w-0 flex-1">
                     <h2
                         id={`uni-${u.id}-title`}
-                        className="serif mb-0.5 text-[15px] leading-snug font-bold text-[var(--text)]"
+                        className="serif mb-0.5 text-[15px] leading-snug font-bold text-[#1a1a1a]"
                     >
                         {u.name}
                     </h2>
-                    <p className="text-[11.5px] text-[var(--text-light)]">{formatLocation(u)}</p>
+                    <p className="text-[11.5px] text-[#7a7a7a]">{formatLocation(u)}</p>
                 </div>
-                <span className="mt-0.5 shrink-0 self-start rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10px] font-semibold tracking-[0.2px] text-[var(--text-mid)] whitespace-nowrap">
+                <span className="mt-0.5 shrink-0 self-start rounded-[50px] border border-[#ece9e4] bg-[#f4f3f0] px-3 py-1 text-[10px] font-semibold tracking-[0.2px] text-[#4a4a4a] whitespace-nowrap">
                     {u.is_public ? "Public" : "Private"}
                 </span>
             </div>
 
-            <p className="mb-4 line-clamp-2 min-h-[38px] text-xs leading-relaxed text-[var(--text-light)]">
+            <p className="mb-4 line-clamp-2 min-h-[38px] text-xs leading-relaxed text-[#7a7a7a]">
                 {desc || "\u00A0"}
             </p>
 
-            <div className="mb-3 flex border-y border-[var(--border-light)] py-2.5">
+            <div className="mb-3 flex border-y border-[#ece9e4] py-2.5">
                 <Stat
                     label="Tuition"
                     icon={<IconTuition />}
@@ -263,27 +263,27 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
             </div>
 
             <div className="mb-4 flex flex-wrap gap-1.5">
-                <span className="flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-[var(--sand)] px-2.5 py-1 text-[10px] font-medium text-[var(--text-mid)]">
+                <span className="flex items-center gap-1 rounded-[50px] border border-[#ece9e4] bg-[#f4f3f0] px-2.5 py-1 text-[10px] font-medium text-[#4a4a4a]">
                     <TagIconChat />
                     IELTS: {formatIelts(u.ielts_min_score)}
                 </span>
-                <span className="flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-[var(--sand)] px-2.5 py-1 text-[10px] font-medium text-[var(--text-mid)]">
+                <span className="flex items-center gap-1 rounded-[50px] border border-[#ece9e4] bg-[#f4f3f0] px-2.5 py-1 text-[10px] font-medium text-[#4a4a4a]">
                     <TagIconShield />
                     SAT: {u.sat_policy?.trim() || "—"}
                 </span>
             </div>
 
-            <footer className="mt-auto flex items-center justify-end gap-2 border-t border-[var(--border-light)] pt-4">
+            <footer className="mt-auto flex items-center justify-end gap-2 border-t border-[#ece9e4] pt-4">
                 <button
                     type="button"
-                    className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[11px] font-medium text-[var(--text-mid)] transition-colors hover:border-[var(--green)] hover:bg-[var(--green-pale)] hover:text-[var(--green)]"
+                    className="cursor-pointer rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-4 py-2 text-[11px] font-medium text-[#4a4a4a] transition-colors hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     Add to shortlist
                 </button>
                 <Link
                     href={`/student/universities/${u.id}`}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-5 py-2 text-[11px] font-semibold text-white no-underline transition-colors hover:bg-[var(--green-dark)]"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-[50px] border-0 bg-[#2D6A4F] px-5 py-2 text-[11px] !font-semibold !text-white no-underline transition-colors hover:bg-[#1B4332]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     View details

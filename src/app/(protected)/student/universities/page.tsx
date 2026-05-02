@@ -1,5 +1,5 @@
 import { Pagination } from "@/components/pagination";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { Suspense } from "react";
 import { UniversitiesFilter } from "./_components/universities-filter";
 import { UniversityCard } from "./_components/university-card";
@@ -152,7 +152,7 @@ export default async function StudentUniversitiesPage({
 }) {
     const sp = await searchParams;
 
-    const supabase = await createSupabaseSecretClient();
+    const supabase = await createSupabaseServerClient();
 
     const { data: majors, error: majorsError } = await supabase
         .from("majors")
@@ -248,8 +248,6 @@ export default async function StudentUniversitiesPage({
         console.error(universitiesError);
     }
 
-
-
     const universities =
         universitiesRaw?.map((row) => {
             const country = row.countries as { name: string } | null;
@@ -275,10 +273,10 @@ export default async function StudentUniversitiesPage({
     return (
         <>
             <div className="mb-5">
-                <h1 className="serif mb-1 text-[26px] font-normal leading-tight text-[var(--text)]">
+                <h1 className="serif mb-1 text-[26px] font-normal leading-tight text-[#1a1a1a]">
                     Explore universities
                 </h1>
-                <p className="text-sm leading-normal text-[var(--text-light)]">
+                <p className="text-sm leading-normal text-[#7a7a7a]">
                     Search and compare universities based on your interests,
                     goals, and admission profile.
                 </p>
@@ -286,7 +284,7 @@ export default async function StudentUniversitiesPage({
 
             <Suspense fallback={
                 <div
-                    className="mb-5 h-[188px] rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white/70"
+                    className="mb-5 h-[188px] rounded-[16px] border border-[#ece9e4] bg-white/70"
                     aria-hidden
                 />
             }>

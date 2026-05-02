@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { UniversityDetailSectionTabs } from "./university-detail-section-tabs";
 
 export type MajorProgramBlock = {
     majorName: string;
@@ -58,21 +59,10 @@ function CrestSvg({ className }: { className?: string }) {
     );
 }
 
-function TabLink({ href, children }: { href: string; children: ReactNode }) {
-    return (
-        <a
-            href={href}
-            className="-mb-px shrink-0 border-b-2 border-transparent px-[18px] py-3 text-[13px] font-medium text-[var(--text-light)] hover:text-[var(--text-mid)] focus-visible:border-[var(--green)] focus-visible:text-[var(--green-dark)] focus-visible:outline-none"
-        >
-            {children}
-        </a>
-    );
-}
-
 function SectionTitle({ icon, children }: { icon: ReactNode; children: ReactNode }) {
     return (
-        <div className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-[var(--text)]">
-            <span className="text-[var(--text-mid)] [&_svg]:opacity-50">{icon}</span>
+        <div className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-[#1a1a1a]">
+            <span className="text-[#4a4a4a] [&_svg]:opacity-50">{icon}</span>
             {children}
         </div>
     );
@@ -81,9 +71,29 @@ function SectionTitle({ icon, children }: { icon: ReactNode; children: ReactNode
 function DocDot() {
     return (
         <div
-            className="mt-[7px] h-[5px] min-w-[5px] rounded-full bg-[var(--green-light)]"
+            className="mt-[7px] h-[5px] min-w-[5px] rounded-full bg-[#40916C]"
             aria-hidden
         />
+    );
+}
+
+function IconGlobe({ className }: { className?: string }) {
+    return (
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+            aria-hidden
+        >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+        </svg>
     );
 }
 
@@ -107,10 +117,10 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
     }
 
     return (
-        <div className="mx-auto max-w-[960px] px-5 py-6 pb-[60px]">
+        <div className="mx-auto px-5 py-6 pb-[60px]">
             <Link
                 href="/student/universities"
-                className="mb-4 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-white px-[18px] py-2 text-xs font-medium text-[var(--text-mid)] transition-colors hover:border-[var(--green)] hover:bg-[var(--green-pale)] hover:text-[var(--green)]"
+                className="mb-4 inline-flex items-center gap-1.5 rounded-[50px] border border-[#ece9e4] bg-white px-[18px] py-2 text-xs font-medium text-[#4a4a4a] transition-colors hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]"
             >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -118,9 +128,9 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                 Back to search
             </Link>
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-white px-5 py-3.5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-[12px] border border-[#ece9e4] bg-white px-5 py-3.5">
                 <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-[var(--green-bg)] p-1">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-[#E8F5EE] p-1">
                         {uni.logoUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element -- remote logos; domains vary
                             <img
@@ -132,13 +142,13 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             <CrestSvg className="h-[18px] w-[18px]" />
                         )}
                     </div>
-                    <span className="truncate text-base font-semibold text-[var(--text)]">{uni.name}</span>
+                    <span className="truncate text-base font-semibold text-[#1a1a1a]">{uni.name}</span>
                 </div>
                 <div className="flex gap-2">
                     <button
                         type="button"
                         aria-label="Save (coming soon)"
-                        className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-lg border border-[var(--border)] bg-white transition-colors hover:bg-[var(--sand)]"
+                        className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-xl border border-[#e0deda] bg-white transition-colors hover:bg-[#f4f3f0]"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a7a7a" strokeWidth="1.8">
                             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
@@ -147,7 +157,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                     <button
                         type="button"
                         aria-label="Reminders (coming soon)"
-                        className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-lg border border-[var(--border)] bg-white transition-colors hover:bg-[var(--sand)]"
+                        className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-xl border border-[#e0deda] bg-white transition-colors hover:bg-[#f4f3f0]"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a7a7a" strokeWidth="1.8">
                             <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -157,11 +167,11 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                 </div>
             </div>
 
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
                 <div className="min-w-0 flex-1">
-                    <div className="relative mb-4 overflow-visible rounded-[var(--radius)] border border-[var(--border-light)] bg-white">
+                    <div className="relative mb-4 overflow-visible rounded-[12px] border border-[#ece9e4] bg-white">
                         <div
-                            className="relative h-[190px] overflow-hidden rounded-t-[var(--radius)]"
+                            className="relative h-[190px] overflow-hidden rounded-t-[12px]"
                             style={{
                                 background:
                                     "linear-gradient(135deg, #1B4332 0%, #2D6A4F 35%, #40916C 70%, #52B788 100%)",
@@ -181,7 +191,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         </div>
 
                         <div className="absolute top-[162px] left-6 z-[5] flex h-16 w-16 items-center justify-center rounded-2xl border-[3px] border-white bg-white shadow-[0_2px_12px_rgba(0,0,0,0.1)]">
-                            <div className="flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-xl bg-[var(--green-bg)] p-2">
+                            <div className="flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-xl bg-[#E8F5EE] p-2">
                                 {uni.logoUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img
@@ -196,30 +206,20 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         </div>
 
                         <div className="px-6 pb-4 pt-[40px]">
-                            <h1 className="serif mb-0.5 text-[22px] font-bold leading-tight text-[var(--text)]">
+                            <h1 className="serif mb-0.5 text-[22px] font-bold leading-tight text-[#1a1a1a]">
                                 {uni.name}
                             </h1>
-                            <p className="mb-2.5 text-sm text-[var(--text-light)]">{uni.locationLine}</p>
-                            <span className="inline-block rounded-[20px] bg-[var(--green-bg)] px-3 py-1 text-xs font-medium text-[var(--green)]">
+                            <p className="mb-2.5 text-sm text-[#7a7a7a]">{uni.locationLine}</p>
+                            <span className="inline-block rounded-[20px] bg-[#E8F5EE] px-3 py-1 text-xs font-medium text-[#2D6A4F]">
                                 {uni.isPublic ? "Public" : "Private"} university
                             </span>
                         </div>
 
-                        <nav
-                            className="scrollbar-thin sticky top-0 z-10 flex flex-wrap gap-x-1 gap-y-0 overflow-x-auto border-t border-[var(--border-light)] bg-white px-4 min-[460px]:px-6"
-                            aria-label="Section navigation"
-                        >
-                            <TabLink href="#d-overview">Overview</TabLink>
-                            <TabLink href="#d-requirements">Requirements</TabLink>
-                            <TabLink href="#d-application">Application</TabLink>
-                            <TabLink href="#d-costs">Costs</TabLink>
-                            <TabLink href="#d-majors">Majors</TabLink>
-                            <TabLink href="#d-alumni">Alumni</TabLink>
-                        </nav>
+                        <UniversityDetailSectionTabs />
 
                         <section
                             id="d-overview"
-                            className="scroll-mt-28 border-b border-[var(--border-light)] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -231,39 +231,39 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             >
                                 Overview
                             </SectionTitle>
-                            <p className="mb-4 text-[13.5px] leading-[1.65] text-[var(--text-mid)]">{desc}</p>
+                            <p className="mb-4 text-[13.5px] leading-[1.65] text-[#4a4a4a]">{desc}</p>
 
-                            <div className="mb-2 text-[13px] font-semibold text-[var(--text)]">
+                            <div className="mb-2 text-[13px] font-semibold text-[#1a1a1a]">
                                 Admission profile
                             </div>
                             <div className="mb-5 flex flex-wrap gap-2">
                                 {uni.difficultyLabel ? (
-                                    <span className="inline-flex items-center rounded-[20px] border border-[var(--green-bg)] bg-[var(--green-bg)] px-3 py-1.5 text-xs font-semibold capitalize text-[var(--green)]">
+                                    <span className="inline-flex items-center rounded-[20px] border border-[#E8F5EE] bg-[#E8F5EE] px-3 py-1.5 text-xs font-semibold capitalize text-[#2D6A4F]">
                                         Difficulty: {uni.difficultyLabel}
                                     </span>
                                 ) : null}
-                                <span className="inline-flex items-center rounded-[20px] border border-[var(--border)] bg-[var(--sand)] px-3 py-1.5 text-xs font-medium text-[var(--text-mid)]">
+                                <span className="inline-flex items-center rounded-[20px] border border-[#e0deda] bg-[#f4f3f0] px-3 py-1.5 text-xs font-medium text-[#4a4a4a]">
                                     Acceptance {uni.acceptanceFormatted}
                                 </span>
                             </div>
 
-                            <div className="mb-2 text-[13px] font-semibold text-[var(--text)]">Featured majors</div>
+                            <div className="mb-2 text-[13px] font-semibold text-[#1a1a1a]">Featured majors</div>
                             <div className="mb-5 flex flex-wrap gap-2">
                                 {uni.topMajorNames.length > 0 ? (
                                     uni.topMajorNames.map((m) => (
                                         <span
                                             key={m}
-                                            className="inline-flex items-center rounded-[20px] border border-[var(--green-bg)] bg-[var(--green-bg)] px-3 py-1.5 text-xs font-semibold text-[var(--green)]"
+                                            className="inline-flex items-center rounded-[20px] border border-[#E8F5EE] bg-[#E8F5EE] px-3 py-1.5 text-xs font-semibold text-[#2D6A4F]"
                                         >
                                             {m}
                                         </span>
                                     ))
                                 ) : (
-                                    <span className="text-[13px] text-[var(--text-light)]">—</span>
+                                    <span className="text-[13px] text-[#7a7a7a]">—</span>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 text-sm font-medium text-[var(--text)]">
+                            <div className="flex items-center gap-2 text-sm font-medium text-[#1a1a1a]">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
                                     <line x1="12" y1="1" x2="12" y2="23" />
                                     <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
@@ -274,7 +274,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-requirements"
-                            className="scroll-mt-28 border-b border-[var(--border-light)] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -286,32 +286,32 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             >
                                 Requirements
                             </SectionTitle>
-                            <div className="flex items-center gap-2.5 border-b border-[var(--border-light)] py-2 text-[13.5px]">
-                                <span className="w-[100px] min-w-[100px] font-medium text-[var(--text-light)]">GPA</span>
-                                <span className="font-semibold text-[var(--text)]">
+                            <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
+                                <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">GPA</span>
+                                <span className="font-semibold text-[#1a1a1a]">
                                     Competitive academic record recommended
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2.5 border-b border-[var(--border-light)] py-2 text-[13.5px]">
-                                <span className="w-[100px] min-w-[100px] font-medium text-[var(--text-light)]">SAT / ACT</span>
-                                <span className="font-semibold text-[var(--text)]">{satMiddle}</span>
+                            <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
+                                <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">SAT / ACT</span>
+                                <span className="font-semibold text-[#1a1a1a]">{satMiddle}</span>
                             </div>
-                            <div className="flex items-center gap-2.5 border-b border-[var(--border-light)] py-2 text-[13.5px]">
-                                <span className="w-[100px] min-w-[100px] font-medium text-[var(--text-light)]">IELTS</span>
-                                <span className="font-semibold text-[var(--text)]">Minimum {uni.ieltsFormatted}</span>
+                            <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
+                                <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">IELTS</span>
+                                <span className="font-semibold text-[#1a1a1a]">Minimum {uni.ieltsFormatted}</span>
                             </div>
                             {uni.toeflFormatted ? (
-                                <div className="flex items-center gap-2.5 border-b border-[var(--border-light)] py-2 text-[13.5px]">
-                                    <span className="w-[100px] min-w-[100px] font-medium text-[var(--text-light)]">TOEFL</span>
-                                    <span className="font-semibold text-[var(--text)]">Minimum {uni.toeflFormatted}</span>
+                                <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
+                                    <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">TOEFL</span>
+                                    <span className="font-semibold text-[#1a1a1a]">Minimum {uni.toeflFormatted}</span>
                                 </div>
                             ) : null}
-                            <div className="mb-3 mt-4 text-[13px] font-semibold text-[var(--text)]">
+                            <div className="mb-3 mt-4 text-[13px] font-semibold text-[#1a1a1a]">
                                 Documents needed
                             </div>
                             <ul className="list-none space-y-1">
                                 {uni.documents.map((doc) => (
-                                    <li key={doc} className="flex items-start gap-2 text-[13px] text-[var(--text-mid)]">
+                                    <li key={doc} className="flex items-start gap-2 text-[13px] text-[#4a4a4a]">
                                         <DocDot />
                                         <span>{doc}</span>
                                     </li>
@@ -321,7 +321,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-application"
-                            className="scroll-mt-28 border-b border-[var(--border-light)] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -334,26 +334,26 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 Application info
                             </SectionTitle>
                             <div className="grid grid-cols-1 gap-2.5 min-[460px]:grid-cols-2">
-                                <div className="rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[var(--sand)] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--text-hint)]">
+                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
+                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
                                         Deadline
                                     </div>
                                     <div className="text-[15px] font-semibold">{uni.deadlineFormatted}</div>
                                 </div>
-                                <div className="rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[var(--sand)] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--text-hint)]">
+                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
+                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
                                         Method
                                     </div>
                                     <div className="text-[15px] font-semibold">{uni.methodFormatted}</div>
                                 </div>
-                                <div className="rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[var(--sand)] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--text-hint)]">
+                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
+                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
                                         Application fee
                                     </div>
                                     <div className="text-[15px] font-semibold">{uni.feeFormatted}</div>
                                 </div>
-                                <div className="rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[var(--sand)] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--text-hint)]">
+                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
+                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
                                         Intakes
                                     </div>
                                     <div className="text-[15px] font-semibold">{uni.intakesFormatted}</div>
@@ -363,7 +363,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-costs"
-                            className="scroll-mt-28 border-b border-[var(--border-light)] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -375,29 +375,29 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             >
                                 Costs & scholarships
                             </SectionTitle>
-                            <div className="flex items-center justify-between border-b border-[var(--border-light)] py-2.5 text-[13.5px]">
-                                <span className="text-[var(--text-light)]">Tuition per year</span>
+                            <div className="flex items-center justify-between border-b border-[#ece9e4] py-2.5 text-[13.5px]">
+                                <span className="text-[#7a7a7a]">Tuition per year</span>
                                 <span className="font-semibold">{uni.tuitionDisplay}</span>
                             </div>
-                            <div className="flex items-center justify-between border-b border-[var(--border-light)] py-2.5 text-[13.5px]">
-                                <span className="text-[var(--text-light)]">Estimated living cost</span>
+                            <div className="flex items-center justify-between border-b border-[#ece9e4] py-2.5 text-[13.5px]">
+                                <span className="text-[#7a7a7a]">Estimated living cost</span>
                                 <span className="font-semibold">{uni.livingFormatted}</span>
                             </div>
                             <div className="flex items-center justify-between py-2.5 text-[13.5px]">
-                                <span className="text-[var(--text-light)]">Scholarships available</span>
+                                <span className="text-[#7a7a7a]">Scholarships available</span>
                                 {uni.scholarshipsAvailable ? (
-                                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--green-bg)] px-3 py-0.5 text-xs font-semibold text-[var(--green)]">
+                                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#E8F5EE] px-3 py-0.5 text-xs font-semibold text-[#2D6A4F]">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5">
                                             <path d="M20 6L9 17l-5-5" />
                                         </svg>
                                         Yes
                                     </span>
                                 ) : (
-                                    <span className="font-semibold text-[var(--text-mid)]">Not listed</span>
+                                    <span className="font-semibold text-[#4a4a4a]">Not listed</span>
                                 )}
                             </div>
                             {uni.scholarshipNote ? (
-                                <p className="mt-2.5 rounded-[var(--radius-sm)] border border-[var(--border-light)] border-l-[3px] border-l-[var(--green-light)] bg-[var(--sand)] px-3.5 py-2.5 text-[12.5px] leading-normal text-[var(--text-light)]">
+                                <p className="mt-2.5 rounded-[8px] border border-[#ece9e4] border-l-[3px] border-l-[#40916C] bg-[#f4f3f0] px-3.5 py-2.5 text-[12.5px] leading-normal text-[#7a7a7a]">
                                     {uni.scholarshipNote}
                                 </p>
                             ) : null}
@@ -405,11 +405,11 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-majors"
-                            className="scroll-mt-28 border-b border-[var(--border-light)] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
                         >
                             <div className="mb-3 flex flex-wrap items-center gap-2">
-                                <div className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold text-[var(--text)]">
-                                    <span className="text-[var(--text-mid)] [&_svg]:opacity-50">
+                                <div className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold text-[#1a1a1a]">
+                                    <span className="text-[#4a4a4a] [&_svg]:opacity-50">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                             <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
                                             <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
@@ -417,13 +417,13 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                     </span>
                                     All majors & programs
                                 </div>
-                                <span className="shrink-0 text-[11px] font-normal text-[var(--text-hint)]">
+                                <span className="shrink-0 text-[11px] font-normal text-[#a0a0a0]">
                                     {uni.totalPrograms} programs
                                 </span>
                             </div>
-                            <div className="scrollbar-thin max-h-[340px] overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--border-light)]">
+                            <div className="scrollbar-thin max-h-[340px] overflow-y-auto rounded-[8px] border border-[#ece9e4]">
                                 {uni.majorBlocks.length === 0 ? (
-                                    <p className="p-4 text-[13px] text-[var(--text-light)]">
+                                    <p className="p-4 text-[13px] text-[#7a7a7a]">
                                         Programs for this university are not listed yet.
                                     </p>
                                 ) : (
@@ -431,11 +431,11 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                         <details
                                             key={`${block.majorName}-${i}`}
                                             open={i === 0}
-                                            className="group border-b border-[var(--border-light)] last:border-b-0"
+                                            className="group border-b border-[#ece9e4] last:border-b-0"
                                         >
-                                            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[13.5px] font-semibold transition-colors hover:bg-[var(--sand)] [&::-webkit-details-marker]:hidden">
+                                            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[13.5px] font-semibold transition-colors hover:bg-[#f4f3f0] [&::-webkit-details-marker]:hidden">
                                                 <span className="flex min-w-0 items-center gap-2">
-                                                    <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-[var(--green-bg)]">
+                                                    <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-[#E8F5EE]">
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
                                                             <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
                                                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
@@ -444,21 +444,21 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                                     <span className="truncate">{block.majorName}</span>
                                                 </span>
                                                 <span className="flex shrink-0 items-center gap-2">
-                                                    <span className="rounded-[10px] bg-[var(--sand)] px-2 py-0.5 text-[11px] text-[var(--text-hint)]">
+                                                    <span className="rounded-[10px] bg-[#f4f3f0] px-2 py-0.5 text-[11px] text-[#a0a0a0]">
                                                         {block.programs.length}
                                                     </span>
-                                                    <span className="text-[var(--text-hint)] transition-transform group-open:rotate-180">
+                                                    <span className="text-[#a0a0a0] transition-transform group-open:rotate-180">
                                                         ▾
                                                     </span>
                                                 </span>
                                             </summary>
-                                            <div className="space-y-1.5 border-t border-[var(--border-light)] px-4 py-3 pl-[56px]">
+                                            <div className="space-y-1.5 border-t border-[#ece9e4] px-4 py-3 pl-[56px]">
                                                 {block.programs.map((p) => (
                                                     <div
                                                         key={p}
-                                                        className="flex items-start gap-2 text-[12.5px] text-[var(--text-mid)]"
+                                                        className="flex items-start gap-2 text-[12.5px] text-[#4a4a4a]"
                                                     >
-                                                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[var(--border)]" />
+                                                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#e0deda]" />
                                                         <span>{p}</span>
                                                     </div>
                                                 ))}
@@ -472,7 +472,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         <section id="d-alumni" className="relative scroll-mt-28 overflow-hidden px-6 py-5">
                             <div
                                 aria-hidden
-                                className="pointer-events-none absolute top-5 right-[-32px] z-[3] rotate-[35deg] bg-[var(--green)] px-10 py-1 text-[11px] font-bold tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.15)]"
+                                className="pointer-events-none absolute top-5 right-[-32px] z-[3] rotate-[35deg] bg-[#2D6A4F] px-10 py-1 text-[11px] font-bold tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.15)]"
                             >
                                 COMING SOON
                             </div>
@@ -486,7 +486,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 >
                                     Speak to an alumni
                                 </SectionTitle>
-                                <p className="text-[13px] text-[var(--text-light)]">
+                                <p className="text-[13px] text-[#7a7a7a]">
                                     Connect with graduates who studied here and learn from their experience.
                                 </p>
                             </div>
@@ -495,11 +495,11 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                 </div>
 
                 <aside className="w-full shrink-0 lg:w-[220px] lg:min-w-[220px]">
-                    <div className="sticky top-6 rounded-[var(--radius)] border border-[var(--border-light)] bg-white p-5">
-                        <div className="mb-3.5 text-sm font-semibold text-[var(--text)]">Your actions</div>
+                    <div className="sticky top-6 rounded-[12px] border border-[#ece9e4] bg-white p-5">
+                        <div className="mb-3.5 text-sm font-semibold text-[#1a1a1a]">Your actions</div>
                         <button
                             type="button"
-                            className="mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3.5 py-2.5 text-left text-[13px] font-medium text-[var(--text)] transition-colors hover:border-[var(--text-hint)] hover:bg-[var(--sand)]"
+                            className="mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border border-[#e0deda] bg-white px-3.5 py-2.5 text-left text-[13px] font-medium text-[#1a1a1a] transition-colors hover:border-[#a0a0a0] hover:bg-[#f4f3f0]"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
@@ -508,7 +508,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         </button>
                         <button
                             type="button"
-                            className="mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3.5 py-2.5 text-left text-[13px] font-medium text-[var(--text)] transition-colors hover:border-[var(--text-hint)] hover:bg-[var(--sand)]"
+                            className="mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border border-[#e0deda] bg-white px-3.5 py-2.5 text-left text-[13px] font-medium text-[#1a1a1a] transition-colors hover:border-[#a0a0a0] hover:bg-[#f4f3f0]"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                 <path d="M12 2l2.4 7.4H22l-6 4.6L18.3 21 12 16.4 5.7 21l2.3-7L2 9.4h7.6z" />
@@ -520,8 +520,9 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 href={uni.websiteUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="mb-2 flex w-full items-center justify-center gap-2.5 rounded-[var(--radius-sm)] border border-[var(--green)] bg-[var(--green)] px-3.5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[var(--green-dark)]"
+                                className="mb-2 flex w-full items-center gap-2.5 rounded-[10px] border border-[#2D6A4F] bg-[#2D6A4F] px-3.5 py-2.5 text-left text-[13px] !font-semibold !text-white no-underline transition-colors hover:bg-[#1B4332]"
                             >
+                                <IconGlobe className="shrink-0" />
                                 Visit website
                             </a>
                         ) : null}
@@ -530,29 +531,30 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 href={uni.admissionUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="mb-2 flex w-full items-center justify-center gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3.5 py-2.5 text-[13px] font-medium text-[var(--text)] transition-colors hover:bg-[var(--sand)]"
+                                className="mb-2 flex w-full items-center gap-2.5 rounded-[10px] border border-[#e0deda] bg-white px-3.5 py-2.5 text-left text-[13px] font-medium text-[#1a1a1a] transition-colors hover:bg-[#f4f3f0]"
                             >
+                                <IconGlobe className="shrink-0 text-[#4a4a4a]" />
                                 Admissions page
                             </a>
                         ) : null}
 
-                        <div className="my-3.5 border-t border-[var(--border-light)]" />
-                        <div className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[var(--text-hint)]">
+                        <div className="my-3.5 border-t border-[#ece9e4]" />
+                        <div className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
                             At a glance
                         </div>
                         <div className="space-y-1 text-xs">
                             <div className="flex justify-between gap-2 py-1">
-                                <span className="text-[var(--text-light)]">Acceptance</span>
-                                <span className="font-semibold text-[var(--text)]">{uni.acceptanceFormatted}</span>
+                                <span className="text-[#7a7a7a]">Acceptance</span>
+                                <span className="font-semibold text-[#1a1a1a]">{uni.acceptanceFormatted}</span>
                             </div>
                             <div className="flex justify-between gap-2 py-1">
-                                <span className="text-[var(--text-light)]">Ranking</span>
-                                <span className="font-semibold text-[var(--text)]">{uni.rankingFormatted ?? "—"}</span>
+                                <span className="text-[#7a7a7a]">Ranking</span>
+                                <span className="font-semibold text-[#1a1a1a]">{uni.rankingFormatted ?? "—"}</span>
                             </div>
                             <div className="flex justify-between gap-2 py-1">
-                                <span className="text-[var(--text-light)]">Intl students</span>
+                                <span className="text-[#7a7a7a]">Intl students</span>
                                 <span
-                                    className={`font-semibold ${uni.intlStudentsFormatted ? "text-[#E65100]" : "text-[var(--text)]"}`}
+                                    className={`font-semibold ${uni.intlStudentsFormatted ? "text-[#E65100]" : "text-[#1a1a1a]"}`}
                                 >
                                     {uni.intlStudentsFormatted ?? "—"}
                                 </span>
@@ -560,9 +562,9 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         </div>
 
                         {uni.email ? (
-                            <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-hint)]">
+                            <p className="mt-3 text-[11px] leading-relaxed text-[#a0a0a0]">
                                 Contact:{" "}
-                                <a href={`mailto:${uni.email}`} className="font-medium text-[var(--green)] hover:underline">
+                                <a href={`mailto:${uni.email}`} className="font-medium text-[#2D6A4F] hover:underline">
                                     {uni.email}
                                 </a>
                             </p>

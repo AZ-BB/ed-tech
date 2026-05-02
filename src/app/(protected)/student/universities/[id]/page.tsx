@@ -1,5 +1,5 @@
 import type { Json } from "@/database.types";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { MajorProgramBlock } from "./_components/university-detail-view";
@@ -179,39 +179,13 @@ export async function generateMetadata(props: { params: Promise<PageParams> }): 
 
 export default async function StudentUniversityDetailPage(props: { params: Promise<PageParams> }) {
     const { id } = await props.params;
-    const supabase = await createSupabaseSecretClient();
+    const supabase = await createSupabaseServerClient();
 
     const { data: raw, error } = await supabase
         .from("universities")
         .select(
             `
-            id,
-            name,
-            city,
-            state,
-            country_code,
-            is_public,
-            description,
-            logo_url,
-            tuition_per_year,
-            deadline_date,
-            is_priority,
-            ielts_min_score,
-            sat_policy,
-            acceptance_rate,
-            ranking,
-            intl_students,
-            website_url,
-            email,
-            admission_page_url,
-            application_fee,
-            method,
-            intakes,
-            estimated_living_cost_per_year,
-            is_scholarship_available,
-            toefl_min_score,
-            documents,
-            difficulty,
+            *,
             countries ( name ),
             university_majors (
                 majors ( name ),
@@ -231,7 +205,7 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
         notFound();
     }
 
-    const row = raw as UniversityRow & { difficulty?: string | null };
+    const row = raw as unknown as UniversityRow & { difficulty?: string | null };
     const countryName = row.countries?.name ?? row.country_code;
     const majorBlocks = buildMajorBlocks(row.university_majors);
     const totalPrograms = majorBlocks.reduce((acc, b) => acc + b.programs.length, 0);

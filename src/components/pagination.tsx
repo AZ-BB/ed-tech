@@ -16,10 +16,10 @@ const LIMIT_SELECT_CHEVRON =
   "url(\"data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7a7a' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E\")";
 
 const limitSelectClass =
-  "min-h-9 min-w-[72px] cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-3 py-2 text-[11.5px] leading-none text-[var(--text-mid)] transition-all hover:border-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-[26px]";
+  "min-h-9 min-w-[72px] cursor-pointer rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-3 py-2 text-[11.5px] leading-none text-[#4a4a4a] transition-all hover:border-[#a0a0a0] focus:border-[#40916C] focus:outline-none appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-[26px]";
 
 const navButtonClass =
-  "inline-flex h-9 min-w-[36px] cursor-pointer items-center justify-center rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-2.5 text-[11.5px] font-medium leading-none text-[var(--text)] transition-all hover:border-[var(--green)] hover:bg-[var(--green-pale)] hover:text-[var(--green)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-[var(--border)] disabled:hover:bg-white disabled:hover:text-[var(--text)]";
+  "inline-flex h-9 min-w-[36px] cursor-pointer items-center justify-center rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-2.5 text-[11.5px] font-medium leading-none text-[#1a1a1a] transition-all hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-[#e0deda] disabled:hover:bg-white disabled:hover:text-[#1a1a1a]";
 
 export type PaginationChangePayload = {
   page: number;
@@ -101,31 +101,31 @@ export function Pagination({
 
   return (
     <div
-      className={`flex flex-wrap items-center justify-between gap-3 text-[11.5px] text-[var(--text-mid)] ${isPending ? "opacity-75" : ""} ${className}`}
+      className={`flex flex-wrap items-center justify-between gap-3 text-[11.5px] text-[#4a4a4a] ${isPending ? "opacity-75" : ""} ${className}`}
       aria-busy={isPending}
     >
       <p className="tabular-nums">
         {summary === "total" ? (
           <span>
             Total:{" "}
-            <span className="text-[var(--text)]">{totalRows}</span>
+            <span className="text-[#1a1a1a]">{totalRows}</span>
           </span>
         ) : totalRows === 0 ? (
           <span>No results</span>
         ) : (
           <span>
-            <span className="text-[var(--text)]">{rangeStart}</span>
+            <span className="text-[#1a1a1a]">{rangeStart}</span>
             {"–"}
-            <span className="text-[var(--text)]">{rangeEnd}</span>
+            <span className="text-[#1a1a1a]">{rangeEnd}</span>
             {" of "}
-            <span className="text-[var(--text)]">{totalRows}</span>
+            <span className="text-[#1a1a1a]">{totalRows}</span>
           </span>
         )}
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="inline-flex items-center gap-2">
-          <span className="whitespace-nowrap text-[var(--text-light)]">
+          <span className="whitespace-nowrap text-[#7a7a7a]">
             Per page
           </span>
           <select
@@ -147,8 +147,8 @@ export function Pagination({
           </select>
         </label>
 
-        <span className="tabular-nums text-[var(--text-light)]">
-          Page <span className="text-[var(--text)]">{safePage}</span> /{" "}
+        <span className="tabular-nums text-[#7a7a7a]">
+          Page <span className="text-[#1a1a1a]">{safePage}</span> /{" "}
           {totalPages}
         </span>
 

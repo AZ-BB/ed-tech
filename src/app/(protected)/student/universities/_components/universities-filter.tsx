@@ -7,7 +7,7 @@ const FILTER_SELECT_CHEVRON =
     'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
 
 const filterSelectClass =
-    "min-h-9 min-w-[120px] cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-3.5 py-2 text-[11.5px] leading-none text-[var(--text-mid)] transition-all hover:border-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none appearance-none bg-[length:10px_6px] bg-[position:right_12px_center] bg-no-repeat pr-[30px] max-[600px]:min-w-0 max-[600px]:w-full";
+    "min-h-9 min-w-[120px] cursor-pointer rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-3.5 py-2 text-[11.5px] leading-none text-[#4a4a4a] transition-all hover:border-[#a0a0a0] focus:border-[#40916C] focus:outline-none appearance-none bg-[length:10px_6px] bg-[position:right_12px_center] bg-no-repeat pr-[30px] max-[600px]:min-w-0 max-[600px]:w-full";
 
 export type UniversitiesFilterProps = {
     majors: { id: number; name: string }[];
@@ -136,7 +136,7 @@ export function UniversitiesFilter({
             className={`mb-5 flex flex-col gap-0 ${isPending ? "opacity-75" : ""}`}
             aria-busy={isPending}
         >
-            <div className="mb-3.5 flex items-center gap-3 rounded-[var(--radius-lg)] border-[1.5px] border-[var(--border-light)] bg-white px-5 py-4 transition-[border-color,box-shadow] focus-within:border-[var(--green-light)] focus-within:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]">
+            <div className="mb-3.5 flex items-center gap-3 rounded-[16px] border-[1.5px] border-[#ece9e4] bg-white px-5 py-4 transition-[border-color,box-shadow] focus-within:border-[#40916C] focus-within:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]">
                 <svg
                     width="18"
                     height="18"
@@ -156,14 +156,14 @@ export function UniversitiesFilter({
                     id="university-search"
                     type="search"
                     placeholder="Search by university, major, or keyword..."
-                    className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[#c0bdb8]"
+                    className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[#1a1a1a] outline-none placeholder:text-[#c0bdb8]"
                     autoComplete="off"
                     value={searchDraft}
                     onChange={(e) => setSearchDraft(e.target.value)}
                 />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-5 py-3 max-[600px]:flex-col max-[600px]:items-stretch">
+            <div className="flex flex-wrap items-center gap-2 rounded-[16px] border border-[#ece9e4] bg-white px-5 py-3 max-[600px]:flex-col max-[600px]:items-stretch">
                 <select
                     aria-label="Major"
                     className={filterSelectClass}
@@ -270,7 +270,7 @@ export function UniversitiesFilter({
 
                 <button
                     type="button"
-                    className="ml-auto inline-flex h-9 cursor-pointer items-center rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-[18px] text-[11.5px] font-medium leading-none text-[var(--text-light)] transition-all hover:border-[var(--green)] hover:bg-[var(--green-pale)] hover:text-[var(--green)] max-[600px]:ml-0 max-[600px]:w-full max-[600px]:justify-center"
+                    className="ml-auto inline-flex h-9 cursor-pointer items-center rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-[18px] text-[11.5px] font-medium leading-none text-[#7a7a7a] transition-all hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F] max-[600px]:ml-0 max-[600px]:w-full max-[600px]:justify-center"
                     onClick={() => {
                         setSearchDraft("");
                         const next = stripFilterParams(paramsRef.current);
