@@ -2,7 +2,7 @@ import { Pagination } from "@/components/pagination";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { Suspense } from "react";
 import { UniversitiesFilter } from "./_components/universities-filter";
-import { UniversityCard } from "./_components/university-card";
+import { UniversityCard, type UniversityCardUniversity } from "./_components/university-card";
 
 type SecretSupabaseClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
@@ -76,6 +76,12 @@ function normalizeUniType(v: string | undefined): string | undefined {
     const x = v.toLowerCase();
     return x === "public" || x === "private" ? x : undefined;
 }
+
+/** Row shape for list query; explicit because dynamic `.select()` breaks Supabase `ParserError` inference. */
+type UniversitiesListQueryRow = UniversityCardUniversity & {
+    countries: { name: string } | null;
+    student_activities: { id: string; type: string }[] | null;
+};
 
 type UniversitiesPageSearchParams = {
     major_id?: string;
@@ -234,6 +240,7 @@ export default async function StudentUniversitiesPage({
             sat_policy,
             acceptance_rate,
             countries ( name ),
+            student_activities ( id, type )
             ${universityMajorsEmbed}
             `,
         );
@@ -248,9 +255,10 @@ export default async function StudentUniversitiesPage({
         console.error(universitiesError);
     }
 
+    const rows = universitiesRaw as UniversitiesListQueryRow[] | null | undefined;
     const universities =
-        universitiesRaw?.map((row) => {
-            const country = row.countries as { name: string } | null;
+        rows?.map((row) => {
+            const country = row.countries;
             return {
                 id: row.id,
                 name: row.name,
@@ -267,7 +275,7 @@ export default async function StudentUniversitiesPage({
                 ielts_min_score: row.ielts_min_score,
                 sat_policy: row.sat_policy,
                 acceptance_rate: row.acceptance_rate,
-            };
+            } satisfies UniversityCardUniversity;
         }) ?? [];
 
     return (
