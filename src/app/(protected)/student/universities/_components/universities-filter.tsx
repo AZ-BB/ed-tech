@@ -9,6 +9,13 @@ const FILTER_SELECT_CHEVRON =
 const filterSelectClass =
     "min-h-9 min-w-[120px] cursor-pointer rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-3.5 py-2 text-[11.5px] leading-none text-[#4a4a4a] transition-all hover:border-[#a0a0a0] focus:border-[#40916C] focus:outline-none appearance-none bg-[length:10px_6px] bg-[position:right_12px_center] bg-no-repeat pr-[30px] max-[600px]:min-w-0 max-[600px]:w-full";
 
+const filterToggleClass =
+    "inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center rounded-[50px] border-[1.5px] px-3.5 py-2 text-[11.5px] font-medium leading-none transition-all";
+
+const filterToggleOffClass = `${filterToggleClass} border-[#e0deda] bg-white text-[#4a4a4a] hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]`;
+
+const filterToggleOnClass = `${filterToggleClass} border-[#2D6A4F] bg-[#f0faf3] text-[#2D6A4F]`;
+
 export type UniversitiesFilterProps = {
     majors: { id: number; name: string }[];
     countries: { id: string; name: string }[];
@@ -19,6 +26,8 @@ export type UniversitiesFilterProps = {
     countryCode?: string;
     uniType?: string;
     difficulty?: string;
+    shortlistOnly?: boolean;
+    favouritesOnly?: boolean;
 };
 
 export const FILTER_PARAM_KEYS = [
@@ -28,6 +37,8 @@ export const FILTER_PARAM_KEYS = [
     "country_code",
     "uni_type",
     "difficulty",
+    "shortlisted",
+    "favourites",
 ] as const;
 
 export type FilterParamKey = (typeof FILTER_PARAM_KEYS)[number];
@@ -63,14 +74,19 @@ export function UniversitiesFilter({
     countryCode,
     uniType,
     difficulty,
+    shortlistOnly = false,
+    favouritesOnly = false,
 }: UniversitiesFilterProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
 
-    const paramsRef = useRef(searchParams);
-    paramsRef.current = searchParams;
+    const paramsRef = useRef(new URLSearchParams(searchParams.toString()));
+    const searchParamsSnapshot = searchParams.toString();
+    useEffect(() => {
+        paramsRef.current = new URLSearchParams(searchParamsSnapshot);
+    }, [searchParamsSnapshot]);
 
     const [searchDraft, setSearchDraft] = useState(searchInitial);
 
@@ -81,6 +97,7 @@ export function UniversitiesFilter({
     const navigateWithParams = useCallback(
         (next: URLSearchParams) => {
             const q = next.toString();
+            paramsRef.current = new URLSearchParams(q);
             startTransition(() => {
                 router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
             });
@@ -133,7 +150,7 @@ export function UniversitiesFilter({
 
     return (
         <div
-            className={`mb-5 flex flex-col gap-0 ${isPending ? "opacity-75" : ""}`}
+            className={`relative z-10 mb-5 flex flex-col gap-0 ${isPending ? "opacity-75" : ""}`}
             aria-busy={isPending}
         >
             <div className="mb-3.5 flex items-center gap-3 rounded-[16px] border-[1.5px] border-[#ece9e4] bg-white px-5 py-4 transition-[border-color,box-shadow] focus-within:border-[#40916C] focus-within:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]">
@@ -164,6 +181,35 @@ export function UniversitiesFilter({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 rounded-[16px] border border-[#ece9e4] bg-white px-5 py-3 max-[600px]:flex-col max-[600px]:items-stretch">
+                <div className="flex flex-wrap items-center gap-2 max-[600px]:w-full">
+                    <button
+                        type="button"
+                        aria-pressed={shortlistOnly}
+                        aria-label={shortlistOnly ? "Show all universities" : "Show shortlisted universities only"}
+                        className={shortlistOnly ? filterToggleOnClass : filterToggleOffClass}
+                        onClick={() =>
+                            patchAndNavigate({
+                                shortlisted: shortlistOnly ? null : "1",
+                            })
+                        }
+                    >
+                        Shortlisted
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={favouritesOnly}
+                        aria-label={favouritesOnly ? "Show all universities" : "Show favourite universities only"}
+                        className={favouritesOnly ? filterToggleOnClass : filterToggleOffClass}
+                        onClick={() =>
+                            patchAndNavigate({
+                                favourites: favouritesOnly ? null : "1",
+                            })
+                        }
+                    >
+                        Favourites
+                    </button>
+                </div>
+
                 <select
                     aria-label="Major"
                     className={filterSelectClass}
