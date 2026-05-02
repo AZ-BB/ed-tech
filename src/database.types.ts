@@ -992,11 +992,13 @@ export type Database = {
           competition:
             | Database["public"]["Enums"]["scholarship_competition_type"]
             | null
-          coverage: number | null
+          coverage: string | null
           created_at: string | null
           deadline: string | null
           deadline_date: string | null
           description: string | null
+          discovery_payload: Json | null
+          discovery_slug: string | null
           docuemnts: Json | null
           documents: Json | null
           fields: Json | null
@@ -1029,11 +1031,13 @@ export type Database = {
           competition?:
             | Database["public"]["Enums"]["scholarship_competition_type"]
             | null
-          coverage?: number | null
+          coverage?: string | null
           created_at?: string | null
           deadline?: string | null
           deadline_date?: string | null
           description?: string | null
+          discovery_payload?: Json | null
+          discovery_slug?: string | null
           docuemnts?: Json | null
           documents?: Json | null
           fields?: Json | null
@@ -1066,11 +1070,13 @@ export type Database = {
           competition?:
             | Database["public"]["Enums"]["scholarship_competition_type"]
             | null
-          coverage?: number | null
+          coverage?: string | null
           created_at?: string | null
           deadline?: string | null
           deadline_date?: string | null
           description?: string | null
+          discovery_payload?: Json | null
+          discovery_slug?: string | null
           docuemnts?: Json | null
           documents?: Json | null
           fields?: Json | null
@@ -1172,6 +1178,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "school_recharge_history_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_students: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          school_id: string
+          signed_up: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          school_id: string
+          signed_up?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          school_id?: string
+          signed_up?: boolean
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_students_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"

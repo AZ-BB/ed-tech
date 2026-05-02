@@ -3,12 +3,42 @@
 import { logout } from "@/action/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { sidebarNavItems } from "../_data/student-dashboard-data";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  sidebarNavItems,
+  type SidebarNavItem,
+} from "../_data/student-dashboard-data";
 
 function isNavItemActive(pathname: string, href: string) {
   if (href === "#") return false;
   return pathname === href || pathname === `${href}/`;
+}
+
+function shellHeaderFromPathname(pathname: string): {
+  label: string;
+  iconPaths: string[];
+} {
+  for (const item of sidebarNavItems) {
+    if (item.type === "divider") continue;
+    if (item.href === "#") continue;
+    if (isNavItemActive(pathname, item.href)) {
+      return { label: item.label, iconPaths: item.iconPaths };
+    }
+  }
+  const dashboard = sidebarNavItems.find(
+    (i): i is Extract<SidebarNavItem, { type: "link" }> =>
+      i.type === "link" && i.id === "dashboard",
+  );
+  if (dashboard) {
+    return { label: dashboard.label, iconPaths: dashboard.iconPaths };
+  }
+  return {
+    label: "Dashboard",
+    iconPaths: [
+      "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z",
+      "M9 22V12h6v10",
+    ],
+  };
 }
 
 function SidebarNav({
@@ -171,6 +201,11 @@ export function StudentLayoutShell({
 }) {
   /** Collapsible drawer from the right + dimmed overlay — same pattern as dashboard.html */
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const shellHeader = useMemo(
+    () => shellHeaderFromPathname(pathname),
+    [pathname],
+  );
 
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -191,7 +226,7 @@ export function StudentLayoutShell({
 
   return (
     <div className="min-h-screen bg-[var(--sand)]">
-      <div className="mx-auto w-full max-w-[1060px] px-5 pt-6 pb-16">
+      <div className="mx-auto w-full px-32 pt-6 pb-16">
         <header className="mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--green-bg)]">
@@ -202,15 +237,17 @@ export function StudentLayoutShell({
                 fill="none"
                 stroke="#2D6A4F"
                 strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 aria-hidden
               >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
+                {shellHeader.iconPaths.map((d) => (
+                  <path key={d} d={d} />
+                ))}
               </svg>
             </div>
             <span className="text-base font-semibold text-[var(--text)]">
-              Dashboard
+              {shellHeader.label}
             </span>
           </div>
           <button

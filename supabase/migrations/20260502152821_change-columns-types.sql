@@ -1,0 +1,1 @@
+ALTER TABLE scholarships ALTER COLUMN coverage TYPE TEXT;
