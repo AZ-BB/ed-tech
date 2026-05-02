@@ -47,6 +47,7 @@ export async function proxy(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
+  console.log("session?.user?.user_metadata?.type", session?.user?.user_metadata)
   const authedHome = authedHomePath(session?.user?.user_metadata?.type)
 
   const { pathname } = request.nextUrl

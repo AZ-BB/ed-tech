@@ -1,8 +1,10 @@
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingPageContent } from "@/components/landing/landing-page-content";
+import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export default function Home() {
+
   return (
     <>
       <LandingNav />
