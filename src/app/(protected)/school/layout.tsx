@@ -11,6 +11,7 @@ function initialsFromNames(first: string, last: string) {
   return "?";
 }
 
+
 export default async function SchoolLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServerClient();
   const {
