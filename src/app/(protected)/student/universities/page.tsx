@@ -1,4 +1,5 @@
 import { Pagination } from "@/components/pagination";
+import type { Database } from "@/database.types";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { Suspense } from "react";
 import { UniversitiesFilter } from "./_components/universities-filter";
@@ -77,11 +78,46 @@ function normalizeUniType(v: string | undefined): string | undefined {
     return x === "public" || x === "private" ? x : undefined;
 }
 
-/** Row shape for list query; explicit because dynamic `.select()` breaks Supabase `ParserError` inference. */
-type UniversitiesListQueryRow = UniversityCardUniversity & {
-    countries: { name: string } | null;
-    student_activities: { id: string; type: string }[] | null;
+function truthyQueryFlag(v: string | undefined): boolean {
+    const t = v?.trim().toLowerCase();
+    return t === "1" || t === "true" || t === "yes";
+}
+
+type StudentActivityRow = {
+    id: number;
+    type: Database["public"]["Enums"]["student_activity_type"] | null;
 };
+
+/** Row shape for list query; explicit because dynamic `.select()` breaks Supabase `ParserError` inference. */
+type UniversitiesListQueryRow = Omit<UniversityCardUniversity, "country_name" | "is_shortlisted" | "is_favourite"> & {
+    countries: { name: string } | null;
+    student_activities: StudentActivityRow[] | null;
+};
+
+function isUniversityShortlistedFromActivities(activities: StudentActivityRow[] | null | undefined): boolean {
+    return activities?.some((a) => a.type === "shortlist") ?? false;
+}
+
+function isUniversityFavouriteFromActivities(activities: StudentActivityRow[] | null | undefined): boolean {
+    return activities?.some((a) => a.type === "save") ?? false;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyStudentActivityFilters(
+    q: any,
+    opts: { shortlistOnly: boolean; favouritesOnly: boolean },
+) {
+    if (!opts.shortlistOnly && !opts.favouritesOnly) return q;
+    let x = q.eq("student_activities.entity_type", "university");
+    if (opts.shortlistOnly && opts.favouritesOnly) {
+        x = x.or("type.eq.shortlist,type.eq.save", { foreignTable: "student_activities" });
+    } else if (opts.shortlistOnly) {
+        x = x.eq("student_activities.type", "shortlist");
+    } else {
+        x = x.eq("student_activities.type", "save");
+    }
+    return x;
+}
 
 type UniversitiesPageSearchParams = {
     major_id?: string;
@@ -90,6 +126,8 @@ type UniversitiesPageSearchParams = {
     search?: string;
     uni_type?: string;
     difficulty?: string;
+    shortlisted?: string;
+    favourites?: string;
     page?: string;
     limit?: string;
 };
@@ -189,6 +227,10 @@ export default async function StudentUniversitiesPage({
     const { page: pageParam, limit: limitParam } = parseUniversitiesPagination(sp);
     const searchTrimmed = search?.trim() || undefined;
 
+    const filterShortlisted = truthyQueryFlag(sp.shortlisted);
+    const filterFavourites = truthyQueryFlag(sp.favourites);
+    const studentActivitiesInner = filterShortlisted || filterFavourites;
+
     const filterCtx: UniversitiesFilterContext = {
         majorId,
         programId,
@@ -204,27 +246,9 @@ export default async function StudentUniversitiesPage({
                 ? "university_majors!inner ( major_id, university_major_programs!inner ( program_id ) )"
                 : "university_majors!inner ( major_id )";
 
-    let countQuery = supabase
-        .from("universities")
-        .select("id", { count: "exact", head: true });
-    countQuery = applyUniversitiesFilters(countQuery, filterCtx);
-    const { count: universitiesCount, error: countError } = await countQuery;
+    const studentActivitiesFragment = `student_activities${studentActivitiesInner ? "!inner" : ""} ( id, type )`;
 
-    if (countError) {
-        console.error(countError);
-    }
-
-    const totalRows = universitiesCount ?? 0;
-    const { safePage, offset } = paginationTotals(
-        totalRows,
-        pageParam,
-        limitParam,
-    );
-
-    let listQuery = supabase
-        .from("universities")
-        .select(
-            `
+    const universitiesListSelect = `
             id,
             name,
             city,
@@ -240,19 +264,51 @@ export default async function StudentUniversitiesPage({
             sat_policy,
             acceptance_rate,
             countries ( name ),
-            student_activities ( id, type )
+            ${studentActivitiesFragment},
             ${universityMajorsEmbed}
-            `,
-        );
-    listQuery = applyUniversitiesFilters(listQuery, filterCtx);
-    listQuery = listQuery
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limitParam - 1);
+            `;
 
-    const { data: universitiesRaw, error: universitiesError } = await listQuery;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function buildUniversitiesListQuery(): any {
+        let q = supabase.from("universities").select(universitiesListSelect, { count: "exact" });
+        q = applyUniversitiesFilters(q, filterCtx);
+        q = applyStudentActivityFilters(q, {
+            shortlistOnly: filterShortlisted,
+            favouritesOnly: filterFavourites,
+        });
+        return q.order("created_at", { ascending: false });
+    }
+
+    const requestedOffset = (pageParam - 1) * limitParam;
+    let listQuery = buildUniversitiesListQuery().range(
+        requestedOffset,
+        requestedOffset + limitParam - 1,
+    );
+
+    let { data: universitiesRaw, count: universitiesCount, error: universitiesError } =
+        await listQuery;
 
     if (universitiesError) {
         console.error(universitiesError);
+    }
+
+    const totalRows = universitiesCount ?? 0;
+    const { safePage, offset: safeOffset } = paginationTotals(
+        totalRows,
+        pageParam,
+        limitParam,
+    );
+
+    if (!universitiesError && safePage !== pageParam && totalRows > 0) {
+        listQuery = buildUniversitiesListQuery().range(
+            safeOffset,
+            safeOffset + limitParam - 1,
+        );
+        const second = await listQuery;
+        universitiesRaw = second.data;
+        if (second.error) {
+            console.error(second.error);
+        }
     }
 
     const rows = universitiesRaw as UniversitiesListQueryRow[] | null | undefined;
@@ -275,6 +331,8 @@ export default async function StudentUniversitiesPage({
                 ielts_min_score: row.ielts_min_score,
                 sat_policy: row.sat_policy,
                 acceptance_rate: row.acceptance_rate,
+                is_shortlisted: isUniversityShortlistedFromActivities(row.student_activities),
+                is_favourite: isUniversityFavouriteFromActivities(row.student_activities),
             } satisfies UniversityCardUniversity;
         }) ?? [];
 
@@ -306,6 +364,8 @@ export default async function StudentUniversitiesPage({
                     countryCode={countryCode}
                     uniType={uniType}
                     difficulty={difficulty}
+                    shortlistOnly={filterShortlisted}
+                    favouritesOnly={filterFavourites}
                 />
             </Suspense>
 

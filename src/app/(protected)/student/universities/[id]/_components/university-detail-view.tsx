@@ -1,6 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { UniversityDetailSectionTabs } from "./university-detail-section-tabs";
+import {
+    DetailHeaderFavouriteButton,
+    DetailSidebarActivityButtons,
+    UniversityDetailStudentActivityProvider,
+} from "./university-detail-student-activities";
 
 export type MajorProgramBlock = {
     majorName: string;
@@ -38,6 +43,8 @@ export type UniversityDetailModel = {
     documents: string[];
     majorBlocks: MajorProgramBlock[];
     totalPrograms: number;
+    is_shortlisted: boolean;
+    is_favourite: boolean;
 };
 
 function CrestSvg({ className }: { className?: string }) {
@@ -117,6 +124,11 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
     }
 
     return (
+        <UniversityDetailStudentActivityProvider
+            universityId={uni.id}
+            initialShortlisted={uni.is_shortlisted}
+            initialFavourite={uni.is_favourite}
+        >
         <div className="mx-auto px-5 py-6 pb-[60px]">
             <Link
                 href="/student/universities"
@@ -145,15 +157,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                     <span className="truncate text-base font-semibold text-[#1a1a1a]">{uni.name}</span>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        type="button"
-                        aria-label="Save (coming soon)"
-                        className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-xl border border-[#e0deda] bg-white transition-colors hover:bg-[#f4f3f0]"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a7a7a" strokeWidth="1.8">
-                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
-                        </svg>
-                    </button>
+                    <DetailHeaderFavouriteButton />
                     <button
                         type="button"
                         aria-label="Reminders (coming soon)"
@@ -497,24 +501,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                 <aside className="w-full shrink-0 lg:w-[220px] lg:min-w-[220px]">
                     <div className="sticky top-6 rounded-[12px] border border-[#ece9e4] bg-white p-5">
                         <div className="mb-3.5 text-sm font-semibold text-[#1a1a1a]">Your actions</div>
-                        <button
-                            type="button"
-                            className="mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border border-[#e0deda] bg-white px-3.5 py-2.5 text-left text-[13px] font-medium text-[#1a1a1a] transition-colors hover:border-[#a0a0a0] hover:bg-[#f4f3f0]"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
-                            </svg>
-                            Save university
-                        </button>
-                        <button
-                            type="button"
-                            className="mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] border border-[#e0deda] bg-white px-3.5 py-2.5 text-left text-[13px] font-medium text-[#1a1a1a] transition-colors hover:border-[#a0a0a0] hover:bg-[#f4f3f0]"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                <path d="M12 2l2.4 7.4H22l-6 4.6L18.3 21 12 16.4 5.7 21l2.3-7L2 9.4h7.6z" />
-                            </svg>
-                            Add to shortlist
-                        </button>
+                        <DetailSidebarActivityButtons />
                         {uni.websiteUrl ? (
                             <a
                                 href={uni.websiteUrl}
@@ -573,5 +560,6 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                 </aside>
             </div>
         </div>
+        </UniversityDetailStudentActivityProvider>
     );
 }

@@ -1517,6 +1517,9 @@ export type Database = {
           created_at: string | null
           deadline_date: string | null
           description: string | null
+          difficulty:
+            | Database["public"]["Enums"]["university_difficulty"]
+            | null
           documents: Json | null
           email: string | null
           estimated_living_cost_per_year: number | null
@@ -1549,6 +1552,9 @@ export type Database = {
           created_at?: string | null
           deadline_date?: string | null
           description?: string | null
+          difficulty?:
+            | Database["public"]["Enums"]["university_difficulty"]
+            | null
           documents?: Json | null
           email?: string | null
           estimated_living_cost_per_year?: number | null
@@ -1581,6 +1587,9 @@ export type Database = {
           created_at?: string | null
           deadline_date?: string | null
           description?: string | null
+          difficulty?:
+            | Database["public"]["Enums"]["university_difficulty"]
+            | null
           documents?: Json | null
           email?: string | null
           estimated_living_cost_per_year?: number | null
@@ -1698,14 +1707,22 @@ export type Database = {
     Functions: {
       rpc_scholarships_discovery_page: {
         Args: {
-          p_q?: string | null
-          p_nat?: string | null
-          p_dest?: string | null
-          p_cov?: string | null
-          p_limit?: number | null
-          p_offset?: number | null
+          p_cov?: string
+          p_dest?: string
+          p_limit?: number
+          p_nat?: string
+          p_offset?: number
+          p_q?: string
         }
         Returns: Json
+      }
+      scholarship_discovery_dest_match: {
+        Args: { p_dest: Json; p_user: string }
+        Returns: boolean
+      }
+      scholarship_discovery_nat_match: {
+        Args: { p_elig: Json; p_user: string }
+        Returns: boolean
       }
     }
     Enums: {
@@ -1766,6 +1783,7 @@ export type Database = {
       student_credits_type: "advisor" | "ambassador"
       student_status: "high_priority" | "at_risk" | "missing_docs"
       tuition_type: "full" | "partial"
+      university_difficulty: "easy" | "medium" | "hard"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1957,6 +1975,7 @@ export const Constants = {
       student_credits_type: ["advisor", "ambassador"],
       student_status: ["high_priority", "at_risk", "missing_docs"],
       tuition_type: ["full", "partial"],
+      university_difficulty: ["easy", "medium", "hard"],
     },
   },
 } as const
