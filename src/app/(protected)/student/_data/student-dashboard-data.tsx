@@ -36,7 +36,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "scholarship-search",
     label: "Scholarship Search",
-    href: "#",
+    href: "/student/scholarships",
     iconPaths: ["M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z"],
   },
   {
@@ -243,7 +243,7 @@ export const quickActions: QuickAction[] = [
   {
     name: "Scholarships",
     desc: "Discover funding opportunities",
-    href: "#",
+    href: "/student/scholarships",
     iconWrap: "bg-[#FEF9C3]",
     iconStroke: "#854D0E",
     icon: (

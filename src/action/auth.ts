@@ -91,12 +91,11 @@ export async function studentSignUp(
     const email = String(formData.get("email") ?? "").trim();
     const nationalityCountryCode = String(formData.get("nationalityCountryCode") ?? "").trim();
     const residenceCountryCode = String(formData.get("residenceCountryCode") ?? "").trim();
-    const schoolName = String(formData.get("schoolName") ?? "").trim();
     const phoneNumber = String(formData.get("phoneNumber") ?? "").trim();
     const password = String(formData.get("password") ?? "");
     const schoolAccessCode = String(formData.get("schoolAccessCode") ?? "").trim();
 
-    if (!firstName || !lastName || !email || !nationalityCountryCode || !residenceCountryCode || !schoolName || !phoneNumber || !password || !schoolAccessCode) {
+    if (!firstName || !lastName || !email || !nationalityCountryCode || !residenceCountryCode || !phoneNumber || !password || !schoolAccessCode) {
         return {
             data: false,
             error: "Missing required profile or country data."
@@ -104,6 +103,7 @@ export async function studentSignUp(
     }
 
     const supabase = await createSupabaseSecretClient();
+    const emailNormalized = email.trim().toLowerCase();
 
     const { data: school, error: schoolError } = await supabase
         .from("schools")
@@ -116,6 +116,35 @@ export async function studentSignUp(
         return {
             data: false,
             error: "Invalid school access code."
+        };
+    }
+
+    const { data: schoolStudent, error: schoolStudentError } = await supabase
+        .from("school_students")
+        .select("id, signed_up")
+        .eq("school_id", school.id)
+        .eq("email", emailNormalized)
+        .maybeSingle();
+
+    if (schoolStudentError) {
+        console.error(schoolStudentError);
+        return {
+            data: false,
+            error: "Could not verify school enrollment."
+        };
+    }
+
+    if (!schoolStudent) {
+        return {
+            data: false,
+            error: "This email is not on the approved list for this school."
+        };
+    }
+
+    if (schoolStudent.signed_up) {
+        return {
+            data: false,
+            error: "This email has already completed registration for this school."
         };
     }
 
@@ -134,13 +163,13 @@ export async function studentSignUp(
 
     const { error: studentsCountError, count: studentsCountCount } = await supabase
         .from("student_profiles")
-        .select("id", { count: "exact" })
+        .select("id", { count: "exact", head: true })
         .eq("school_id", school.id);
 
-    if (studentsCountError || !studentsCountCount) {
+    if (studentsCountError || studentsCountCount === null) {
         return {
             data: false,
-            error: 'School not found.'
+            error: "School not found."
         };
     }
 
@@ -185,6 +214,22 @@ export async function studentSignUp(
         return {
             data: false,
             error: studentProfileError.message
+        };
+    }
+
+    const { error: markSignedUpError } = await supabase
+        .from("school_students")
+        .update({
+            signed_up: true,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", schoolStudent.id);
+
+    if (markSignedUpError) {
+        await supabase.auth.admin.deleteUser(data.user.id);
+        return {
+            data: false,
+            error: markSignedUpError.message
         };
     }
 

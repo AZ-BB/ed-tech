@@ -213,7 +213,6 @@ export function SignupWizard() {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [schoolName, setSchoolName] = useState("");
   const [nationality, setNationality] = useState<Country | null>(null);
   const [residence, setResidence] = useState<Country | null>(null);
 
@@ -260,12 +259,12 @@ export function SignupWizard() {
     const next = {
       f: !firstName.trim() ? "First name is required" : "",
       l: !lastName.trim() ? "Last name is required" : "",
-      s: !schoolName.trim() ? "School name is required" : "",
+      s: "",
       n: !nationality ? "Nationality is required" : "",
       r: !residence ? "Country of residence is required" : "",
     };
     setPe(next);
-    return !next.f && !next.l && !next.s && !next.n && !next.r;
+    return !next.f && !next.l && !next.n && !next.r;
   }
 
   const buildSignUpFormData = useCallback((): FormData | null => {
@@ -276,7 +275,6 @@ export function SignupWizard() {
     fd.append("email", email.trim());
     fd.append("nationalityCountryCode", nationality.alpha2);
     fd.append("residenceCountryCode", residence.alpha2);
-    fd.append("schoolName", schoolName.trim());
     fd.append("phoneNumber", phone.trim());
     fd.append("password", password);
     fd.append("schoolAccessCode", schoolCode.trim());
@@ -287,7 +285,6 @@ export function SignupWizard() {
     email,
     nationality,
     residence,
-    schoolName,
     phone,
     password,
     schoolCode,
@@ -463,19 +460,6 @@ export function SignupWizard() {
               placeholder="Select country"
               error={pe.r}
             />
-            <div>
-              <label htmlFor={`${uid}-sch`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
-                School name
-              </label>
-              <input
-                id={`${uid}-sch`}
-                value={schoolName}
-                onChange={(e) => setSchoolName(e.target.value)}
-                placeholder="e.g. GEMS Wellington Academy"
-                className={clsx(pe.s ? fieldErr : fieldNormal)}
-              />
-              {pe.s ? <p className="mt-1 text-[11px] text-red-600">{pe.s}</p> : null}
-            </div>
           </div>
           <div className="mt-6 flex items-center justify-between">
             <Link href="/login" className={btnBack}>
@@ -741,6 +725,9 @@ export function SignupWizard() {
                 )}
               />
               {se.c ? <p className="mt-1 text-[11px] text-red-600">{se.c}</p> : null}
+              <p className="mt-2 text-[12px] leading-snug text-[var(--text-light)]">
+                Use the same email address your school added to their approved student list.
+              </p>
             </div>
           ) : null}
           <div className="mt-6 flex items-center justify-between">
