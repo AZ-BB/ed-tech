@@ -45,11 +45,14 @@ export const SCHOLARSHIPS_DISCOVERY_SELECT_BASE = [
 
 export const SCHOLARSHIPS_DISCOVERY_PAYLOAD_COLUMN = "discovery_payload";
 
+/** Single select list for one-row fetches (same shape as RPC rows). */
+export const SCHOLARSHIPS_DISCOVERY_ROW_SELECT = `${SCHOLARSHIPS_DISCOVERY_SELECT_BASE},${SCHOLARSHIPS_DISCOVERY_PAYLOAD_COLUMN}`;
+
 /**
  * Prefer payload + base (see module doc). Fall back to base-only if
  * `discovery_payload` is absent on older databases.
  */
 export const SCHOLARSHIPS_DISCOVERY_SELECT_TRIES = [
-  `${SCHOLARSHIPS_DISCOVERY_SELECT_BASE},${SCHOLARSHIPS_DISCOVERY_PAYLOAD_COLUMN}`,
+  SCHOLARSHIPS_DISCOVERY_ROW_SELECT,
   SCHOLARSHIPS_DISCOVERY_SELECT_BASE,
 ] as const;

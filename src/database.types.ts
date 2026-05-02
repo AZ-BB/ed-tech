@@ -1696,7 +1696,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      rpc_scholarships_discovery_page: {
+        Args: {
+          p_q?: string | null
+          p_nat?: string | null
+          p_dest?: string | null
+          p_cov?: string | null
+          p_limit?: number | null
+          p_offset?: number | null
+        }
+        Returns: Json
+      }
     }
     Enums: {
       activity_log_entity_type: "student" | "school_admin" | "admin"

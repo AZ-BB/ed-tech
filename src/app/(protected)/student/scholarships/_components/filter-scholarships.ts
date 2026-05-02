@@ -1,5 +1,7 @@
 import type { Scholarship } from "./types";
 
+/** Client-side helpers; server discovery mirrors this in `rpc_scholarships_discovery_page` (see Supabase migration). */
+
 export const gccGroup = ["ae", "sa", "qa", "kw", "om", "bh"] as const;
 
 export const menaGroup = [

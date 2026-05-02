@@ -1,10 +1,7 @@
 import { Suspense } from "react";
 
 import { ScholarshipDiscovery } from "./_components/scholarship-discovery";
-import {
-  getScholarshipDiscoveryPageData,
-  parseScholarshipDiscoverySearchParams,
-} from "./_lib/get-scholarship-discovery-programs";
+import { loadScholarshipDiscoveryPageFromSearchParams } from "@/actions/Scholarships";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +10,7 @@ type PageProps = {
 };
 
 export default async function StudentScholarshipsPage({ searchParams }: PageProps) {
-  const raw = searchParams ? await searchParams : {};
-  const pageData = await getScholarshipDiscoveryPageData(
-    parseScholarshipDiscoverySearchParams(raw),
-  );
+  const pageData = await loadScholarshipDiscoveryPageFromSearchParams(searchParams);
 
   return (
     <Suspense
