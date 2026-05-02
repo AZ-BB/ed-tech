@@ -42,13 +42,12 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
+  // Validates the JWT with Supabase Auth (do not use getSession() here — cookie payload may be stale)
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  console.log("session?.user?.user_metadata?.type", session?.user?.user_metadata)
-  const authedHome = authedHomePath(session?.user?.user_metadata?.type)
+  const authedHome = authedHomePath(user?.user_metadata?.type)
 
   const { pathname } = request.nextUrl
 
@@ -71,7 +70,7 @@ export async function proxy(request: NextRequest) {
   const isCallbackRoute = pathname.startsWith('/auth/callback')
 
   // If user is not authenticated and trying to access a protected route
-  if (!session && !isPublicRoute) {
+  if (!user && !isPublicRoute) {
     const redirectUrl = new URL('/login', request.url)
     // Add the current path as a query parameter to redirect back after login
     redirectUrl.searchParams.set('next', pathname)
@@ -79,13 +78,13 @@ export async function proxy(request: NextRequest) {
   }
 
   // Authed user on app root → role dashboard (when type is set)
-  if (session && pathname === "/" && authedHome) {
+  if (user && pathname === "/" && authedHome) {
     return NextResponse.redirect(new URL(authedHome, request.url))
   }
 
   // If user is authenticated and trying to access auth pages, redirect to home
   // BUT allow the callback route to complete its processing
-  if (session && isPublicRoute && !isCallbackRoute) {
+  if (user && isPublicRoute && !isCallbackRoute) {
     const dest = authedHome ?? "/"
     return NextResponse.redirect(new URL(dest, request.url))
   }

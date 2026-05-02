@@ -211,6 +211,25 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
     const totalPrograms = majorBlocks.reduce((acc, b) => acc + b.programs.length, 0);
     const topNames = topMajorNamesFromBlocks(majorBlocks, 8);
 
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    let is_shortlisted = false;
+    let is_favourite = false;
+    if (user) {
+        const { data: activityRows } = await supabase
+            .from("student_activities")
+            .select("type")
+            .eq("student_id", user.id)
+            .eq("uni_id", id)
+            .eq("entity_type", "university");
+        for (const ar of activityRows ?? []) {
+            if (ar.type === "shortlist") is_shortlisted = true;
+            if (ar.type === "save") is_favourite = true;
+        }
+    }
+
     const difficultyRaw = row.difficulty?.trim().toLowerCase();
     const difficultyLabel =
         difficultyRaw === "easy" || difficultyRaw === "medium" || difficultyRaw === "hard"
@@ -252,6 +271,8 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
         documents: documentListFromJson(row.documents),
         majorBlocks,
         totalPrograms,
+        is_shortlisted,
+        is_favourite,
     };
 
     return <UniversityDetailView uni={model} />;
