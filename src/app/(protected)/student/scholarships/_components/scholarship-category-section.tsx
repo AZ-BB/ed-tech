@@ -11,7 +11,7 @@ type Props = {
   scholarships: Scholarship[];
   onSelect: (id: string) => void;
   savedIds: Set<string>;
-  onToggleSave: (id: string) => void;
+  onToggleSave: (id: string) => void | Promise<void>;
   footer?: ReactNode;
 };
 

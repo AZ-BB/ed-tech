@@ -8,7 +8,7 @@ type Props = {
   scholarship: Scholarship;
   onOpenDetail: () => void;
   saved: boolean;
-  onToggleSave: () => void;
+  onToggleSave: () => void | Promise<void>;
 };
 
 export function ScholarshipCard({
@@ -82,7 +82,7 @@ export function ScholarshipCard({
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
-          className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-white transition-colors hover:border-[var(--green-bg)] hover:bg-[var(--green-bg)]"
+          className="flex cursor-pointer h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-white transition-colors hover:border-[var(--green-bg)] hover:bg-[var(--green-bg)]"
           aria-label={saved ? "Remove from saved" : "Save scholarship"}
           onClick={(e) => {
             e.stopPropagation();

@@ -9,6 +9,7 @@ import {
 } from "./scholarship-discovery-select";
 import {
   type ScholarshipDiscoveryRow,
+  discoveryUiIdFromScholarshipRow,
   scholarshipDiscoveryRowToScholarship,
   scholarshipFromPayloadRow,
 } from "./scholarship-row-to-scholarship";
@@ -177,6 +178,97 @@ async function fetchScholarshipByDetailId(
   return null;
 }
 
+type SupabaseServer = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+async function fetchScholarshipActivityDiscoveryKeys(
+  supabase: SupabaseServer,
+  studentId: string,
+  activityType: "save" | "shortlist",
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("student_activities")
+    .select(
+      "scholarships ( id, discovery_slug, discovery_payload )",
+    )
+    .eq("student_id", studentId)
+    .eq("entity_type", "scholarship")
+    .eq("type", activityType);
+
+  if (error || !data?.length) return [];
+
+  const keys = new Set<string>();
+  for (const row of data) {
+    const raw = row as {
+      scholarships: unknown;
+    };
+    const sch = raw.scholarships;
+    if (!sch) continue;
+    const rowSch = Array.isArray(sch) ? sch[0] : sch;
+    if (
+      !rowSch ||
+      typeof rowSch !== "object" ||
+      !("id" in rowSch) ||
+      typeof (rowSch as { id: unknown }).id !== "string"
+    ) {
+      continue;
+    }
+    const typed = rowSch as {
+      id: string;
+      discovery_slug: string | null;
+      discovery_payload?: unknown;
+    };
+    keys.add(discoveryUiIdFromScholarshipRow(typed));
+  }
+  return [...keys];
+}
+
+async function loadScholarshipActivityIds(): Promise<{
+  savedDiscoveryIds: string[];
+  shortlistedDiscoveryIds: string[];
+}> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.id) {
+    return { savedDiscoveryIds: [], shortlistedDiscoveryIds: [] };
+  }
+  const [savedDiscoveryIds, shortlistedDiscoveryIds] = await Promise.all([
+    fetchScholarshipActivityDiscoveryKeys(supabase, user.id, "save"),
+    fetchScholarshipActivityDiscoveryKeys(supabase, user.id, "shortlist"),
+  ]);
+  return { savedDiscoveryIds, shortlistedDiscoveryIds };
+}
+
+/** Resolves `scholarships.id` (UUID) from a discovery UI id (slug, payload id, or row UUID). */
+export async function resolveScholarshipUuidForDiscoveryId(
+  discoveryId: string,
+): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const uuidRe =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRe.test(discoveryId)) {
+    const { data, error } = await supabase
+      .from("scholarships")
+      .select("id")
+      .eq("id", discoveryId)
+      .maybeSingle();
+    if (!error && data?.id) return data.id;
+  }
+  const { data: bySlug } = await supabase
+    .from("scholarships")
+    .select("id")
+    .eq("discovery_slug", discoveryId)
+    .maybeSingle();
+  if (bySlug?.id) return bySlug.id;
+  const { data: byPayload } = await supabase
+    .from("scholarships")
+    .select("id")
+    .filter("discovery_payload->>id", "eq", discoveryId)
+    .maybeSingle();
+  return byPayload?.id ?? null;
+}
+
 export type ScholarshipDiscoveryPageData = {
   scholarships: Scholarship[];
   totalMatching: number;
@@ -187,6 +279,8 @@ export type ScholarshipDiscoveryPageData = {
   filters: { q: string; nat: string; dest: string; cov: string };
   detailId: string | null;
   detailScholarship: Scholarship | null;
+  savedDiscoveryIds: string[];
+  shortlistedDiscoveryIds: string[];
 };
 
 export async function getScholarshipDiscoveryPageData(
@@ -198,6 +292,8 @@ export async function getScholarshipDiscoveryPageData(
     dest: query.destination,
     cov: query.coverage,
   };
+
+  const activityIds = await loadScholarshipActivityIds();
 
   let page = Math.max(1, query.page);
   let rpc = await fetchDiscoveryPageRpc(query, page);
@@ -213,6 +309,7 @@ export async function getScholarshipDiscoveryPageData(
       filters,
       detailId: query.detail,
       detailScholarship: null,
+      ...activityIds,
     };
   }
 
@@ -231,6 +328,7 @@ export async function getScholarshipDiscoveryPageData(
       detailScholarship: query.detail
         ? await fetchScholarshipByDetailId(query.detail)
         : null,
+      ...activityIds,
     };
   }
 
@@ -250,6 +348,7 @@ export async function getScholarshipDiscoveryPageData(
         filters,
         detailId: query.detail,
         detailScholarship: null,
+        ...activityIds,
       };
     }
     totalMatching = rpc.total;
@@ -279,5 +378,6 @@ export async function getScholarshipDiscoveryPageData(
     filters,
     detailId: query.detail,
     detailScholarship,
+    ...activityIds,
   };
 }

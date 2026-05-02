@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
+import {
+  addScholarshipToShortlist,
+  removeScholarshipFromShortlist,
+  saveScholarship,
+  unsaveScholarship,
+} from "@/actions/Scholarships";
 import type { ScholarshipDiscoveryPageData } from "../_lib/get-scholarship-discovery-programs";
 import type { Scholarship } from "./types";
 import { ScholarshipApplyModal } from "./scholarship-apply-modal";
@@ -42,7 +48,17 @@ export function ScholarshipDiscovery({
   const searchParams = useSearchParams();
   const [applyOpen, setApplyOpen] = useState(false);
   const [applySourceId, setApplySourceId] = useState<string | null>(null);
-  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
+  const [savedIds, setSavedIds] = useState(
+    () => new Set(pageData.savedDiscoveryIds),
+  );
+  const [shortlistIds, setShortlistIds] = useState(
+    () => new Set(pageData.shortlistedDiscoveryIds),
+  );
+
+  useEffect(() => {
+    setSavedIds(new Set(pageData.savedDiscoveryIds));
+    setShortlistIds(new Set(pageData.shortlistedDiscoveryIds));
+  }, [pageData.savedDiscoveryIds, pageData.shortlistedDiscoveryIds]);
 
   const { filters } = pageData;
   const detailOpen = pageData.detailScholarship !== null;
@@ -91,13 +107,84 @@ export function ScholarshipDiscovery({
     return visible.find((x) => x.id === id) ?? pageData.detailScholarship;
   }, [applySourceId, pageData.detailId, pageData.detailScholarship, visible]);
 
-  const toggleSave = (id: string) => {
+  const toggleSave = async (id: string) => {
+    const wasSaved = savedIds.has(id);
     setSavedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
+      if (wasSaved) next.delete(id);
       else next.add(id);
       return next;
     });
+    const res = wasSaved ? await unsaveScholarship(id) : await saveScholarship(id);
+    if (res.ok) {
+      router.refresh();
+      return;
+    }
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+    console.error(
+      typeof res.error === "string" ? res.error : "Scholarship action failed",
+    );
+  };
+
+  const detailScholarship = pageData.detailScholarship;
+
+  const handleDetailSave = async () => {
+    if (!detailScholarship) return;
+    const id = detailScholarship.id;
+    const wasSaved = savedIds.has(id);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    const res = wasSaved ? await unsaveScholarship(id) : await saveScholarship(id);
+    if (res.ok) {
+      router.refresh();
+      return;
+    }
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+    console.error(
+      typeof res.error === "string" ? res.error : "Scholarship action failed",
+    );
+  };
+
+  const handleDetailShortlist = async () => {
+    if (!detailScholarship) return;
+    const id = detailScholarship.id;
+    const wasShortlisted = shortlistIds.has(id);
+    setShortlistIds((prev) => {
+      const next = new Set(prev);
+      if (wasShortlisted) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    const res = wasShortlisted
+      ? await removeScholarshipFromShortlist(id)
+      : await addScholarshipToShortlist(id);
+    if (res.ok) {
+      router.refresh();
+      return;
+    }
+    setShortlistIds((prev) => {
+      const next = new Set(prev);
+      if (wasShortlisted) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+    console.error(
+      typeof res.error === "string" ? res.error : "Scholarship action failed",
+    );
   };
 
   const noResults = pageData.totalMatching === 0;
@@ -186,6 +273,10 @@ export function ScholarshipDiscovery({
         scholarship={pageData.detailScholarship}
         open={detailOpen}
         onClose={closeDetail}
+        isSaved={detailScholarship ? savedIds.has(detailScholarship.id) : false}
+        isShortlisted={detailScholarship ? shortlistIds.has(detailScholarship.id) : false}
+        onSaveScholarship={handleDetailSave}
+        onShortlistScholarship={handleDetailShortlist}
         onApplyNow={() => {
           if (pageData.detailId) setApplySourceId(pageData.detailId);
           setApplyOpen(true);

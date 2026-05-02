@@ -144,3 +144,19 @@ export function scholarshipFromPayloadRow(row: {
       : (row.discovery_slug ?? row.id);
   return { ...payload, id } as Scholarship;
 }
+
+/** Stable UI id for a scholarship row (matches `Scholarship.id` from discovery). */
+export function discoveryUiIdFromScholarshipRow(row: {
+  id: string;
+  discovery_slug: string | null;
+  discovery_payload?: unknown;
+}): string {
+  if (row.discovery_payload && typeof row.discovery_payload === "object") {
+    const p = row.discovery_payload as Record<string, unknown>;
+    const pid = typeof p.id === "string" ? p.id.trim() : "";
+    if (pid) return pid;
+  }
+  const slug = row.discovery_slug?.trim();
+  if (slug) return slug;
+  return row.id;
+}

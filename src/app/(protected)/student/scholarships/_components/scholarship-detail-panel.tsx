@@ -18,6 +18,10 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onApplyNow: () => void;
+  isSaved?: boolean;
+  isShortlisted?: boolean;
+  onSaveScholarship?: () => void | Promise<void>;
+  onShortlistScholarship?: () => void | Promise<void>;
 };
 
 export function ScholarshipDetailPanel({
@@ -25,6 +29,10 @@ export function ScholarshipDetailPanel({
   open,
   onClose,
   onApplyNow,
+  isSaved = false,
+  isShortlisted = false,
+  onSaveScholarship,
+  onShortlistScholarship,
 }: Props) {
   const [activeTab, setActiveTab] = useState<(typeof TAB_IDS)[number]["id"]>(
     "d-overview",
@@ -275,12 +283,27 @@ export function ScholarshipDetailPanel({
           <aside className="w-full shrink-0 lg:w-[220px]">
             <div className="sticky top-5 rounded-[var(--radius)] border border-[var(--border-light)] bg-white p-5">
               <div className="mb-3.5 text-[14px] font-semibold">Your actions</div>
-              <SideBtn icon={<HeartIcon />}>Save scholarship</SideBtn>
-              <SideBtn icon={<StarIcon />}>Add to shortlist</SideBtn>
+              <SideBtn
+                tone={isSaved ? "saved" : "neutral"}
+                icon={<HeartIcon filled={isSaved} />}
+                onClick={() => void onSaveScholarship?.()}
+                disabled={!onSaveScholarship}
+                ariaPressed={isSaved}
+              >
+                {isSaved ? "Saved" : "Save scholarship"}
+              </SideBtn>
+              <SideBtn
+                tone={isShortlisted ? "shortlisted" : "neutral"}
+                icon={<StarIcon filled={isShortlisted} />}
+                onClick={() => void onShortlistScholarship?.()}
+                disabled={!onShortlistScholarship}
+                ariaPressed={isShortlisted}
+              >
+                {isShortlisted ? "On shortlist" : "Add to shortlist"}
+              </SideBtn>
               <SideBtn primary icon={<ExternalIcon />} onClick={onApplyNow}>
                 Apply now
               </SideBtn>
-              <SideBtn icon={<UserCircleIcon />}>Book advisor</SideBtn>
               <div className="my-3.5 border-t border-[var(--border-light)]" />
               <div className="mb-2.5 text-[11px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
                 Quick info
@@ -298,15 +321,7 @@ export function ScholarshipDetailPanel({
                 valueClass="text-[var(--green)]"
               />
               <div className="my-3.5 border-t border-[var(--border-light)]" />
-              <div className="mb-2.5 text-[11px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
-                Application status
-              </div>
-              <div className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[var(--sand)] px-3.5 py-2.5">
-                <div className="h-2 w-2 shrink-0 rounded-full bg-[#E65100]" />
-                <span className="text-[12px] font-medium text-[var(--text-mid)]">
-                  Not started
-                </span>
-              </div>
+              
             </div>
           </aside>
         </div>
@@ -407,25 +422,50 @@ function SideBtn({
   children,
   icon,
   primary,
+  tone = "neutral",
   onClick,
+  disabled,
+  ariaPressed,
 }: {
   children: ReactNode;
   icon: React.ReactNode;
   primary?: boolean;
+  tone?: "neutral" | "saved" | "shortlisted";
   onClick?: () => void;
+  disabled?: boolean;
+  ariaPressed?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-pressed={ariaPressed}
       className={clsx(
-        "mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--radius-sm)] border px-3.5 py-2.5 text-left text-[13px] font-medium transition-colors",
+        "mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--radius-sm)] border px-3.5 py-2.5 text-left text-[13px] font-medium transition-[background-color,border-color,color,box-shadow]",
+        disabled && "cursor-not-allowed opacity-50",
         primary
-          ? "border-[var(--green)] bg-[var(--green)] font-semibold text-white hover:bg-[var(--green-dark)]"
-          : "border-[var(--border)] bg-white text-[var(--text)] hover:border-[var(--text-hint)] hover:bg-[var(--sand)]",
+          ? "border-[var(--green)] bg-[var(--green)] font-semibold text-white shadow-sm hover:bg-[var(--green-dark)]"
+          : clsx(
+              "shadow-sm",
+              tone === "neutral" &&
+                "border-[var(--border)] bg-white text-[var(--text)] hover:border-[var(--text-hint)] hover:bg-[var(--sand)]",
+              tone === "saved" &&
+                "border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/80 text-rose-950 ring-1 ring-rose-100/80 hover:border-rose-300 hover:from-rose-50 hover:to-rose-100",
+              tone === "shortlisted" &&
+                "border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-950 ring-1 ring-amber-100/80 hover:border-amber-300 hover:from-amber-50 hover:to-amber-100",
+            ),
       )}
     >
-      <span className="shrink-0 [&_svg]:block">{icon}</span>
+      <span
+        className={clsx(
+          "shrink-0 [&_svg]:block",
+          !primary && tone === "saved" && "text-rose-600",
+          !primary && tone === "shortlisted" && "text-amber-600",
+        )}
+      >
+        {icon}
+      </span>
       {children}
     </button>
   );
@@ -443,9 +483,15 @@ function SideStat({
   valueStyle?: CSSProperties;
 }) {
   return (
-    <div className="flex justify-between py-1 text-[12px]">
-      <span className="text-[var(--text-light)]">{label}</span>
-      <span className={clsx("font-semibold", valueClass)} style={valueStyle}>
+    <div className="grid grid-cols-[auto_1fr] items-start gap-x-2 gap-y-0 py-1 text-[12px]">
+      <span className="shrink-0 text-[var(--text-light)]">{label}</span>
+      <span
+        className={clsx(
+          "min-w-0 text-right font-semibold leading-snug break-words [overflow-wrap:anywhere]",
+          valueClass,
+        )}
+        style={valueStyle}
+      >
         {value}
       </span>
     </div>
@@ -489,18 +535,30 @@ function MoneyIcon() {
   );
 }
 
-function HeartIcon() {
+function HeartIcon({ filled }: { filled?: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.8"
+        className={clsx(!filled && "opacity-90")}
+      />
     </svg>
   );
 }
 
-function StarIcon() {
+function StarIcon({ filled }: { filled?: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M12 2l2.4 7.4H22l-6 4.6L18.3 21 12 16.4 5.7 21l2.3-7L2 9.4h7.6z" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 2l2.4 7.4H22l-6 4.6L18.3 21 12 16.4 5.7 21l2.3-7L2 9.4h7.6z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.8"
+        className={clsx(!filled && "opacity-90")}
+      />
     </svg>
   );
 }
