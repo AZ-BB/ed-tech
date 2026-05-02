@@ -1,50 +1,95 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  filterScholarships,
-  splitGovernmentInternational,
-} from "./filter-scholarships";
+import { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+import type { ScholarshipDiscoveryPageData } from "../_lib/get-scholarship-discovery-programs";
 import type { Scholarship } from "./types";
 import { ScholarshipApplyModal } from "./scholarship-apply-modal";
 import { ScholarshipCategorySection } from "./scholarship-category-section";
 import { ScholarshipDetailPanel } from "./scholarship-detail-panel";
+import { ScholarshipEmptyCatalog } from "./scholarship-empty-catalog";
+import { ScholarshipPaginationNav } from "./scholarship-pagination-nav";
 import { ScholarshipSelectorBar } from "./scholarship-selector-bar";
 
+function mergeSearchHref(
+  pathname: string,
+  current: URLSearchParams,
+  patch: Record<string, string | undefined>,
+  resetPagingForFilter: boolean,
+): string {
+  const n = new URLSearchParams(current.toString());
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined || v === "") n.delete(k);
+    else n.set(k, v);
+  }
+  if (resetPagingForFilter) {
+    n.set("page", "1");
+    n.delete("govPage");
+    n.delete("intlPage");
+  }
+  const qs = n.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
 export function ScholarshipDiscovery({
-  scholarships,
+  pageData,
 }: {
-  scholarships: Scholarship[];
+  pageData: ScholarshipDiscoveryPageData;
 }) {
-  const [nationality, setNationality] = useState("any");
-  const [destination, setDestination] = useState("any");
-  const [coverage, setCoverage] = useState("any");
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [applyOpen, setApplyOpen] = useState(false);
   const [applySourceId, setApplySourceId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
 
-  const filtered = useMemo(
-    () =>
-      filterScholarships(scholarships, nationality, destination, coverage),
-    [scholarships, nationality, destination, coverage],
+  const { filters } = pageData;
+  const detailOpen = pageData.detailScholarship !== null;
+
+  const navigate = useCallback(
+    (patch: Record<string, string | undefined>, resetPagingForFilter: boolean) => {
+      router.replace(
+        mergeSearchHref(pathname, searchParams, patch, resetPagingForFilter),
+      );
+    },
+    [pathname, router, searchParams],
   );
 
-  const { gov, other } = useMemo(
-    () => splitGovernmentInternational(filtered),
-    [filtered],
+  const onNationalityChange = (v: string) => {
+    navigate({ nat: v === "any" ? undefined : v }, true);
+  };
+  const onDestinationChange = (v: string) => {
+    navigate({ dest: v === "any" ? undefined : v }, true);
+  };
+  const onCoverageChange = (v: string) => {
+    navigate({ cov: v === "any" ? undefined : v }, true);
+  };
+  const onSearchSubmit = (q: string) => {
+    navigate({ q: q.trim() ? q.trim() : undefined }, true);
+  };
+
+  const hrefPage = useCallback(
+    (p: number) =>
+      mergeSearchHref(pathname, searchParams, { page: String(p) }, false),
+    [pathname, searchParams],
   );
 
-  const detailScholarship: Scholarship | null = useMemo(() => {
-    if (!detailId) return null;
-    return scholarships.find((x) => x.id === detailId) ?? null;
-  }, [scholarships, detailId]);
+  const openDetail = (id: string) => {
+    navigate({ detail: id }, false);
+  };
+
+  const closeDetail = () => {
+    navigate({ detail: undefined }, false);
+  };
+
+  const visible = pageData.scholarships;
 
   const applyScholarship: Scholarship | null = useMemo(() => {
-    const id = applySourceId ?? detailId;
+    const id = applySourceId ?? pageData.detailId;
     if (!id) return null;
-    return scholarships.find((x) => x.id === id) ?? null;
-  }, [scholarships, applySourceId, detailId]);
+    return visible.find((x) => x.id === id) ?? pageData.detailScholarship;
+  }, [applySourceId, pageData.detailId, pageData.detailScholarship, visible]);
 
   const toggleSave = (id: string) => {
     setSavedIds((prev) => {
@@ -55,12 +100,12 @@ export function ScholarshipDiscovery({
     });
   };
 
-  const noResults = gov.length === 0 && other.length === 0;
+  const noResults = pageData.totalMatching === 0;
 
-  if (scholarships.length === 0) {
+  if (pageData.totalCatalog === 0) {
     return (
-      <div className="mx-auto w-full pb-16 pt-0 px-2">
-        <header className="mb-6">
+      <div className="mx-auto w-full px-2 pb-16 pt-0">
+        <header className="mb-8">
           <h1 className="serif mb-1 text-[26px] font-bold text-[var(--text)]">
             Find your scholarship
           </h1>
@@ -68,30 +113,15 @@ export function ScholarshipDiscovery({
             Scholarships matched to your nationality, destination, and goals
           </p>
         </header>
-        <p className="rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-10 text-center text-[14px] text-[var(--text-mid)]">
-          No discovery rows in{" "}
-          <code className="rounded bg-[var(--sand)] px-1.5 py-0.5 text-[13px]">
-            scholarships
-          </code>{" "}
-          yet (<code className="rounded bg-[var(--sand)] px-1.5 py-0.5 text-[13px]">discovery_payload</code>{" "}
-          is null). Apply migrations, then run{" "}
-          <code className="rounded bg-[var(--sand)] px-1.5 py-0.5 text-[13px]">
-            npm run db:seed:scholarships:xlsx
-          </code>{" "}
-          or{" "}
-          <code className="rounded bg-[var(--sand)] px-1.5 py-0.5 text-[13px]">
-            npm run db:seed:scholarships
-          </code>
-          .
-        </p>
+        <ScholarshipEmptyCatalog />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full pb-16 pt-0 px-2">
+    <div className="mx-auto w-full px-2 pb-16 pt-0">
       <header className="mb-6">
-        <h1 className="serif mb-1 text-[26px] text-[var(--text)] font-bold">
+        <h1 className="serif mb-1 text-[26px] font-bold text-[var(--text)]">
           Find your scholarship
         </h1>
         <p className="text-[14px] text-[var(--text-light)]">
@@ -100,76 +130,64 @@ export function ScholarshipDiscovery({
       </header>
 
       <ScholarshipSelectorBar
-        nationality={nationality}
-        destination={destination}
-        coverage={coverage}
-        onNationalityChange={setNationality}
-        onDestinationChange={setDestination}
-        onCoverageChange={setCoverage}
+        q={filters.q}
+        nationality={filters.nat}
+        destination={filters.dest}
+        coverage={filters.cov}
+        onNationalityChange={onNationalityChange}
+        onDestinationChange={onDestinationChange}
+        onCoverageChange={onCoverageChange}
+        onSearchSubmit={onSearchSubmit}
       />
 
       {noResults ? (
         <p className="py-10 text-center text-[13px] text-[var(--text-light)]">
-          No scholarships match your current filters.
+          No scholarships match your current filters or search.
         </p>
       ) : null}
 
-      <ScholarshipCategorySection
-        title="Government & sector scholarships"
-        subtitle="Funded by GCC governments and major sector employers for their nationals"
-        iconWrapClass="bg-[#E8F5EE]"
-        count={gov.length}
-        scholarships={gov}
-        onSelect={setDetailId}
-        savedIds={savedIds}
-        onToggleSave={toggleSave}
-        icon={
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#2D6A4F"
-            strokeWidth="1.8"
-            aria-hidden
-          >
-            <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
-          </svg>
-        }
-      />
-
-      <ScholarshipCategorySection
-        title="International scholarships"
-        subtitle="State-backed international scholarship programs open to MENA students"
-        iconWrapClass="bg-[#E6F1FB]"
-        count={other.length}
-        scholarships={other}
-        onSelect={setDetailId}
-        savedIds={savedIds}
-        onToggleSave={toggleSave}
-        icon={
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#185FA5"
-            strokeWidth="1.8"
-            aria-hidden
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
-        }
-      />
+      {pageData.totalMatching > 0 ? (
+        <ScholarshipCategorySection
+          title="Scholarships"
+          subtitle="Government, university, foundation, and corporate programs in one directory"
+          iconWrapClass="bg-[#EEF2F7]"
+          count={pageData.totalMatching}
+          scholarships={pageData.scholarships}
+          onSelect={openDetail}
+          savedIds={savedIds}
+          onToggleSave={toggleSave}
+          footer={
+            <ScholarshipPaginationNav
+              hrefForPage={hrefPage}
+              currentPage={pageData.page}
+              totalPages={pageData.totalPages}
+              totalItems={pageData.totalMatching}
+              ariaLabel="Scholarships pages"
+            />
+          }
+          icon={
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#3d5a80"
+              strokeWidth="1.8"
+              aria-hidden
+            >
+              <path d="M12 3L2 8l10 5 10-5-10-5z" />
+              <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
+            </svg>
+          }
+        />
+      ) : null}
 
       <ScholarshipDetailPanel
-        scholarship={detailScholarship}
-        open={detailId !== null}
-        onClose={() => setDetailId(null)}
+        scholarship={pageData.detailScholarship}
+        open={detailOpen}
+        onClose={closeDetail}
         onApplyNow={() => {
-          if (detailId) setApplySourceId(detailId);
+          if (pageData.detailId) setApplySourceId(pageData.detailId);
           setApplyOpen(true);
         }}
       />

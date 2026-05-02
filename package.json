@@ -10,7 +10,10 @@
     "format": "biome format --write",
     "db:gen": "supabase gen types typescript --project-id \"cqtqhrvyakjiafaxpijd\" --schema public > src/database.types.ts",
     "db:seed:scholarships": "node scripts/seed-scholarship-discovery.mjs",
-    "db:seed:scholarships:xlsx": "node scripts/seed-scholarship-discovery-from-xlsx.mjs"
+    "db:seed:scholarships:csv": "node scripts/seed-scholarships-from-csv.mjs",
+    "db:seed:scholarships:xlsx": "node scripts/seed-scholarship-discovery-from-xlsx.mjs",
+    "db:seed:scholarships:xlsx:all": "node scripts/seed-scholarship-discovery-from-xlsx.mjs --all",
+    "scholarships:export-csv": "node scripts/scholarships-json-to-standard-csv.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

@@ -1,119 +1,157 @@
 "use client";
 
+import { useRef } from "react";
+
+import { COUNTRIES } from "@/lib/countries";
+
 const selectClass =
   "min-w-[160px] cursor-pointer appearance-none rounded-[var(--radius-sm)] border-[1.5px] border-[var(--border)] bg-white py-2.5 pl-4 pr-9 text-[13px] text-[var(--text)] focus:border-[var(--green-light)] focus:outline-none";
 
+const inputClass =
+  "min-w-[200px] flex-1 rounded-[var(--radius-sm)] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none";
+
+/** Labels for filter values that are not plain ISO alpha-2 codes. */
+const SYNTHETIC_NATIONALITY_OPTIONS: readonly { value: string; label: string }[] =
+  [
+    { value: "eu-cit", label: "European Union (any member state)" },
+    { value: "us-cit", label: "United States citizen" },
+    { value: "gb-cit", label: "United Kingdom citizen" },
+    { value: "ca-cit", label: "Canadian citizen" },
+    { value: "other", label: "Other nationality" },
+  ];
+
+const destinationNameSet = new Set(COUNTRIES.map((c) => c.name));
+
+const alpha2LowerSet = new Set(COUNTRIES.map((c) => c.alpha2.toLowerCase()));
+
 type Props = {
+  q: string;
   nationality: string;
   destination: string;
   coverage: string;
   onNationalityChange: (v: string) => void;
   onDestinationChange: (v: string) => void;
   onCoverageChange: (v: string) => void;
+  onSearchSubmit: (q: string) => void;
 };
 
 export function ScholarshipSelectorBar({
+  q,
   nationality,
   destination,
   coverage,
   onNationalityChange,
   onDestinationChange,
   onCoverageChange,
+  onSearchSubmit,
 }: Props) {
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const nationalityUnknown =
+    nationality !== "any" &&
+    !alpha2LowerSet.has(nationality) &&
+    !SYNTHETIC_NATIONALITY_OPTIONS.some((o) => o.value === nationality);
+
+  const destinationUnknown =
+    destination !== "any" &&
+    destination.trim().length > 0 &&
+    !destinationNameSet.has(destination);
+
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-2.5 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-[18px] text-[14px] text-[var(--text-mid)] max-[700px]:flex-col max-[700px]:items-stretch">
-      <span>I am a</span>
-      <div className="relative inline-block">
-        <select
-          className={selectClass}
-          value={nationality}
-          onChange={(e) => onNationalityChange(e.target.value)}
-          aria-label="Nationality"
-        >
-          <option value="any">Any nationality</option>
-          <optgroup label="GCC">
-            <option value="ae">UAE national</option>
-            <option value="sa">Saudi national</option>
-            <option value="qa">Qatari national</option>
-            <option value="kw">Kuwaiti national</option>
-            <option value="om">Omani national</option>
-            <option value="bh">Bahraini national</option>
-          </optgroup>
-          <optgroup label="MENA / Arab">
-            <option value="eg">Egyptian national</option>
-            <option value="jo">Jordanian national</option>
-            <option value="lb">Lebanese national</option>
-            <option value="ps">Palestinian national</option>
-            <option value="iq">Iraqi national</option>
-            <option value="ma">Moroccan national</option>
-            <option value="tn">Tunisian national</option>
-            <option value="dz">Algerian national</option>
-            <option value="ly">Libyan national</option>
-            <option value="sd">Sudanese national</option>
-            <option value="sy">Syrian national</option>
-            <option value="ye">Yemeni national</option>
-          </optgroup>
-          <optgroup label="Global">
-            <option value="us-cit">United States citizen</option>
-            <option value="gb-cit">United Kingdom citizen</option>
-            <option value="ca-cit">Canadian citizen</option>
-            <option value="eu-cit">European (any EU country)</option>
-            <option value="other">Other nationality</option>
-          </optgroup>
-        </select>
-        <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+    <div className="mb-5 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-[18px] text-[14px] text-[var(--text-mid)] max-[700px]:items-stretch">
+      <div className="flex flex-wrap items-center gap-2.5 max-[700px]:flex-col max-[700px]:items-stretch">
+        <span>I am a</span>
+        <div className="relative inline-block">
+          <select
+            className={selectClass}
+            value={nationality}
+            onChange={(e) => onNationalityChange(e.target.value)}
+            aria-label="Nationality"
+          >
+            <option value="any">Any nationality</option>
+            {nationalityUnknown ? (
+              <option value={nationality}>{nationality}</option>
+            ) : null}
+            <optgroup label="All countries">
+              {COUNTRIES.map((c) => (
+                <option key={c.alpha2} value={c.alpha2.toLowerCase()}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Regional / other">
+              {SYNTHETIC_NATIONALITY_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+          <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+        </div>
+        <span>looking to study in</span>
+        <div className="relative inline-block">
+          <select
+            className={selectClass}
+            value={destination}
+            onChange={(e) => onDestinationChange(e.target.value)}
+            aria-label="Destination"
+          >
+            <option value="any">Any destination</option>
+            {destinationUnknown ? (
+              <option value={destination}>{destination}</option>
+            ) : null}
+            <optgroup label="All countries">
+              {COUNTRIES.map((c) => (
+                <option key={c.alpha2} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+          <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+        </div>
+        <span>and want a</span>
+        <div className="relative inline-block">
+          <select
+            className={selectClass}
+            value={coverage}
+            onChange={(e) => onCoverageChange(e.target.value)}
+            aria-label="Coverage type"
+          >
+            <option value="any">Any coverage</option>
+            <option value="full">Full scholarship</option>
+            <option value="partial">Partial scholarship</option>
+          </select>
+          <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+        </div>
       </div>
-      <span>looking to study in</span>
-      <div className="relative inline-block">
-        <select
-          className={selectClass}
-          value={destination}
-          onChange={(e) => onDestinationChange(e.target.value)}
-          aria-label="Destination"
+      <div className="flex flex-wrap items-end gap-2 border-t border-[var(--border-light)] pt-3 max-[700px]:flex-col">
+        <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-[12px] font-medium text-[var(--text-light)]">
+          Search
+          <input
+            key={q}
+            ref={searchRef}
+            type="search"
+            className={inputClass}
+            placeholder="Name, provider, country, field of study…"
+            defaultValue={q}
+            aria-label="Search scholarships"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onSearchSubmit(searchRef.current?.value ?? "");
+              }
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          className="rounded-[var(--radius-sm)] bg-[var(--green)] px-4 py-2.5 text-[13px] font-medium text-white hover:opacity-95"
+          onClick={() => onSearchSubmit(searchRef.current?.value ?? "")}
         >
-          <option value="any">Any destination</option>
-          <optgroup label="Popular destinations">
-            <option value="United Kingdom">United Kingdom</option>
-            <option value="United States">United States</option>
-            <option value="Canada">Canada</option>
-            <option value="Australia">Australia</option>
-            <option value="Germany">Germany</option>
-            <option value="Netherlands">Netherlands</option>
-            <option value="Ireland">Ireland</option>
-            <option value="France">France</option>
-            <option value="Spain">Spain</option>
-            <option value="Italy">Italy</option>
-            <option value="Switzerland">Switzerland</option>
-            <option value="Turkey">Turkey</option>
-            <option value="Malaysia">Malaysia</option>
-          </optgroup>
-          <optgroup label="MENA / GCC">
-            <option value="Saudi Arabia">Saudi Arabia</option>
-            <option value="United Arab Emirates">United Arab Emirates</option>
-            <option value="Qatar">Qatar</option>
-            <option value="Kuwait">Kuwait</option>
-            <option value="Bahrain">Bahrain</option>
-            <option value="Oman">Oman</option>
-            <option value="Egypt">Egypt</option>
-            <option value="Jordan">Jordan</option>
-            <option value="Lebanon">Lebanon</option>
-          </optgroup>
-        </select>
-        <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
-      </div>
-      <span>and want a</span>
-      <div className="relative inline-block">
-        <select
-          className={selectClass}
-          value={coverage}
-          onChange={(e) => onCoverageChange(e.target.value)}
-          aria-label="Coverage type"
-        >
-          <option value="any">Any coverage</option>
-          <option value="full">Full scholarship</option>
-          <option value="partial">Partial scholarship</option>
-        </select>
-        <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+          Search
+        </button>
       </div>
     </div>
   );

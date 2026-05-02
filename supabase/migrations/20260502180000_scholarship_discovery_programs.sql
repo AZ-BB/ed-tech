@@ -1,8 +1,6 @@
 -- Scholarship discovery uses table `programs` (slug + JSONB).
 -- The legacy degree-programs table from init is renamed to `academic_programs`.
 
-DROP TABLE IF EXISTS programssss;
-
 DO $$
 BEGIN
   IF EXISTS (
