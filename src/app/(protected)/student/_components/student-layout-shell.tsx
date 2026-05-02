@@ -14,6 +14,18 @@ function isNavItemActive(pathname: string, href: string) {
   return pathname === href || pathname === `${href}/`;
 }
 
+/** `/student/universities/[id]` — list page is `/student/universities` only */
+function isStudentUniversityDetailPath(pathname: string) {
+  const normalized = pathname.replace(/\/$/, "") || "/";
+  const parts = normalized.split("/");
+  return (
+    parts.length === 4 &&
+    parts[1] === "student" &&
+    parts[2] === "universities" &&
+    Boolean(parts[3])
+  );
+}
+
 function shellHeaderFromPathname(pathname: string): {
   label: string;
   iconPaths: string[];
@@ -207,6 +219,8 @@ export function StudentLayoutShell({
     [pathname],
   );
 
+  const hideTopNav = isStudentUniversityDetailPath(pathname);
+
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
@@ -227,50 +241,52 @@ export function StudentLayoutShell({
   return (
     <div className="min-h-screen bg-[var(--sand)]">
       <div className="mx-auto w-full px-32 pt-6 pb-16">
-        <header className="mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--green-bg)]">
+        {hideTopNav ? null : (
+          <header className="mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--green-bg)]">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#2D6A4F"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  {shellHeader.iconPaths.map((d) => (
+                    <path key={d} d={d} />
+                  ))}
+                </svg>
+              </div>
+              <span className="text-base font-semibold text-[var(--text)]">
+                {shellHeader.label}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-lg border border-[var(--border)] bg-white transition-colors hover:bg-[var(--sand)]"
+              onClick={openSidebar}
+              aria-label="Open menu"
+              aria-expanded={sidebarOpen}
+              aria-controls="student-sidebar-panel"
+            >
               <svg
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#2D6A4F"
+                stroke="#7a7a7a"
                 strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
                 aria-hidden
               >
-                {shellHeader.iconPaths.map((d) => (
-                  <path key={d} d={d} />
-                ))}
+                <path d="M4 12h16M4 6h16M4 18h16" />
               </svg>
-            </div>
-            <span className="text-base font-semibold text-[var(--text)]">
-              {shellHeader.label}
-            </span>
-          </div>
-          <button
-            type="button"
-            className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-lg border border-[var(--border)] bg-white transition-colors hover:bg-[var(--sand)]"
-            onClick={openSidebar}
-            aria-label="Open menu"
-            aria-expanded={sidebarOpen}
-            aria-controls="student-sidebar-panel"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#7a7a7a"
-              strokeWidth="1.8"
-              aria-hidden
-            >
-              <path d="M4 12h16M4 6h16M4 18h16" />
-            </svg>
-          </button>
-        </header>
+            </button>
+          </header>
+        )}
 
         {children}
       </div>
