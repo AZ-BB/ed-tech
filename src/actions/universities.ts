@@ -76,13 +76,14 @@ export async function addUniversityToShortlist(universityId: string): Promise<Ge
         return { data: false, error: actor.error };
     }
 
+    const server = await createSupabaseServerClient();
     const secret = await createSupabaseSecretClient();
     const exists = await validateUniversity(secret, id);
     if (!exists) {
         return { data: false, error: "University not found." };
     }
 
-    const { data: existing } = await secret
+    const { data: existing } = await server
         .from("student_activities")
         .select("id")
         .eq("student_id", actor.studentId)
@@ -92,7 +93,7 @@ export async function addUniversityToShortlist(universityId: string): Promise<Ge
         .maybeSingle();
 
     if (!existing) {
-        const { error: insertErr } = await secret.from("student_activities").insert({
+        const { error: insertErr } = await server.from("student_activities").insert({
             student_id: actor.studentId,
             type: "shortlist",
             entity_type: "university",
@@ -130,9 +131,10 @@ export async function removeUniversityFromShortlist(universityId: string): Promi
         return { data: false, error: actor.error };
     }
 
+    const server = await createSupabaseServerClient();
     const secret = await createSupabaseSecretClient();
 
-    const { error: delErr, data: deleted } = await secret
+    const { error: delErr, data: deleted } = await server
         .from("student_activities")
         .delete()
         .eq("student_id", actor.studentId)
@@ -172,13 +174,14 @@ export async function addUniversityToFavourites(universityId: string): Promise<G
         return { data: false, error: actor.error };
     }
 
+    const server = await createSupabaseServerClient();
     const secret = await createSupabaseSecretClient();
     const exists = await validateUniversity(secret, id);
     if (!exists) {
         return { data: false, error: "University not found." };
     }
 
-    const { data: existing } = await secret
+    const { data: existing } = await server
         .from("student_activities")
         .select("id")
         .eq("student_id", actor.studentId)
@@ -188,7 +191,7 @@ export async function addUniversityToFavourites(universityId: string): Promise<G
         .maybeSingle();
 
     if (!existing) {
-        const { error: insertErr } = await secret.from("student_activities").insert({
+        const { error: insertErr } = await server.from("student_activities").insert({
             student_id: actor.studentId,
             type: "save",
             entity_type: "university",
@@ -226,9 +229,10 @@ export async function removeUniversityFromFavourites(universityId: string): Prom
         return { data: false, error: actor.error };
     }
 
+    const server = await createSupabaseServerClient();
     const secret = await createSupabaseSecretClient();
 
-    const { error: delErr, data: deleted } = await secret
+    const { error: delErr, data: deleted } = await server
         .from("student_activities")
         .delete()
         .eq("student_id", actor.studentId)
