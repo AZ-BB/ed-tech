@@ -76,7 +76,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "essay-review",
     label: "Essay Review",
-    href: "#",
+    href: "/student/essay-review",
     iconPaths: [
       "M12 20h9",
       "M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z",
@@ -190,7 +190,7 @@ export const quickActions: QuickAction[] = [
   {
     name: "Essay review",
     desc: "Get AI-powered feedback on your essay",
-    href: "#",
+    href: "/student/essay-review",
     iconWrap: "bg-[#EEEDFE]",
     iconStroke: "#534AB7",
     icon: (
