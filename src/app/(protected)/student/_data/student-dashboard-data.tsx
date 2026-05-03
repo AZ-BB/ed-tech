@@ -43,7 +43,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "ai-matching",
     label: "AI University Matching",
-    href: "#",
+    href: "/student/ai-matching",
     iconPaths: [
       "M12 2l1 3.5L16.5 4l-1.5 3 3.5 1-3.5 1.5L16.5 13l-3.5-1.5L12 15l-1-3.5L7.5 13l1.5-3.5L5.5 8l3.5-1L7.5 4l3.5 1.5z",
       "M19 9l.5 1.5L21 11l-1.5.5L19 13l-.5-1.5L17 11l1.5-.5z",
@@ -176,7 +176,7 @@ export const quickActions: QuickAction[] = [
   {
     name: "AI matching",
     desc: "Find universities that fit your profile",
-    href: "#",
+    href: "/student/ai-matching",
     iconWrap: "bg-[#E6F1FB]",
     iconStroke: "#185FA5",
     icon: (
