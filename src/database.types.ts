@@ -1300,6 +1300,68 @@ export type Database = {
           },
         ]
       }
+      student_application_profile: {
+        Row: {
+          budget_range: string | null
+          created_at: string
+          curriculum: string | null
+          english_test_scores: string | null
+          grade: string | null
+          interested_programs: string[]
+          need_based_aid: string | null
+          other_tests: string | null
+          predicted_grades: string | null
+          predicted_grades_set_by_school: boolean
+          preferred_destinations: string[]
+          sat_act_scores: string | null
+          student_id: string
+          target_intake: string | null
+          updated_at: string
+        }
+        Insert: {
+          budget_range?: string | null
+          created_at?: string
+          curriculum?: string | null
+          english_test_scores?: string | null
+          grade?: string | null
+          interested_programs?: string[]
+          need_based_aid?: string | null
+          other_tests?: string | null
+          predicted_grades?: string | null
+          predicted_grades_set_by_school?: boolean
+          preferred_destinations?: string[]
+          sat_act_scores?: string | null
+          student_id: string
+          target_intake?: string | null
+          updated_at?: string
+        }
+        Update: {
+          budget_range?: string | null
+          created_at?: string
+          curriculum?: string | null
+          english_test_scores?: string | null
+          grade?: string | null
+          interested_programs?: string[]
+          need_based_aid?: string | null
+          other_tests?: string | null
+          predicted_grades?: string | null
+          predicted_grades_set_by_school?: boolean
+          preferred_destinations?: string[]
+          sat_act_scores?: string | null
+          student_id?: string
+          target_intake?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_application_profile_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_activities: {
         Row: {
           advisor_id: string | null
@@ -1443,6 +1505,221 @@ export type Database = {
           },
         ]
       }
+      student_my_application_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          file_name: string | null
+          id: string
+          slot_key: string
+          status: string
+          storage_path: string | null
+          student_id: string
+          updated_at: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          file_name?: string | null
+          id?: string
+          slot_key: string
+          status?: string
+          storage_path?: string | null
+          student_id: string
+          updated_at?: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          file_name?: string | null
+          id?: string
+          slot_key?: string
+          status?: string
+          storage_path?: string | null
+          student_id?: string
+          updated_at?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_my_application_documents_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_my_application_essays: {
+        Row: {
+          body: string
+          comment_count: number
+          counselor_comment_preview: string | null
+          created_at: string
+          essay_type: string | null
+          for_application: string | null
+          id: string
+          last_edited_at: string | null
+          limit_note: string | null
+          requirement_note: string | null
+          status: string
+          student_id: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          body?: string
+          comment_count?: number
+          counselor_comment_preview?: string | null
+          created_at?: string
+          essay_type?: string | null
+          for_application?: string | null
+          id?: string
+          last_edited_at?: string | null
+          limit_note?: string | null
+          requirement_note?: string | null
+          status?: string
+          student_id: string
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          body?: string
+          comment_count?: number
+          counselor_comment_preview?: string | null
+          created_at?: string
+          essay_type?: string | null
+          for_application?: string | null
+          id?: string
+          last_edited_at?: string | null
+          limit_note?: string | null
+          requirement_note?: string | null
+          status?: string
+          student_id?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_my_application_essays_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_my_application_recommendations: {
+        Row: {
+          created_at: string
+          for_application: string
+          id: string
+          needed_by: string
+          personal_note: string | null
+          requested_at: string
+          status: string
+          student_id: string
+          submitted_at: string | null
+          teacher_email: string
+          teacher_name: string
+          teacher_subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          for_application: string
+          id?: string
+          needed_by: string
+          personal_note?: string | null
+          requested_at?: string
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+          teacher_email: string
+          teacher_name: string
+          teacher_subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          for_application?: string
+          id?: string
+          needed_by?: string
+          personal_note?: string | null
+          requested_at?: string
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+          teacher_email?: string
+          teacher_name?: string
+          teacher_subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_my_application_recommendations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_my_application_tasks: {
+        Row: {
+          assigned_by_name: string | null
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          priority: string
+          student_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by_name?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: string
+          student_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by_name?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: string
+          student_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_my_application_tasks_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_profiles: {
         Row: {
           advisor_credit_limit: number | null
@@ -1505,6 +1782,59 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_shortlist_universities: {
+        Row: {
+          application_deadline: string | null
+          application_method: string | null
+          country: string | null
+          created_at: string
+          decision: string | null
+          id: string
+          major_program: string | null
+          sort_order: number
+          status: string
+          student_id: string
+          university_name: string
+          updated_at: string
+        }
+        Insert: {
+          application_deadline?: string | null
+          application_method?: string | null
+          country?: string | null
+          created_at?: string
+          decision?: string | null
+          id?: string
+          major_program?: string | null
+          sort_order?: number
+          status?: string
+          student_id: string
+          university_name: string
+          updated_at?: string
+        }
+        Update: {
+          application_deadline?: string | null
+          application_method?: string | null
+          country?: string | null
+          created_at?: string
+          decision?: string | null
+          id?: string
+          major_program?: string | null
+          sort_order?: number
+          status?: string
+          student_id?: string
+          university_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_shortlist_universities_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
             referencedColumns: ["id"]
           },
         ]
