@@ -407,8 +407,8 @@ export function StudentDashboard() {
           checks, deadline management, personal statement refinement, and
           direct access to application specialists.
         </p>
-        <button
-          type="button"
+        <Link
+          href="/student/application-support"
           className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[var(--green-dark)] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
         >
           Start application support
@@ -423,7 +423,7 @@ export function StudentDashboard() {
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
           </svg>
-        </button>
+        </Link>
       </div>
 
       <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 md:grid-cols-2">

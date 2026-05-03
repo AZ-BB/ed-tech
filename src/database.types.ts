@@ -706,7 +706,10 @@ export type Database = {
           school_id: string | null
           school_name: string | null
           status: Database["public"]["Enums"]["application_status"] | null
+          student_email: string | null
           student_id: string
+          student_name: string | null
+          student_phone: string | null
           submitted_at: string | null
           toefl: number | null
           updated_at: string | null
@@ -739,7 +742,10 @@ export type Database = {
           school_id?: string | null
           school_name?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
+          student_email?: string | null
           student_id: string
+          student_name?: string | null
+          student_phone?: string | null
           submitted_at?: string | null
           toefl?: number | null
           updated_at?: string | null
@@ -772,7 +778,10 @@ export type Database = {
           school_id?: string | null
           school_name?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
+          student_email?: string | null
           student_id?: string
+          student_name?: string | null
+          student_phone?: string | null
           submitted_at?: string | null
           toefl?: number | null
           updated_at?: string | null

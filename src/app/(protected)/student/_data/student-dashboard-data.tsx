@@ -86,7 +86,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "application-support",
     label: "Application Support",
-    href: "#",
+    href: "/student/application-support",
     iconPaths: ["M22 2L11 13", "M22 2l-7 20-4-9-9-4 20-7z"],
   },
   { type: "divider" },
@@ -230,7 +230,7 @@ export const quickActions: QuickAction[] = [
   {
     name: "Application support",
     desc: "We handle your full application",
-    href: "#",
+    href: "/student/application-support",
     iconWrap: "bg-[#FCEBEB]",
     iconStroke: "#A32D2D",
     icon: (
