@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import type { EssayReviewFeedback, EssayReviewStats } from "@/app/(protected)/student/essay-review/_lib/essay-review-types";
+import type { Json } from "@/database.types";
+import {
+  extractOpenAiResponseUsage,
+  logStudentAiUsageAndActivity,
+  requireStudentSession,
+} from "@/lib/student-ai-usage-log";
 
 const fallbackModel = "gpt-4.1-mini";
 
@@ -146,6 +152,12 @@ function parseLlmFeedback(raw: Record<string, unknown>): Omit<
 }
 
 export async function POST(request: Request) {
+  const auth = await requireStudentSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.message }, { status: auth.status });
+  }
+  const { studentId } = auth;
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -156,6 +168,8 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  const model = process.env.OPENAI_MODEL ?? fallbackModel;
 
   let body: unknown;
   try {
@@ -245,7 +259,7 @@ Rules:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? fallbackModel,
+        model,
         input: prompt,
       }),
     });
@@ -286,6 +300,47 @@ Rules:
       recommendation: partial.recommendation,
       _stats,
     };
+
+    const usage = extractOpenAiResponseUsage(result);
+    const inputsSummary: Json = {
+      essayWordCount: wc,
+      essayCharCount: essayText.length,
+      essayPrompt: essayPrompt.slice(0, 2000),
+      university: university.slice(0, 500),
+      essayExcerpt: essayText.slice(0, 4000),
+    };
+    const outputsSummary: Json = {
+      is_valid_essay: feedback.is_valid_essay,
+      invalid_reason: feedback.invalid_reason ?? null,
+      overallScore: feedback._stats.score,
+      stats: feedback._stats,
+      assessment: feedback.assessment.slice(0, 4000),
+      structure: feedback.structure,
+      strengths: feedback.strengths,
+      improvements: feedback.improvements,
+      suggestionCount: feedback.suggestions.length,
+      quality: feedback.quality,
+      authenticity: feedback.authenticity,
+      recommendation: feedback.recommendation.slice(0, 2000),
+    };
+    const activityMessage = feedback.is_valid_essay
+      ? `Completed AI essay review (${wc} words, score ${feedback._stats.score}/100).`
+      : `AI essay review could not treat submission as an essay: ${(feedback.invalid_reason ?? "unspecified").slice(0, 240)}`;
+
+    void logStudentAiUsageAndActivity({
+      studentId,
+      type: "essay_review",
+      model,
+      usage,
+      inputs: inputsSummary,
+      outputs: outputsSummary,
+      activityLog: {
+        entitiy_type: "essay_review",
+        entity_id: studentId,
+        action: "essay_review",
+        message: activityMessage,
+      },
+    });
 
     return NextResponse.json(feedback);
   } catch (error) {

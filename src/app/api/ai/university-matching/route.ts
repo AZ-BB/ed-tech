@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import type { Json } from "@/database.types";
+import {
+  extractOpenAiResponseUsage,
+  logStudentAiUsageAndActivity,
+  requireStudentSession,
+} from "@/lib/student-ai-usage-log";
 
 export type StudentMatchingPayload = {
   fullName: string;
@@ -137,6 +143,12 @@ function safeJsonParse(text: string): MatchResponse {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireStudentSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.message }, { status: auth.status });
+  }
+  const { studentId } = auth;
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -147,6 +159,8 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  const model = process.env.OPENAI_MODEL ?? fallbackModel;
 
   let raw: unknown;
   try {
@@ -210,7 +224,7 @@ Rules:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? fallbackModel,
+        model,
         input: prompt,
         tools: [{ type: "web_search_preview" }],
       }),
@@ -236,7 +250,36 @@ Rules:
       );
     }
 
-    const matches = safeJsonParse(outputText);
+    const matches = safeJsonParse(outputText) as MatchResponse;
+    const usage = extractOpenAiResponseUsage(result);
+    const outputsSummary: Json = {
+      profileSummary: matches.profileSummary?.slice(0, 4000) ?? "",
+      recommendedStrategy: matches.recommendedStrategy ?? [],
+      matchCount: matches.matches?.length ?? 0,
+      matches: (matches.matches ?? []).map((m) => ({
+        universityName: m.universityName,
+        programName: m.programName,
+        city: m.city,
+        country: m.country,
+        matchScore: m.matchScore,
+        admissionFit: m.admissionFit,
+      })),
+    };
+    void logStudentAiUsageAndActivity({
+      studentId,
+      type: "matching",
+      model,
+      usage,
+      inputs: payload as unknown as Json,
+      outputs: outputsSummary,
+      activityLog: {
+        entitiy_type: "ai_university_matching",
+        entity_id: studentId,
+        action: "ai_university_matching",
+        message: `Generated AI university matches (${matches.matches?.length ?? 0} recommendations).`,
+      },
+    });
+
     return NextResponse.json(matches);
   } catch (error) {
     const message =

@@ -25,7 +25,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "university-search",
     label: "University Search",
-    href: "#",
+    href: "/student/universities",
     iconPaths: [
       "M2 7l10-5 10 5-10 5z",
       "M2 17l10 5 10-5",
