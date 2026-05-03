@@ -1,8 +1,9 @@
-"use server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+"use server";
+import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 
-import type { Database } from "@/database.types"
+import type { Database } from "@/database.types";
 
 export async function createSupabaseServerClient() {
   // Create server client that can access cookies
@@ -30,19 +31,17 @@ export async function createSupabaseServerClient() {
 }
 
 
+/**
+ * Service-role / secret Supabase client for trusted server-only reads and writes.
+ * Uses `@supabase/supabase-js` `createClient` — not `createServerClient` from `@supabase/ssr`,
+ * which is intended for user sessions and can mis-handle the service role key.
+ */
 export async function createSupabaseSecretClient() {
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return []
-        },
-        setAll() {
-          // no-op for admin client
-        },
-      },
-    }
-  )
+  return createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
 }

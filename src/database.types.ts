@@ -125,7 +125,10 @@ export type Database = {
           id: number
           specific_uni: string | null
           status: Database["public"]["Enums"]["advisor_session_status"] | null
+          student_email: string | null
           student_id: string
+          student_name: string | null
+          student_phone: string | null
           updated_at: string | null
         }
         Insert: {
@@ -138,7 +141,10 @@ export type Database = {
           id?: number
           specific_uni?: string | null
           status?: Database["public"]["Enums"]["advisor_session_status"] | null
+          student_email?: string | null
           student_id: string
+          student_name?: string | null
+          student_phone?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -151,7 +157,10 @@ export type Database = {
           id?: number
           specific_uni?: string | null
           status?: Database["public"]["Enums"]["advisor_session_status"] | null
+          student_email?: string | null
           student_id?: string
+          student_name?: string | null
+          student_phone?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -410,7 +419,10 @@ export type Database = {
           status:
             | Database["public"]["Enums"]["ambassador_session_request_status"]
             | null
+          student_email: string | null
           student_id: string
+          student_name: string | null
+          student_phone: string | null
           updated_at: string | null
         }
         Insert: {
@@ -424,7 +436,10 @@ export type Database = {
           status?:
             | Database["public"]["Enums"]["ambassador_session_request_status"]
             | null
+          student_email?: string | null
           student_id: string
+          student_name?: string | null
+          student_phone?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -438,7 +453,10 @@ export type Database = {
           status?:
             | Database["public"]["Enums"]["ambassador_session_request_status"]
             | null
+          student_email?: string | null
           student_id?: string
+          student_name?: string | null
+          student_phone?: string | null
           updated_at?: string | null
         }
         Relationships: [

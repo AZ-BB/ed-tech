@@ -9,14 +9,30 @@ import {
   type SidebarNavItem,
 } from "../_data/student-dashboard-data";
 
-function isNavItemActive(pathname: string, href: string) {
-  if (href === "#") return false;
-  return pathname === href || pathname === `${href}/`;
+function normalizePath(pathname: string): string {
+  return pathname.replace(/\/$/, "") || "/";
+}
+
+function isSidebarNavLinkActive(
+  pathname: string,
+  item: Extract<SidebarNavItem, { type: "link" }>,
+): boolean {
+  if (item.href === "#") return false;
+  const n = normalizePath(pathname);
+  const h = normalizePath(item.href);
+  if (n === h) return true;
+  if (item.id === "advisor-sessions" && h === "/student/advisor-sessions" && n.startsWith(`${h}/`)) {
+    return true;
+  }
+  if (item.id === "ambassadors" && h === "/student/ambassadors" && n.startsWith(`${h}/`)) {
+    return true;
+  }
+  return false;
 }
 
 /** `/student/universities/[id]` — list page is `/student/universities` only */
 function isStudentUniversityDetailPath(pathname: string) {
-  const normalized = pathname.replace(/\/$/, "") || "/";
+  const normalized = normalizePath(pathname);
   const parts = normalized.split("/");
   return (
     parts.length === 4 &&
@@ -26,6 +42,17 @@ function isStudentUniversityDetailPath(pathname: string) {
   );
 }
 
+/** Full-page booking flow — hide shell header like university detail */
+function isStudentAdvisorSessionBookPath(pathname: string) {
+  const normalized = normalizePath(pathname);
+  return /\/student\/advisor-sessions\/[^/]+\/book$/.test(normalized);
+}
+
+function isStudentAmbassadorSessionBookPath(pathname: string) {
+  const normalized = normalizePath(pathname);
+  return /\/student\/ambassadors\/[^/]+\/book$/.test(normalized);
+}
+
 function shellHeaderFromPathname(pathname: string): {
   label: string;
   iconPaths: string[];
@@ -33,7 +60,7 @@ function shellHeaderFromPathname(pathname: string): {
   for (const item of sidebarNavItems) {
     if (item.type === "divider") continue;
     if (item.href === "#") continue;
-    if (isNavItemActive(pathname, item.href)) {
+    if (item.type === "link" && isSidebarNavLinkActive(pathname, item)) {
       return { label: item.label, iconPaths: item.iconPaths };
     }
   }
@@ -72,7 +99,7 @@ function SidebarNav({
           );
         }
 
-        const active = isNavItemActive(pathname, item.href);
+        const active = item.type === "link" ? isSidebarNavLinkActive(pathname, item) : false;
         const rowClass = `flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13.5px] font-medium transition-colors mb-0.5 cursor-pointer ${
           active
             ? "bg-[var(--green-bg)] font-semibold text-[var(--green-dark)] [&_svg]:stroke-[var(--green)]"
@@ -219,7 +246,10 @@ export function StudentLayoutShell({
     [pathname],
   );
 
-  const hideTopNav = isStudentUniversityDetailPath(pathname);
+  const hideTopNav =
+    isStudentUniversityDetailPath(pathname) ||
+    isStudentAdvisorSessionBookPath(pathname) ||
+    isStudentAmbassadorSessionBookPath(pathname);
 
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);

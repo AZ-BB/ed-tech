@@ -53,8 +53,8 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "advisor-sessions",
-    label: "1-1 Advisor Session",
-    href: "#",
+    label: "1:1 Advisor Sessions",
+    href: "/student/advisor-sessions",
     iconPaths: [
       "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2",
       "M12 7a4 4 0 100-8 4 4 0 000 8",
@@ -64,7 +64,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "ambassadors",
     label: "University Ambassadors",
-    href: "#",
+    href: "/student/ambassadors",
     iconPaths: [
       "M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2",
       "M9 7a4 4 0 100-8 4 4 0 000 8",
@@ -203,7 +203,7 @@ export const quickActions: QuickAction[] = [
   {
     name: "Advisor sessions",
     desc: "Book 1:1 guidance with an expert",
-    href: "#",
+    href: "/student/advisor-sessions",
     iconWrap: "bg-[#FAEEDA]",
     iconStroke: "#854F0B",
     icon: (
@@ -216,7 +216,7 @@ export const quickActions: QuickAction[] = [
   {
     name: "Ambassadors",
     desc: "Talk to students who've been there",
-    href: "#",
+    href: "/student/ambassadors",
     iconWrap: "bg-[var(--green-bg)]",
     iconStroke: "#2D6A4F",
     icon: (

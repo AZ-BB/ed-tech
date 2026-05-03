@@ -8,7 +8,7 @@ import {
   removeScholarshipFromShortlist,
   saveScholarship,
   unsaveScholarship,
-} from "@/actions/Scholarships";
+} from "@/actions/scholarship-activities";
 import type { ScholarshipDiscoveryPageData } from "../_lib/get-scholarship-discovery-programs";
 import type { Scholarship } from "./types";
 import { ScholarshipApplyModal } from "./scholarship-apply-modal";
