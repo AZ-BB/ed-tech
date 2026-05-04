@@ -1,7 +1,6 @@
 "use server";
 
-import { createSupabaseServerClient } from "@/utils/supabase-server";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type ScholarshipActivityActionResult =
   | { ok: true }
@@ -27,10 +26,7 @@ async function insertActivityLog(
   action: string,
   message: string,
 ): Promise<{ ok: false; error: string } | null> {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-  );
+  const supabase = await createSupabaseSecretClient();
   const { error } = await supabase.from("acitivity_logs").insert({
     action,
     message,

@@ -224,9 +224,22 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
             .eq("student_id", user.id)
             .eq("uni_id", id)
             .eq("entity_type", "university");
+        let has_viewed = false;
         for (const ar of activityRows ?? []) {
             if (ar.type === "shortlist") is_shortlisted = true;
             if (ar.type === "save") is_favourite = true;
+            if (ar.type === "viewed") has_viewed = true;
+        }
+        if (!has_viewed) {
+            const { error: viewedError } = await supabase.from("student_activities").insert({
+                student_id: user.id,
+                uni_id: id,
+                entity_type: "university",
+                type: "viewed",
+            });
+            if (viewedError) {
+                console.error(viewedError);
+            }
         }
     }
 

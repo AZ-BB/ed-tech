@@ -1,4 +1,4 @@
-import { logout } from "@/action/auth";
+import { logout } from "@/actions/auth";
 
 function LogoIcon() {
   return (

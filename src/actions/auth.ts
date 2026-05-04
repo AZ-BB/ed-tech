@@ -25,6 +25,16 @@ export async function login(
     }
 
     const supabase = await createSupabaseServerClient();
+    const { data: studentProfile } = await supabase
+        .from("student_profiles")
+        .select("total_logins")
+        .eq("email", email)
+        .maybeSingle();
+
+    await supabase.from("student_profiles").update({
+        total_logins: studentProfile?.total_logins ? studentProfile.total_logins + 1 : 1,
+    }).eq("email", email);
+    
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {

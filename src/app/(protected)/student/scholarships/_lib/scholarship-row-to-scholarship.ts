@@ -1,3 +1,5 @@
+import { flagFromCountryCode } from "@/lib/country-flag-emoji";
+
 import type { Scholarship } from "../_components/types";
 
 function formatFieldsColumn(fields: unknown): string {
@@ -38,18 +40,6 @@ export type ScholarshipDiscoveryRow = {
   discovery_payload?: unknown;
 };
 
-function flagFromCountryCode(code: string | null | undefined): string {
-  const c = String(code ?? "")
-    .trim()
-    .toUpperCase();
-  if (c.length !== 2 || !/^[A-Z]{2}$/.test(c)) return "🌐";
-  const A = 0x1f1e6;
-  return (
-    String.fromCodePoint(A + (c.charCodeAt(0) - 65)) +
-    String.fromCodePoint(A + (c.charCodeAt(1) - 65))
-  );
-}
-
 function typeToBadgeClass(type: string | null | undefined): string {
   const t = String(type ?? "")
     .trim()
@@ -62,12 +52,16 @@ function typeToBadgeClass(type: string | null | undefined): string {
 }
 
 function formatTypeLabel(type: string | null | undefined): string {
-  const t = String(type ?? "").trim().toLowerCase();
+  const t = String(type ?? "")
+    .trim()
+    .toLowerCase();
   if (!t) return "Other";
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-function coverageFromRow(coverage: string | null | undefined): "full" | "partial" {
+function coverageFromRow(
+  coverage: string | null | undefined,
+): "full" | "partial" {
   const v = String(coverage ?? "")
     .trim()
     .toLowerCase();
@@ -136,7 +130,8 @@ export function scholarshipFromPayloadRow(row: {
   discovery_slug: string | null;
   discovery_payload: Record<string, unknown> | null;
 }): Scholarship | null {
-  if (!row.discovery_payload || typeof row.discovery_payload !== "object") return null;
+  if (!row.discovery_payload || typeof row.discovery_payload !== "object")
+    return null;
   const payload = row.discovery_payload;
   const id =
     typeof payload.id === "string" && payload.id.length > 0

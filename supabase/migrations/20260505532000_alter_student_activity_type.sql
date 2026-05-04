@@ -1,0 +1,1 @@
+ALTER TYPE student_activity_type ADD VALUE 'viewed';
