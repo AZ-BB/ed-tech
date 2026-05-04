@@ -51,8 +51,8 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Define public routes that don't require authentication
-  const publicRoutes = [
+  // Auth/marketing pages anyone can open without logging in (prefix match).
+  const publicAuthRoutes = [
     '/login',
     '/signup',
     '/auth/callback',
@@ -62,15 +62,20 @@ export async function proxy(request: NextRequest) {
     '/privacy',
     '/terms',
     '/about',
-    '/contact'
+    '/contact',
   ]
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
+  const isPublicAuthRoute = publicAuthRoutes.some((route) =>
+    pathname.startsWith(route)
+  )
+
+  // Landing is public for guests; do not use pathname.startsWith("/") — that matches every path.
+  const isPublicForGuests = pathname === '/' || isPublicAuthRoute
 
   // OAuth callback route needs special handling - always allow it through
   const isCallbackRoute = pathname.startsWith('/auth/callback')
 
   // If user is not authenticated and trying to access a protected route
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicForGuests) {
     const redirectUrl = new URL('/login', request.url)
     // Add the current path as a query parameter to redirect back after login
     redirectUrl.searchParams.set('next', pathname)
@@ -84,7 +89,8 @@ export async function proxy(request: NextRequest) {
 
   // If user is authenticated and trying to access auth pages, redirect to home
   // BUT allow the callback route to complete its processing
-  if (user && isPublicRoute && !isCallbackRoute) {
+  // (Exclude "/": logged-in users without a role still use the marketing landing.)
+  if (user && isPublicAuthRoute && !isCallbackRoute) {
     const dest = authedHome ?? "/"
     return NextResponse.redirect(new URL(dest, request.url))
   }
