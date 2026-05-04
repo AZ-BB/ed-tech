@@ -627,6 +627,30 @@ export type Database = {
           },
         ]
       }
+      announcements: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       application_documents: {
         Row: {
           application_id: number
@@ -1300,68 +1324,6 @@ export type Database = {
           },
         ]
       }
-      student_application_profile: {
-        Row: {
-          budget_range: string | null
-          created_at: string
-          curriculum: string | null
-          english_test_scores: string | null
-          grade: string | null
-          interested_programs: string[]
-          need_based_aid: string | null
-          other_tests: string | null
-          predicted_grades: string | null
-          predicted_grades_set_by_school: boolean
-          preferred_destinations: string[]
-          sat_act_scores: string | null
-          student_id: string
-          target_intake: string | null
-          updated_at: string
-        }
-        Insert: {
-          budget_range?: string | null
-          created_at?: string
-          curriculum?: string | null
-          english_test_scores?: string | null
-          grade?: string | null
-          interested_programs?: string[]
-          need_based_aid?: string | null
-          other_tests?: string | null
-          predicted_grades?: string | null
-          predicted_grades_set_by_school?: boolean
-          preferred_destinations?: string[]
-          sat_act_scores?: string | null
-          student_id: string
-          target_intake?: string | null
-          updated_at?: string
-        }
-        Update: {
-          budget_range?: string | null
-          created_at?: string
-          curriculum?: string | null
-          english_test_scores?: string | null
-          grade?: string | null
-          interested_programs?: string[]
-          need_based_aid?: string | null
-          other_tests?: string | null
-          predicted_grades?: string | null
-          predicted_grades_set_by_school?: boolean
-          preferred_destinations?: string[]
-          sat_act_scores?: string | null
-          student_id?: string
-          target_intake?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_application_profile_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: true
-            referencedRelation: "student_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       student_activities: {
         Row: {
           advisor_id: string | null
@@ -1433,6 +1395,68 @@ export type Database = {
             columns: ["uni_id"]
             isOneToOne: false
             referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_application_profile: {
+        Row: {
+          budget_range: string | null
+          created_at: string
+          curriculum: string | null
+          english_test_scores: string | null
+          grade: string | null
+          interested_programs: string[]
+          need_based_aid: string | null
+          other_tests: string | null
+          predicted_grades: string | null
+          predicted_grades_set_by_school: boolean
+          preferred_destinations: string[]
+          sat_act_scores: string | null
+          student_id: string
+          target_intake: string | null
+          updated_at: string
+        }
+        Insert: {
+          budget_range?: string | null
+          created_at?: string
+          curriculum?: string | null
+          english_test_scores?: string | null
+          grade?: string | null
+          interested_programs?: string[]
+          need_based_aid?: string | null
+          other_tests?: string | null
+          predicted_grades?: string | null
+          predicted_grades_set_by_school?: boolean
+          preferred_destinations?: string[]
+          sat_act_scores?: string | null
+          student_id: string
+          target_intake?: string | null
+          updated_at?: string
+        }
+        Update: {
+          budget_range?: string | null
+          created_at?: string
+          curriculum?: string | null
+          english_test_scores?: string | null
+          grade?: string | null
+          interested_programs?: string[]
+          need_based_aid?: string | null
+          other_tests?: string | null
+          predicted_grades?: string | null
+          predicted_grades_set_by_school?: boolean
+          preferred_destinations?: string[]
+          sat_act_scores?: string | null
+          student_id?: string
+          target_intake?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_application_profile_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "student_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1733,8 +1757,10 @@ export type Database = {
           notification_app_updates: boolean
           notification_news_platform: boolean
           phone: string | null
+          platform_completion: Json | null
           school_id: string
           status: Database["public"]["Enums"]["student_status"] | null
+          total_logins: number | null
           updated_at: string | null
         }
         Insert: {
@@ -1749,8 +1775,10 @@ export type Database = {
           notification_app_updates?: boolean
           notification_news_platform?: boolean
           phone?: string | null
+          platform_completion?: Json | null
           school_id: string
           status?: Database["public"]["Enums"]["student_status"] | null
+          total_logins?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -1765,8 +1793,10 @@ export type Database = {
           notification_app_updates?: boolean
           notification_news_platform?: boolean
           phone?: string | null
+          platform_completion?: Json | null
           school_id?: string
           status?: Database["public"]["Enums"]["student_status"] | null
+          total_logins?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -2135,7 +2165,7 @@ export type Database = {
         | "scholarship"
         | "advisor"
         | "ambassador"
-      student_activity_type: "save" | "shortlist" | "block"
+      student_activity_type: "save" | "shortlist" | "block" | "viewed"
       student_credits_status: "used" | "refunded"
       student_credits_type: "advisor" | "ambassador"
       student_status: "high_priority" | "at_risk" | "missing_docs"
@@ -2327,7 +2357,7 @@ export const Constants = {
         "advisor",
         "ambassador",
       ],
-      student_activity_type: ["save", "shortlist", "block"],
+      student_activity_type: ["save", "shortlist", "block", "viewed"],
       student_credits_status: ["used", "refunded"],
       student_credits_type: ["advisor", "ambassador"],
       student_status: ["high_priority", "at_risk", "missing_docs"],

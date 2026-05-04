@@ -1,5 +1,9 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import {
+  recordStudentPlatformCompletionOnce,
+  STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AdvisorSessionsClient } from "./_components/advisor-sessions-client";
@@ -16,6 +20,13 @@ export default async function AdvisorSessionsPage() {
   if (!auth.ok) {
     redirect("/login");
   }
+
+  const supabase = await createSupabaseServerClient();
+  await recordStudentPlatformCompletionOnce(
+    supabase,
+    auth.studentId,
+    STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_advisor_sessions,
+  );
 
   // Catalog read uses the secret client so nested embeds are not stripped by
   // per-table RLS (PostgREST can return empty parents when child RLS differs).

@@ -1,6 +1,6 @@
 "use client";
 
-import { login, requestPasswordReset } from "@/action/auth";
+import { login, requestPasswordReset } from "@/actions/auth";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";

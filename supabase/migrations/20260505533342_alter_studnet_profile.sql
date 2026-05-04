@@ -1,0 +1,1 @@
+ALTER TABLE public.student_profiles ADD COLUMN total_logins INTEGER DEFAULT 0;

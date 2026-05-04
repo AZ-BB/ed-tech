@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
-import { studentSignUp } from "@/action/auth";
+import { studentSignUp } from "@/actions/auth";
 import { CountryCombobox } from "@/components/auth/country-combobox";
 import type { Country } from "@/lib/countries";
 import { GeneralResponse } from "@/utils/response";

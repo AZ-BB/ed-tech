@@ -1,6 +1,6 @@
 "use client";
 
-import { logout } from "@/action/auth";
+import { logout } from "@/actions/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
