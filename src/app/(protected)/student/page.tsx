@@ -3,7 +3,6 @@ import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
 import type {
   DashboardActivityLogItem,
   DashboardAnnouncementItem,
-  StudentDashboardActivityCounts,
 } from "./_data/student-dashboard-data";
 import { StudentDashboard } from "./_components/student-dashboard";
 
@@ -25,62 +24,13 @@ export default async function StudentPage() {
 
   const { data: studentProgress } = await supabase
     .from("student_profiles")
-    .select("first_name, last_name, platform_completion")
+    .select("first_name, last_name, platform_completion, total_logins")
     .single();
 
   const platformStats = getPlatformCompletionStats(
     studentProgress?.platform_completion ?? null,
   );
   const welcomeFirstName = studentProgress?.first_name?.trim() ?? "";
-
-  const [
-    { count: savedUniversitiesCount },
-    { count: viewedUniversitiesCount },
-    { count: savedScholarshipsCount },
-    { count: essaysReviewedCount },
-    { count: aiMatchesGeneratedCount },
-    { count: advisorSessionsBookedCount },
-    { count: ambassadorSessionsBookedCount },
-  ] = await Promise.all([
-    supabase
-      .from("student_activities")
-      .select("id", { count: "exact" })
-      .eq("entity_type", "university")
-      .eq("type", "save"),
-    supabase
-      .from("student_activities")
-      .select("id", { count: "exact" })
-      .eq("entity_type", "university")
-      .eq("type", "viewed"),
-    supabase
-      .from("student_activities")
-      .select("id", { count: "exact" })
-      .eq("entity_type", "scholarship")
-      .eq("type", "save"),
-    supabase
-      .from("ai_usage")
-      .select("id", { count: "exact" })
-      .eq("type", "essay_review"),
-    supabase
-      .from("ai_usage")
-      .select("id", { count: "exact" })
-      .eq("type", "matching"),
-    supabase.from("advisor_sessions").select("id", { count: "exact" }),
-    supabase
-      .from("ambassador_session_requests")
-      .select("id", { count: "exact" }),
-  ]);
-
-  const activityCounts: StudentDashboardActivityCounts = {
-    universities_viewed: viewedUniversitiesCount ?? 0,
-    universities_saved: savedUniversitiesCount ?? 0,
-    scholarships_saved: savedScholarshipsCount ?? 0,
-    essays_reviewed: essaysReviewedCount ?? 0,
-    advisor_sessions_booked: advisorSessionsBookedCount ?? 0,
-    ambassador_sessions_booked: ambassadorSessionsBookedCount ?? 0,
-    total_logins: 0,
-    ai_matches_generated: aiMatchesGeneratedCount ?? 0,
-  };
 
   const announcementItems: DashboardAnnouncementItem[] = (announcements ?? [])
     .map((row) => ({
@@ -103,7 +53,7 @@ export default async function StudentPage() {
       platformCompleted={platformStats.completed}
       platformTotal={platformStats.total}
       platformPercent={platformStats.percent}
-      activityCounts={activityCounts}
+      totalLogins={studentProgress?.total_logins ?? 0}
       announcementItems={announcementItems}
       activityLogItems={activityLogItems}
     />

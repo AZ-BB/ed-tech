@@ -25,23 +25,29 @@ export async function login(
     }
 
     const supabase = await createSupabaseServerClient();
-    const { data: studentProfile } = await supabase
-        .from("student_profiles")
-        .select("total_logins")
-        .eq("email", email)
-        .maybeSingle();
-
-    await supabase.from("student_profiles").update({
-        total_logins: studentProfile?.total_logins ? studentProfile.total_logins + 1 : 1,
-    }).eq("email", email);
-    
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
         return {
             data: null,
             error: error.message,
         };
+    }
+
+
+    const { data: studentProfile } = await supabase
+        .from("student_profiles")
+        .select("total_logins")
+        .eq("email", email)
+        .maybeSingle();
+
+    if (studentProfile) {
+        await supabase
+            .from("student_profiles")
+            .update({
+                total_logins: (studentProfile.total_logins ?? 0) + 1,
+            })
+            .eq("email", email);
     }
 
     redirect(next);
