@@ -87,7 +87,7 @@ export async function logAdvisorSessionsCatalogView(): Promise<{ ok: true } | { 
     "advisor_sessions",
     actor.studentId,
     "advisor_sessions_catalog_view",
-    "Student viewed the 1:1 advisor sessions catalog.",
+    "You viewed the 1:1 advisor sessions catalog.",
   );
   return { ok: true };
 }
@@ -246,7 +246,7 @@ export async function createAdvisorSessionBooking(
     "advisor",
     advisorId,
     "advisor_session_booking_requested",
-    `Student submitted a booking request for advisor ${advisor.first_name} ${advisor.last_name}.`,
+    `You submitted a booking request for advisor ${advisor.first_name} ${advisor.last_name}.`,
   );
 
   return { ok: true };

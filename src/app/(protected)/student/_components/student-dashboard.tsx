@@ -19,6 +19,15 @@ function formatDashboardTimestamp(iso: string | null): string {
   return formatDistanceToNow(d, { addSuffix: true });
 }
 
+/** Second-person copy for the student dashboard; also normalizes legacy log rows. */
+function formatActivityLogMessageForStudent(message: string): string {
+  let s = message.trimStart();
+  if (s.startsWith("Student ")) {
+    s = `You ${s.slice("Student ".length)}`;
+  }
+  return s.replace(/\btheir\b/g, "your");
+}
+
 const announcementDotClass =
   "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#378ADD]";
 
@@ -363,7 +372,7 @@ export function StudentDashboard({
                       </svg>
                     </div>
                     <span className="min-w-0 flex-1 break-words">
-                      {a.message}
+                      {formatActivityLogMessageForStudent(a.message)}
                     </span>
                     {timeLabel ? (
                       <span className="ml-auto shrink-0 whitespace-nowrap text-[10px] text-[var(--text-hint)]">

@@ -88,7 +88,7 @@ export async function logAmbassadorsCatalogView(): Promise<{ ok: true } | { ok: 
     "ambassador_sessions",
     actor.studentId,
     "ambassador_sessions_catalog_view",
-    "Student viewed the University Ambassadors catalog.",
+    "You viewed the University Ambassadors catalog.",
   );
   return { ok: true };
 }
@@ -253,7 +253,7 @@ export async function createAmbassadorSessionRequest(
     "ambassador",
     ambassadorId,
     "ambassador_session_requested",
-    `Student submitted an ambassador session request for ${amb.first_name} ${amb.last_name}.`,
+    `You submitted an ambassador session request for ${amb.first_name} ${amb.last_name}.`,
   );
 
   return { ok: true };

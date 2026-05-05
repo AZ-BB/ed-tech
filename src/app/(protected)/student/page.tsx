@@ -25,7 +25,7 @@ export default async function StudentPage() {
 
   const { data: studentProgress } = await supabase
     .from("student_profiles")
-    .select("first_name, last_name, platform_completion")
+    .select("first_name, last_name, platform_completion, total_logins")
     .single();
 
   const platformStats = getPlatformCompletionStats(
@@ -78,7 +78,7 @@ export default async function StudentPage() {
     essays_reviewed: essaysReviewedCount ?? 0,
     advisor_sessions_booked: advisorSessionsBookedCount ?? 0,
     ambassador_sessions_booked: ambassadorSessionsBookedCount ?? 0,
-    total_logins: 0,
+    total_logins: studentProgress?.total_logins ?? 0,
     ai_matches_generated: aiMatchesGeneratedCount ?? 0,
   };
 
