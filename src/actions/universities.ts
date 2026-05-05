@@ -111,7 +111,7 @@ export async function addUniversityToShortlist(universityId: string): Promise<Ge
             actor.studentId,
             id,
             "university_shortlist_add",
-            "You added a university to your shortlist.",
+            "Student added a university to their shortlist.",
         );
     }
 
@@ -154,7 +154,7 @@ export async function removeUniversityFromShortlist(universityId: string): Promi
             actor.studentId,
             id,
             "university_shortlist_remove",
-            "You removed a university from your shortlist.",
+            "Student removed a university from their shortlist.",
         );
     }
 
@@ -209,7 +209,7 @@ export async function addUniversityToFavourites(universityId: string): Promise<G
             actor.studentId,
             id,
             "university_favourite_add",
-            "You added a university to your favourites.",
+            "Student added a university to their favourites.",
         );
     }
 
@@ -252,7 +252,7 @@ export async function removeUniversityFromFavourites(universityId: string): Prom
             actor.studentId,
             id,
             "university_favourite_remove",
-            "You removed a university from your favourites.",
+            "Student removed a university from their favourites.",
         );
     }
 

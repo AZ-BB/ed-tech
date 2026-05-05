@@ -3,13 +3,12 @@
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
-  activityConfig,
   newsItems,
   quickActions,
   type DashboardActivityLogItem,
   type DashboardAnnouncementItem,
-  type StudentDashboardActivityCounts,
 } from "../_data/student-dashboard-data";
+import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
 
 function formatDashboardTimestamp(iso: string | null): string {
@@ -19,7 +18,7 @@ function formatDashboardTimestamp(iso: string | null): string {
   return formatDistanceToNow(d, { addSuffix: true });
 }
 
-/** Second-person copy for the student dashboard; also normalizes legacy log rows. */
+/** Student dashboard only: maps stored log copy to second-person. Does not change DB values. */
 function formatActivityLogMessageForStudent(message: string): string {
   let s = message.trimStart();
   if (s.startsWith("Student ")) {
@@ -69,7 +68,7 @@ type StudentDashboardProps = {
   platformCompleted: number;
   platformTotal: number;
   platformPercent: number;
-  activityCounts: StudentDashboardActivityCounts;
+  totalLogins: number;
   announcementItems: DashboardAnnouncementItem[];
   activityLogItems: DashboardActivityLogItem[];
 };
@@ -79,7 +78,7 @@ export function StudentDashboard({
   platformCompleted,
   platformTotal,
   platformPercent,
-  activityCounts,
+  totalLogins,
   announcementItems,
   activityLogItems,
 }: StudentDashboardProps) {
@@ -228,24 +227,7 @@ export function StudentDashboard({
         </div>
       </div>
 
-      <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-hint)]">
-        Your activity
-      </div>
-      <div className="mb-5 grid grid-cols-2 gap-3 min-[801px]:grid-cols-4">
-        {activityConfig.map((m) => (
-          <div
-            key={m.key}
-            className="rounded-xl border border-[var(--border-light)] bg-white px-4 py-4 text-center"
-          >
-            <div className="font-[family-name:var(--font-dm-serif)] text-2xl font-bold text-[var(--green)]">
-              {activityCounts[m.key]}
-            </div>
-            <div className="mt-0.5 text-[11px] font-medium text-[var(--text-light)]">
-              {m.label}
-            </div>
-          </div>
-        ))}
-      </div>
+      <StudentDashboardActivityStats totalLogins={totalLogins} />
 
       <StudentDashboardCollections />
 

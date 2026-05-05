@@ -121,7 +121,7 @@ export async function saveScholarship(
     studentId,
     scholarshipId,
     "scholarship_saved",
-    "You saved a scholarship to your list.",
+    "Student saved a scholarship to their list.",
   );
   if (logErr) return logErr;
 
@@ -159,7 +159,7 @@ export async function unsaveScholarship(
     studentId,
     scholarshipId,
     "scholarship_unsaved",
-    "You removed a scholarship from your saved list.",
+    "Student removed a scholarship from their saved list.",
   );
   if (logErr) return logErr;
 
@@ -212,7 +212,7 @@ export async function addScholarshipToShortlist(
     studentId,
     scholarshipId,
     "scholarship_shortlisted",
-    "You added a scholarship to your shortlist.",
+    "Student added a scholarship to their shortlist.",
   );
   if (logErr) return logErr;
 
@@ -250,7 +250,7 @@ export async function removeScholarshipFromShortlist(
     studentId,
     scholarshipId,
     "scholarship_shortlist_removed",
-    "You removed a scholarship from your shortlist.",
+    "Student removed a scholarship from their shortlist.",
   );
   if (logErr) return logErr;
 
