@@ -104,7 +104,15 @@ export async function fetchSchoolStudentPickerOptions(): Promise<
   return rows.map((r) => {
     const name =
       `${r.first_name?.trim() ?? ""} ${r.last_name?.trim() ?? ""}`.trim();
-    const label = name || r.email?.trim() || r.id;
+    const email = r.email?.trim() ?? "";
+    let label: string;
+    if (name && email) {
+      label = `${name} (${email})`;
+    } else if (email) {
+      label = email;
+    } else {
+      label = name || r.id;
+    }
     return { id: r.id, label };
   });
 }
