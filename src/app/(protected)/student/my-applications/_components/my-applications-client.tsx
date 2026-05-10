@@ -608,11 +608,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
 
   return (
     <div className="mx-auto pb-14 text-[var(--text)]">
-      <div className="mb-[18px]">
+      <div className="mb-[18px] px-4">
         <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--green)]">
           Your application workspace
         </div>
-        <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] leading-tight tracking-tight text-[var(--text)] sm:text-[30px]">
+        <h1 className="font-[family-name:var(--font-dm-serif)] font-bold text-[28px] leading-tight tracking-tight text-[var(--text)] sm:text-[30px]">
           Keep your school in the loop
         </h1>
         <p className="mt-1.5 max-w-[680px] text-sm leading-relaxed text-[var(--text-mid)]">
