@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 import type { Database } from "@/database.types";
 import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
@@ -20,11 +20,11 @@ function pickLatestActivityIso(
   return new Date(aiAt).getTime() > new Date(actAt).getTime() ? aiAt : actAt;
 }
 
-function formatActivityCalendarDate(iso: string): string {
+function formatActivityAgo(iso: string): string {
   try {
     const t = new Date(iso).getTime();
     if (Number.isNaN(t)) return "—";
-    return format(new Date(iso), "MMM d, yyyy");
+    return formatDistanceToNow(new Date(iso), { addSuffix: true });
   } catch {
     return "—";
   }
@@ -86,9 +86,21 @@ export type SchoolStudentDetailPayload = {
     /** No webinar-attendance table in schema yet; keep UI slot at 0. */
     webinarsAttended: number;
     totalLogins: number;
-    /** Calendar date of latest student_activities vs ai_usage (newer wins); else profile `updated_at`. */
+    /** Relative time of latest student_activities vs ai_usage (e.g. “3 days ago”); else profile `updated_at`. */
     lastActivityDateLabel: string | null;
   };
+  /** Manual application shortlist (`student_shortlist_universities`). */
+  shortlist: Database["public"]["Tables"]["student_shortlist_universities"]["Row"][];
+  /** For add-university modal country `<select>`. */
+  countries: { id: string; name: string }[];
+  /** Internal notes for school admins only (`student_notes`). */
+  studentNotes: {
+    id: string;
+    noteType: string;
+    content: string;
+    createdAt: string;
+    authorLabel: string;
+  }[];
 };
 
 function stageFromProfilePercent(pct: number): string {
@@ -170,7 +182,8 @@ export async function fetchSchoolStudentDetail(
     { data: latestAiRow, error: latestAiErr },
     { data: appProf },
     counselorRes,
-    shortlistRes,
+    shortlistRowsRes,
+    countriesRes,
     docsRes,
     tasksRes,
     advisorSessRes,
@@ -181,6 +194,7 @@ export async function fetchSchoolStudentDetail(
     scholarSavedRes,
     essayReviewRes,
     matchingRes,
+    notesRes,
   ] = await Promise.all([
     supabase
       .from("student_activities")
@@ -219,8 +233,11 @@ export async function fetchSchoolStudentDetail(
         }),
     supabase
       .from("student_shortlist_universities")
-      .select("id", { count: "exact", head: true })
-      .eq("student_id", studentId),
+      .select("*")
+      .eq("student_id", studentId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase.from("countries").select("id, name").order("name", { ascending: true }),
     supabase
       .from("student_my_application_documents")
       .select("id", { count: "exact", head: true })
@@ -271,6 +288,23 @@ export async function fetchSchoolStudentDetail(
       .select("id", { count: "exact", head: true })
       .eq("student_id", studentId)
       .eq("type", "matching"),
+    supabase
+      .from("student_notes")
+      .select(
+        `
+      id,
+      note_type,
+      content,
+      created_at,
+      school_admin_profiles!student_notes_author_id_fkey (
+        first_name,
+        last_name
+      )
+    `,
+      )
+      .eq("student_id", studentId)
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   if (latestActErr) {
@@ -278,6 +312,21 @@ export async function fetchSchoolStudentDetail(
   }
   if (latestAiErr) {
     console.error("[fetchSchoolStudentDetail] latest ai_usage:", latestAiErr.message);
+  }
+  if (shortlistRowsRes.error) {
+    console.error(
+      "[fetchSchoolStudentDetail] student_shortlist_universities:",
+      shortlistRowsRes.error.message,
+    );
+  }
+  if (countriesRes.error) {
+    console.error("[fetchSchoolStudentDetail] countries:", countriesRes.error.message);
+  }
+  if (notesRes.error) {
+    console.error(
+      "[fetchSchoolStudentDetail] student_notes:",
+      notesRes.error.message,
+    );
   }
 
   const platformAt = pickLatestActivityIso(
@@ -287,10 +336,10 @@ export async function fetchSchoolStudentDetail(
 
   let lastActivityDateLabel: string | null = null;
   if (platformAt) {
-    const formatted = formatActivityCalendarDate(platformAt);
+    const formatted = formatActivityAgo(platformAt);
     lastActivityDateLabel = formatted === "—" ? null : formatted;
   } else if (profile.updated_at) {
-    const formatted = formatActivityCalendarDate(profile.updated_at);
+    const formatted = formatActivityAgo(profile.updated_at);
     lastActivityDateLabel = formatted === "—" ? null : formatted;
   }
 
@@ -393,6 +442,27 @@ export async function fetchSchoolStudentDetail(
     inactiveWeek,
   );
 
+  const shortlist = shortlistRowsRes.data ?? [];
+
+  const rawNotes = notesRes.data ?? [];
+  const studentNotes = rawNotes.map((row) => {
+    const embed = row.school_admin_profiles as
+      | { first_name: string; last_name: string }
+      | { first_name: string; last_name: string }[]
+      | null;
+    const sap = Array.isArray(embed) ? embed[0] : embed;
+    const authorLabel =
+      `${sap?.first_name?.trim() ?? ""} ${sap?.last_name?.trim() ?? ""}`.trim() ||
+      "School admin";
+    return {
+      id: row.id,
+      noteType: row.note_type,
+      content: row.content,
+      createdAt: row.created_at,
+      authorLabel,
+    };
+  });
+
   return {
     student: {
       id: profile.id,
@@ -424,12 +494,15 @@ export async function fetchSchoolStudentDetail(
     },
     applicationProfile: app,
     quickStats: {
-      universitiesCount: shortlistRes.count ?? 0,
+      universitiesCount: shortlist.length,
       documentsInCount: docsRes.count ?? 0,
       openTasksCount: tasksRes.count ?? 0,
       supportSessionsCount:
         (advisorSessRes.count ?? 0) + (ambRes.count ?? 0),
     },
     platformActivity,
+    shortlist,
+    countries: countriesRes.data ?? [],
+    studentNotes,
   };
 }

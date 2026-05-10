@@ -1757,6 +1757,48 @@ export type Database = {
           },
         ]
       }
+      student_notes: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          note_type: string
+          student_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          note_type: string
+          student_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          note_type?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_profiles: {
         Row: {
           advisor_credit_limit: number | null
@@ -1849,6 +1891,8 @@ export type Database = {
           country: string | null
           created_at: string
           decision: string | null
+          docs_status: string
+          essay_status: string
           id: string
           major_program: string | null
           sort_order: number
@@ -1863,6 +1907,8 @@ export type Database = {
           country?: string | null
           created_at?: string
           decision?: string | null
+          docs_status?: string
+          essay_status?: string
           id?: string
           major_program?: string | null
           sort_order?: number
@@ -1877,6 +1923,8 @@ export type Database = {
           country?: string | null
           created_at?: string
           decision?: string | null
+          docs_status?: string
+          essay_status?: string
           id?: string
           major_program?: string | null
           sort_order?: number

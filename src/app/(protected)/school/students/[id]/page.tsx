@@ -20,6 +20,9 @@ export default async function SchoolStudentDetailPage({ params }: PageProps) {
       applicationProfile={payload.applicationProfile}
       quickStats={payload.quickStats}
       platformActivity={payload.platformActivity}
+      shortlist={payload.shortlist}
+      countries={payload.countries}
+      studentNotes={payload.studentNotes}
     />
   );
 }

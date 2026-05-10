@@ -9,7 +9,6 @@ import { useCallback, useMemo, useState } from "react";
 import type { MyApplicationsInitialPayload } from "../_lib/my-applications-types";
 import {
   AID_OPTIONS,
-  APPLICATION_METHOD_OPTIONS,
   BUDGET_OPTIONS,
   CURRICULUM_OPTIONS,
   ESSAY_TYPE_OPTIONS,
@@ -18,6 +17,16 @@ import {
   UNIVERSITY_APPLICATION_STATUSES,
   UNIVERSITY_DECISIONS,
 } from "../_lib/my-applications-defaults";
+import {
+  UNIVERSITY_DECISION_LABEL,
+  UNIVERSITY_STATUS_LABEL,
+} from "../_lib/my-applications-university-labels";
+
+import {
+  AddUniversityShortlistModal,
+  type AddUniversityShortlistForm,
+} from "./add-university-shortlist-modal";
+import { ModalVeil } from "./modal-veil";
 
 type ShortlistRow = Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
 type DocRow = Database["public"]["Tables"]["student_my_application_documents"]["Row"];
@@ -26,26 +35,6 @@ type RecRow = Database["public"]["Tables"]["student_my_application_recommendatio
 type TaskRow = Database["public"]["Tables"]["student_my_application_tasks"]["Row"];
 
 type TabId = "profile" | "universities" | "documents" | "essays" | "recommendations" | "tasks";
-
-const STATUS_LABEL: Record<string, string> = {
-  considering: "Considering",
-  shortlisted: "Shortlisted",
-  preparing_application: "Preparing application",
-  submitted: "Submitted",
-  interview_invited: "Interview invited",
-  withdrawn: "Withdrawn",
-};
-
-const DECISION_LABEL: Record<string, string> = {
-  "": "—",
-  pending: "Pending",
-  offer_received: "Offer received",
-  conditional_offer: "Conditional offer",
-  waitlisted: "Waitlisted",
-  rejected: "Rejected",
-  accepted: "Accepted",
-  declined_by_me: "Declined by me",
-};
 
 const ESSAY_STATUS_LABEL: Record<string, string> = {
   not_started: "Not started",
@@ -242,13 +231,6 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
   const [essayModal, setEssayModal] = useState(false);
   const [recModal, setRecModal] = useState(false);
 
-  const [uniForm, setUniForm] = useState({
-    university_name: "",
-    country: "",
-    major_program: "",
-    application_method: "",
-    application_deadline: "",
-  });
   const [essayForm, setEssayForm] = useState({
     title: "",
     essay_type: ESSAY_TYPE_OPTIONS[0] as string,
@@ -379,12 +361,7 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
     showToast("Saved");
   };
 
-  const addUniversity = async () => {
-    if (!uniForm.university_name.trim() || !uniForm.country || !uniForm.major_program.trim() || !uniForm.application_method) {
-      showToast("Fill in all fields first");
-      return;
-    }
-    const nextSort = shortlist.length ? Math.max(...shortlist.map((r) => r.sort_order)) + 1 : 0;
+  const addUniversity = async (uniForm: AddUniversityShortlistForm) => {
     const insert = {
       student_id: initial.studentId,
       university_name: uniForm.university_name.trim(),
@@ -394,7 +371,7 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       application_deadline: uniForm.application_deadline || null,
       status: "considering",
       decision: "",
-      sort_order: nextSort,
+      sort_order: shortlist.length ? Math.max(...shortlist.map((r) => r.sort_order)) + 1 : 0,
     };
     const { data, error } = await supabase.from("student_shortlist_universities").insert(insert).select("*").single();
     if (error || !data) {
@@ -403,13 +380,6 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
     }
     setShortlist((prev) => [data, ...prev]);
     setUniModal(false);
-    setUniForm({
-      university_name: "",
-      country: "",
-      major_program: "",
-      application_method: "",
-      application_deadline: "",
-    });
     showToast(`${data.university_name} added · counselor will see this`);
   };
 
@@ -1062,7 +1032,7 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                         >
                           {UNIVERSITY_APPLICATION_STATUSES.map((s) => (
                             <option key={s} value={s}>
-                              {STATUS_LABEL[s] ?? s}
+                              {UNIVERSITY_STATUS_LABEL[s] ?? s}
                             </option>
                           ))}
                         </select>
@@ -1082,7 +1052,7 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                         >
                           {UNIVERSITY_DECISIONS.map((d) => (
                             <option key={d || "none"} value={d}>
-                              {DECISION_LABEL[d] ?? d}
+                              {UNIVERSITY_DECISION_LABEL[d] ?? d}
                             </option>
                           ))}
                         </select>
@@ -1515,81 +1485,13 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
         </div>
       ) : null}
 
-      {uniModal ? (
-        <ModalVeil onClose={() => setUniModal(false)} title="Add a university">
-          <div className="flex flex-col gap-3.5">
-            <div>
-              <label className={labelClass}>University name</label>
-              <input
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={uniForm.university_name}
-                onChange={(e) => setUniForm((f) => ({ ...f, university_name: e.target.value }))}
-                placeholder="e.g. University of Edinburgh"
-              />
-            </div>
-            <div>
-              <label className={labelClass}>University location</label>
-              <select
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={uniForm.country}
-                onChange={(e) => setUniForm((f) => ({ ...f, country: e.target.value }))}
-              >
-                <option value="">Select country…</option>
-                {initial.countries.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Major / program</label>
-              <input
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={uniForm.major_program}
-                onChange={(e) => setUniForm((f) => ({ ...f, major_program: e.target.value }))}
-                placeholder="e.g. BSc Finance"
-              />
-            </div>
-            <div>
-              <label className={labelClass}>How do you apply?</label>
-              <select
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={uniForm.application_method}
-                onChange={(e) => setUniForm((f) => ({ ...f, application_method: e.target.value }))}
-              >
-                <option value="">Select application system…</option>
-                {APPLICATION_METHOD_OPTIONS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Deadline (optional)</label>
-              <input
-                type="date"
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={uniForm.application_deadline}
-                onChange={(e) => setUniForm((f) => ({ ...f, application_deadline: e.target.value }))}
-              />
-            </div>
-          </div>
-          <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
-            <button type="button" className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]" onClick={() => setUniModal(false)}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
-              onClick={() => void addUniversity()}
-            >
-              Add to shortlist
-            </button>
-          </div>
-        </ModalVeil>
-      ) : null}
+      <AddUniversityShortlistModal
+        open={uniModal}
+        onClose={() => setUniModal(false)}
+        countries={initial.countries}
+        onAdd={(f) => void addUniversity(f)}
+        onInvalid={() => showToast("Fill in all fields first")}
+      />
 
       {essayModal ? (
         <ModalVeil onClose={() => setEssayModal(false)} title="Start a new essay">
@@ -1854,37 +1756,6 @@ function DocumentRow({ doc, onPickFile }: { doc: DocRow; onPickFile: (f: File) =
             {missing ? "Upload" : "Replace"}
           </span>
         </label>
-      </div>
-    </div>
-  );
-}
-
-function ModalVeil({
-  title,
-  children,
-  onClose,
-}: {
-  title: string;
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(15,30,20,0.5)] p-5"
-      role="dialog"
-      aria-modal
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="max-h-[90vh] w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-[var(--border-light)] px-[22px] py-4">
-          <h2 className="font-[family-name:var(--font-dm-serif)] text-xl tracking-tight">{title}</h2>
-          <button type="button" className="rounded-md p-1.5 text-[var(--text-light)] hover:bg-[var(--cream)]" onClick={onClose} aria-label="Close">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="px-[22px] py-[18px]">{children}</div>
       </div>
     </div>
   );

@@ -1,12 +1,16 @@
 "use client";
 
-import { updateSchoolStudentCreditLimits } from "@/actions/school-students";
+import { updateSchoolStudentCreditLimits, addSchoolStudentNote } from "@/actions/school-students";
 import type { Database } from "@/database.types";
+import { SCHOOL_STUDENT_NOTE_TAGS } from "@/lib/school-student-note-tags";
+import { format } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { SchoolStudentDetailPayload } from "../_lib/fetch-school-student-detail";
+
+import { SchoolStudentShortlistTab } from "./school-student-shortlist-tab";
 
 type TabId =
   | "snapshot"
@@ -39,6 +43,9 @@ export type SchoolStudentViewClientProps = {
   applicationProfile: ApplicationProfileRow | null;
   quickStats: SchoolStudentDetailPayload["quickStats"];
   platformActivity: SchoolStudentDetailPayload["platformActivity"];
+  shortlist: SchoolStudentDetailPayload["shortlist"];
+  countries: SchoolStudentDetailPayload["countries"];
+  studentNotes: SchoolStudentDetailPayload["studentNotes"];
 };
 
 function initials(first: string, last: string): string {
@@ -480,18 +487,175 @@ function SnapshotContent({
   );
 }
 
-type EmptyTabId = Exclude<TabId, "snapshot" | "activity">;
+function NotesTabContent({
+  studentId,
+  notes,
+}: {
+  studentId: string;
+  notes: SchoolStudentDetailPayload["studentNotes"];
+}) {
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [selectedNoteTag, setSelectedNoteTag] = useState<string>(
+    SCHOOL_STUDENT_NOTE_TAGS[0],
+  );
+
+  function formatWhen(iso: string): string {
+    try {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "—";
+      return format(d, "MMM d, yyyy");
+    } catch {
+      return "—";
+    }
+  }
+
+  async function submit(formData: FormData) {
+    setError(null);
+    setPending(true);
+    try {
+      const res = await addSchoolStudentNote(null, formData);
+      const errMsg =
+        res.error == null
+          ? null
+          : typeof res.error === "string"
+            ? res.error
+            : "Something went wrong.";
+      if (errMsg) {
+        setError(errMsg);
+      } else {
+        formRef.current?.reset();
+        setSelectedNoteTag(SCHOOL_STUDENT_NOTE_TAGS[0]);
+        router.refresh();
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Panel
+      head="Counselor notes"
+      sub="Internal-only — visible to school admins at your school; students cannot see these."
+    >
+      <div className="mb-[14px] flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3.5">
+        <form ref={formRef} action={submit} className="flex flex-col gap-2.5">
+          <input type="hidden" name="student_id" value={studentId} />
+          <input type="hidden" name="note_type" value={selectedNoteTag} />
+          <div>
+            <textarea
+              name="content"
+              rows={4}
+              placeholder="Add internal counselor note… (Ctrl+Enter or ⌘+Enter to save)"
+              className="min-h-[64px] w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[var(--green-light)]"
+              disabled={pending}
+              maxLength={8000}
+              onKeyDown={(e) => {
+                if (
+                  (e.metaKey || e.ctrlKey) &&
+                  e.key === "Enter" &&
+                  !pending
+                ) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {SCHOOL_STUDENT_NOTE_TAGS.map((tag) => {
+                const active = selectedNoteTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    disabled={pending}
+                    onClick={() => setSelectedNoteTag(tag)}
+                    className={`cursor-pointer rounded-[14px] border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
+                      active
+                        ? "border-[var(--green-light)] bg-[var(--green-pale)] text-[var(--green-dark)]"
+                        : "border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:text-[var(--green-dark)]"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="submit"
+              disabled={pending}
+              className="inline-flex shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-[var(--green-dark)] disabled:opacity-55"
+            >
+              {pending ? "Saving…" : "Save note"}
+            </button>
+          </div>
+          {error ? (
+            <div className="text-[12.5px] font-medium text-[#8c2d22]">{error}</div>
+          ) : null}
+        </form>
+      </div>
+
+      {notes.length === 0 ? (
+        <EmptyBlock message="No notes yet. Add one above — only staff at your school can see this list." />
+      ) : (
+        <div className="overflow-x-auto rounded-[10px] border border-[var(--border-light)]">
+          <table className="w-full border-separate border-spacing-0 text-[13px]">
+            <thead>
+              <tr>
+                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 pl-5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
+                  Type
+                </th>
+                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
+                  Note
+                </th>
+                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
+                  Written by
+                </th>
+                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 pr-5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
+                  When
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {notes.map((n) => (
+                <tr
+                  key={n.id}
+                  className="transition-colors hover:bg-[#faf9f4]/80 [&_td]:border-b [&_td]:border-[var(--border-light)] last:[&_td]:border-b-0"
+                >
+                  <td className="max-w-[180px] px-4 py-3 pl-5 align-top">
+                    <span className="inline-flex rounded-full border border-[var(--border)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-mid)]">
+                      {n.noteType}
+                    </span>
+                  </td>
+                  <td className="min-w-[200px] whitespace-pre-wrap px-4 py-3 align-top text-[var(--text)] leading-snug">
+                    {n.content}
+                  </td>
+                  <td className="max-w-[160px] px-4 py-3 align-top text-[12.5px] text-[var(--text-mid)]">
+                    {n.authorLabel}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 pr-5 align-top text-[11.5px] text-[var(--text-hint)]">
+                    {formatWhen(n.createdAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+type EmptyTabId = Exclude<TabId, "snapshot" | "activity" | "shortlist" | "notes">;
 
 const EMPTY_TAB: Record<
   EmptyTabId,
   { title: string; subtitle?: string; message: string }
 > = {
-  shortlist: {
-    title: "University shortlist",
-    subtitle:
-      "Universities being considered, applied to, or with offers — coming soon.",
-    message: "Content coming soon.",
-  },
   essays: {
     title: "Essays",
     subtitle:
@@ -502,11 +666,6 @@ const EMPTY_TAB: Record<
     title: "Essays & documents",
     subtitle:
       "Document checklist — change status anytime, click upload to add files — coming soon.",
-    message: "Content coming soon.",
-  },
-  notes: {
-    title: "Counselor notes",
-    subtitle: "Internal-only — students cannot see these — coming soon.",
     message: "Content coming soon.",
   },
   interactions: {
@@ -533,6 +692,9 @@ export function SchoolStudentViewClient({
   applicationProfile,
   quickStats,
   platformActivity,
+  shortlist,
+  countries,
+  studentNotes,
 }: SchoolStudentViewClientProps) {
   const [tab, setTab] = useState<TabId>("snapshot");
 
@@ -573,6 +735,18 @@ export function SchoolStudentViewClient({
   } else if (tab === "activity") {
     tabBody = (
       <ActivityContent student={student} platformActivity={platformActivity} />
+    );
+  } else if (tab === "shortlist") {
+    tabBody = (
+      <SchoolStudentShortlistTab
+        studentId={student.id}
+        initialShortlist={shortlist}
+        countries={countries}
+      />
+    );
+  } else if (tab === "notes") {
+    tabBody = (
+      <NotesTabContent studentId={student.id} notes={studentNotes} />
     );
   } else {
     const cfg = EMPTY_TAB[tab];
