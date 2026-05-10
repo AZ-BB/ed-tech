@@ -17,24 +17,45 @@ import {
   UNIVERSITY_APPLICATION_STATUSES,
   UNIVERSITY_DECISIONS,
 } from "../_lib/my-applications-defaults";
-import {
-  UNIVERSITY_DECISION_LABEL,
-  UNIVERSITY_STATUS_LABEL,
-} from "../_lib/my-applications-university-labels";
 
-import {
-  AddUniversityShortlistModal,
-  type AddUniversityShortlistForm,
-} from "./add-university-shortlist-modal";
-import { ModalVeil } from "./modal-veil";
+type ShortlistRow =
+  Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
+type DocRow =
+  Database["public"]["Tables"]["student_my_application_documents"]["Row"];
+type EssayRow =
+  Database["public"]["Tables"]["student_my_application_essays"]["Row"];
+type RecRow =
+  Database["public"]["Tables"]["student_my_application_recommendations"]["Row"];
+type TaskRow =
+  Database["public"]["Tables"]["student_my_application_tasks"]["Row"];
 
-type ShortlistRow = Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
-type DocRow = Database["public"]["Tables"]["student_my_application_documents"]["Row"];
-type EssayRow = Database["public"]["Tables"]["student_my_application_essays"]["Row"];
-type RecRow = Database["public"]["Tables"]["student_my_application_recommendations"]["Row"];
-type TaskRow = Database["public"]["Tables"]["student_my_application_tasks"]["Row"];
+type TabId =
+  | "profile"
+  | "universities"
+  | "documents"
+  | "essays"
+  | "recommendations"
+  | "tasks";
 
-type TabId = "profile" | "universities" | "documents" | "essays" | "recommendations" | "tasks";
+const STATUS_LABEL: Record<string, string> = {
+  considering: "Considering",
+  shortlisted: "Shortlisted",
+  preparing_application: "Preparing application",
+  submitted: "Submitted",
+  interview_invited: "Interview invited",
+  withdrawn: "Withdrawn",
+};
+
+const DECISION_LABEL: Record<string, string> = {
+  "": "—",
+  pending: "Pending",
+  offer_received: "Offer received",
+  conditional_offer: "Conditional offer",
+  waitlisted: "Waitlisted",
+  rejected: "Rejected",
+  accepted: "Accepted",
+  declined_by_me: "Declined by me",
+};
 
 const ESSAY_STATUS_LABEL: Record<string, string> = {
   not_started: "Not started",
@@ -131,17 +152,32 @@ function CalloutInfo({ children }: { children: ReactNode }) {
   return (
     <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
-        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+        <svg
+          className="h-3.5 w-3.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          aria-hidden
+        >
           <circle cx="12" cy="12" r="10" />
           <path d="M12 8v4M12 16h.01" />
         </svg>
       </div>
-      <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">{children}</p>
+      <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
+        {children}
+      </p>
     </div>
   );
 }
 
-function StatusPill({ variant, label }: { variant: "green" | "amber" | "red" | "blue" | "grey"; label: string }) {
+function StatusPill({
+  variant,
+  label,
+}: {
+  variant: "green" | "amber" | "red" | "blue" | "grey";
+  label: string;
+}) {
   const wrap =
     variant === "green"
       ? "bg-[rgba(82,183,135,0.13)] text-[#1B4332]"
@@ -163,8 +199,13 @@ function StatusPill({ variant, label }: { variant: "green" | "amber" | "red" | "
             ? "bg-[#3498DB]"
             : "bg-[#a0a0a0]";
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[11.5px] font-semibold leading-snug ${wrap}`}>
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden />
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[11.5px] font-semibold leading-snug ${wrap}`}
+    >
+      <span
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`}
+        aria-hidden
+      />
       {label}
     </span>
   );
@@ -198,27 +239,43 @@ function profileCompletionPct(args: {
   return { pct: Math.min(100, pct), missing: Math.max(0, missing) };
 }
 
-export function MyApplicationsClient({ initial }: { initial: MyApplicationsInitialPayload }) {
+export function MyApplicationsClient({
+  initial,
+}: {
+  initial: MyApplicationsInitialPayload;
+}) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [tab, setTab] = useState<TabId>("profile");
   const [toast, setToast] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState(initial.profile.first_name);
   const [lastName, setLastName] = useState(initial.profile.last_name);
-  const [nationalityCode, setNationalityCode] = useState(initial.profile.nationality_country_code);
+  const [nationalityCode, setNationalityCode] = useState(
+    initial.profile.nationality_country_code,
+  );
 
   const ap0 = initial.applicationProfile;
   const [grade, setGrade] = useState(ap0?.grade ?? "");
   const [curriculum, setCurriculum] = useState(ap0?.curriculum ?? "");
   const [targetIntake, setTargetIntake] = useState(ap0?.target_intake ?? "");
-  const [destinations, setDestinations] = useState<string[]>(ap0?.preferred_destinations ?? []);
-  const [programs, setPrograms] = useState<string[]>(ap0?.interested_programs ?? []);
+  const [destinations, setDestinations] = useState<string[]>(
+    ap0?.preferred_destinations ?? [],
+  );
+  const [programs, setPrograms] = useState<string[]>(
+    ap0?.interested_programs ?? [],
+  );
   const [budgetRange, setBudgetRange] = useState(ap0?.budget_range ?? "");
   const [needAid, setNeedAid] = useState(ap0?.need_based_aid ?? "");
-  const [englishScores, setEnglishScores] = useState(ap0?.english_test_scores ?? "");
+  const [englishScores, setEnglishScores] = useState(
+    ap0?.english_test_scores ?? "",
+  );
   const [satAct, setSatAct] = useState(ap0?.sat_act_scores ?? "");
-  const [predictedGrades, setPredictedGrades] = useState(ap0?.predicted_grades ?? "");
-  const [predictedSchool, setPredictedSchool] = useState(ap0?.predicted_grades_set_by_school ?? false);
+  const [predictedGrades, setPredictedGrades] = useState(
+    ap0?.predicted_grades ?? "",
+  );
+  const [predictedSchool, setPredictedSchool] = useState(
+    ap0?.predicted_grades_set_by_school ?? false,
+  );
   const [otherTests, setOtherTests] = useState(ap0?.other_tests ?? "");
 
   const [shortlist, setShortlist] = useState<ShortlistRow[]>(initial.shortlist);
@@ -266,11 +323,14 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
 
   const openTasks = tasks.filter((t) => !t.completed).length;
   const tasksDueThisWeek = useMemo(
-    () => tasks.filter((t) => isTaskDueThisWeek(t.due_date, t.completed)).length,
+    () =>
+      tasks.filter((t) => isTaskDueThisWeek(t.due_date, t.completed)).length,
     [tasks],
   );
   const counselorDisplayName = useMemo(() => {
-    const named = tasks.map((t) => t.assigned_by_name).find((n) => n && n.trim());
+    const named = tasks
+      .map((t) => t.assigned_by_name)
+      .find((n) => n && n.trim());
     return named?.trim() ?? null;
   }, [tasks]);
   const shortlistHintUniversities = useMemo(
@@ -278,7 +338,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       shortlist.filter((u) => {
         const name = u.university_name.trim().toLowerCase();
         if (!name) return false;
-        return !essays.some((e) => (e.for_application ?? "").toLowerCase().includes(name));
+        return !essays.some((e) =>
+          (e.for_application ?? "").toLowerCase().includes(name),
+        );
       }),
     [shortlist, essays],
   );
@@ -329,9 +391,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       showToast(e1.message);
       return;
     }
-    const { error: e2 } = await supabase.from("student_application_profile").upsert(buildApplicationProfileRow(), {
-      onConflict: "student_id",
-    });
+    const { error: e2 } = await supabase
+      .from("student_application_profile")
+      .upsert(buildApplicationProfileRow(), {
+        onConflict: "student_id",
+      });
     if (e2) {
       showToast(e2.message);
       return;
@@ -340,9 +404,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
   };
 
   const saveGoals = async () => {
-    const { error } = await supabase.from("student_application_profile").upsert(buildApplicationProfileRow(), {
-      onConflict: "student_id",
-    });
+    const { error } = await supabase
+      .from("student_application_profile")
+      .upsert(buildApplicationProfileRow(), {
+        onConflict: "student_id",
+      });
     if (error) {
       showToast(error.message);
       return;
@@ -351,9 +417,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
   };
 
   const saveScores = async () => {
-    const { error } = await supabase.from("student_application_profile").upsert(buildApplicationProfileRow(), {
-      onConflict: "student_id",
-    });
+    const { error } = await supabase
+      .from("student_application_profile")
+      .upsert(buildApplicationProfileRow(), {
+        onConflict: "student_id",
+      });
     if (error) {
       showToast(error.message);
       return;
@@ -361,7 +429,19 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
     showToast("Saved");
   };
 
-  const addUniversity = async (uniForm: AddUniversityShortlistForm) => {
+  const addUniversity = async () => {
+    if (
+      !uniForm.university_name.trim() ||
+      !uniForm.country ||
+      !uniForm.major_program.trim() ||
+      !uniForm.application_method
+    ) {
+      showToast("Fill in all fields first");
+      return;
+    }
+    const nextSort = shortlist.length
+      ? Math.max(...shortlist.map((r) => r.sort_order)) + 1
+      : 0;
     const insert = {
       student_id: initial.studentId,
       university_name: uniForm.university_name.trim(),
@@ -373,7 +453,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       decision: "",
       sort_order: shortlist.length ? Math.max(...shortlist.map((r) => r.sort_order)) + 1 : 0,
     };
-    const { data, error } = await supabase.from("student_shortlist_universities").insert(insert).select("*").single();
+    const { data, error } = await supabase
+      .from("student_shortlist_universities")
+      .insert(insert)
+      .select("*")
+      .single();
     if (error || !data) {
       showToast(error?.message ?? "Could not add");
       return;
@@ -383,14 +467,23 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
     showToast(`${data.university_name} added · counselor will see this`);
   };
 
-  const updateShortlistRow = async (id: string, patch: Partial<ShortlistRow>) => {
-    const { error } = await supabase.from("student_shortlist_universities").update(patch).eq("id", id);
+  const updateShortlistRow = async (
+    id: string,
+    patch: Partial<ShortlistRow>,
+  ) => {
+    const { error } = await supabase
+      .from("student_shortlist_universities")
+      .update(patch)
+      .eq("id", id);
     if (error) showToast(error.message);
   };
 
   const removeUniversity = async (id: string) => {
     if (!confirm("Remove from shortlist?")) return;
-    const { error } = await supabase.from("student_shortlist_universities").delete().eq("id", id);
+    const { error } = await supabase
+      .from("student_shortlist_universities")
+      .delete()
+      .eq("id", id);
     if (error) {
       showToast(error.message);
       return;
@@ -401,9 +494,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
   const uploadDocument = async (doc: DocRow, file: File) => {
     const safeName = file.name.replace(/[^\w.\-()+ ]/g, "_");
     const path = `${initial.studentId}/${doc.slot_key}/${Date.now()}_${safeName}`;
-    const { error: upErr } = await supabase.storage.from("student-my-applications").upload(path, file, {
-      upsert: true,
-    });
+    const { error: upErr } = await supabase.storage
+      .from("student-my-applications")
+      .upload(path, file, {
+        upsert: true,
+      });
     if (upErr) {
       showToast(upErr.message);
       return;
@@ -477,7 +572,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
           ? "not_started"
           : essay.status;
     const nextVersion =
-      trimmed !== essay.body ? (essay.body.trim().length > 0 ? essay.version + 1 : essay.version) : essay.version;
+      trimmed !== essay.body
+        ? essay.body.trim().length > 0
+          ? essay.version + 1
+          : essay.version
+        : essay.version;
     const { data, error } = await supabase
       .from("student_my_application_essays")
       .update({
@@ -500,7 +599,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
   };
 
   const sendRecRequest = async () => {
-    if (!recForm.teacher_name.trim() || !recForm.teacher_email.trim() || !recForm.for_application.trim()) {
+    if (
+      !recForm.teacher_name.trim() ||
+      !recForm.teacher_email.trim() ||
+      !recForm.for_application.trim()
+    ) {
       showToast("Teacher name, email, and application are required");
       return;
     }
@@ -578,16 +681,17 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
 
   return (
     <div className="mx-auto pb-14 text-[var(--text)]">
-      <div className="mb-[18px]">
+      <div className="mb-[18px] px-4">
         <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--green)]">
           Your application workspace
         </div>
-        <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] leading-tight tracking-tight text-[var(--text)] sm:text-[30px]">
+        <h1 className="font-[family-name:var(--font-dm-serif)] font-bold text-[28px] leading-tight tracking-tight text-[var(--text)] sm:text-[30px]">
           Keep your school in the loop
         </h1>
         <p className="mt-1.5 max-w-[680px] text-sm leading-relaxed text-[var(--text-mid)]">
-          Update your profile, shortlist, documents, and application status here. Your school counselor sees this in
-          real time and can flag anything that needs attention before deadlines.
+          Update your profile, shortlist, documents, and application status
+          here. Your school counselor sees this in real time and can flag
+          anything that needs attention before deadlines.
         </p>
       </div>
 
@@ -604,7 +708,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
           </div>
         </div>
         <div className="relative z-[1] flex flex-col items-start gap-1.5 sm:items-end">
-          <div className="font-[family-name:var(--font-dm-serif)] text-3xl leading-none">{pct}%</div>
+          <div className="font-[family-name:var(--font-dm-serif)] text-3xl leading-none">
+            {pct}%
+          </div>
           <div className="h-1.5 w-[140px] max-w-full rounded bg-white/15">
             <div
               className="h-full rounded bg-[var(--green-bright)] transition-[width] duration-500"
@@ -639,7 +745,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
             {badge != null && badge > 0 ? (
               <span
                 className={`rounded-lg px-1.5 py-0.5 text-[10px] font-bold ${
-                  tab === id ? "bg-white/25 text-white" : "bg-[#FCEBEB] text-[#8c2d22]"
+                  tab === id
+                    ? "bg-white/25 text-white"
+                    : "bg-[#FCEBEB] text-[#8c2d22]"
                 }`}
               >
                 {badge}
@@ -653,21 +761,31 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <svg
+                className="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden
+              >
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
             </div>
             <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              <strong>Why this matters:</strong> The information you fill in here is what your counselor sees on their
-              dashboard. Better info → better guidance.
+              <strong>Why this matters:</strong> The information you fill in
+              here is what your counselor sees on their dashboard. Better info →
+              better guidance.
             </p>
           </div>
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
-                <div className="text-[15px] font-semibold tracking-tight">About you</div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  About you
+                </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
                   Basic info — most of this came from your school registration
                 </div>
@@ -677,19 +795,35 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               <div className="grid gap-3.5 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <label className={labelClass}>First name</label>
-                  <input className={fieldClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  <input
+                    className={fieldClass}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className={labelClass}>Last name</label>
-                  <input className={fieldClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                  <input
+                    className={fieldClass}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className={labelClass}>School email</label>
-                  <input className={`${fieldClass} bg-[var(--cream)] text-[var(--text-light)]`} value={initial.profile.email} disabled />
+                  <input
+                    className={`${fieldClass} bg-[var(--cream)] text-[var(--text-light)]`}
+                    value={initial.profile.email}
+                    disabled
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className={labelClass}>Grade</label>
-                  <select className={fieldClass} value={grade} onChange={(e) => setGrade(e.target.value)}>
+                  <select
+                    className={fieldClass}
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                  >
                     <option value="">Select…</option>
                     {GRADE_OPTIONS.map((g) => (
                       <option key={g} value={g}>
@@ -700,7 +834,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>Curriculum</label>
-                  <select className={fieldClass} value={curriculum} onChange={(e) => setCurriculum(e.target.value)}>
+                  <select
+                    className={fieldClass}
+                    value={curriculum}
+                    onChange={(e) => setCurriculum(e.target.value)}
+                  >
                     <option value="">Select…</option>
                     {CURRICULUM_OPTIONS.map((c) => (
                       <option key={c} value={c}>
@@ -725,7 +863,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>Target intake</label>
-                  <select className={fieldClass} value={targetIntake} onChange={(e) => setTargetIntake(e.target.value)}>
+                  <select
+                    className={fieldClass}
+                    value={targetIntake}
+                    onChange={(e) => setTargetIntake(e.target.value)}
+                  >
                     <option value="">Select…</option>
                     {TARGET_INTAKE_OPTIONS.map((t) => (
                       <option key={t} value={t}>
@@ -750,9 +892,12 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
-                <div className="text-[15px] font-semibold tracking-tight">Your goals</div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  Your goals
+                </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Where you want to study, what you want to study, and your budget
+                  Where you want to study, what you want to study, and your
+                  budget
                 </div>
               </div>
             </div>
@@ -775,7 +920,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               <div className="mt-3.5 grid gap-3.5 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <label className={labelClass}>Budget range (annual)</label>
-                  <select className={fieldClass} value={budgetRange} onChange={(e) => setBudgetRange(e.target.value)}>
+                  <select
+                    className={fieldClass}
+                    value={budgetRange}
+                    onChange={(e) => setBudgetRange(e.target.value)}
+                  >
                     <option value="">Select…</option>
                     {BUDGET_OPTIONS.map((b) => (
                       <option key={b} value={b}>
@@ -786,7 +935,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className={labelClass}>Need-based financial aid</label>
-                  <select className={fieldClass} value={needAid} onChange={(e) => setNeedAid(e.target.value)}>
+                  <select
+                    className={fieldClass}
+                    value={needAid}
+                    onChange={(e) => setNeedAid(e.target.value)}
+                  >
                     <option value="">Select…</option>
                     {AID_OPTIONS.map((a) => (
                       <option key={a} value={a}>
@@ -811,9 +964,12 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
-                <div className="text-[15px] font-semibold tracking-tight">Test scores</div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  Test scores
+                </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Add your test scores as you take them — your counselor will use these for matching
+                  Add your test scores as you take them — your counselor will
+                  use these for matching
                 </div>
               </div>
             </div>
@@ -838,7 +994,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                   />
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className={labelClass}>Predicted IB / A-Level grades</label>
+                  <label className={labelClass}>
+                    Predicted IB / A-Level grades
+                  </label>
                   <input
                     className={`${fieldClass} ${predictedSchool ? "bg-[var(--cream)] text-[var(--text-light)]" : ""}`}
                     value={predictedGrades}
@@ -858,7 +1016,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className={labelClass}>Other tests (AP, BMAT, LNAT…)</label>
+                  <label className={labelClass}>
+                    Other tests (AP, BMAT, LNAT…)
+                  </label>
                   <input
                     className={fieldClass}
                     placeholder="e.g. AP Calc BC: 5, AP Physics: 4"
@@ -885,15 +1045,23 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <svg
+                className="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden
+              >
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
             </div>
             <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              Universities you shortlist in <strong>University Search</strong> appear below. Use{" "}
-              <strong>Your application shortlist</strong> to track status and decisions for every school — including
-              ones you add manually.
+              Universities you shortlist in <strong>University Search</strong>{" "}
+              appear below. Use <strong>Your application shortlist</strong> to
+              track status and decisions for every school — including ones you
+              add manually.
             </p>
           </div>
 
@@ -908,7 +1076,8 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                     </span>
                   </div>
                   <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                    Pulled from your shortlist in the catalog (student activities)
+                    Pulled from your shortlist in the catalog (student
+                    activities)
                   </div>
                 </div>
               </div>
@@ -920,19 +1089,31 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[#E6F1FB] text-[#185FA5]">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
                           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                         </svg>
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[13.5px] font-semibold">{u.name}</span>
+                          <span className="text-[13.5px] font-semibold">
+                            {u.name}
+                          </span>
                           <span className="rounded-full bg-[var(--green-pale)] px-2 py-0.5 text-[10px] font-semibold text-[var(--green-dark)]">
                             Catalog
                           </span>
                         </div>
                         <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
-                          {[u.countryName ?? u.countryCode, u.city].filter(Boolean).join(" · ")}
+                          {[u.countryName ?? u.countryCode, u.city]
+                            .filter(Boolean)
+                            .join(" · ")}
                           {u.method ? (
                             <>
                               {" "}
@@ -942,8 +1123,12 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                               </span>
                             </>
                           ) : null}
-                          {u.deadlineDate ? <> · Deadline {formatDate(u.deadlineDate)}</> : null}
-                          {u.createdAt ? <> · Shortlisted {formatDate(u.createdAt)}</> : null}
+                          {u.deadlineDate ? (
+                            <> · Deadline {formatDate(u.deadlineDate)}</>
+                          ) : null}
+                          {u.createdAt ? (
+                            <> · Shortlisted {formatDate(u.createdAt)}</>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -964,10 +1149,13 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
                   Your application shortlist{" "}
-                  <span className="font-normal text-[var(--text-light)]">({shortlist.length})</span>
+                  <span className="font-normal text-[var(--text-light)]">
+                    ({shortlist.length})
+                  </span>
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Track status and decisions — add schools not in the catalog here
+                  Track status and decisions — add schools not in the catalog
+                  here
                 </div>
               </div>
               <button
@@ -975,7 +1163,15 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                 className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
                 onClick={() => setUniModal(true)}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  aria-hidden
+                >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 Add university
@@ -996,23 +1192,41 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[var(--green-bg)] text-[var(--green)]">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
                           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                         </svg>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[13.5px] font-semibold">{u.university_name}</div>
+                        <div className="text-[13.5px] font-semibold">
+                          {u.university_name}
+                        </div>
                         <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
-                          {[u.country, u.major_program].filter(Boolean).join(" · ")}
+                          {[u.country, u.major_program]
+                            .filter(Boolean)
+                            .join(" · ")}
                           {u.application_method ? (
                             <>
                               {" "}
-                              · <span className="rounded-full bg-[var(--green-pale)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--green-dark)]">
+                              ·{" "}
+                              <span className="rounded-full bg-[var(--green-pale)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--green-dark)]">
                                 {methodPillLabel(u.application_method)}
                               </span>
                             </>
                           ) : null}
-                          {u.application_deadline ? <> · Deadline {formatDate(u.application_deadline)}</> : null}
+                          {u.application_deadline ? (
+                            <>
+                              {" "}
+                              · Deadline {formatDate(u.application_deadline)}
+                            </>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -1026,7 +1240,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                           value={u.status}
                           onChange={(e) => {
                             const status = e.target.value;
-                            setShortlist((prev) => prev.map((x) => (x.id === u.id ? { ...x, status } : x)));
+                            setShortlist((prev) =>
+                              prev.map((x) =>
+                                x.id === u.id ? { ...x, status } : x,
+                              ),
+                            );
                             void updateShortlistRow(u.id, { status });
                           }}
                         >
@@ -1046,8 +1264,14 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                           value={u.decision ?? ""}
                           onChange={(e) => {
                             const decision = e.target.value;
-                            setShortlist((prev) => prev.map((x) => (x.id === u.id ? { ...x, decision } : x)));
-                            void updateShortlistRow(u.id, { decision: decision || null });
+                            setShortlist((prev) =>
+                              prev.map((x) =>
+                                x.id === u.id ? { ...x, decision } : x,
+                              ),
+                            );
+                            void updateShortlistRow(u.id, {
+                              decision: decision || null,
+                            });
                           }}
                         >
                           {UNIVERSITY_DECISIONS.map((d) => (
@@ -1063,7 +1287,15 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                         className="flex h-8 w-8 shrink-0 items-center justify-center self-end rounded-lg border border-[var(--border)] text-[var(--text-light)] hover:border-[#f0c4c4] hover:bg-[#FCEBEB] hover:text-[var(--red)]"
                         onClick={() => void removeUniversity(u.id)}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
                           <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
                         </svg>
                       </button>
@@ -1080,26 +1312,41 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <svg
+                className="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden
+              >
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
             </div>
             <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              Upload each document below. Once uploaded, it shows as <strong>Submitted</strong> and you can replace it
-              anytime.
+              Upload each document below. Once uploaded, it shows as{" "}
+              <strong>Submitted</strong> and you can replace it anytime.
             </p>
           </div>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
-                <div className="text-[15px] font-semibold tracking-tight">Document checklist</div>
-                <div className="mt-0.5 text-xs text-[var(--text-light)]">Upload to mark as submitted · Replace to update</div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  Document checklist
+                </div>
+                <div className="mt-0.5 text-xs text-[var(--text-light)]">
+                  Upload to mark as submitted · Replace to update
+                </div>
               </div>
             </div>
             <div className={`${panelBodyClass} space-y-2`}>
               {documents.map((d) => (
-                <DocumentRow key={d.id} doc={d} onPickFile={(file) => void uploadDocument(d, file)} />
+                <DocumentRow
+                  key={d.id}
+                  doc={d}
+                  onPickFile={(file) => void uploadDocument(d, file)}
+                />
               ))}
             </div>
           </div>
@@ -1109,19 +1356,36 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       {tab === "essays" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <CalloutInfo>
-            Save your essay drafts here. <strong>Each essay is linked to a specific university or application</strong> so
-            your counselor knows what each piece is for.
+            Save your essay drafts here.{" "}
+            <strong>
+              Each essay is linked to a specific university or application
+            </strong>{" "}
+            so your counselor knows what each piece is for.
           </CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
-                <div className="text-[15px] font-semibold tracking-tight">Your essays</div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  Your essays
+                </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
                   Personal statements, supplementals, and scholarship essays
                 </div>
               </div>
-              <button type="button" className={btnSmClass(true)} onClick={() => setEssayModal(true)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <button
+                type="button"
+                className={btnSmClass(true)}
+                onClick={() => setEssayModal(true)}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  aria-hidden
+                >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 New essay
@@ -1132,7 +1396,7 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                 <p className="text-sm text-[var(--text-mid)]">
                   {shortlistHintUniversities.length > 0
                     ? "You have not saved any essay drafts yet."
-                    : "No essays yet. Use \"New essay\" when you are ready."}
+                    : 'No essays yet. Use "New essay" when you are ready.'}
                 </p>
               ) : null}
               {essays.map((e) => {
@@ -1146,11 +1410,20 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                         : "bg-[var(--green-bg)] text-[var(--green)]";
                 const pill =
                   e.status === "in_review" ? (
-                    <StatusPill variant="amber" label={ESSAY_STATUS_LABEL.in_review} />
+                    <StatusPill
+                      variant="amber"
+                      label={ESSAY_STATUS_LABEL.in_review}
+                    />
                   ) : e.status === "drafting" ? (
-                    <StatusPill variant="blue" label={ESSAY_STATUS_LABEL.drafting} />
+                    <StatusPill
+                      variant="blue"
+                      label={ESSAY_STATUS_LABEL.drafting}
+                    />
                   ) : e.status === "complete" ? (
-                    <StatusPill variant="green" label={ESSAY_STATUS_LABEL.complete} />
+                    <StatusPill
+                      variant="green"
+                      label={ESSAY_STATUS_LABEL.complete}
+                    />
                   ) : null;
                 return (
                   <div key={e.id} className="space-y-2">
@@ -1158,31 +1431,52 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                       <div
                         className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${iconWrap}`}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
                           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[13.5px] font-semibold">{e.title}</div>
+                        <div className="text-[13.5px] font-semibold">
+                          {e.title}
+                        </div>
                         <div className="mt-0.5 text-[11.5px] leading-snug text-[var(--text-light)]">
                           For: <strong>{e.for_application ?? "—"}</strong>
                           {e.essay_type ? <> ({e.essay_type})</> : null}
                           {e.status === "not_started" ? (
                             <>
                               {" · "}Not started
-                              {e.requirement_note ? <> · {e.requirement_note}</> : e.limit_note ? <> · {e.limit_note}</> : null}
+                              {e.requirement_note ? (
+                                <> · {e.requirement_note}</>
+                              ) : e.limit_note ? (
+                                <> · {e.limit_note}</>
+                              ) : null}
                             </>
                           ) : (
                             <>
                               {" · "}V{e.version}
                               {e.limit_note ? <> · {e.limit_note}</> : null}
-                              {e.last_edited_at ? <> · Last edited {formatRelativeTime(e.last_edited_at)}</> : null}
+                              {e.last_edited_at ? (
+                                <>
+                                  {" "}
+                                  · Last edited{" "}
+                                  {formatRelativeTime(e.last_edited_at)}
+                                </>
+                              ) : null}
                               {e.counselor_comment_preview ? (
                                 <> · {e.counselor_comment_preview}</>
                               ) : e.comment_count > 0 ? (
                                 <>
                                   {" · "}
-                                  {e.comment_count} comment{e.comment_count !== 1 ? "s" : ""}
+                                  {e.comment_count} comment
+                                  {e.comment_count !== 1 ? "s" : ""}
                                 </>
                               ) : null}
                             </>
@@ -1207,7 +1501,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                             type="button"
                             className={btnSmClass(false)}
                             onClick={() => {
-                              setEssayOpenId((id) => (id === e.id ? null : e.id));
+                              setEssayOpenId((id) =>
+                                id === e.id ? null : e.id,
+                              );
                               setEssayDraft(e.body);
                             }}
                           >
@@ -1226,10 +1522,18 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                           placeholder="Write your essay here…"
                         />
                         <div className="mt-3 flex flex-wrap justify-end gap-2">
-                          <button type="button" className={btnSmClass(false)} onClick={() => setEssayOpenId(null)}>
+                          <button
+                            type="button"
+                            className={btnSmClass(false)}
+                            onClick={() => setEssayOpenId(null)}
+                          >
                             Cancel
                           </button>
-                          <button type="button" className={btnSmClass(true)} onClick={() => void saveEssayDraft(e.id)}>
+                          <button
+                            type="button"
+                            className={btnSmClass(true)}
+                            onClick={() => void saveEssayDraft(e.id)}
+                          >
                             Save
                           </button>
                         </div>
@@ -1241,13 +1545,24 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               {shortlistHintUniversities.length > 0 ? (
                 <div className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] px-3.5 py-3 sm:flex-row sm:items-center">
                   <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[var(--green-bg)] text-[var(--green)]">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
                       <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                     </svg>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-semibold text-[var(--text-light)]">
-                      Need to write essays for: {shortlistHintUniversities.map((u) => u.university_name).join(", ")}
+                      Need to write essays for:{" "}
+                      {shortlistHintUniversities
+                        .map((u) => u.university_name)
+                        .join(", ")}
                     </div>
                     <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
                       Click &quot;New essay&quot; above to draft for these
@@ -1263,19 +1578,37 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       {tab === "recommendations" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <CalloutInfo>
-            <strong>Most universities require 1–2 recommendation letters</strong> from teachers. Request them here —
-            your teacher gets a notification, drafts the letter on Univeera, and submits it directly.
+            <strong>
+              Most universities require 1–2 recommendation letters
+            </strong>{" "}
+            from teachers. Request them here — your teacher gets a notification,
+            drafts the letter on Univeera, and submits it directly.
           </CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
-                <div className="text-[15px] font-semibold tracking-tight">Recommendation letters</div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  Recommendation letters
+                </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Track requests, see which letters are pending, drafting, or submitted
+                  Track requests, see which letters are pending, drafting, or
+                  submitted
                 </div>
               </div>
-              <button type="button" className={btnSmClass(true)} onClick={() => setRecModal(true)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <button
+                type="button"
+                className={btnSmClass(true)}
+                onClick={() => setRecModal(true)}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  aria-hidden
+                >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 Request a letter
@@ -1283,7 +1616,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
             </div>
             <div className={`${panelBodyClass} space-y-[7px]`}>
               {recs.length === 0 ? (
-                <p className="text-sm text-[var(--text-mid)]">No requests yet.</p>
+                <p className="text-sm text-[var(--text-mid)]">
+                  No requests yet.
+                </p>
               ) : (
                 recs.map((r) => {
                   const iconWrap =
@@ -1303,18 +1638,31 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                   const teacherLine = `${r.teacher_name}${r.teacher_subject?.trim() ? ` (${r.teacher_subject.trim()})` : ""}`;
                   const pill =
                     r.status === "submitted" ? (
-                      <StatusPill variant="green" label={REC_STATUS_LABEL.submitted} />
+                      <StatusPill
+                        variant="green"
+                        label={REC_STATUS_LABEL.submitted}
+                      />
                     ) : r.status === "drafting" ? (
-                      <StatusPill variant="amber" label={REC_STATUS_LABEL.drafting} />
+                      <StatusPill
+                        variant="amber"
+                        label={REC_STATUS_LABEL.drafting}
+                      />
                     ) : (
-                      <StatusPill variant="red" label={REC_STATUS_LABEL.pending} />
+                      <StatusPill
+                        variant="red"
+                        label={REC_STATUS_LABEL.pending}
+                      />
                     );
                   const action =
                     r.status === "submitted" ? (
                       <button
                         type="button"
                         className={btnSmClass(false)}
-                        onClick={() => showToast("Letter viewer can be wired when submissions are stored.")}
+                        onClick={() =>
+                          showToast(
+                            "Letter viewer can be wired when submissions are stored.",
+                          )
+                        }
                       >
                         View
                       </button>
@@ -1322,7 +1670,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                       <button
                         type="button"
                         className={btnSmClass(false)}
-                        onClick={() => showToast(`Friendly nudge sent to ${r.teacher_name} (stub).`)}
+                        onClick={() =>
+                          showToast(
+                            `Friendly nudge sent to ${r.teacher_name} (stub).`,
+                          )
+                        }
                       >
                         Nudge
                       </button>
@@ -1330,7 +1682,11 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                       <button
                         type="button"
                         className={btnSmClass(false)}
-                        onClick={() => showToast("Request reminder (stub) — email delivery can be wired later.")}
+                        onClick={() =>
+                          showToast(
+                            "Request reminder (stub) — email delivery can be wired later.",
+                          )
+                        }
                       >
                         Resend
                       </button>
@@ -1340,16 +1696,29 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                       key={r.id}
                       className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-3 transition-colors hover:border-[var(--border)] sm:flex-row sm:items-center"
                     >
-                      <div className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${iconWrap}`}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <div
+                        className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${iconWrap}`}
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
                           <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
                         </svg>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[13.5px] font-semibold">{teacherLine}</div>
+                        <div className="text-[13.5px] font-semibold">
+                          {teacherLine}
+                        </div>
                         <div className="mt-0.5 text-[11.5px] leading-snug text-[var(--text-light)]">
-                          For: {r.for_application} · Requested {formatShortMonthDay(r.requested_at)} · {metaTail}
+                          For: {r.for_application} · Requested{" "}
+                          {formatShortMonthDay(r.requested_at)} · {metaTail}
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
@@ -1365,28 +1734,39 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
 
           <div className={`${panelClass} mt-3.5`}>
             <div className={panelHeadClass}>
-              <div className="text-[15px] font-semibold tracking-tight">Tips for great recommendation letters</div>
+              <div className="text-[15px] font-semibold tracking-tight">
+                Tips for great recommendation letters
+              </div>
             </div>
             <div className={`${panelBodyClass} pt-2`}>
               <div className="flex flex-col gap-2 text-[13px] leading-[1.55] text-[var(--text-mid)]">
                 <div className="flex gap-2.5">
-                  <span className="shrink-0 font-bold text-[var(--green)]">→</span>
+                  <span className="shrink-0 font-bold text-[var(--green)]">
+                    →
+                  </span>
                   <div>
-                    <strong>Ask early.</strong> Give teachers at least 4–6 weeks. They often write 20+ letters per cycle.
+                    <strong>Ask early.</strong> Give teachers at least 4–6
+                    weeks. They often write 20+ letters per cycle.
                   </div>
                 </div>
                 <div className="flex gap-2.5">
-                  <span className="shrink-0 font-bold text-[var(--green)]">→</span>
+                  <span className="shrink-0 font-bold text-[var(--green)]">
+                    →
+                  </span>
                   <div>
-                    <strong>Pick teachers who know you well.</strong> A B+ from a teacher who knows your story is better
-                    than an A from one who doesn&apos;t.
+                    <strong>Pick teachers who know you well.</strong> A B+ from
+                    a teacher who knows your story is better than an A from one
+                    who doesn&apos;t.
                   </div>
                 </div>
                 <div className="flex gap-2.5">
-                  <span className="shrink-0 font-bold text-[var(--green)]">→</span>
+                  <span className="shrink-0 font-bold text-[var(--green)]">
+                    →
+                  </span>
                   <div>
-                    <strong>Add a personal note.</strong> Remind them of a specific project, presentation, or moment they
-                    could mention.
+                    <strong>Add a personal note.</strong> Remind them of a
+                    specific project, presentation, or moment they could
+                    mention.
                   </div>
                 </div>
               </div>
@@ -1398,15 +1778,21 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       {tab === "tasks" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <CalloutInfo>
-            These tasks were assigned by <strong>{counselorDisplayName ?? "your counselor"}</strong>. Tick them off as you
-            complete them.
+            These tasks were assigned by{" "}
+            <strong>{counselorDisplayName ?? "your counselor"}</strong>. Tick
+            them off as you complete them.
           </CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
-                <div className="text-[15px] font-semibold tracking-tight">Tasks from your counselor</div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  Tasks from your counselor
+                </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  {openTasks} open{tasksDueThisWeek > 0 ? ` · ${tasksDueThisWeek} due this week` : ""}
+                  {openTasks} open
+                  {tasksDueThisWeek > 0
+                    ? ` · ${tasksDueThisWeek} due this week`
+                    : ""}
                 </div>
               </div>
             </div>
@@ -1422,17 +1808,26 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                   const priorityPill =
                     t.priority === "high" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(231,76,60,0.12)] px-[7px] py-px text-[10px] font-bold text-[#8c2d22]">
-                        <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--red)]" aria-hidden />
+                        <span
+                          className="h-1 w-1 shrink-0 rounded-full bg-[var(--red)]"
+                          aria-hidden
+                        />
                         High
                       </span>
                     ) : t.priority === "medium" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(212,162,42,0.14)] px-[7px] py-px text-[10px] font-bold text-[#7a5d10]">
-                        <span className="h-1 w-1 shrink-0 rounded-full bg-[#D4A22A]" aria-hidden />
+                        <span
+                          className="h-1 w-1 shrink-0 rounded-full bg-[#D4A22A]"
+                          aria-hidden
+                        />
                         Medium
                       </span>
                     ) : t.priority === "low" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#ECEAE5] px-[7px] py-px text-[10px] font-bold text-[var(--text-mid)]">
-                        <span className="h-1 w-1 shrink-0 rounded-full bg-[#a0a0a0]" aria-hidden />
+                        <span
+                          className="h-1 w-1 shrink-0 rounded-full bg-[#a0a0a0]"
+                          aria-hidden
+                        />
                         Low
                       </span>
                     ) : null;
@@ -1447,11 +1842,20 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                     >
                       <div
                         className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] border-[var(--border)] bg-white ${
-                          t.completed ? "border-[var(--green-bright)] bg-[var(--green-bright)]" : ""
+                          t.completed
+                            ? "border-[var(--green-bright)] bg-[var(--green-bright)]"
+                            : ""
                         }`}
                       >
                         {t.completed ? (
-                          <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+                          <svg
+                            className="h-2.5 w-2.5 text-white"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            aria-hidden
+                          >
                             <path d="M20 6L9 17l-5-5" />
                           </svg>
                         ) : null}
@@ -1462,17 +1866,36 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                         >
                           {t.title}
                         </div>
+                        {t.description?.trim() ? (
+                          <p
+                            className={`mt-1 whitespace-pre-wrap text-[12px] leading-snug text-[var(--text-mid)] ${
+                              t.completed
+                                ? "text-[var(--text-hint)] line-through"
+                                : ""
+                            }`}
+                          >
+                            {t.description.trim()}
+                          </p>
+                        ) : null}
                         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px] text-[var(--text-light)]">
                           <span>{assignLabel}</span>
                           {priorityPill}
                           {!t.completed && t.due_date ? (
-                            <span className={overdue ? "font-medium text-[var(--red)]" : undefined}>
+                            <span
+                              className={
+                                overdue
+                                  ? "font-medium text-[var(--red)]"
+                                  : undefined
+                              }
+                            >
                               Due {formatDate(t.due_date)}
                               {overdue ? " — overdue" : ""}
                             </span>
                           ) : null}
                           {t.completed && t.completed_at ? (
-                            <span className="text-[var(--text-light)]">Completed {formatDate(t.completed_at)}</span>
+                            <span className="text-[var(--text-light)]">
+                              Completed {formatDate(t.completed_at)}
+                            </span>
                           ) : null}
                         </div>
                       </div>
@@ -1485,23 +1908,116 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
         </div>
       ) : null}
 
-      <AddUniversityShortlistModal
-        open={uniModal}
-        onClose={() => setUniModal(false)}
-        countries={initial.countries}
-        onAdd={(f) => void addUniversity(f)}
-        onInvalid={() => showToast("Fill in all fields first")}
-      />
+      {uniModal ? (
+        <ModalVeil onClose={() => setUniModal(false)} title="Add a university">
+          <div className="flex flex-col gap-3.5">
+            <div>
+              <label className={labelClass}>University name</label>
+              <input
+                className={`${fieldClass} mt-1.5 w-full`}
+                value={uniForm.university_name}
+                onChange={(e) =>
+                  setUniForm((f) => ({ ...f, university_name: e.target.value }))
+                }
+                placeholder="e.g. University of Edinburgh"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>University location</label>
+              <select
+                className={`${fieldClass} mt-1.5 w-full`}
+                value={uniForm.country}
+                onChange={(e) =>
+                  setUniForm((f) => ({ ...f, country: e.target.value }))
+                }
+              >
+                <option value="">Select country…</option>
+                {initial.countries.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Major / program</label>
+              <input
+                className={`${fieldClass} mt-1.5 w-full`}
+                value={uniForm.major_program}
+                onChange={(e) =>
+                  setUniForm((f) => ({ ...f, major_program: e.target.value }))
+                }
+                placeholder="e.g. BSc Finance"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>How do you apply?</label>
+              <select
+                className={`${fieldClass} mt-1.5 w-full`}
+                value={uniForm.application_method}
+                onChange={(e) =>
+                  setUniForm((f) => ({
+                    ...f,
+                    application_method: e.target.value,
+                  }))
+                }
+              >
+                <option value="">Select application system…</option>
+                {APPLICATION_METHOD_OPTIONS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Deadline (optional)</label>
+              <input
+                type="date"
+                className={`${fieldClass} mt-1.5 w-full`}
+                value={uniForm.application_deadline}
+                onChange={(e) =>
+                  setUniForm((f) => ({
+                    ...f,
+                    application_deadline: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+          <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
+              onClick={() => setUniModal(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
+              onClick={() => void addUniversity()}
+            >
+              Add to shortlist
+            </button>
+          </div>
+        </ModalVeil>
+      ) : null}
 
       {essayModal ? (
-        <ModalVeil onClose={() => setEssayModal(false)} title="Start a new essay">
+        <ModalVeil
+          onClose={() => setEssayModal(false)}
+          title="Start a new essay"
+        >
           <div className="flex flex-col gap-3.5">
             <div>
               <label className={labelClass}>Essay title</label>
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={essayForm.title}
-                onChange={(e) => setEssayForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(e) =>
+                  setEssayForm((f) => ({ ...f, title: e.target.value }))
+                }
               />
             </div>
             <div>
@@ -1509,7 +2025,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               <select
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={essayForm.essay_type}
-                onChange={(e) => setEssayForm((f) => ({ ...f, essay_type: e.target.value }))}
+                onChange={(e) =>
+                  setEssayForm((f) => ({ ...f, essay_type: e.target.value }))
+                }
               >
                 {ESSAY_TYPE_OPTIONS.map((x) => (
                   <option key={x} value={x}>
@@ -1523,29 +2041,49 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={essayForm.for_application}
-                onChange={(e) => setEssayForm((f) => ({ ...f, for_application: e.target.value }))}
+                onChange={(e) =>
+                  setEssayForm((f) => ({
+                    ...f,
+                    for_application: e.target.value,
+                  }))
+                }
               />
             </div>
             <div>
-              <label className={labelClass}>Word / character limit (if known)</label>
+              <label className={labelClass}>
+                Word / character limit (if known)
+              </label>
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={essayForm.limit_note}
-                onChange={(e) => setEssayForm((f) => ({ ...f, limit_note: e.target.value }))}
+                onChange={(e) =>
+                  setEssayForm((f) => ({ ...f, limit_note: e.target.value }))
+                }
               />
             </div>
             <div>
-              <label className={labelClass}>Requirement / prompt note (optional)</label>
+              <label className={labelClass}>
+                Requirement / prompt note (optional)
+              </label>
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={essayForm.requirement_note}
-                onChange={(e) => setEssayForm((f) => ({ ...f, requirement_note: e.target.value }))}
+                onChange={(e) =>
+                  setEssayForm((f) => ({
+                    ...f,
+                    requirement_note: e.target.value,
+                  }))
+                }
                 placeholder="e.g. Required for Rotman supplemental"
               />
             </div>
           </div>
           <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
-            <button type="button" className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold" onClick={() => setEssayModal(false)}>
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold"
+              onClick={() => setEssayModal(false)}
+            >
               Cancel
             </button>
             <button
@@ -1560,9 +2098,13 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
       ) : null}
 
       {recModal ? (
-        <ModalVeil onClose={() => setRecModal(false)} title="Request a recommendation letter">
+        <ModalVeil
+          onClose={() => setRecModal(false)}
+          title="Request a recommendation letter"
+        >
           <p className="mb-3 rounded-lg border border-[var(--green-bg)] bg-[var(--green-pale)] px-3 py-2.5 text-xs leading-relaxed text-[var(--green-dark)]">
-            Your teacher receives the request details here; full email delivery can be wired later.
+            Your teacher receives the request details here; full email delivery
+            can be wired later.
           </p>
           <div className="grid gap-3.5 sm:grid-cols-3">
             <div>
@@ -1570,7 +2112,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={recForm.teacher_name}
-                onChange={(e) => setRecForm((f) => ({ ...f, teacher_name: e.target.value }))}
+                onChange={(e) =>
+                  setRecForm((f) => ({ ...f, teacher_name: e.target.value }))
+                }
               />
             </div>
             <div>
@@ -1578,7 +2122,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={recForm.teacher_subject}
-                onChange={(e) => setRecForm((f) => ({ ...f, teacher_subject: e.target.value }))}
+                onChange={(e) =>
+                  setRecForm((f) => ({ ...f, teacher_subject: e.target.value }))
+                }
                 placeholder="e.g. Mathematics"
               />
             </div>
@@ -1588,7 +2134,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
                 type="email"
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={recForm.teacher_email}
-                onChange={(e) => setRecForm((f) => ({ ...f, teacher_email: e.target.value }))}
+                onChange={(e) =>
+                  setRecForm((f) => ({ ...f, teacher_email: e.target.value }))
+                }
               />
             </div>
           </div>
@@ -1597,7 +2145,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
             <input
               className={`${fieldClass} mt-1.5 w-full`}
               value={recForm.for_application}
-              onChange={(e) => setRecForm((f) => ({ ...f, for_application: e.target.value }))}
+              onChange={(e) =>
+                setRecForm((f) => ({ ...f, for_application: e.target.value }))
+              }
             />
           </div>
           <div className="mt-3.5">
@@ -1605,7 +2155,9 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
             <textarea
               className={`${fieldClass} mt-1.5 min-h-[60px] w-full resize-y`}
               value={recForm.personal_note}
-              onChange={(e) => setRecForm((f) => ({ ...f, personal_note: e.target.value }))}
+              onChange={(e) =>
+                setRecForm((f) => ({ ...f, personal_note: e.target.value }))
+              }
             />
           </div>
           <div className="mt-3.5">
@@ -1614,11 +2166,17 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
               type="date"
               className={`${fieldClass} mt-1.5 w-full`}
               value={recForm.needed_by}
-              onChange={(e) => setRecForm((f) => ({ ...f, needed_by: e.target.value }))}
+              onChange={(e) =>
+                setRecForm((f) => ({ ...f, needed_by: e.target.value }))
+              }
             />
           </div>
           <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
-            <button type="button" className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold" onClick={() => setRecModal(false)}>
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold"
+              onClick={() => setRecModal(false)}
+            >
               Cancel
             </button>
             <button
@@ -1634,13 +2192,19 @@ export function MyApplicationsClient({ initial }: { initial: MyApplicationsIniti
 
       {toast ? (
         <div className="fixed bottom-6 right-6 z-[200] flex items-center gap-2 rounded-[10px] bg-[var(--green-dark)] px-4 py-3 text-[13px] font-medium text-white shadow-lg">
-          <svg className="h-3.5 w-3.5 text-[var(--green-bright)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+          <svg
+            className="h-3.5 w-3.5 text-[var(--green-bright)]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            aria-hidden
+          >
             <path d="M20 6L9 17l-5-5" />
           </svg>
           {toast}
         </div>
       ) : null}
-
     </div>
   );
 }
@@ -1667,7 +2231,9 @@ function TagField({
   };
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]">{label}</label>
+      <label className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]">
+        {label}
+      </label>
       <div
         className="flex min-h-[42px] cursor-text flex-wrap items-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 focus-within:border-[var(--green-light)]"
         onClick={(e) => {
@@ -1690,7 +2256,15 @@ function TagField({
                 onChange(values.filter((x) => x !== t));
               }}
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden
+              >
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
@@ -1709,21 +2283,39 @@ function TagField({
           }}
         />
       </div>
-      {hint ? <p className="text-[11.5px] text-[var(--text-hint)]">{hint}</p> : null}
+      {hint ? (
+        <p className="text-[11.5px] text-[var(--text-hint)]">{hint}</p>
+      ) : null}
     </div>
   );
 }
 
-function DocumentRow({ doc, onPickFile }: { doc: DocRow; onPickFile: (f: File) => void }) {
+function DocumentRow({
+  doc,
+  onPickFile,
+}: {
+  doc: DocRow;
+  onPickFile: (f: File) => void;
+}) {
   const missing = doc.status === "missing";
   return (
     <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center">
       <div
         className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${
-          missing ? "bg-[#FCEBEB] text-[var(--red)]" : "bg-[rgba(52,152,219,0.12)] text-[#3498DB]"
+          missing
+            ? "bg-[#FCEBEB] text-[var(--red)]"
+            : "bg-[rgba(52,152,219,0.12)] text-[#3498DB]"
         }`}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden
+        >
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
         </svg>
       </div>
@@ -1738,14 +2330,22 @@ function DocumentRow({ doc, onPickFile }: { doc: DocRow; onPickFile: (f: File) =
       <div className="flex shrink-0 items-center gap-2">
         <span
           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
-            missing ? "bg-[rgba(231,76,60,0.12)] text-[#8c2d22]" : "bg-[rgba(52,152,219,0.12)] text-[#1d4d70]"
+            missing
+              ? "bg-[rgba(231,76,60,0.12)] text-[#8c2d22]"
+              : "bg-[rgba(52,152,219,0.12)] text-[#1d4d70]"
           }`}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
           {missing ? "Missing" : "Submitted"}
         </span>
         <label className="cursor-pointer">
-          <input type="file" className="sr-only" onChange={(e) => e.target.files?.[0] && onPickFile(e.target.files[0])} />
+          <input
+            type="file"
+            className="sr-only"
+            onChange={(e) =>
+              e.target.files?.[0] && onPickFile(e.target.files[0])
+            }
+          />
           <span
             className={`inline-flex rounded-lg border px-2.5 py-1.5 text-[11.5px] font-semibold ${
               missing
@@ -1756,6 +2356,52 @@ function DocumentRow({ doc, onPickFile }: { doc: DocRow; onPickFile: (f: File) =
             {missing ? "Upload" : "Replace"}
           </span>
         </label>
+      </div>
+    </div>
+  );
+}
+
+function ModalVeil({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(15,30,20,0.5)] p-5"
+      role="dialog"
+      aria-modal
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="max-h-[90vh] w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-[var(--border-light)] px-[22px] py-4">
+          <h2 className="font-[family-name:var(--font-dm-serif)] text-xl tracking-tight">
+            {title}
+          </h2>
+          <button
+            type="button"
+            className="rounded-md p-1.5 text-[var(--text-light)] hover:bg-[var(--cream)]"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="px-[22px] py-[18px]">{children}</div>
       </div>
     </div>
   );
