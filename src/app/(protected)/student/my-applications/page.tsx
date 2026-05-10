@@ -1,48 +1,16 @@
-import type { Database } from "@/database.types";
+import {
+  ensureStudentApplicationDocuments,
+} from "@/lib/ensure-student-application-documents";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import { notFound, redirect } from "next/navigation";
 
 import { MyApplicationsClient } from "./_components/my-applications-client";
-import { DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS } from "./_lib/my-applications-defaults";
 import type { ActivityShortlistQueryRow } from "./_lib/normalize-activity-shortlist";
 import { normalizeActivityShortlistUniversities } from "./_lib/normalize-activity-shortlist";
 import type { MyApplicationsInitialPayload } from "./_lib/my-applications-types";
 
 export const dynamic = "force-dynamic";
-
-type DocRow = Database["public"]["Tables"]["student_my_application_documents"]["Row"];
-type SecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
-
-async function ensureDefaultDocuments(supabase: SecretClient, studentId: string): Promise<DocRow[]> {
-  const { data: existing, error: selErr } = await supabase
-    .from("student_my_application_documents")
-    .select("*")
-    .eq("student_id", studentId);
-  if (selErr) {
-    console.error(selErr);
-    return [];
-  }
-  if (existing && existing.length > 0) {
-    return existing;
-  }
-  const rows = DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS.map((s) => ({
-    student_id: studentId,
-    slot_key: s.slot_key,
-    display_name: s.display_name,
-    description: s.description,
-    status: "missing" as const,
-  }));
-  const { data: inserted, error: insErr } = await supabase
-    .from("student_my_application_documents")
-    .insert(rows)
-    .select("*");
-  if (insErr) {
-    console.error(insErr);
-    return [];
-  }
-  return inserted ?? [];
-}
 
 export default async function MyApplicationsPage() {
   const auth = await requireStudentSession();
@@ -119,7 +87,7 @@ export default async function MyApplicationsPage() {
       .order("created_at", { ascending: false }),
   ]);
 
-  const documents = await ensureDefaultDocuments(secret, auth.studentId);
+  const documents = await ensureStudentApplicationDocuments(secret, auth.studentId);
 
   const activityShortlistedUniversities = normalizeActivityShortlistUniversities(
     (activityShortlistRows ?? []) as ActivityShortlistQueryRow[],

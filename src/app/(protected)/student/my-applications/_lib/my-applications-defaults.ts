@@ -1,5 +1,11 @@
 /** Predefined document checklist rows (slot_key unique per student). */
 export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
+  {
+    slot_key: "predicted",
+    display_name: "Predicted",
+    description:
+      "Predicted grades or outcomes — your school enters this; it is read-only for you.",
+  },
   { slot_key: "passport", display_name: "Passport", description: null as string | null },
   { slot_key: "transcript", display_name: "Transcript", description: null },
   { slot_key: "cv_resume", display_name: "CV / Resume", description: null },
@@ -29,6 +35,9 @@ export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
     description: "Required only for art / design / architecture programs",
   },
 ] as const;
+
+/** School fills this via portal; students cannot edit the row (RLS). */
+export const SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY = "predicted";
 
 export const UNIVERSITY_APPLICATION_STATUSES = [
   "considering",

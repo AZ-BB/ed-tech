@@ -1,15 +1,18 @@
 "use client";
 
+import { SchoolTasksClient } from "@/app/(protected)/school/tasks/_components/school-tasks-client";
+import type { SchoolTaskTableRow } from "@/app/(protected)/school/tasks/_lib/fetch-school-tasks-page";
 import { updateSchoolStudentCreditLimits, addSchoolStudentNote } from "@/actions/school-students";
 import type { Database } from "@/database.types";
 import { SCHOOL_STUDENT_NOTE_TAGS } from "@/lib/school-student-note-tags";
 import { format } from "date-fns";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { SchoolStudentDetailPayload } from "../_lib/fetch-school-student-detail";
 
+import { SchoolStudentDocumentsTab } from "./school-student-documents-tab";
 import { SchoolStudentShortlistTab } from "./school-student-shortlist-tab";
 
 type TabId =
@@ -46,6 +49,19 @@ export type SchoolStudentViewClientProps = {
   shortlist: SchoolStudentDetailPayload["shortlist"];
   countries: SchoolStudentDetailPayload["countries"];
   studentNotes: SchoolStudentDetailPayload["studentNotes"];
+  documents: SchoolStudentDetailPayload["documents"];
+  /** From `?tab=tasks` so filter Apply keeps the Tasks tab active after navigation. */
+  initialTab?: TabId;
+  tasksPanel: {
+    rows: SchoolTaskTableRow[];
+    totalRows: number;
+    page: number;
+    limit: number;
+    q: string;
+    when: string;
+    priority: string;
+    status: string;
+  };
 };
 
 function initials(first: string, last: string): string {
@@ -538,34 +554,31 @@ function NotesTabContent({
   return (
     <Panel
       head="Counselor notes"
-      sub="Internal-only — visible to school admins at your school; students cannot see these."
+      sub="Internal-only — students cannot see these."
     >
-      <div className="mb-[14px] flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3.5">
+      <div className="mb-3.5 flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] p-3.5">
         <form ref={formRef} action={submit} className="flex flex-col gap-2.5">
           <input type="hidden" name="student_id" value={studentId} />
           <input type="hidden" name="note_type" value={selectedNoteTag} />
-          <div>
-            <textarea
-              name="content"
-              rows={4}
-              placeholder="Add internal counselor note… (Ctrl+Enter or ⌘+Enter to save)"
-              className="min-h-[64px] w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[var(--green-light)]"
-              disabled={pending}
-              maxLength={8000}
-              onKeyDown={(e) => {
-                if (
-                  (e.metaKey || e.ctrlKey) &&
-                  e.key === "Enter" &&
-                  !pending
-                ) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-            />
-          </div>
+          <textarea
+            name="content"
+            placeholder="Add internal counselor note... (Cmd+Enter to save)"
+            className="min-h-[64px] w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)]"
+            disabled={pending}
+            maxLength={8000}
+            onKeyDown={(e) => {
+              if (
+                (e.metaKey || e.ctrlKey) &&
+                e.key === "Enter" &&
+                !pending
+              ) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-[5px]">
               {SCHOOL_STUDENT_NOTE_TAGS.map((tag) => {
                 const active = selectedNoteTag === tag;
                 return (
@@ -574,10 +587,10 @@ function NotesTabContent({
                     type="button"
                     disabled={pending}
                     onClick={() => setSelectedNoteTag(tag)}
-                    className={`cursor-pointer rounded-[14px] border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
+                    className={`cursor-pointer rounded-[14px] border px-[9px] py-1 font-[family-name:var(--font-dm-sans)] text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
                       active
                         ? "border-[var(--green-light)] bg-[var(--green-pale)] text-[var(--green-dark)]"
-                        : "border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:text-[var(--green-dark)]"
+                        : "border-[var(--border)] bg-white text-[var(--text-mid)]"
                     }`}
                   >
                     {tag}
@@ -588,7 +601,7 @@ function NotesTabContent({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-[var(--green-dark)] disabled:opacity-55"
+              className="inline-flex shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-55"
             >
               {pending ? "Saving…" : "Save note"}
             </button>
@@ -600,57 +613,45 @@ function NotesTabContent({
       </div>
 
       {notes.length === 0 ? (
-        <EmptyBlock message="No notes yet. Add one above — only staff at your school can see this list." />
+        <div className="py-8 text-center text-[13px] text-[var(--text-light)]">
+          No notes yet — add the first one above
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-[10px] border border-[var(--border-light)]">
-          <table className="w-full border-separate border-spacing-0 text-[13px]">
-            <thead>
-              <tr>
-                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 pl-5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
-                  Type
-                </th>
-                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
-                  Note
-                </th>
-                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
-                  Written by
-                </th>
-                <th className="border-b border-[var(--border-light)] bg-[#faf9f4] px-4 py-2.5 pr-5 text-left text-[11px] font-semibold tracking-[0.06em] text-[var(--text-light)] uppercase whitespace-nowrap">
-                  When
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {notes.map((n) => (
-                <tr
-                  key={n.id}
-                  className="transition-colors hover:bg-[#faf9f4]/80 [&_td]:border-b [&_td]:border-[var(--border-light)] last:[&_td]:border-b-0"
-                >
-                  <td className="max-w-[180px] px-4 py-3 pl-5 align-top">
-                    <span className="inline-flex rounded-full border border-[var(--border)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-mid)]">
-                      {n.noteType}
-                    </span>
-                  </td>
-                  <td className="min-w-[200px] whitespace-pre-wrap px-4 py-3 align-top text-[var(--text)] leading-snug">
-                    {n.content}
-                  </td>
-                  <td className="max-w-[160px] px-4 py-3 align-top text-[12.5px] text-[var(--text-mid)]">
+        <div className="flex flex-col">
+          {notes.map((n) => (
+            <div
+              key={n.id}
+              className="mb-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3.5 last:mb-0"
+            >
+              <div className="mb-2 flex items-center justify-between gap-2.5">
+                <div className="min-w-0 font-[family-name:var(--font-dm-sans)] text-[12px] text-[var(--text-mid)]">
+                  <strong className="font-semibold text-[var(--text)]">
                     {n.authorLabel}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 pr-5 align-top text-[11.5px] text-[var(--text-hint)]">
-                    {formatWhen(n.createdAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </strong>
+                  {" · "}
+                  <span className="inline-flex items-center gap-1 rounded-[20px] border border-[var(--border)] bg-transparent px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap text-[var(--text-mid)] leading-snug">
+                    {n.noteType}
+                  </span>
+                </div>
+                <div className="shrink-0 font-[family-name:var(--font-dm-sans)] text-[11.5px] text-[var(--text-hint)]">
+                  {formatWhen(n.createdAt)}
+                </div>
+              </div>
+              <div className="font-[family-name:var(--font-dm-sans)] text-[13px] leading-[1.55] text-[var(--text)] whitespace-pre-wrap">
+                {n.content}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </Panel>
   );
 }
 
-type EmptyTabId = Exclude<TabId, "snapshot" | "activity" | "shortlist" | "notes">;
+type EmptyTabId = Exclude<
+  TabId,
+  "snapshot" | "activity" | "shortlist" | "notes" | "docs" | "tasks"
+>;
 
 const EMPTY_TAB: Record<
   EmptyTabId,
@@ -662,22 +663,10 @@ const EMPTY_TAB: Record<
       "Essay requirements + uploaded drafts. Status updates auto-flow as files come in. — coming soon.",
     message: "Content coming soon.",
   },
-  docs: {
-    title: "Essays & documents",
-    subtitle:
-      "Document checklist — change status anytime, click upload to add files — coming soon.",
-    message: "Content coming soon.",
-  },
   interactions: {
     title: "Interactions log",
     subtitle:
       "Every meeting, call, email, and parent contact — used for end-of-year reporting and inspections — coming soon.",
-    message: "Content coming soon.",
-  },
-  tasks: {
-    title: "Tasks / next actions",
-    subtitle:
-      "Track what needs to happen, by when, what priority — coming soon.",
     message: "Content coming soon.",
   },
   history: {
@@ -695,8 +684,33 @@ export function SchoolStudentViewClient({
   shortlist,
   countries,
   studentNotes,
+  documents,
+  initialTab = "snapshot",
+  tasksPanel,
 }: SchoolStudentViewClientProps) {
-  const [tab, setTab] = useState<TabId>("snapshot");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<TabId>(initialTab);
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "tasks") setNewTaskOpen(false);
+  }, [tab]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (tab === "tasks") {
+      if (next.get("tab") === "tasks") return;
+      next.set("tab", "tasks");
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    } else {
+      if (next.get("tab") !== "tasks") return;
+      next.delete("tab");
+      const q = next.toString();
+      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    }
+  }, [tab, pathname, router, searchParams]);
 
   const ini = useMemo(
     () => initials(student.firstName, student.lastName),
@@ -747,6 +761,30 @@ export function SchoolStudentViewClient({
   } else if (tab === "notes") {
     tabBody = (
       <NotesTabContent studentId={student.id} notes={studentNotes} />
+    );
+  } else if (tab === "docs") {
+    tabBody = (
+      <SchoolStudentDocumentsTab
+        studentId={student.id}
+        initialDocuments={documents}
+      />
+    );
+  } else if (tab === "tasks") {
+    tabBody = (
+      <SchoolTasksClient
+        variant="studentProfile"
+        scopedStudentId={student.id}
+        rows={tasksPanel.rows}
+        totalRows={tasksPanel.totalRows}
+        page={tasksPanel.page}
+        limit={tasksPanel.limit}
+        q={tasksPanel.q}
+        when={tasksPanel.when}
+        priority={tasksPanel.priority}
+        status={tasksPanel.status}
+        studentOptions={[]}
+        newTaskModal={{ open: newTaskOpen, onOpenChange: setNewTaskOpen }}
+      />
     );
   } else {
     const cfg = EMPTY_TAB[tab];
@@ -809,9 +847,11 @@ export function SchoolStudentViewClient({
             </button>
             <button
               type="button"
-              disabled
-              className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] opacity-55"
-              title="Coming soon"
+              onClick={() => {
+                setTab("tasks");
+                setNewTaskOpen(true);
+              }}
+              className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
             >
               + Add task
             </button>

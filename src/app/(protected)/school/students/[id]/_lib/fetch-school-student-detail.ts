@@ -1,8 +1,12 @@
 import { formatDistanceToNow } from "date-fns";
 
 import type { Database } from "@/database.types";
+import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
 import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
-import { createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
 
 type SchoolCreditsEmbed = {
   name?: string;
@@ -101,6 +105,8 @@ export type SchoolStudentDetailPayload = {
     createdAt: string;
     authorLabel: string;
   }[];
+  /** Application document checklist (`student_my_application_documents`), ordered by default slots. */
+  documents: Database["public"]["Tables"]["student_my_application_documents"]["Row"][];
 };
 
 function stageFromProfilePercent(pct: number): string {
@@ -157,6 +163,8 @@ export async function fetchSchoolStudentDetail(
     return null;
   }
 
+  const secret = await createSupabaseSecretClient();
+
   const schoolsEmbedRaw = profile.schools as
     | SchoolCreditsEmbed
     | SchoolCreditsEmbed[]
@@ -184,7 +192,6 @@ export async function fetchSchoolStudentDetail(
     counselorRes,
     shortlistRowsRes,
     countriesRes,
-    docsRes,
     tasksRes,
     advisorSessRes,
     ambRes,
@@ -195,6 +202,7 @@ export async function fetchSchoolStudentDetail(
     essayReviewRes,
     matchingRes,
     notesRes,
+    documents,
   ] = await Promise.all([
     supabase
       .from("student_activities")
@@ -238,11 +246,6 @@ export async function fetchSchoolStudentDetail(
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
     supabase.from("countries").select("id, name").order("name", { ascending: true }),
-    supabase
-      .from("student_my_application_documents")
-      .select("id", { count: "exact", head: true })
-      .eq("student_id", studentId)
-      .not("storage_path", "is", null),
     supabase
       .from("student_my_application_tasks")
       .select("id", { count: "exact", head: true })
@@ -305,6 +308,7 @@ export async function fetchSchoolStudentDetail(
       .eq("student_id", studentId)
       .order("created_at", { ascending: false })
       .limit(100),
+    ensureStudentApplicationDocuments(secret, studentId),
   ]);
 
   if (latestActErr) {
@@ -495,7 +499,7 @@ export async function fetchSchoolStudentDetail(
     applicationProfile: app,
     quickStats: {
       universitiesCount: shortlist.length,
-      documentsInCount: docsRes.count ?? 0,
+      documentsInCount: documents.filter((d) => d.storage_path != null).length,
       openTasksCount: tasksRes.count ?? 0,
       supportSessionsCount:
         (advisorSessRes.count ?? 0) + (ambRes.count ?? 0),
@@ -504,5 +508,6 @@ export async function fetchSchoolStudentDetail(
     shortlist,
     countries: countriesRes.data ?? [],
     studentNotes,
+    documents,
   };
 }

@@ -1549,6 +1549,7 @@ export type Database = {
           display_name: string
           file_name: string | null
           id: string
+          school_text_value: string | null
           slot_key: string
           status: string
           storage_path: string | null
@@ -1562,6 +1563,7 @@ export type Database = {
           display_name: string
           file_name?: string | null
           id?: string
+          school_text_value?: string | null
           slot_key: string
           status?: string
           storage_path?: string | null
@@ -1575,6 +1577,7 @@ export type Database = {
           display_name?: string
           file_name?: string | null
           id?: string
+          school_text_value?: string | null
           slot_key?: string
           status?: string
           storage_path?: string | null

@@ -9,10 +9,12 @@ import { useCallback, useMemo, useState } from "react";
 import type { MyApplicationsInitialPayload } from "../_lib/my-applications-types";
 import {
   AID_OPTIONS,
+  APPLICATION_METHOD_OPTIONS,
   BUDGET_OPTIONS,
   CURRICULUM_OPTIONS,
   ESSAY_TYPE_OPTIONS,
   GRADE_OPTIONS,
+  SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
   TARGET_INTAKE_OPTIONS,
   UNIVERSITY_APPLICATION_STATUSES,
   UNIVERSITY_DECISIONS,
@@ -288,6 +290,13 @@ export function MyApplicationsClient({
   const [essayModal, setEssayModal] = useState(false);
   const [recModal, setRecModal] = useState(false);
 
+  const [uniForm, setUniForm] = useState({
+    university_name: "",
+    country: "",
+    major_program: "",
+    application_method: "",
+    application_deadline: "",
+  });
   const [essayForm, setEssayForm] = useState({
     title: "",
     essay_type: ESSAY_TYPE_OPTIONS[0] as string,
@@ -451,7 +460,7 @@ export function MyApplicationsClient({
       application_deadline: uniForm.application_deadline || null,
       status: "considering",
       decision: "",
-      sort_order: shortlist.length ? Math.max(...shortlist.map((r) => r.sort_order)) + 1 : 0,
+      sort_order: nextSort,
     };
     const { data, error } = await supabase
       .from("student_shortlist_universities")
@@ -464,6 +473,13 @@ export function MyApplicationsClient({
     }
     setShortlist((prev) => [data, ...prev]);
     setUniModal(false);
+    setUniForm({
+      university_name: "",
+      country: "",
+      major_program: "",
+      application_method: "",
+      application_deadline: "",
+    });
     showToast(`${data.university_name} added · counselor will see this`);
   };
 
@@ -492,6 +508,10 @@ export function MyApplicationsClient({
   };
 
   const uploadDocument = async (doc: DocRow, file: File) => {
+    if (doc.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY) {
+      showToast("Your school enters this — it is read-only for you.");
+      return;
+    }
     const safeName = file.name.replace(/[^\w.\-()+ ]/g, "_");
     const path = `${initial.studentId}/${doc.slot_key}/${Date.now()}_${safeName}`;
     const { error: upErr } = await supabase.storage
@@ -1250,7 +1270,7 @@ export function MyApplicationsClient({
                         >
                           {UNIVERSITY_APPLICATION_STATUSES.map((s) => (
                             <option key={s} value={s}>
-                              {UNIVERSITY_STATUS_LABEL[s] ?? s}
+                              {STATUS_LABEL[s] ?? s}
                             </option>
                           ))}
                         </select>
@@ -1276,7 +1296,7 @@ export function MyApplicationsClient({
                         >
                           {UNIVERSITY_DECISIONS.map((d) => (
                             <option key={d || "none"} value={d}>
-                              {UNIVERSITY_DECISION_LABEL[d] ?? d}
+                              {DECISION_LABEL[d] ?? d}
                             </option>
                           ))}
                         </select>
@@ -1325,8 +1345,9 @@ export function MyApplicationsClient({
               </svg>
             </div>
             <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              Upload each document below. Once uploaded, it shows as{" "}
-              <strong>Submitted</strong> and you can replace it anytime.
+              Upload each file-based document below. <strong>Predicted</strong>{" "}
+              is entered by your school and is read-only. Once uploaded, a file
+              shows as <strong>Submitted</strong> and you can replace it anytime.
             </p>
           </div>
           <div className={panelClass}>
@@ -1336,7 +1357,7 @@ export function MyApplicationsClient({
                   Document checklist
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Upload to mark as submitted · Replace to update
+                  Upload files where needed · Predicted is from your school
                 </div>
               </div>
             </div>
@@ -2297,6 +2318,62 @@ function DocumentRow({
   doc: DocRow;
   onPickFile: (f: File) => void;
 }) {
+  if (doc.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY) {
+    const text = doc.school_text_value?.trim();
+    const has = !!text;
+    return (
+      <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3 sm:flex-row sm:items-center">
+        <div
+          className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${
+            has
+              ? "bg-[var(--green-bg)] text-[var(--green)]"
+              : "bg-[#ECEAE5] text-[var(--text-mid)]"
+          }`}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-semibold">{doc.display_name}</div>
+          <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
+            {has ? (
+              <span className="text-[var(--text)]">{text}</span>
+            ) : (
+              "Your school has not entered this yet."
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
+              has
+                ? "bg-[rgba(82,183,135,.13)] text-[#1B4332]"
+                : "bg-[#ECEAE5] text-[var(--text-mid)]"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+            {has ? "From school" : "Pending"}
+          </span>
+          <span
+            className="inline-flex rounded-lg border border-[var(--border)] bg-[var(--cream)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-hint)]"
+            title="Read-only"
+          >
+            View only
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   const missing = doc.status === "missing";
   return (
     <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center">

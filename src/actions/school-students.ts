@@ -1,6 +1,10 @@
 "use server";
 
 import { fetchPendingInvitesPage } from "@/app/(protected)/school/students/_lib/fetch-pending-invites-page";
+import {
+  DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS,
+  SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
+} from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import {
   isSchoolStudentNoteTag,
@@ -469,4 +473,122 @@ export async function addSchoolStudentNote(
 
   revalidatePath(`/school/students/${studentId}`);
   return { data: null, error: null };
+}
+
+/**
+ * Counselor-only: text-only **Predicted** document (`school_text_value`, slot `predicted`).
+ * Mirrors into `student_application_profile.predicted_grades` for the student profile.
+ */
+export async function updateSchoolPredictedDocumentSlot(
+  studentId: string,
+  schoolText: string,
+): Promise<{ ok: true } | { error: string }> {
+  if (!studentId || !UUID_RE.test(studentId)) {
+    return { error: "Invalid student." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return {
+      error:
+        "Could not verify your school admin access. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  const { data: spRow } = await supabase
+    .from("student_profiles")
+    .select("id")
+    .eq("id", studentId)
+    .eq("school_id", sap.school_id)
+    .maybeSingle();
+
+  if (!spRow) {
+    return {
+      error: "That student was not found or is not enrolled at your school.",
+    };
+  }
+
+  const trimmed = schoolText.trim();
+  const secret = await createSupabaseSecretClient();
+  const now = new Date().toISOString();
+
+  const predDef = DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS.find(
+    (s) => s.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
+  );
+  if (!predDef) {
+    return { error: "Predicted document slot is not configured." };
+  }
+
+  const { data: docRow } = await secret
+    .from("student_my_application_documents")
+    .select("id")
+    .eq("student_id", studentId)
+    .eq("slot_key", SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY)
+    .maybeSingle();
+
+  if (docRow?.id) {
+    const { error: docErr } = await secret
+      .from("student_my_application_documents")
+      .update({
+        school_text_value: trimmed || null,
+        status: trimmed ? "approved" : "missing",
+        updated_at: now,
+      })
+      .eq("id", docRow.id);
+    if (docErr) {
+      console.error("[updateSchoolPredictedDocumentSlot] doc", docErr);
+      return { error: docErr.message };
+    }
+  } else {
+    const { error: insErr } = await secret
+      .from("student_my_application_documents")
+      .insert({
+        student_id: studentId,
+        slot_key: predDef.slot_key,
+        display_name: predDef.display_name,
+        description: predDef.description,
+        status: trimmed ? "approved" : "missing",
+        school_text_value: trimmed || null,
+        updated_at: now,
+      });
+    if (insErr) {
+      console.error("[updateSchoolPredictedDocumentSlot] insert", insErr);
+      return { error: insErr.message };
+    }
+  }
+
+  const { error: profErr } = await secret
+    .from("student_application_profile")
+    .upsert(
+      {
+        student_id: studentId,
+        predicted_grades: trimmed || null,
+        predicted_grades_set_by_school: true,
+        updated_at: now,
+      },
+      { onConflict: "student_id" },
+    );
+
+  if (profErr) {
+    console.error("[updateSchoolPredictedDocumentSlot] profile", profErr);
+    return { error: profErr.message };
+  }
+
+  revalidatePath(`/school/students/${studentId}`);
+  revalidatePath("/student/my-applications");
+  return { ok: true };
 }

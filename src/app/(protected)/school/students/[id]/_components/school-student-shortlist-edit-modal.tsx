@@ -44,6 +44,7 @@ export function SchoolStudentShortlistEditModal({
   open: boolean;
   row: ShortlistRow | null;
   countries: { id: string; name: string }[];
+  onClose: () => void;
   onSave: (patch: {
     university_name: string;
     country: string;
