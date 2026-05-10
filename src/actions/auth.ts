@@ -34,7 +34,6 @@ export async function login(
         };
     }
 
-
     const { data: studentProfile } = await supabase
         .from("student_profiles")
         .select("total_logins")
@@ -137,7 +136,7 @@ export async function studentSignUp(
 
     const { data: schoolStudent, error: schoolStudentError } = await supabase
         .from("school_students")
-        .select("id, signed_up")
+        .select("id, signed_up, grade, counselor_school_admin_id")
         .eq("school_id", school.id)
         .eq("email", emailNormalized)
         .maybeSingle();
@@ -167,7 +166,7 @@ export async function studentSignUp(
     const { data: student, error: studentError } = await supabase
         .from("student_profiles")
         .select("id")
-        .eq("email", email)
+        .eq("email", emailNormalized)
         .maybeSingle();
 
     if (studentError || student) {
@@ -197,7 +196,7 @@ export async function studentSignUp(
     }
 
     const { data, error } = await supabase.auth.admin.createUser({
-        email,
+        email: emailNormalized,
         password,
         user_metadata: {
             firstName,
@@ -218,11 +217,14 @@ export async function studentSignUp(
         .from("student_profiles")
         .insert({
             id: data.user.id,
-            email,
+            email: emailNormalized,
             first_name: firstName,
             last_name: lastName,
             school_id: school.id,
             nationality_country_code: nationalityCountryCode,
+            grade: schoolStudent.grade ?? null,
+            counselor_school_admin_id:
+                schoolStudent.counselor_school_admin_id ?? null,
         });
 
     if (studentProfileError) {
@@ -252,7 +254,7 @@ export async function studentSignUp(
     const supabaseClient = await createSupabaseServerClient();
 
     await supabaseClient.auth.signInWithPassword({
-        email,
+        email: emailNormalized,
         password,
     });
 

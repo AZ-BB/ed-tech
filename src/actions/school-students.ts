@@ -1,0 +1,271 @@
+"use server";
+
+import { fetchPendingInvitesPage } from "@/app/(protected)/school/students/_lib/fetch-pending-invites-page";
+import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
+import type { GeneralResponse } from "@/utils/response";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
+
+export type {
+  PendingInviteRow,
+  PendingInvitesPageFilters,
+} from "@/app/(protected)/school/students/_lib/fetch-pending-invites-page";
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+const GRADE_ALLOWED = new Set<string>(GRADE_FILTER_OPTIONS);
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Adds a pending invite row for this school (`signed_up = false`).
+ * Enrollment still requires the student to complete signup with the school code.
+ */
+export async function inviteSchoolStudentEmail(
+  _prev: GeneralResponse<null> | null,
+  formData: FormData,
+): Promise<GeneralResponse<null>> {
+  const raw = String(formData.get("email") ?? "").trim();
+  const email = normalizeEmail(raw);
+
+  if (!email) {
+    return { data: null, error: "Please enter an email address." };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { data: null, error: "Enter a valid email address." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: null, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError) {
+    console.error("[inviteSchoolStudentEmail] school_admin_profiles", sapError);
+    return {
+      data: null,
+      error:
+        "Could not load your school admin profile. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  if (!sap?.school_id) {
+    return {
+      data: null,
+      error:
+        "Your account is not linked to a school admin profile. Ask a platform admin to assign you, or sign in with the correct school admin account.",
+    };
+  }
+
+  const schoolId = sap.school_id;
+
+  const secret = await createSupabaseSecretClient();
+  const { data: existingProfile, error: existingProfileError } = await secret
+    .from("student_profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (existingProfileError) {
+    console.error(
+      "[inviteSchoolStudentEmail] student_profiles exists check",
+      existingProfileError,
+    );
+    return {
+      data: null,
+      error: "Could not verify whether this email is already enrolled.",
+    };
+  }
+
+  if (existingProfile) {
+    return {
+      data: null,
+      error:
+        "This email already belongs to an enrolled student. They can sign in instead of receiving a new invite.",
+    };
+  }
+
+  const { data: school, error: schoolError } = await supabase
+    .from("schools")
+    .select("students_limit")
+    .eq("id", schoolId)
+    .maybeSingle();
+
+  if (schoolError) {
+    return { data: null, error: "Could not verify school enrollment limits." };
+  }
+
+  const limit = school?.students_limit;
+  if (limit != null && limit > 0) {
+    const { count: enrolled, error: c1 } = await supabase
+      .from("student_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", schoolId);
+
+    const { count: pending, error: c2 } = await supabase
+      .from("school_students")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", schoolId)
+      .eq("signed_up", false);
+
+    if (c1 || c2) {
+      return {
+        data: null,
+        error:
+          "Could not verify how many invites are already on file for your school.",
+      };
+    }
+
+    if ((enrolled ?? 0) + (pending ?? 0) >= limit) {
+      return {
+        data: null,
+        error:
+          "This school has reached its student limit — remove invites or enroll fewer students.",
+      };
+    }
+  }
+
+  const gradeRaw = String(formData.get("grade") ?? "").trim();
+  const grade =
+    gradeRaw === ""
+      ? null
+      : GRADE_ALLOWED.has(gradeRaw)
+        ? gradeRaw
+        : null;
+  if (gradeRaw !== "" && grade === null) {
+    return {
+      data: null,
+      error: "Choose a valid grade or leave it blank.",
+    };
+  }
+
+  const counselorRaw = String(
+    formData.get("counselorSchoolAdminId") ?? "",
+  ).trim();
+  let counselorSchoolAdminId: string | null = null;
+  if (counselorRaw !== "") {
+    if (!UUID_RE.test(counselorRaw)) {
+      return { data: null, error: "Invalid counselor selection." };
+    }
+    const { data: counselorRow, error: counselorErr } = await supabase
+      .from("school_admin_profiles")
+      .select("id")
+      .eq("id", counselorRaw)
+      .eq("school_id", schoolId)
+      .maybeSingle();
+
+    if (counselorErr || !counselorRow) {
+      return {
+        data: null,
+        error: "That counselor is not part of your school.",
+      };
+    }
+    counselorSchoolAdminId = counselorRaw;
+  }
+
+  const { error: insertError } = await supabase.from("school_students").insert({
+    school_id: schoolId,
+    email,
+    signed_up: false,
+    grade,
+    counselor_school_admin_id: counselorSchoolAdminId,
+  });
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      return {
+        data: null,
+        error:
+          "That email is already on the invite or enrollment list for this school.",
+      };
+    }
+    return { data: null, error: insertError.message };
+  }
+
+  return { data: null, error: null };
+}
+
+export async function getPendingSchoolInvites(filters: {
+  q: string;
+  page: number;
+  limit: number;
+}) {
+  return fetchPendingInvitesPage({
+    q: filters.q,
+    page: filters.page,
+    limit: filters.limit,
+  });
+}
+
+/**
+ * Removes a pending invite row for this school (`signed_up` must still be false).
+ */
+export async function deleteSchoolStudentInvite(
+  inviteId: string,
+): Promise<GeneralResponse<null>> {
+  const id = inviteId.trim();
+  if (!id || !UUID_RE.test(id)) {
+    return { data: null, error: "Invalid invite." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: null, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return {
+      data: null,
+      error:
+        "Could not verify your school admin access. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  const { data: removed, error: deleteError } = await supabase
+    .from("school_students")
+    .delete()
+    .eq("id", id)
+    .eq("school_id", sap.school_id)
+    .eq("signed_up", false)
+    .select("id");
+
+  if (deleteError) {
+    console.error("[deleteSchoolStudentInvite]", deleteError);
+    return { data: null, error: deleteError.message };
+  }
+
+  if (!removed?.length) {
+    return {
+      data: null,
+      error:
+        "That invite was not found, already removed, or the student has already signed up.",
+    };
+  }
+
+  return { data: null, error: null };
+}
