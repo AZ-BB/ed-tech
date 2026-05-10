@@ -1,0 +1,673 @@
+"use client";
+
+import { updateSchoolStudentCreditLimits } from "@/actions/school-students";
+import type { Database } from "@/database.types";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, type ReactNode } from "react";
+
+import type { SchoolStudentDetailPayload } from "../_lib/fetch-school-student-detail";
+
+type TabId =
+  | "snapshot"
+  | "activity"
+  | "shortlist"
+  | "essays"
+  | "docs"
+  | "notes"
+  | "interactions"
+  | "tasks"
+  | "history";
+
+const TAB_DEFS: { id: TabId; label: string }[] = [
+  { id: "snapshot", label: "Snapshot" },
+  { id: "activity", label: "Activity" },
+  { id: "shortlist", label: "Shortlist" },
+  { id: "essays", label: "Essays" },
+  { id: "docs", label: "Documents" },
+  { id: "notes", label: "Notes" },
+  { id: "interactions", label: "Interactions" },
+  { id: "tasks", label: "Tasks" },
+  { id: "history", label: "History" },
+];
+
+type ApplicationProfileRow =
+  Database["public"]["Tables"]["student_application_profile"]["Row"];
+
+export type SchoolStudentViewClientProps = {
+  student: SchoolStudentDetailPayload["student"];
+  applicationProfile: ApplicationProfileRow | null;
+  quickStats: SchoolStudentDetailPayload["quickStats"];
+  platformActivity: SchoolStudentDetailPayload["platformActivity"];
+};
+
+function initials(first: string, last: string): string {
+  const a = first.trim()[0];
+  const b = last.trim()[0];
+  const pair = `${a ?? ""}${b ?? ""}`.toUpperCase();
+  if (pair) return pair.slice(0, 2);
+  if (a) return a.toUpperCase();
+  return "?";
+}
+
+function joinList(items: string[] | null | undefined): string {
+  if (!Array.isArray(items) || items.length === 0) return "—";
+  const t = items.map((x) => x.trim()).filter(Boolean);
+  return t.length ? t.join(", ") : "—";
+}
+
+function snapDisplay(
+  value: string | null | undefined,
+  empty: string,
+): string {
+  const t = value?.trim();
+  return t ? t : empty;
+}
+
+function RiskPill({
+  riskClass,
+  label,
+}: {
+  riskClass: "green" | "amber" | "red";
+  label: string;
+}) {
+  const pillCls =
+    riskClass === "green"
+      ? "bg-[rgba(82,183,135,.13)] text-[#1B4332] [&_.sd-pill-dot]:bg-[var(--green-bright)]"
+      : riskClass === "amber"
+        ? "bg-[rgba(212,162,42,.14)] text-[#7a5d10] [&_.sd-pill-dot]:bg-[#D4A22A]"
+        : "bg-[rgba(231,76,60,.12)] text-[#8c2d22] [&_.sd-pill-dot]:bg-[#E74C3C]";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug ${pillCls}`}
+    >
+      <span className="sd-pill-dot h-1.5 w-1.5 rounded-full" />
+      {label}
+    </span>
+  );
+}
+
+function Panel({
+  head,
+  sub,
+  actions,
+  children,
+  className = "",
+}: {
+  head: string;
+  sub?: string;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${className}`}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--border-light)] px-5 py-[18px]">
+        <div>
+          <div className="text-[15px] font-semibold tracking-tight text-[var(--text)]">
+            {head}
+          </div>
+          {sub ? (
+            <div className="mt-0.5 text-[12px] text-[var(--text-light)]">
+              {sub}
+            </div>
+          ) : null}
+        </div>
+        {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      </div>
+      <div className="px-5 py-[18px]">{children}</div>
+    </div>
+  );
+}
+
+function SnapItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3.5">
+      <div className="mb-1 text-[11.5px] font-medium uppercase tracking-[0.05em] text-[var(--text-light)]">
+        {label}
+      </div>
+      <div className="text-[13.5px] font-semibold text-[var(--text)]">{value}</div>
+    </div>
+  );
+}
+
+function EmptyBlock({ message }: { message: string }) {
+  return (
+    <div className="px-5 py-10 text-center text-[13px] text-[var(--text-light)]">
+      {message}
+    </div>
+  );
+}
+
+function parseCreditLimitDraft(
+  raw: string,
+):
+  | { ok: true; value: number | null }
+  | { ok: false; error: string } {
+  const trimmed = raw.trim();
+  if (trimmed === "") return { ok: true, value: null };
+  if (!/^\d+$/.test(trimmed)) {
+    return {
+      ok: false,
+      error: "Use a whole number ≥ 0, or leave blank for school default.",
+    };
+  }
+  const n = Number(trimmed);
+  if (!Number.isSafeInteger(n)) {
+    return { ok: false, error: "That number is too large." };
+  }
+  return { ok: true, value: n };
+}
+
+function CreditLimitCard({
+  kind,
+  studentId,
+  displayLimit,
+  override,
+  schoolDefault,
+  label,
+}: {
+  kind: "advisor" | "ambassador";
+  studentId: string;
+  displayLimit: number | null;
+  override: number | null;
+  schoolDefault: number | null;
+  label: string;
+}) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  const placeholder =
+    schoolDefault != null
+      ? `School default (${schoolDefault})`
+      : "School default";
+
+  function openEdit() {
+    setDraft(override !== null ? String(override) : "");
+    setLocalError(null);
+    setEditing(true);
+  }
+
+  function cancel() {
+    setEditing(false);
+    setLocalError(null);
+  }
+
+  async function save() {
+    const parsed = parseCreditLimitDraft(draft);
+    if (!parsed.ok) {
+      setLocalError(parsed.error);
+      return;
+    }
+
+    const patch =
+      kind === "advisor"
+        ? { advisor_credit_limit: parsed.value }
+        : { ambassador_credit_limit: parsed.value };
+
+    setLocalError(null);
+    setPending(true);
+    try {
+      const res = await updateSchoolStudentCreditLimits(studentId, patch);
+      const err = res.error;
+      if (err != null && err !== "") {
+        setLocalError(typeof err === "string" ? err : "Could not save.");
+        return;
+      }
+      setEditing(false);
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col justify-between rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+      {!editing ? (
+        <>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+                {displayLimit ?? "—"}
+              </div>
+              <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+                {label}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--text-mid)]"
+              aria-label={`Edit ${label}`}
+              onClick={openEdit}
+            >
+              Edit
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <div className="text-[11.5px] font-medium text-[var(--text)]">
+            {label}
+          </div>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={placeholder}
+            disabled={pending}
+            className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] text-[var(--text-mid)]"
+            aria-invalid={Boolean(localError)}
+          />
+          <div className="text-[10px] text-[var(--text-hint)]">
+            Leave blank to use the school-wide default on this profile.
+          </div>
+          {localError ? (
+            <div className="text-[11.5px] text-[#c0392b]">{localError}</div>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => void save()}
+              className="inline-flex rounded-lg border border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white disabled:opacity-60"
+            >
+              {pending ? "Saving…" : "Save"}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={cancel}
+              className="inline-flex rounded-lg border border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActivityCell({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+      <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+        {value}
+      </div>
+      <div className="mt-1 text-[11.5px] text-[var(--text-light)]">{label}</div>
+    </div>
+  );
+}
+
+function ActivityContent({
+  student,
+  platformActivity,
+}: {
+  student: SchoolStudentDetailPayload["student"];
+  platformActivity: SchoolStudentDetailPayload["platformActivity"];
+}) {
+  const who = student.firstName?.trim() || "this student";
+  const cells: { label: string; value: number }[] = [
+    { label: "Programs viewed", value: platformActivity.programsViewed },
+    { label: "Universities saved", value: platformActivity.universitiesSaved },
+    { label: "Scholarships saved", value: platformActivity.scholarshipsSaved },
+    { label: "AI matches", value: platformActivity.aiMatches },
+    { label: "Essays reviewed", value: platformActivity.essaysReviewed },
+    { label: "Advisor sessions", value: platformActivity.advisorSessions },
+    { label: "Ambassador sessions", value: platformActivity.ambassadorSessions },
+    { label: "Webinars attended", value: platformActivity.webinarsAttended },
+  ];
+
+  return (
+    <Panel
+      head="Platform activity"
+      sub={`What ${who} has done on Univeera (read-only)`}
+    >
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        {cells.map((c) => (
+          <ActivityCell key={c.label} label={c.label} value={c.value} />
+        ))}
+      </div>
+      <div className="mt-3.5 flex flex-col justify-between gap-2 rounded-[10px] bg-[#faf9f4] px-3.5 py-3.5 text-[13px] sm:flex-row sm:items-center">
+        <div>
+          <span className="text-[var(--text-light)]">Last activity: </span>
+          <span className="font-semibold text-[var(--text)]">
+            {platformActivity.lastActivityDateLabel ?? "—"}
+          </span>
+        </div>
+        <div className="sm:text-right">
+          <span className="text-[var(--text-light)]">Total logins: </span>
+          <span className="font-semibold text-[var(--text)]">
+            {platformActivity.totalLogins}
+          </span>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function SnapshotContent({
+  applicationProfile,
+  quickStats,
+  student,
+}: {
+  applicationProfile: ApplicationProfileRow | null;
+  quickStats: SchoolStudentDetailPayload["quickStats"];
+  student: SchoolStudentDetailPayload["student"];
+}) {
+  const preferred = applicationProfile
+    ? joinList(applicationProfile.preferred_destinations)
+    : "—";
+  const programs = applicationProfile
+    ? joinList(applicationProfile.interested_programs)
+    : "—";
+  const budget = snapDisplay(applicationProfile?.budget_range, "-");
+  const english = applicationProfile?.english_test_scores?.trim()
+    ? applicationProfile.english_test_scores.trim()
+    : "Pending";
+  const sat = snapDisplay(applicationProfile?.sat_act_scores, "-");
+  const curr = snapDisplay(applicationProfile?.curriculum, "-");
+
+  return (
+    <>
+      <Panel
+        head="Snapshot"
+        sub="Quick overview — student profile and key info"
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <SnapItem label="Preferred destinations" value={preferred} />
+          <SnapItem label="Interested programs" value={programs} />
+          <SnapItem label="Budget range" value={budget} />
+          <SnapItem label="English test" value={english} />
+          <SnapItem label="SAT / ACT" value={sat} />
+          <SnapItem label="Curriculum" value={curr} />
+        </div>
+      </Panel>
+
+      <Panel head="Quick stats">
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+            <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+              {quickStats.universitiesCount}
+            </div>
+            <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+              Universities
+            </div>
+          </div>
+          <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+            <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+              {quickStats.documentsInCount}
+            </div>
+            <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+              Documents in
+            </div>
+          </div>
+          <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+            <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+              {quickStats.openTasksCount}
+            </div>
+            <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+              Open tasks
+            </div>
+          </div>
+          <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+            <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+              {quickStats.supportSessionsCount}
+            </div>
+            <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+              Support sessions
+            </div>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel head="Credits">
+        <div className="space-y-2.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col justify-center rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+              <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+                {student.advisorCreditsUsedNet}
+              </div>
+              <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+                Advisor credits used
+              </div>
+            </div>
+            <div className="flex flex-col justify-center rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
+              <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+                {student.ambassadorCreditsUsedNet}
+              </div>
+              <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+                Ambassador credits used
+              </div>
+            </div>
+            <div className="flex flex-col justify-center rounded-[10px] border border-[var(--border-light)] bg-white p-3.5 sm:col-span-2 lg:col-span-1">
+              <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+                {student.creditsUsedTotal}
+              </div>
+              <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+                Total credits used
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <CreditLimitCard
+              kind="advisor"
+              studentId={student.id}
+              displayLimit={student.advisorCreditLimit}
+              override={student.advisorCreditLimitOverride}
+              schoolDefault={student.schoolDefaultAdvisorCreditLimit}
+              label="Advisor credit limit"
+            />
+            <CreditLimitCard
+              kind="ambassador"
+              studentId={student.id}
+              displayLimit={student.ambassadorCreditLimit}
+              override={student.ambassadorCreditLimitOverride}
+              schoolDefault={student.schoolDefaultAmbassadorCreditLimit}
+              label="Ambassador credit limit"
+            />
+          </div>
+        </div>
+      </Panel>
+    </>
+  );
+}
+
+type EmptyTabId = Exclude<TabId, "snapshot" | "activity">;
+
+const EMPTY_TAB: Record<
+  EmptyTabId,
+  { title: string; subtitle?: string; message: string }
+> = {
+  shortlist: {
+    title: "University shortlist",
+    subtitle:
+      "Universities being considered, applied to, or with offers — coming soon.",
+    message: "Content coming soon.",
+  },
+  essays: {
+    title: "Essays",
+    subtitle:
+      "Essay requirements + uploaded drafts. Status updates auto-flow as files come in. — coming soon.",
+    message: "Content coming soon.",
+  },
+  docs: {
+    title: "Essays & documents",
+    subtitle:
+      "Document checklist — change status anytime, click upload to add files — coming soon.",
+    message: "Content coming soon.",
+  },
+  notes: {
+    title: "Counselor notes",
+    subtitle: "Internal-only — students cannot see these — coming soon.",
+    message: "Content coming soon.",
+  },
+  interactions: {
+    title: "Interactions log",
+    subtitle:
+      "Every meeting, call, email, and parent contact — used for end-of-year reporting and inspections — coming soon.",
+    message: "Content coming soon.",
+  },
+  tasks: {
+    title: "Tasks / next actions",
+    subtitle:
+      "Track what needs to happen, by when, what priority — coming soon.",
+    message: "Content coming soon.",
+  },
+  history: {
+    title: "Meetings & support history",
+    subtitle: "Sessions booked, attended, and reviews — coming soon.",
+    message: "Content coming soon.",
+  },
+};
+
+export function SchoolStudentViewClient({
+  student,
+  applicationProfile,
+  quickStats,
+  platformActivity,
+}: SchoolStudentViewClientProps) {
+  const [tab, setTab] = useState<TabId>("snapshot");
+
+  const ini = useMemo(
+    () => initials(student.firstName, student.lastName),
+    [student.firstName, student.lastName],
+  );
+
+  const fullName = [student.firstName, student.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const sidebarRows: { lab: string; val: string; valSmall?: boolean }[] = [
+    { lab: "Grade", val: student.gradeDisplay ?? "—" },
+    { lab: "Nationality", val: student.nationalityName ?? "—" },
+    { lab: "Curriculum", val: student.curriculumDisplay ?? "—" },
+    { lab: "Target intake", val: student.targetIntakeDisplay ?? "—" },
+    { lab: "Counselor", val: student.counselorLabel },
+    { lab: "Profile", val: `${student.profilePercent}%` },
+    {
+      lab: "Stage",
+      val: student.stageLabel,
+      valSmall: true,
+    },
+    { lab: "Last active", val: student.lastActiveLabel },
+  ];
+
+  let tabBody: ReactNode;
+  if (tab === "snapshot") {
+    tabBody = (
+      <SnapshotContent
+        applicationProfile={applicationProfile}
+        quickStats={quickStats}
+        student={student}
+      />
+    );
+  } else if (tab === "activity") {
+    tabBody = (
+      <ActivityContent student={student} platformActivity={platformActivity} />
+    );
+  } else {
+    const cfg = EMPTY_TAB[tab];
+    tabBody = (
+      <Panel head={cfg.title} sub={cfg.subtitle}>
+        <EmptyBlock message={cfg.message} />
+      </Panel>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <Link
+        href="/school/students"
+        className="sd-back mb-3.5 inline-flex cursor-pointer items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-[var(--text-mid)] hover:text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Back to all students
+      </Link>
+
+      <div className="sd-grid grid grid-cols-1 items-start gap-5 xl:grid-cols-[280px_1fr] xl:gap-5">
+        <aside className="sd-side flex flex-col gap-3.5 rounded-[14px] border border-[var(--border-light)] bg-white p-[22px] xl:sticky xl:top-[80px]">
+          <div className="sd-side-top flex flex-col items-center gap-2.5 border-b border-[var(--border-light)] pb-[18px] text-center">
+            <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] font-[family-name:var(--font-dm-serif)] text-2xl font-bold text-[var(--green-dark)]">
+              {ini}
+            </div>
+            <div className="font-[family-name:var(--font-dm-serif)] text-xl leading-snug text-[var(--text)]">
+              {fullName || "Student"}
+            </div>
+            <div className="break-all text-xs text-[var(--text-light)]">
+              {student.email || "—"}
+            </div>
+            <RiskPill riskClass={student.riskClass} label={student.riskLabel} />
+          </div>
+
+          {sidebarRows.map((r) => (
+            <div
+              key={r.lab}
+              className="flex justify-between gap-2 py-1 text-[12.5px]"
+            >
+              <span className="shrink-0 text-[var(--text-light)]">{r.lab}</span>
+              <span
+                className={`max-w-[60%] text-right font-medium text-[var(--text)] ${r.valSmall ? "text-[11.5px] leading-snug" : ""}`}
+              >
+                {r.val}
+              </span>
+            </div>
+          ))}
+
+          <div className="mt-2 flex flex-col gap-1.5">
+            <button
+              type="button"
+              disabled
+              className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white opacity-55"
+              title="Coming soon"
+            >
+              Email student
+            </button>
+            <button
+              type="button"
+              disabled
+              className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] opacity-55"
+              title="Coming soon"
+            >
+              + Add task
+            </button>
+          </div>
+        </aside>
+
+        <div className="sd-main flex flex-col gap-[18px]">
+          <div className="sd-tabs flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
+            {TAB_DEFS.map((t) => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={`shrink-0 rounded-[7px] px-3.5 py-2 font-[family-name:var(--font-dm-sans)] text-[12.5px] font-medium whitespace-nowrap transition-colors ${
+                    active
+                      ? "bg-[var(--green)] text-white"
+                      : "border-0 bg-transparent text-[var(--text-light)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div id="sd-tab-content">{tabBody}</div>
+        </div>
+      </div>
+    </div>
+  );
+}

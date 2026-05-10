@@ -2,6 +2,7 @@
 
 import { fetchPendingInvitesPage } from "@/app/(protected)/school/students/_lib/fetch-pending-invites-page";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
+import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
   createSupabaseSecretClient,
@@ -111,31 +112,41 @@ export async function inviteSchoolStudentEmail(
   }
 
   const limit = school?.students_limit;
-  if (limit != null && limit > 0) {
-    const { count: enrolled, error: c1 } = await supabase
+  // Capacity = enrolled students + pending invites (unsigned rows). New invite is allowed only if total stays under students_limit.
+  if (limit != null) {
+    if (limit <= 0) {
+      return {
+        data: null,
+        error: "This school has no student capacity configured.",
+      };
+    }
+
+    const { count: enrolledCount, error: enrolledCountError } = await secret
       .from("student_profiles")
       .select("id", { count: "exact", head: true })
       .eq("school_id", schoolId);
 
-    const { count: pending, error: c2 } = await supabase
-      .from("school_students")
-      .select("id", { count: "exact", head: true })
-      .eq("school_id", schoolId)
-      .eq("signed_up", false);
+    const { count: pendingInviteCount, error: pendingInviteCountError } =
+      await secret
+        .from("school_students")
+        .select("id", { count: "exact", head: true })
+        .eq("school_id", schoolId)
+        .eq("signed_up", false);
 
-    if (c1 || c2) {
+    if (enrolledCountError || pendingInviteCountError) {
       return {
         data: null,
         error:
-          "Could not verify how many invites are already on file for your school.",
+          "Could not verify how many students and invites are already registered for your school.",
       };
     }
 
-    if ((enrolled ?? 0) + (pending ?? 0) >= limit) {
+    const total = (enrolledCount ?? 0) + (pendingInviteCount ?? 0);
+    if (total >= limit) {
       return {
         data: null,
         error:
-          "This school has reached its student limit — remove invites or enroll fewer students.",
+          "This school has reached its student limit (enrolled students plus pending invites). Remove an invite or raise the limit before adding another.",
       };
     }
   }
@@ -264,6 +275,104 @@ export async function deleteSchoolStudentInvite(
       data: null,
       error:
         "That invite was not found, already removed, or the student has already signed up.",
+    };
+  }
+
+  return { data: null, error: null };
+}
+
+export async function updateSchoolStudentCreditLimits(
+  studentId: string,
+  patch: {
+    advisor_credit_limit?: number | null;
+    ambassador_credit_limit?: number | null;
+  },
+): Promise<GeneralResponse<null>> {
+  const id = studentId.trim();
+  if (!id || !UUID_RE.test(id)) {
+    return { data: null, error: "Invalid student." };
+  }
+
+  const hasAdvisor = Object.prototype.hasOwnProperty.call(
+    patch,
+    "advisor_credit_limit",
+  );
+  const hasAmbassador = Object.prototype.hasOwnProperty.call(
+    patch,
+    "ambassador_credit_limit",
+  );
+  if (!hasAdvisor && !hasAmbassador) {
+    return { data: null, error: "Nothing to update." };
+  }
+
+  const validate = (label: string, v: unknown): string | null => {
+    if (v === null || v === undefined) return null;
+    if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
+      return `${label} must be a whole number ≥ 0, or left blank for the school default.`;
+    }
+    return null;
+  };
+
+  type StudentProfileUpdate =
+    Database["public"]["Tables"]["student_profiles"]["Update"];
+
+  const updateRow: StudentProfileUpdate = {};
+
+  if (hasAdvisor) {
+    const msg = validate("Advisor credit limit", patch.advisor_credit_limit);
+    if (msg) return { data: null, error: msg };
+    updateRow.advisor_credit_limit = patch.advisor_credit_limit ?? null;
+  }
+
+  if (hasAmbassador) {
+    const msg = validate(
+      "Ambassador credit limit",
+      patch.ambassador_credit_limit,
+    );
+    if (msg) return { data: null, error: msg };
+    updateRow.ambassador_credit_limit = patch.ambassador_credit_limit ?? null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: null, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return {
+      data: null,
+      error:
+        "Could not verify your school admin access. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from("student_profiles")
+    .update(updateRow)
+    .eq("id", id)
+    .eq("school_id", sap.school_id)
+    .select("id");
+
+  if (updateError) {
+    console.error("[updateSchoolStudentCreditLimits]", updateError);
+    return { data: null, error: updateError.message };
+  }
+
+  if (!updated?.length) {
+    return {
+      data: null,
+      error:
+        "That student was not found or you do not have permission to edit their profile.",
     };
   }
 
