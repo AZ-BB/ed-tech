@@ -306,7 +306,17 @@ export function SchoolStudentsClient({
                 rows.map((r) => (
                   <tr
                     key={r.id}
-                    className="border-b border-[var(--border-light)] transition-colors last:border-b-0 hover:bg-[#faf9f4]"
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`View ${r.firstName} ${r.lastName}`}
+                    className="group cursor-pointer border-b border-[var(--border-light)] transition-colors last:border-b-0 hover:bg-[#faf9f4] focus-visible:bg-[#faf9f4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--green)]"
+                    onClick={() => router.push(`/school/students/${r.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(`/school/students/${r.id}`);
+                      }
+                    }}
                   >
                     <td className="py-3 pl-5 pr-3 align-middle">
                       <div className="flex items-center gap-2.5">
@@ -315,7 +325,7 @@ export function SchoolStudentsClient({
                           {(r.lastName[0] ?? "").toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold leading-tight text-[var(--text)]">
+                          <div className="font-semibold leading-tight text-[var(--text)] group-hover:text-[var(--green-dark)]">
                             {r.firstName} {r.lastName}
                           </div>
                           <div className="text-[11.5px] text-[var(--text-hint)]">
