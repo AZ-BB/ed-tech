@@ -7,7 +7,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { MyApplicationsClient } from "./_components/my-applications-client";
 import type { ActivityShortlistQueryRow } from "./_lib/normalize-activity-shortlist";
-import { normalizeActivityShortlistUniversities } from "./_lib/normalize-activity-shortlist";
+import { normalizeActivityCatalogUniversities } from "./_lib/normalize-activity-shortlist";
 import type {
   EssayWithComments,
   MyApplicationsInitialPayload,
@@ -55,7 +55,7 @@ export default async function MyApplicationsPage() {
     { data: essays },
     { data: recommendations },
     { data: tasks },
-    { data: activityShortlistRows },
+    { data: activityFavouriteRows },
   ] = await Promise.all([
     secret.from("student_application_profile").select("*").eq("student_id", auth.studentId).maybeSingle(),
     secret
@@ -111,15 +111,15 @@ export default async function MyApplicationsPage() {
       )
       .eq("student_id", auth.studentId)
       .eq("entity_type", "university")
-      .eq("type", "shortlist")
+      .eq("type", "save")
       .not("uni_id", "is", null)
       .order("created_at", { ascending: false }),
   ]);
 
   const documents = await ensureStudentApplicationDocuments(secret, auth.studentId);
 
-  const activityShortlistedUniversities = normalizeActivityShortlistUniversities(
-    (activityShortlistRows ?? []) as ActivityShortlistQueryRow[],
+  const activityFavouriteUniversities = normalizeActivityCatalogUniversities(
+    (activityFavouriteRows ?? []) as ActivityShortlistQueryRow[],
   );
 
   const payload: MyApplicationsInitialPayload = {
@@ -127,7 +127,7 @@ export default async function MyApplicationsPage() {
     profile,
     countries: countries ?? [],
     applicationProfile: applicationProfile ?? null,
-    activityShortlistedUniversities,
+    activityFavouriteUniversities,
     shortlist: shortlist ?? [],
     documents,
     essays: normalizeEssaysWithComments((essays as EssayWithComments[]) ?? []),
