@@ -8,6 +8,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
 import type { EssayWithComments, MyApplicationsInitialPayload } from "../_lib/my-applications-types";
+import { getStudentApplicationProfileCompletion } from "@/lib/student-application-profile-completion";
 import {
   AID_OPTIONS,
   APPLICATION_METHOD_OPTIONS,
@@ -214,28 +215,6 @@ function btnSmClass(primary?: boolean) {
     : "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]";
 }
 
-function profileCompletionPct(args: {
-  grade: string;
-  curriculum: string;
-  destinations: string[];
-  programs: string[];
-  english: string;
-  sat: string;
-}): { pct: number; missing: number } {
-  let ok = 0;
-  const total = 6;
-  if (args.grade.trim()) ok++;
-  if (args.curriculum.trim()) ok++;
-  if (args.destinations.length) ok++;
-  if (args.programs.length) ok++;
-  if (args.english.trim() || args.sat.trim()) ok++;
-  if (args.english.trim() && args.sat.trim()) ok++;
-  else if (args.english.trim() || args.sat.trim()) ok += 0.5;
-  const pct = Math.round((ok / total) * 100);
-  const missing = total - Math.ceil(ok);
-  return { pct: Math.min(100, pct), missing: Math.max(0, missing) };
-}
-
 export function MyApplicationsClient({
   initial,
 }: {
@@ -317,7 +296,7 @@ export function MyApplicationsClient({
     window.setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const { pct, missing } = profileCompletionPct({
+  const { pct, missing } = getStudentApplicationProfileCompletion({
     grade,
     curriculum,
     destinations,
@@ -1983,7 +1962,7 @@ export function MyApplicationsClient({
                         >
                           {t.title}
                         </div>
-                        {t.description?.trim() ? (
+                        {t.notes?.trim() ? (
                           <p
                             className={`mt-1 whitespace-pre-wrap text-[12px] leading-snug text-[var(--text-mid)] ${
                               t.completed
@@ -1991,7 +1970,7 @@ export function MyApplicationsClient({
                                 : ""
                             }`}
                           >
-                            {t.description.trim()}
+                            {t.notes.trim()}
                           </p>
                         ) : null}
                         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px] text-[var(--text-light)]">

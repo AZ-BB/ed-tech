@@ -3,7 +3,14 @@ import { formatDistanceToNow } from "date-fns";
 import type { EssayWithComments } from "@/app/(protected)/student/my-applications/_lib/my-applications-types";
 import type { Database } from "@/database.types";
 import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
-import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
+import {
+  pickLatestActivityIso,
+  riskFromSignals,
+} from "@/lib/school-student-risk";
+import {
+  getStudentApplicationProfileCompletion,
+  studentApplicationProfileRowToCompletionInput,
+} from "@/lib/student-application-profile-completion";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -14,16 +21,6 @@ type SchoolCreditsEmbed = {
   default_advisor_credit_limit: number | null;
   default_ambasador_credit_limit: number | null;
 };
-
-function pickLatestActivityIso(
-  actAt: string | null | undefined,
-  aiAt: string | null | undefined,
-): string | null {
-  if (!actAt && !aiAt) return null;
-  if (!actAt) return aiAt!;
-  if (!aiAt) return actAt;
-  return new Date(aiAt).getTime() > new Date(actAt).getTime() ? aiAt : actAt;
-}
 
 function formatActivityAgo(iso: string): string {
   try {
@@ -130,16 +127,6 @@ function stageFromProfilePercent(pct: number): string {
   return "Getting started on the platform";
 }
 
-function riskFromSignals(
-  profilePercent: number,
-  inactiveWeek: boolean,
-): { riskClass: "green" | "amber" | "red"; riskLabel: string } {
-  if (profilePercent < 28) return { riskClass: "red", riskLabel: "Urgent" };
-  if (inactiveWeek || profilePercent < 55)
-    return { riskClass: "amber", riskLabel: "Follow-up" };
-  return { riskClass: "green", riskLabel: "On track" };
-}
-
 export async function fetchSchoolStudentDetail(
   studentId: string,
 ): Promise<SchoolStudentDetailPayload | null> {
@@ -156,7 +143,6 @@ export async function fetchSchoolStudentDetail(
       grade,
       created_at,
       updated_at,
-      platform_completion,
       counselor_school_admin_id,
       advisor_credit_limit,
       ambassador_credit_limit,
@@ -192,10 +178,6 @@ export async function fetchSchoolStudentDetail(
     typeof countriesEmbed?.name === "string"
       ? countriesEmbed.name.trim() || null
       : null;
-
-  const profilePercent = getPlatformCompletionStats(
-    profile.platform_completion,
-  ).percent;
 
   const counselorId = profile.counselor_school_admin_id;
 
@@ -451,8 +433,12 @@ export async function fetchSchoolStudentDetail(
   const curriculumDisplay = app?.curriculum?.trim() || null;
   const targetIntakeDisplay = app?.target_intake?.trim() || null;
 
+  const profilePercent = getStudentApplicationProfileCompletion(
+    studentApplicationProfileRowToCompletionInput(app),
+  ).pct;
   let advisorCreditsUsedNet = 0;
   let ambassadorCreditsUsedNet = 0;
+  let poolCreditsNet = 0;
   if (creditRowsRes.error) {
     console.error(
       "[fetchSchoolStudentDetail] student_credits_history:",
@@ -463,6 +449,8 @@ export async function fetchSchoolStudentDetail(
     let advRefunded = 0;
     let ambUsed = 0;
     let ambRefunded = 0;
+    let poolUsed = 0;
+    let poolRefunded = 0;
     for (const r of creditRowsRes.data) {
       const amt =
         typeof r.amount === "number" && Number.isFinite(r.amount)
@@ -475,13 +463,18 @@ export async function fetchSchoolStudentDetail(
       } else if (r.type === "ambassador") {
         if (isRefund) ambRefunded += amt;
         else ambUsed += amt;
+      } else if (r.type === "base_credit" || r.type === "extra_credits") {
+        if (isRefund) poolRefunded += amt;
+        else poolUsed += amt;
       }
     }
     advisorCreditsUsedNet = Math.max(0, advUsed - advRefunded);
     ambassadorCreditsUsedNet = Math.max(0, ambUsed - ambRefunded);
+    poolCreditsNet = Math.max(0, poolUsed - poolRefunded);
   }
 
-  const creditsUsedTotal = advisorCreditsUsedNet + ambassadorCreditsUsedNet;
+  const creditsUsedTotal =
+    advisorCreditsUsedNet + ambassadorCreditsUsedNet + poolCreditsNet;
 
   const countOr0 = (err: { message?: string } | null, count: number | null) => {
     if (err) {
