@@ -2325,6 +2325,10 @@ export type Database = {
         Args: { p_elig: Json; p_user: string }
         Returns: boolean
       }
+      school_dashboard_shortlist_top_stats: {
+        Args: { p_top_n?: number }
+        Returns: Json
+      }
     }
     Enums: {
       activity_log_entity_type: "student" | "school_admin" | "admin"

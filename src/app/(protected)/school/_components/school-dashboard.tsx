@@ -2,6 +2,10 @@ import Link from "next/link";
 
 import type { SchoolDashboardPayload } from "../_lib/fetch-school-dashboard";
 
+const fontSans =
+  '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
+const fontSerif = '"DM Serif Display", Georgia, serif' as const;
+
 type Props = {
   data: SchoolDashboardPayload;
 };
@@ -9,7 +13,7 @@ type Props = {
 function KpiIcon({ children, tint }: { children: React.ReactNode; tint: string }) {
   return (
     <div
-      className={`absolute right-4 top-4 flex h-[30px] w-[30px] items-center justify-center rounded-lg ${tint}`}
+      className={`absolute right-4 top-4 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] transition-transform duration-150 group-hover:scale-105 ${tint}`}
     >
       {children}
     </div>
@@ -110,6 +114,9 @@ const kpiIconSvgs = {
   ),
 };
 
+const btnGhostClassName =
+  "inline-flex cursor-pointer items-center gap-[5px] rounded-[6px] border-[1.5px] border-[#e0deda] bg-white px-[10px] py-[5px] text-[11.5px] font-semibold leading-none text-[#4a4a4a] transition-all duration-[150ms] hover:border-[#40916C] hover:bg-[#f0f7f2] hover:text-[#1B4332]";
+
 export function SchoolDashboard({ data }: Props) {
   const {
     totalStudents,
@@ -168,7 +175,7 @@ export function SchoolDashboard({ data }: Props) {
       label: "Universities shortlisted",
       value: universitiesShortlistedCount,
       sub: null,
-      helper: "across all students",
+      helper: "discovery shortlist (unique student–university)",
       icon: kpiIconSvgs.unis,
       tint: "bg-[rgba(225,87,89,0.12)] text-[#8c2d22]",
     },
@@ -178,37 +185,46 @@ export function SchoolDashboard({ data }: Props) {
   const progMax = Math.max(1, ...topPrograms.map((p) => p.count));
 
   return (
-    <div>
+    <div style={{ fontFamily: fontSans }}>
       <div className="mb-6 max-[760px]:mb-6">
-        <h1 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-[30px] font-normal leading-[1.15] tracking-tight text-[var(--text)] max-[760px]:text-2xl">
+        <h1
+          className="mb-1.5 text-[30px] font-normal leading-[1.15] tracking-[-0.01em] text-[#1a1a1a] max-[760px]:text-2xl"
+          style={{ fontFamily: fontSerif }}
+        >
           School Counseling Dashboard
         </h1>
-        <p className="max-w-[720px] text-sm leading-normal text-[var(--text-light)] max-[760px]:text-[13px]">
+        <p className="max-w-[720px] text-[14px] leading-[1.5] text-[#6a6a6a] max-[760px]:text-[13px]">
           Track student engagement, university planning, advisor usage, and
           application support across your school.
         </p>
       </div>
 
-      <div className="mb-7 grid grid-cols-1 gap-3.5 min-[761px]:grid-cols-2 min-[1101px]:grid-cols-3">
+      <div className="mb-7 grid grid-cols-1 gap-[14px] min-[761px]:grid-cols-2 min-[1101px]:grid-cols-3">
         {kpis.map((k) => (
           <div
             key={k.label}
-            className="relative flex min-h-[130px] flex-col rounded-[14px] border border-[var(--border-light)] bg-white px-5 pb-4 pt-[18px] transition-[border-color,box-shadow,transform] duration-150 hover:border-[var(--border)] hover:shadow-[0_1px_2px_rgba(15,30,20,0.04)]"
+            className="group relative flex min-h-[130px] flex-col rounded-[14px] border border-[#ece9e4] bg-white px-5 pb-4 pt-[18px] transition-[border-color,box-shadow,transform] duration-150 hover:border-[#e0deda] hover:shadow-[0_1px_2px_rgba(15,30,20,0.04)]"
           >
             <KpiIcon tint={k.tint}>{k.icon}</KpiIcon>
-            <div className="mb-3.5 pr-10 text-[11px] font-semibold uppercase leading-snug tracking-[0.07em] text-[var(--text-light)]">
+            <div className="mb-[14px] pr-[42px] text-[11px] font-semibold uppercase leading-[1.3] tracking-[0.07em] text-[#6a6a6a]">
               {k.label}
             </div>
-            <div className="mb-auto font-[family-name:var(--font-dm-serif)] text-[38px] font-normal leading-none tracking-tight text-[var(--text)]">
+            <div
+              className="mb-auto text-[38px] font-normal leading-none tracking-[-0.02em] text-[#1a1a1a]"
+              style={{ fontFamily: fontSerif }}
+            >
               {k.value}
               {k.sub ? (
-                <sub className="ml-px font-[family-name:var(--font-dm-sans)] text-[15px] font-normal tracking-normal text-[var(--text-hint)]">
+                <sub
+                  className="ml-px align-baseline text-[15px] font-normal tracking-normal text-[#a0a0a0]"
+                  style={{ fontFamily: fontSans }}
+                >
                   {k.sub}
                 </sub>
               ) : null}
             </div>
             {k.helper ? (
-              <div className="mt-3.5 border-t border-[var(--border-light)] pt-3 text-[11.5px] font-normal tracking-wide text-[var(--text-light)]">
+              <div className="mt-[14px] border-t border-[#ece9e4] pt-3 text-[11.5px] font-normal tracking-[0.005em] text-[#6a6a6a]">
                 {k.helper}
               </div>
             ) : null}
@@ -217,11 +233,11 @@ export function SchoolDashboard({ data }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-[18px] min-[1101px]:grid-cols-[1.5fr_1fr]">
-        <div className="mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white min-[1101px]:mb-0">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-light)] px-5 py-[18px]">
+        <div className="mb-[18px] overflow-hidden rounded-[14px] border border-[#ece9e4] bg-white min-[1101px]:mb-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ece9e4] px-5 py-[18px]">
             <div>
-              <div className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-[var(--text)]">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green-bg)] text-[var(--green)]">
+              <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-[#1a1a1a]">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[#E8F5EE] text-[#2D6A4F]">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -236,21 +252,18 @@ export function SchoolDashboard({ data }: Props) {
                 </span>
                 Students needing counselor follow-up
               </div>
-              <p className="mt-0.5 text-xs text-[var(--text-light)]">
+              <p className="mt-[2px] text-[12px] leading-none text-[#6a6a6a]">
                 Flagged based on activity, missing items, or application progress.
               </p>
             </div>
-            <Link
-              href="/school/students"
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold leading-none text-[var(--text-mid)] transition-all hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
-            >
+            <Link href="/school/students" className={btnGhostClassName} style={{ fontFamily: fontSans }}>
               View all
             </Link>
           </div>
           <div className="px-5 py-[18px]">
             {attention.length === 0 ? (
-              <div className="px-5 py-10 text-center text-[13px] text-[var(--text-light)]">
-                <div className="mx-auto mb-2.5 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--green-pale)] text-[var(--green)]">
+              <div className="px-5 py-10 text-center text-[13px] text-[#6a6a6a]">
+                <div className="mx-auto mb-2.5 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f2] text-[#2D6A4F]">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -269,37 +282,37 @@ export function SchoolDashboard({ data }: Props) {
                 {attention.map((row) => (
                   <div
                     key={row.id}
-                    className="flex items-center justify-between gap-4 border-b border-[var(--border-light)] py-3.5 first:pt-1.5 last:border-b-0"
+                    className="flex items-center justify-between gap-4 border-b border-[#ece9e4] py-[14px] first:pt-[6px] last:border-b-0"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-semibold text-[var(--green-dark)]">
+                      <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#E8F5EE] text-[11.5px] font-semibold text-[#1B4332]">
                         {row.initials}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[13.5px] font-semibold tracking-tight text-[var(--text)]">
+                        <div className="text-[13.5px] font-semibold tracking-[-0.005em] text-[#1a1a1a]">
                           {row.firstName} {row.lastName}
                           {row.grade ? (
-                            <span className="text-[11.5px] font-normal text-[var(--text-hint)]">
+                            <span className="text-[11.5px] font-normal text-[#a0a0a0]">
                               {" "}
                               · {row.grade}
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-0.5 max-w-[320px] text-xs leading-snug text-[var(--text-mid)]">
+                        <p className="mt-[3px] max-w-[320px] text-[12px] leading-[1.45] text-[#4a4a4a]">
                           {row.issue}
                         </p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3.5">
+                    <div className="flex shrink-0 items-center gap-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug ${
+                        className={`inline-flex items-center gap-[5px] rounded-full px-[10px] py-[3px] text-[11.5px] font-semibold leading-[1.4] ${
                           row.riskClass === "red"
                             ? "bg-[rgba(231,76,60,.12)] text-[#8c2d22]"
                             : "bg-[rgba(212,162,42,.14)] text-[#7a5d10]"
                         }`}
                       >
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${
+                          className={`h-[6px] w-[6px] rounded-full ${
                             row.riskClass === "red" ? "bg-[#E74C3C]" : "bg-[#D4A22A]"
                           }`}
                         />
@@ -307,7 +320,8 @@ export function SchoolDashboard({ data }: Props) {
                       </span>
                       <Link
                         href={`/school/students/${row.id}`}
-                        className="cursor-pointer whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-semibold tracking-wide text-[var(--green-dark)] transition-colors hover:bg-[var(--green-pale)]"
+                        className="cursor-pointer whitespace-nowrap rounded-[6px] px-[10px] py-[6px] text-[12px] font-semibold tracking-[0.005em] text-[#1B4332] transition-colors duration-[120ms] hover:bg-[#f0f7f2]"
+                        style={{ fontFamily: fontSans }}
                       >
                         Open profile →
                       </Link>
@@ -319,24 +333,19 @@ export function SchoolDashboard({ data }: Props) {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-light)] px-5 py-[18px]">
+        <div className="overflow-hidden rounded-[14px] border border-[#ece9e4] bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ece9e4] px-5 py-[18px]">
             <div>
-              <div className="text-[15px] font-semibold text-[var(--text)]">Offer highlights</div>
-              <p className="mt-0.5 text-xs text-[var(--text-light)]">
-                Recent university offers across your cohort.
-              </p>
+              <div className="text-[15px] font-semibold tracking-[-0.01em] text-[#1a1a1a]">Offer highlights</div>
+              <p className="mt-[2px] text-[12px] text-[#6a6a6a]">Recent university offers across your cohort.</p>
             </div>
-            <Link
-              href="/school/applications"
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold leading-none text-[var(--text-mid)] transition-all hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
-            >
+            <Link href="/school/applications" className={btnGhostClassName} style={{ fontFamily: fontSans }}>
               View all
             </Link>
           </div>
           <div className="p-0">
-            <div className="px-6 py-10 text-center text-[13px] text-[var(--text-light)]">
-              <div className="mx-auto mb-2.5 flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#faf9f4] text-[var(--text-hint)]">
+            <div className="px-5 py-10 text-center text-[13px] text-[#6a6a6a]">
+              <div className="mx-auto mb-2.5 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f2] text-[#2D6A4F]">
                 <svg
                   width="18"
                   height="18"
@@ -357,10 +366,10 @@ export function SchoolDashboard({ data }: Props) {
       </div>
 
       <div className="mt-[18px] grid grid-cols-1 gap-[18px] min-[1101px]:grid-cols-2">
-        <div className="overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
-          <div className="border-b border-[var(--border-light)] px-5 py-[18px]">
-            <div className="flex items-center gap-2 text-[15px] font-semibold text-[var(--text)]">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green-bg)] text-[var(--green)]">
+        <div className="overflow-hidden rounded-[14px] border border-[#ece9e4] bg-white">
+          <div className="border-b border-[#ece9e4] px-5 py-[18px]">
+            <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-[#1a1a1a]">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[#E8F5EE] text-[#2D6A4F]">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -378,28 +387,28 @@ export function SchoolDashboard({ data }: Props) {
           </div>
           <div className="px-5 py-[18px]">
             {topDestinations.length === 0 ? (
-              <p className="text-center text-[13px] text-[var(--text-light)]">No destination data yet.</p>
+              <p className="text-center text-[13px] text-[#6a6a6a]">No destination data yet.</p>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-[10px]">
                 {topDestinations.map((d, i) => (
                   <div
                     key={d.label}
-                    className="flex items-center justify-between border-b border-[var(--border-light)] py-2.5 last:border-b-0"
+                    className="flex items-center justify-between border-b border-[#ece9e4] py-[10px] last:border-b-0"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] bg-[var(--green-pale)] text-[10.5px] font-bold tracking-wide text-[var(--green-dark)]">
+                    <div className="flex items-center gap-[10px]">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] bg-[#f0f7f2] text-[10.5px] font-bold tracking-[0.02em] text-[#1B4332]">
                         {i + 1}
                       </div>
-                      <span className="text-[13px] font-medium tracking-tight text-[var(--text)]">{d.label}</span>
+                      <span className="text-[13px] font-medium tracking-[-0.005em] text-[#1a1a1a]">{d.label}</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-1 w-[72px] overflow-hidden rounded-sm bg-[var(--border-light)]">
+                    <div className="flex items-center gap-[10px]">
+                      <div className="h-[4px] w-[72px] overflow-hidden rounded-[2px] bg-[#ece9e4]">
                         <div
-                          className="h-full rounded-sm bg-[var(--green)] transition-[width] duration-300"
+                          className="h-full rounded-[2px] bg-[#2D6A4F] transition-[width] duration-300 ease-out"
                           style={{ width: `${(d.count / destMax) * 100}%` }}
                         />
                       </div>
-                      <span className="min-w-[22px] text-right text-xs font-semibold text-[var(--text-mid)]">
+                      <span className="min-w-[22px] text-right text-[12px] font-semibold tracking-[0.005em] text-[#4a4a4a]">
                         {d.count}
                       </span>
                     </div>
@@ -410,10 +419,10 @@ export function SchoolDashboard({ data }: Props) {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
-          <div className="border-b border-[var(--border-light)] px-5 py-[18px]">
-            <div className="flex items-center gap-2 text-[15px] font-semibold text-[var(--text)]">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green-bg)] text-[var(--green)]">
+        <div className="overflow-hidden rounded-[14px] border border-[#ece9e4] bg-white">
+          <div className="border-b border-[#ece9e4] px-5 py-[18px]">
+            <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] text-[#1a1a1a]">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[#E8F5EE] text-[#2D6A4F]">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -426,35 +435,35 @@ export function SchoolDashboard({ data }: Props) {
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
               </span>
-              Most popular programs
+              Most popular universities
             </div>
           </div>
           <div className="px-5 py-[18px]">
             {topPrograms.length === 0 ? (
-              <p className="text-center text-[13px] text-[var(--text-light)]">No program data yet.</p>
+              <p className="text-center text-[13px] text-[#6a6a6a]">No university data yet.</p>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-[10px]">
                 {topPrograms.map((p, i) => (
                   <div
                     key={p.label}
-                    className="flex items-center justify-between border-b border-[var(--border-light)] py-2.5 last:border-b-0"
+                    className="flex items-center justify-between border-b border-[#ece9e4] py-[10px] last:border-b-0"
                   >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] bg-[var(--green-pale)] text-[10.5px] font-bold tracking-wide text-[var(--green-dark)]">
+                    <div className="flex min-w-0 items-center gap-[10px]">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] bg-[#f0f7f2] text-[10.5px] font-bold tracking-[0.02em] text-[#1B4332]">
                         {i + 1}
                       </div>
-                      <span className="truncate text-[13px] font-medium tracking-tight text-[var(--text)]">
+                      <span className="truncate text-[13px] font-medium tracking-[-0.005em] text-[#1a1a1a]">
                         {p.label}
                       </span>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2.5">
-                      <div className="h-1 w-[72px] overflow-hidden rounded-sm bg-[var(--border-light)]">
+                    <div className="flex shrink-0 items-center gap-[10px]">
+                      <div className="h-[4px] w-[72px] overflow-hidden rounded-[2px] bg-[#ece9e4]">
                         <div
-                          className="h-full rounded-sm bg-[var(--green)] transition-[width] duration-300"
+                          className="h-full rounded-[2px] bg-[#2D6A4F] transition-[width] duration-300 ease-out"
                           style={{ width: `${(p.count / progMax) * 100}%` }}
                         />
                       </div>
-                      <span className="min-w-[22px] text-right text-xs font-semibold text-[var(--text-mid)]">
+                      <span className="min-w-[22px] text-right text-[12px] font-semibold tracking-[0.005em] text-[#4a4a4a]">
                         {p.count}
                       </span>
                     </div>

@@ -11,6 +11,52 @@ import {
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 const PAGE_SIZE = 1000;
+const DASHBOARD_SHORTLIST_TOP_N = 6;
+
+function parseSchoolDashboardShortlistTopStats(raw: unknown): {
+  topDestinations: { label: string; count: number }[];
+  topPrograms: { label: string; count: number }[];
+  shortlistRowCount: number;
+} {
+  const empty = {
+    topDestinations: [] as { label: string; count: number }[],
+    topPrograms: [] as { label: string; count: number }[],
+    shortlistRowCount: 0,
+  };
+  if (!raw || typeof raw !== "object") return empty;
+  const o = raw as Record<string, unknown>;
+
+  const parseList = (v: unknown): { label: string; count: number }[] => {
+    if (!Array.isArray(v)) return [];
+    const out: { label: string; count: number }[] = [];
+    for (const item of v) {
+      if (!item || typeof item !== "object") continue;
+      const r = item as Record<string, unknown>;
+      const label = typeof r.label === "string" ? r.label : "";
+      const c =
+        typeof r.count === "number"
+          ? r.count
+          : typeof r.count === "string"
+            ? Number(r.count)
+            : NaN;
+      if (!label.trim() || !Number.isFinite(c)) continue;
+      out.push({ label, count: Math.trunc(c) });
+    }
+    return out;
+  };
+
+  const src = o.shortlist_row_count;
+  const shortlistRowCount =
+    typeof src === "number" ? src : typeof src === "string" ? Number(src) : NaN;
+
+  return {
+    topDestinations: parseList(o.destinations),
+    topPrograms: parseList(o.programs),
+    shortlistRowCount: Number.isFinite(shortlistRowCount)
+      ? Math.trunc(shortlistRowCount)
+      : 0,
+  };
+}
 
 export type SchoolDashboardAttentionRow = {
   id: string;
@@ -71,7 +117,10 @@ async function scanActivities(
       .order("created_at", { ascending: false })
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
-      console.error("[fetchSchoolDashboard] student_activities:", error.message);
+      console.error(
+        "[fetchSchoolDashboard] student_activities:",
+        error.message,
+      );
       break;
     }
     if (!data?.length) break;
@@ -127,7 +176,10 @@ async function scanAiUsage(
 }
 
 async function paginateStudentIds(
-  fetchPage: (from: number, to: number) => Promise<{
+  fetchPage: (
+    from: number,
+    to: number,
+  ) => Promise<{
     data: { student_id: string }[] | null;
     error: { message: string } | null;
   }>,
@@ -137,7 +189,10 @@ async function paginateStudentIds(
   for (;;) {
     const { data, error } = await fetchPage(from, from + PAGE_SIZE - 1);
     if (error) {
-      console.error("[fetchSchoolDashboard] paginateStudentIds:", error.message);
+      console.error(
+        "[fetchSchoolDashboard] paginateStudentIds:",
+        error.message,
+      );
       break;
     }
     if (!data?.length) break;
@@ -150,35 +205,13 @@ async function paginateStudentIds(
   return set;
 }
 
-async function paginateCountries(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-): Promise<Map<string, number>> {
-  const freq = new Map<string, number>();
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
-      .from("student_shortlist_universities")
-      .select("country")
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) {
-      console.error("[fetchSchoolDashboard] shortlist countries:", error.message);
-      break;
-    }
-    if (!data?.length) break;
-    for (const row of data) {
-      const c = row.country?.trim();
-      if (!c) continue;
-      freq.set(c, (freq.get(c) ?? 0) + 1);
-    }
-    if (data.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-  return freq;
-}
+type AppProfRow = StudentApplicationProfileCompletionRow & {
+  student_id: string;
+};
 
-type AppProfRow = StudentApplicationProfileCompletionRow & { student_id: string };
-
-function toCompletionRow(row: AppProfRow): StudentApplicationProfileCompletionRow {
+function toCompletionRow(
+  row: AppProfRow,
+): StudentApplicationProfileCompletionRow {
   const {
     student_id: _sid,
     grade,
@@ -209,7 +242,10 @@ async function fetchApplicationProfilesForSchool(
     .eq("school_id", schoolId);
 
   if (profErr) {
-    console.error("[fetchSchoolDashboard] student_profiles ids:", profErr.message);
+    console.error(
+      "[fetchSchoolDashboard] student_profiles ids:",
+      profErr.message,
+    );
     return byStudent;
   }
 
@@ -224,7 +260,10 @@ async function fetchApplicationProfilesForSchool(
       )
       .in("student_id", chunk);
     if (error) {
-      console.error("[fetchSchoolDashboard] student_application_profile:", error.message);
+      console.error(
+        "[fetchSchoolDashboard] student_application_profile:",
+        error.message,
+      );
       continue;
     }
     for (const row of data ?? []) {
@@ -232,13 +271,6 @@ async function fetchApplicationProfilesForSchool(
     }
   }
   return byStudent;
-}
-
-function topNFromFreq(freq: Map<string, number>, n: number): { label: string; count: number }[] {
-  return [...freq.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, n)
-    .map(([label, count]) => ({ label, count }));
 }
 
 export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
@@ -278,7 +310,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     totalStudentsRes,
     advisorCountRes,
     ambassadorCountRes,
-    shortlistCountRes,
+    shortlistTopStatsRes,
     profilesRes,
   ] = await Promise.all([
     supabase
@@ -291,9 +323,9 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     supabase
       .from("ambassador_session_requests")
       .select("*", { count: "exact", head: true }),
-    supabase
-      .from("student_shortlist_universities")
-      .select("*", { count: "exact", head: true }),
+    supabase.rpc("school_dashboard_shortlist_top_stats", {
+      p_top_n: DASHBOARD_SHORTLIST_TOP_N,
+    }),
     supabase
       .from("student_profiles")
       .select("id, first_name, last_name, grade, updated_at, created_at")
@@ -301,7 +333,10 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
   ]);
 
   if (totalStudentsRes.error) {
-    console.error("[fetchSchoolDashboard] totalStudents:", totalStudentsRes.error.message);
+    console.error(
+      "[fetchSchoolDashboard] totalStudents:",
+      totalStudentsRes.error.message,
+    );
   }
   const totalStudents = totalStudentsRes.count ?? 0;
   const advisorSessionsCount = advisorCountRes.error
@@ -310,18 +345,31 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
   const ambassadorSessionsCount = ambassadorCountRes.error
     ? 0
     : (ambassadorCountRes.count ?? 0);
-  const universitiesShortlistedCount = shortlistCountRes.error
-    ? 0
-    : (shortlistCountRes.count ?? 0);
+
+  if (shortlistTopStatsRes.error) {
+    console.error(
+      "[fetchSchoolDashboard] school_dashboard_shortlist_top_stats:",
+      shortlistTopStatsRes.error.message,
+    );
+  }
+  const shortlistTopStats = parseSchoolDashboardShortlistTopStats(
+    shortlistTopStatsRes.data,
+  );
+  const universitiesShortlistedCount = shortlistTopStats.shortlistRowCount;
 
   if (profilesRes.error || !profilesRes.data) {
-    console.error("[fetchSchoolDashboard] profiles:", profilesRes.error?.message);
+    console.error(
+      "[fetchSchoolDashboard] profiles:",
+      profilesRes.error?.message,
+    );
     return {
       ...empty,
       totalStudents,
       advisorSessionsCount,
       ambassadorSessionsCount,
       universitiesShortlistedCount,
+      topDestinations: shortlistTopStats.topDestinations,
+      topPrograms: shortlistTopStats.topPrograms,
     };
   }
 
@@ -333,7 +381,6 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     supportAdvisorIds,
     supportAmbassadorIds,
     supportEssayIds,
-    destFreq,
     appProfByStudent,
   ] = await Promise.all([
     scanActivities(supabase, cutoff30Iso),
@@ -354,13 +401,14 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
         .eq("type", "essay_review")
         .range(from, to),
     ),
-    paginateCountries(supabase),
     fetchApplicationProfilesForSchool(supabase, schoolId),
   ]);
 
   const profileIds30dUpdated = new Set(
     profiles
-      .filter((p) => p.updated_at && new Date(p.updated_at) >= new Date(cutoff30Iso))
+      .filter(
+        (p) => p.updated_at && new Date(p.updated_at) >= new Date(cutoff30Iso),
+      )
       .map((p) => p.id),
   );
 
@@ -373,15 +421,6 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
   for (const id of supportAdvisorIds) studentsUsingAppSupport.add(id);
   for (const id of supportAmbassadorIds) studentsUsingAppSupport.add(id);
   for (const id of supportEssayIds) studentsUsingAppSupport.add(id);
-
-  const programFreq = new Map<string, number>();
-  for (const row of appProfByStudent.values()) {
-    for (const raw of row.interested_programs ?? []) {
-      const p = typeof raw === "string" ? raw.trim() : "";
-      if (!p) continue;
-      programFreq.set(p, (programFreq.get(p) ?? 0) + 1);
-    }
-  }
 
   const attentionRaw: SchoolDashboardAttentionRow[] = [];
 
@@ -407,8 +446,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
       try {
         const t = new Date(activityIso).getTime();
         if (!Number.isNaN(t)) {
-          inactiveWeek =
-            (Date.now() - t) / (1000 * 60 * 60 * 24) >= 7;
+          inactiveWeek = (Date.now() - t) / (1000 * 60 * 60 * 24) >= 7;
         }
       } catch {
         inactiveWeek = false;
@@ -435,7 +473,9 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
 
   attentionRaw.sort((a, b) => {
     if (a.riskClass !== b.riskClass) return a.riskClass === "red" ? -1 : 1;
-    return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+    return `${a.lastName} ${a.firstName}`.localeCompare(
+      `${b.lastName} ${b.firstName}`,
+    );
   });
 
   return {
@@ -446,7 +486,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     studentsUsingAppSupportCount: studentsUsingAppSupport.size,
     universitiesShortlistedCount,
     attention: attentionRaw.slice(0, 5),
-    topDestinations: topNFromFreq(destFreq, 6),
-    topPrograms: topNFromFreq(programFreq, 6),
+    topDestinations: shortlistTopStats.topDestinations,
+    topPrograms: shortlistTopStats.topPrograms,
   };
 }
