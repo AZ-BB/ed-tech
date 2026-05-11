@@ -18,6 +18,12 @@ import { ScholarshipEmptyCatalog } from "./scholarship-empty-catalog";
 import { ScholarshipPaginationNav } from "./scholarship-pagination-nav";
 import { ScholarshipSelectorBar } from "./scholarship-selector-bar";
 
+function isGovernmentScholarship(s: Scholarship): boolean {
+  return String(s.type ?? "")
+    .trim()
+    .toLowerCase() === "government";
+}
+
 function mergeSearchHref(
   pathname: string,
   current: URLSearchParams,
@@ -100,6 +106,15 @@ export function ScholarshipDiscovery({
   };
 
   const visible = pageData.scholarships;
+
+  const governmentScholarships = useMemo(
+    () => pageData.scholarships.filter(isGovernmentScholarship),
+    [pageData.scholarships],
+  );
+  const otherScholarships = useMemo(
+    () => pageData.scholarships.filter((s) => !isGovernmentScholarship(s)),
+    [pageData.scholarships],
+  );
 
   const applyScholarship: Scholarship | null = useMemo(() => {
     const id = applySourceId ?? pageData.detailId;
@@ -234,39 +249,83 @@ export function ScholarshipDiscovery({
       ) : null}
 
       {pageData.totalMatching > 0 ? (
-        <ScholarshipCategorySection
-          title="Scholarships"
-          subtitle="Government, university, foundation, and corporate programs in one directory"
-          iconWrapClass="bg-[#EEF2F7]"
-          count={pageData.totalMatching}
-          scholarships={pageData.scholarships}
-          onSelect={openDetail}
-          savedIds={savedIds}
-          onToggleSave={toggleSave}
-          footer={
-            <ScholarshipPaginationNav
-              hrefForPage={hrefPage}
-              currentPage={pageData.page}
-              totalPages={pageData.totalPages}
-              totalItems={pageData.totalMatching}
-              ariaLabel="Scholarships pages"
-            />
-          }
-          icon={
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#3d5a80"
-              strokeWidth="1.8"
-              aria-hidden
-            >
-              <path d="M12 3L2 8l10 5 10-5-10-5z" />
-              <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
-            </svg>
-          }
-        />
+        <>
+          <p className="mb-4 text-[12px] text-[var(--text-hint)]">
+            {pageData.totalMatching} scholarship
+            {pageData.totalMatching === 1 ? "" : "s"} match your filters
+            {pageData.totalPages > 1
+              ? ` · Page ${pageData.page} of ${pageData.totalPages}`
+              : ""}
+          </p>
+          <ScholarshipCategorySection
+            title="Government scholarships"
+            subtitle="National and ministry-funded programs"
+            iconWrapClass="bg-[#E8EEF5]"
+            scholarships={governmentScholarships}
+            onSelect={openDetail}
+            savedIds={savedIds}
+            onToggleSave={toggleSave}
+            footer={
+              otherScholarships.length === 0 ? (
+                <ScholarshipPaginationNav
+                  hrefForPage={hrefPage}
+                  currentPage={pageData.page}
+                  totalPages={pageData.totalPages}
+                  totalItems={pageData.totalMatching}
+                  ariaLabel="Scholarships pages"
+                />
+              ) : undefined
+            }
+            icon={
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#3d5a80"
+                strokeWidth="1.8"
+                aria-hidden
+              >
+                <path d="M12 3L2 8l10 5 10-5-10-5z" />
+                <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
+              </svg>
+            }
+          />
+          <ScholarshipCategorySection
+            title="Other scholarships"
+            subtitle="University, foundation, corporate, and other programs"
+            iconWrapClass="bg-[#F0EDE8]"
+            scholarships={otherScholarships}
+            onSelect={openDetail}
+            savedIds={savedIds}
+            onToggleSave={toggleSave}
+            footer={
+              otherScholarships.length > 0 ? (
+                <ScholarshipPaginationNav
+                  hrefForPage={hrefPage}
+                  currentPage={pageData.page}
+                  totalPages={pageData.totalPages}
+                  totalItems={pageData.totalMatching}
+                  ariaLabel="Scholarships pages"
+                />
+              ) : undefined
+            }
+            icon={
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#6b5b4f"
+                strokeWidth="1.8"
+                aria-hidden
+              >
+                <path d="M12 3L2 8l10 5 10-5-10-5z" />
+                <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
+              </svg>
+            }
+          />
+        </>
       ) : null}
 
       <ScholarshipDetailPanel

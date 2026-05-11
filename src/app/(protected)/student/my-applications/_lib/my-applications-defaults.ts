@@ -1,4 +1,4 @@
-/** Predefined document checklist rows (slot_key unique per student). */
+/** Predefined document checklist rows (slot_key unique per student; extra “other” rows use `other:<uuid>`). */
 export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
   {
     slot_key: "predicted",
@@ -34,10 +34,37 @@ export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
     display_name: "Portfolio",
     description: "Required only for art / design / architecture programs",
   },
+  {
+    slot_key: "other",
+    display_name: "Other",
+    description:
+      "Any extra file for your counselor — certificates, medical forms, etc. You can rename this row to describe what you upload.",
+  },
 ] as const;
 
 /** School fills this via portal; students cannot edit the row (RLS). */
 export const SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY = "predicted";
+
+/** Primary student-defined misc upload row; label is editable. */
+export const OTHER_DOCUMENT_SLOT_KEY = "other";
+
+/** Supplemental other-document rows use `other:` + a unique suffix (UUID). */
+export const OTHER_DOCUMENT_EXTRA_KEY_PREFIX = "other:";
+
+export function isOtherDocumentSlot(slotKey: string): boolean {
+  return (
+    slotKey === OTHER_DOCUMENT_SLOT_KEY ||
+    slotKey.startsWith(OTHER_DOCUMENT_EXTRA_KEY_PREFIX)
+  );
+}
+
+/** New checklist row key; unique per student with the table’s (student_id, slot_key) constraint. */
+export function makeSupplementalOtherDocumentSlotKey(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${OTHER_DOCUMENT_EXTRA_KEY_PREFIX}${crypto.randomUUID()}`;
+  }
+  return `${OTHER_DOCUMENT_EXTRA_KEY_PREFIX}${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
 
 export const UNIVERSITY_APPLICATION_STATUSES = [
   "considering",

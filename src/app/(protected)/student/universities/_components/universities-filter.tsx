@@ -6,8 +6,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 const FILTER_SELECT_CHEVRON =
     'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
 
-const filterSelectClass =
-    "min-h-9 min-w-[120px] cursor-pointer rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-3.5 py-2 text-[11.5px] leading-none text-[#4a4a4a] transition-all hover:border-[#a0a0a0] focus:border-[#40916C] focus:outline-none appearance-none bg-[length:10px_6px] bg-[position:right_12px_center] bg-no-repeat pr-[30px] max-[600px]:min-w-0 max-[600px]:w-full";
+const filterSelectBase =
+    "min-h-9 shrink-0 cursor-pointer rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-3.5 py-2 text-[11.5px] leading-none text-[#4a4a4a] transition-all hover:border-[#a0a0a0] focus:border-[#40916C] focus:outline-none appearance-none bg-[length:10px_6px] bg-[position:right_12px_center] bg-no-repeat pr-[30px]";
+
+/** Default width for Major, Program, Type, Difficulty */
+const filterSelectClass = `${filterSelectBase} min-w-[120px] max-w-[200px]`;
+
+/** Narrower — country names are long in the list but the closed control does not need to span the row */
+const filterSelectCountryClass = `${filterSelectBase} w-[132px] min-w-[132px] max-w-[132px]`;
 
 const filterToggleClass =
     "inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center rounded-[50px] border-[1.5px] px-3.5 py-2 text-[11.5px] font-medium leading-none transition-all";
@@ -180,36 +186,9 @@ export function UniversitiesFilter({
                 />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 rounded-[16px] border border-[#ece9e4] bg-white px-5 py-3 max-[600px]:flex-col max-[600px]:items-stretch">
-                <div className="flex flex-wrap items-center gap-2 max-[600px]:w-full">
-                    <button
-                        type="button"
-                        aria-pressed={shortlistOnly}
-                        aria-label={shortlistOnly ? "Show all universities" : "Show shortlisted universities only"}
-                        className={shortlistOnly ? filterToggleOnClass : filterToggleOffClass}
-                        onClick={() =>
-                            patchAndNavigate({
-                                shortlisted: shortlistOnly ? null : "1",
-                            })
-                        }
-                    >
-                        Shortlisted
-                    </button>
-                    <button
-                        type="button"
-                        aria-pressed={favouritesOnly}
-                        aria-label={favouritesOnly ? "Show all universities" : "Show favourite universities only"}
-                        className={favouritesOnly ? filterToggleOnClass : filterToggleOffClass}
-                        onClick={() =>
-                            patchAndNavigate({
-                                favourites: favouritesOnly ? null : "1",
-                            })
-                        }
-                    >
-                        Favourites
-                    </button>
-                </div>
-
+            <div className="rounded-[16px] border border-[#ece9e4] bg-white px-5 py-3">
+                <div className="flex w-full min-w-0 flex-nowrap items-center gap-3">
+                    <div className="flex min-h-9 min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5">
                 <select
                     aria-label="Major"
                     className={filterSelectClass}
@@ -258,7 +237,7 @@ export function UniversitiesFilter({
 
                 <select
                     aria-label="Country"
-                    className={filterSelectClass}
+                    className={filterSelectCountryClass}
                     style={{ backgroundImage: FILTER_SELECT_CHEVRON }}
                     value={countryValue}
                     onChange={(e) =>
@@ -313,10 +292,38 @@ export function UniversitiesFilter({
                     <option value="medium">Medium</option>
                     <option value="hard">Hard</option>
                 </select>
+                    </div>
 
+                    <div className="flex shrink-0 flex-nowrap items-center gap-2">
+                    <button
+                        type="button"
+                        aria-pressed={shortlistOnly}
+                        aria-label={shortlistOnly ? "Show all universities" : "Show shortlisted universities only"}
+                        className={shortlistOnly ? filterToggleOnClass : filterToggleOffClass}
+                        onClick={() =>
+                            patchAndNavigate({
+                                shortlisted: shortlistOnly ? null : "1",
+                            })
+                        }
+                    >
+                        Shortlisted
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={favouritesOnly}
+                        aria-label={favouritesOnly ? "Show all universities" : "Show favourite universities only"}
+                        className={favouritesOnly ? filterToggleOnClass : filterToggleOffClass}
+                        onClick={() =>
+                            patchAndNavigate({
+                                favourites: favouritesOnly ? null : "1",
+                            })
+                        }
+                    >
+                        Favourites
+                    </button>
                 <button
                     type="button"
-                    className="ml-auto inline-flex h-9 cursor-pointer items-center rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-[18px] text-[11.5px] font-medium leading-none text-[#7a7a7a] transition-all hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F] max-[600px]:ml-0 max-[600px]:w-full max-[600px]:justify-center"
+                    className="inline-flex h-9 shrink-0 cursor-pointer items-center rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-[18px] text-[11.5px] font-medium leading-none text-[#7a7a7a] transition-all hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]"
                     onClick={() => {
                         setSearchDraft("");
                         const next = stripFilterParams(paramsRef.current);
@@ -325,6 +332,8 @@ export function UniversitiesFilter({
                 >
                     Clear filters
                 </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
