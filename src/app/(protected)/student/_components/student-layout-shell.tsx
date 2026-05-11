@@ -1,6 +1,21 @@
 "use client";
 
 import { logout } from "@/actions/auth";
+import {
+  Brain,
+  ClipboardList,
+  Compass,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  ScanSearch,
+  Send,
+  Settings,
+  Star,
+  UserRound,
+  UsersRound,
+  Video,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -8,6 +23,50 @@ import {
   sidebarNavItems,
   type SidebarNavItem,
 } from "../_data/student-dashboard-data";
+
+const NAV_ICON_STROKE = 1.75;
+
+function StudentNavIcon({
+  navId,
+  className,
+}: {
+  navId: string;
+  className?: string;
+}) {
+  const common = {
+    className,
+    strokeWidth: NAV_ICON_STROKE,
+    "aria-hidden": true as const,
+  };
+  switch (navId) {
+    case "dashboard":
+      return <LayoutDashboard {...common} />;
+    case "my-applications":
+      return <ClipboardList {...common} />;
+    case "personality-check":
+      return <Brain {...common} />;
+    case "program-discovery":
+      return <Compass {...common} />;
+    case "university-search":
+      return <ScanSearch {...common} />;
+    case "scholarships":
+      return <Star {...common} />;
+    case "advisor-sessions":
+      return <UserRound {...common} />;
+    case "ambassadors":
+      return <UsersRound {...common} />;
+    case "application-support":
+      return <Send {...common} />;
+    case "post-admission-support":
+      return <Package {...common} />;
+    case "webinars":
+      return <Video {...common} />;
+    case "account-settings":
+      return <Settings {...common} />;
+    default:
+      return <LayoutDashboard {...common} />;
+  }
+}
 
 function normalizePath(pathname: string): string {
   return pathname.replace(/\/$/, "") || "/";
@@ -20,6 +79,14 @@ function isSidebarNavLinkActive(
   if (item.href === "#") return false;
   const n = normalizePath(pathname);
   const h = normalizePath(item.href);
+  if (item.id === "university-search") {
+    return (
+      n === "/student/universities" ||
+      n.startsWith("/student/universities/") ||
+      n === "/student/ai-matching" ||
+      n.startsWith("/student/ai-matching/")
+    );
+  }
   if (n === h) return true;
   if (item.id === "advisor-sessions" && h === "/student/advisor-sessions" && n.startsWith(`${h}/`)) {
     return true;
@@ -55,29 +122,16 @@ function isStudentAmbassadorSessionBookPath(pathname: string) {
 
 function shellHeaderFromPathname(pathname: string): {
   label: string;
-  iconPaths: string[];
+  navId: string;
 } {
   for (const item of sidebarNavItems) {
     if (item.type === "divider") continue;
     if (item.href === "#") continue;
     if (item.type === "link" && isSidebarNavLinkActive(pathname, item)) {
-      return { label: item.label, iconPaths: item.iconPaths };
+      return { label: item.label, navId: item.id };
     }
   }
-  const dashboard = sidebarNavItems.find(
-    (i): i is Extract<SidebarNavItem, { type: "link" }> =>
-      i.type === "link" && i.id === "dashboard",
-  );
-  if (dashboard) {
-    return { label: dashboard.label, iconPaths: dashboard.iconPaths };
-  }
-  return {
-    label: "Dashboard",
-    iconPaths: [
-      "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z",
-      "M9 22V12h6v10",
-    ],
-  };
+  return { label: "Dashboard", navId: "dashboard" };
 }
 
 function SidebarNav({
@@ -100,31 +154,22 @@ function SidebarNav({
         }
 
         const active = item.type === "link" ? isSidebarNavLinkActive(pathname, item) : false;
-        const rowClass = `flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13.5px] font-medium transition-colors mb-0.5 cursor-pointer ${
+        const rowClass = `group flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13.5px] font-medium transition-colors mb-0.5 cursor-pointer ${
           active
-            ? "bg-[var(--green-bg)] font-semibold text-[var(--green-dark)] [&_svg]:stroke-[var(--green)]"
-            : "text-[var(--text-mid)] hover:bg-[var(--sand)] hover:text-[var(--text)] [&_svg]:stroke-[var(--text-hint)]"
+            ? "bg-[var(--green-bg)] font-semibold text-[var(--green-dark)]"
+            : "text-[var(--text-mid)] hover:bg-[var(--sand)] hover:text-[var(--text)]"
         }`;
 
         const inner = (
           <>
-            <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center [&_svg]:h-[18px] [&_svg]:w-[18px]">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                {item.iconPaths.map((d) => (
-                  <path key={d} d={d} />
-                ))}
-              </svg>
-            </span>
+            <StudentNavIcon
+              navId={item.id}
+              className={
+                active
+                  ? "h-[18px] w-[18px] shrink-0 text-[var(--green)]"
+                  : "h-[18px] w-[18px] shrink-0 text-[var(--text-hint)] transition-colors group-hover:text-[var(--text-mid)]"
+              }
+            />
             {item.label}
           </>
         );
@@ -159,25 +204,13 @@ function SidebarNav({
       <form action={logout} className="mt-1 px-3 pb-2">
         <button
           type="submit"
-          className="flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-left text-[13.5px] font-medium text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] hover:text-[var(--text)] [&_svg]:stroke-[var(--text-hint)] hover:[&_svg]:stroke-[var(--text-mid)]"
+          className="group flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-left text-[13.5px] font-medium text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] hover:text-[var(--text)]"
         >
-          <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center [&_svg]:h-[18px] [&_svg]:w-[18px]">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-              <path d="M16 17l5-5-5-5" />
-              <path d="M21 12H9" />
-            </svg>
-          </span>
+          <LogOut
+            className="h-[18px] w-[18px] shrink-0 text-[var(--text-hint)] transition-colors group-hover:text-[var(--text-mid)]"
+            strokeWidth={NAV_ICON_STROKE}
+            aria-hidden
+          />
           Log out
         </button>
       </form>
@@ -205,7 +238,7 @@ function SidebarHeader({ onClose }: { onClose?: () => void }) {
           </svg>
         </div>
         <span className="text-[15px] font-bold text-[var(--text)]">
-          UniApply
+          Univeera
         </span>
       </div>
       {onClose ? (
@@ -275,21 +308,10 @@ export function StudentLayoutShell({
           <header className="mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--green-bg)]">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#2D6A4F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  {shellHeader.iconPaths.map((d) => (
-                    <path key={d} d={d} />
-                  ))}
-                </svg>
+                <StudentNavIcon
+                  navId={shellHeader.navId}
+                  className="h-[18px] w-[18px] text-[#2D6A4F]"
+                />
               </div>
               <span className="text-base font-semibold text-[var(--text)]">
                 {shellHeader.label}

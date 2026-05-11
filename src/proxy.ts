@@ -53,16 +53,19 @@ export async function proxy(request: NextRequest) {
 
   // Auth/marketing pages anyone can open without logging in (prefix match).
   const publicAuthRoutes = [
-    '/login',
-    '/signup',
-    '/auth/callback',
-    '/auth',
-    '/forget-password',
-    '/auth/reset-password',
-    '/privacy',
-    '/terms',
-    '/about',
-    '/contact',
+    "/login",
+    "/signup",
+    "/auth/callback",
+    "/auth",
+    "/forget-password",
+    "/auth/reset-password",
+    "/privacy",
+    "/terms",
+    "/about",
+    "/contact",
+    "/for-schools",
+    "/for-advisors",
+    "/blog",
   ]
   const isPublicAuthRoute = publicAuthRoutes.some((route) =>
     pathname.startsWith(route)

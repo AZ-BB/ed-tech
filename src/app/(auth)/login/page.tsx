@@ -85,7 +85,7 @@ function ForgotPasswordModal({
                 if (e.key === "Escape") onClose();
             }}
         >
-            <div className="relative m-0 w-full min-w-0 max-w-full box-border overflow-hidden rounded-2xl border-0 bg-white p-10 shadow-[0_8px_40px_rgba(0,0,0,0.12)] sm:p-11">
+            <div className="relative m-0 w-full max-w-[400px] min-w-0 box-border overflow-hidden rounded-2xl border-0 bg-white p-10 shadow-[0_8px_40px_rgba(0,0,0,0.12)] sm:p-11">
                 <button
                     type="button"
                     onClick={onClose}
@@ -309,7 +309,7 @@ function LoginPageContent() {
                         <LogoIcon />
                     </div>
                     <span className="text-[1.15rem] font-bold tracking-tight text-[var(--text)]">
-                        UniApply
+                        Univeera
                     </span>
                 </div>
 

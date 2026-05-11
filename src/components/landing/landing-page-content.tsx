@@ -214,144 +214,118 @@ export function LandingPageContent() {
           </div>
 
           <div className="feat-grid">
-            <a
-              href="ai_university_matching.html"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="feat-card">
-                <div
-                  className="feat-icon"
-                  style={{ background: "var(--green-bg)" }}
+            <div className="feat-card">
+              <div
+                className="feat-icon"
+                style={{ background: "var(--green-bg)" }}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#2D6A4F"
+                  strokeWidth="1.8"
+                  aria-hidden
                 >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#2D6A4F"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
-                  </svg>
-                </div>
-                <div className="feat-name">AI university matching</div>
-                <div className="feat-desc">
-                  Answer a few questions and get top university recommendations
-                  tailored for you.
-                </div>
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
               </div>
-            </a>
-            <a
-              href="university_search_page.html"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="feat-card">
-                <div className="feat-icon" style={{ background: "#E6F1FB" }}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#185FA5"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M2 12l10 5 10-5" />
-                  </svg>
-                </div>
-                <div className="feat-name">University search database</div>
-                <div className="feat-desc">
-                  Browse local, regional, and global universities with detailed
-                  requirements.
-                </div>
+              <div className="feat-name">AI university matching</div>
+              <div className="feat-desc">
+                Answer a few questions and get top university recommendations
+                tailored for you.
               </div>
-            </a>
-            <a
-              href="ambassadors_page.html"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="feat-card">
-                <div className="feat-icon" style={{ background: "#FAEEDA" }}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#854F0B"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                  </svg>
-                </div>
-                <div className="feat-name">University ambassadors</div>
-                <div className="feat-desc">
-                  Speak to students who have already studied at your target
-                  university.
-                </div>
-              </div>
-            </a>
-            <a
-              href="advisor_sessions_page.html"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="feat-card">
-                <div className="feat-icon" style={{ background: "#EEEDFE" }}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#534AB7"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-                <div className="feat-name">1:1 advisor sessions</div>
-                <div className="feat-desc">
-                  Get expert guidance tailored to your goals and application
-                  strategy.
-                </div>
-              </div>
-            </a>
-            <a
-              href="essay_review_page.html"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="feat-card">
-                <div
-                  className="feat-icon"
-                  style={{ background: "var(--green-bg)" }}
+            </div>
+            <div className="feat-card">
+              <div className="feat-icon" style={{ background: "#E6F1FB" }}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#185FA5"
+                  strokeWidth="1.8"
+                  aria-hidden
                 >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#2D6A4F"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                </div>
-                <div className="feat-name">Essay support (AI-powered)</div>
-                <div className="feat-desc">
-                  Receive actionable feedback to improve your personal
-                  statement.
-                </div>
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
               </div>
-            </a>
+              <div className="feat-name">University search database</div>
+              <div className="feat-desc">
+                Browse local, regional, and global universities with detailed
+                requirements.
+              </div>
+            </div>
+            <div className="feat-card">
+              <div className="feat-icon" style={{ background: "#FAEEDA" }}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#854F0B"
+                  strokeWidth="1.8"
+                  aria-hidden
+                >
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                </svg>
+              </div>
+              <div className="feat-name">University ambassadors</div>
+              <div className="feat-desc">
+                Speak to students who have already studied at your target
+                university.
+              </div>
+            </div>
+            <div className="feat-card">
+              <div className="feat-icon" style={{ background: "#EEEDFE" }}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#534AB7"
+                  strokeWidth="1.8"
+                  aria-hidden
+                >
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <div className="feat-name">1:1 advisor sessions</div>
+              <div className="feat-desc">
+                Get expert guidance tailored to your goals and application
+                strategy.
+              </div>
+            </div>
+            <div className="feat-card">
+              <div
+                className="feat-icon"
+                style={{ background: "var(--green-bg)" }}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#2D6A4F"
+                  strokeWidth="1.8"
+                  aria-hidden
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </div>
+              <div className="feat-name">Essay support (AI-powered)</div>
+              <div className="feat-desc">
+                Receive actionable feedback to improve your personal statement.
+              </div>
+            </div>
             <div className="feat-card">
               <div className="feat-icon" style={{ background: "#FCEBEB" }}>
                 <svg
@@ -371,57 +345,46 @@ export function LandingPageContent() {
                 Practice with real tests and get AI insights on how to improve.
               </div>
             </div>
-            <a
-              href="scholarship_discovery_page.html"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="feat-card">
-                <div className="feat-icon" style={{ background: "#E6F1FB" }}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#185FA5"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
-                  </svg>
-                </div>
-                <div className="feat-name">Scholarship opportunities</div>
-                <div className="feat-desc">
-                  Find and filter scholarships that match your profile and
-                  needs.
-                </div>
+            <div className="feat-card">
+              <div className="feat-icon" style={{ background: "#E6F1FB" }}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#185FA5"
+                  strokeWidth="1.8"
+                  aria-hidden
+                >
+                  <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
+                </svg>
               </div>
-            </a>
-            <a
-              href="application_support.html"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="feat-card">
-                <div className="feat-icon" style={{ background: "#FAEEDA" }}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#854F0B"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <path d="M22 2L11 13" />
-                    <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-                  </svg>
-                </div>
-                <div className="feat-name">Application support</div>
-                <div className="feat-desc">
-                  Tell us your targets — we&apos;ll handle the full application
-                  process for you.
-                </div>
+              <div className="feat-name">Scholarship opportunities</div>
+              <div className="feat-desc">
+                Find and filter scholarships that match your profile and needs.
               </div>
-            </a>
+            </div>
+            <div className="feat-card">
+              <div className="feat-icon" style={{ background: "#FAEEDA" }}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#854F0B"
+                  strokeWidth="1.8"
+                  aria-hidden
+                >
+                  <path d="M22 2L11 13" />
+                  <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
+              </div>
+              <div className="feat-name">Application support</div>
+              <div className="feat-desc">
+                Tell us your targets — we&apos;ll handle the full application
+                process for you.
+              </div>
+            </div>
           </div>
         </div>
       </section>

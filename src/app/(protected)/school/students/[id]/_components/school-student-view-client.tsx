@@ -20,6 +20,8 @@ import { SchoolStudentEssaysTab } from "./school-student-essays-tab";
 import { SchoolStudentInteractionsTab } from "./school-student-interactions-tab";
 import { SchoolStudentPanel } from "./school-student-panel";
 import { SchoolStudentShortlistTab } from "./school-student-shortlist-tab";
+import { parseLegacySatActScores } from "@/app/(protected)/student/my-applications/_lib/sat-act-score-input";
+import { formatPreferredDestinationsForDisplay } from "@/app/(protected)/student/my-applications/_lib/preferred-destinations-iso";
 
 type TabId =
   | "snapshot"
@@ -359,8 +361,22 @@ function SnapshotContent({
   student: SchoolStudentDetailPayload["student"];
 }) {
   const preferred = applicationProfile
-    ? joinList(applicationProfile.preferred_destinations)
+    ? formatPreferredDestinationsForDisplay(
+        applicationProfile.preferred_destinations,
+      )
     : "—";
+  const satScoreSnap = applicationProfile?.sat_score?.trim()
+    ? applicationProfile.sat_score.trim()
+    : applicationProfile
+      ? parseLegacySatActScores(applicationProfile.sat_act_scores).sat.trim() ||
+        "—"
+      : "—";
+  const actScoreSnap = applicationProfile?.act_score?.trim()
+    ? applicationProfile.act_score.trim()
+    : applicationProfile
+      ? parseLegacySatActScores(applicationProfile.sat_act_scores).act.trim() ||
+        "—"
+      : "—";
   const programs = applicationProfile
     ? joinList(applicationProfile.interested_programs)
     : "—";
@@ -368,7 +384,8 @@ function SnapshotContent({
   const english = applicationProfile?.english_test_scores?.trim()
     ? applicationProfile.english_test_scores.trim()
     : "Pending";
-  const sat = snapDisplay(applicationProfile?.sat_act_scores, "-");
+  const sat = satScoreSnap;
+  const act = actScoreSnap;
   const curr = snapDisplay(applicationProfile?.curriculum, "-");
 
   return (
@@ -380,9 +397,10 @@ function SnapshotContent({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <SnapItem label="Preferred destinations" value={preferred} />
           <SnapItem label="Interested programs" value={programs} />
+          <SnapItem label="SAT (total)" value={sat} />
+          <SnapItem label="ACT (composite)" value={act} />
           <SnapItem label="Budget range" value={budget} />
           <SnapItem label="English test" value={english} />
-          <SnapItem label="SAT / ACT" value={sat} />
           <SnapItem label="Curriculum" value={curr} />
         </div>
       </SchoolStudentPanel>

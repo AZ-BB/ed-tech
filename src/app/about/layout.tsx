@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./about.css";
 
 export const metadata: Metadata = {
-  title: "About — UniApply",
+  title: "About — Univeera",
 };
 
 export default function AboutLayout({
