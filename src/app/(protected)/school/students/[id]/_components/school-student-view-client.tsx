@@ -755,6 +755,14 @@ export function SchoolStudentViewClient({
       <SchoolTasksClient
         variant="studentProfile"
         scopedStudentId={student.id}
+        scopedStudentAssignLabel={
+          [
+            `${student.firstName} ${student.lastName}`.trim(),
+            student.gradeDisplay?.trim(),
+          ]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        }
         rows={tasksPanel.rows}
         totalRows={tasksPanel.totalRows}
         page={tasksPanel.page}
@@ -823,14 +831,23 @@ export function SchoolStudentViewClient({
           ))}
 
           <div className="mt-2 flex flex-col gap-1.5">
-            <button
-              type="button"
-              disabled
-              className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white opacity-55"
-              title="Coming soon"
-            >
-              Email student
-            </button>
+            {student.email ? (
+              <a
+                href={`mailto:${student.email}`}
+                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                Email student
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white opacity-55"
+                title="No email on file"
+              >
+                Email student
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {

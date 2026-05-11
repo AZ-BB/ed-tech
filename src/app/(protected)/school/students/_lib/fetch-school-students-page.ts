@@ -1,6 +1,9 @@
 import { formatDistanceToNow } from "date-fns";
 
-import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
+import {
+  getStudentApplicationProfileCompletion,
+  studentApplicationProfileRowToCompletionInput,
+} from "@/lib/student-application-profile-completion";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type SchoolStudentTableRow = {
@@ -160,7 +163,7 @@ export async function fetchSchoolStudentsPage(
   let listQuery = supabase
     .from("student_profiles")
     .select(
-      "id, first_name, last_name, email, grade, platform_completion, updated_at, counselor_school_admin_id",
+      "id, first_name, last_name, email, grade, updated_at, counselor_school_admin_id",
       {
         count: "exact",
       },
@@ -223,7 +226,7 @@ export async function fetchSchoolStudentsPage(
     }
   }
 
-  const [slRes, actRes] = await Promise.all([
+  const [slRes, actRes, appProfRes] = await Promise.all([
     supabase
       .from("student_shortlist_universities")
       .select("student_id, country, major_program, sort_order")
@@ -232,6 +235,12 @@ export async function fetchSchoolStudentsPage(
       .from("student_activities")
       .select("student_id, created_at")
       .in("student_id", ids),
+    supabase
+      .from("student_application_profile")
+      .select(
+        "student_id, grade, curriculum, preferred_destinations, interested_programs, english_test_scores, sat_act_scores",
+      )
+      .in("student_id", ids),
   ]);
 
   const slRoll = rollupShortlist(slRes.data ?? []);
@@ -239,9 +248,27 @@ export async function fetchSchoolStudentsPage(
   /** Last interaction time per student (any activity row). */
   const lastActive = maxActivityByStudent(actRes.data ?? []);
 
+  const appProfByStudent = new Map<
+    string,
+    NonNullable<typeof appProfRes.data>[number]
+  >();
+  if (appProfRes.error) {
+    console.error(
+      "[fetchSchoolStudentsPage] student_application_profile:",
+      appProfRes.error.message,
+    );
+  } else {
+    for (const row of appProfRes.data ?? []) {
+      appProfByStudent.set(row.student_id, row);
+    }
+  }
+
   const rows: SchoolStudentTableRow[] = profiles.map((p) => {
     const slMeta = slRoll.get(p.id);
-    const pct = getPlatformCompletionStats(p.platform_completion).percent;
+    const appRow = appProfByStudent.get(p.id);
+    const pct = getStudentApplicationProfileCompletion(
+      studentApplicationProfileRowToCompletionInput(appRow),
+    ).pct;
 
     const activityIso = lastActive.get(p.id) ?? p.updated_at ?? null;
     let lastActiveLabel = "—";
