@@ -8,9 +8,26 @@ import { notFound, redirect } from "next/navigation";
 import { MyApplicationsClient } from "./_components/my-applications-client";
 import type { ActivityShortlistQueryRow } from "./_lib/normalize-activity-shortlist";
 import { normalizeActivityShortlistUniversities } from "./_lib/normalize-activity-shortlist";
-import type { MyApplicationsInitialPayload } from "./_lib/my-applications-types";
+import type {
+  EssayWithComments,
+  MyApplicationsInitialPayload,
+} from "./_lib/my-applications-types";
 
 export const dynamic = "force-dynamic";
+
+function normalizeEssaysWithComments(
+  rows: EssayWithComments[] | null,
+): EssayWithComments[] {
+  return (rows ?? []).map((row) => ({
+    ...row,
+    student_my_application_essay_comments: [
+      ...(row.student_my_application_essay_comments ?? []),
+    ].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    ),
+  }));
+}
 
 export default async function MyApplicationsPage() {
   const auth = await requireStudentSession();
@@ -49,7 +66,19 @@ export default async function MyApplicationsPage() {
       .order("created_at", { ascending: true }),
     secret
       .from("student_my_application_essays")
-      .select("*")
+      .select(
+        `
+          *,
+          student_my_application_essay_comments (
+            id,
+            essay_id,
+            author_id,
+            author_display_name,
+            body,
+            created_at
+          )
+        `,
+      )
       .eq("student_id", auth.studentId)
       .order("updated_at", { ascending: false }),
     secret
@@ -101,7 +130,7 @@ export default async function MyApplicationsPage() {
     activityShortlistedUniversities,
     shortlist: shortlist ?? [],
     documents,
-    essays: essays ?? [],
+    essays: normalizeEssaysWithComments((essays as EssayWithComments[]) ?? []),
     recommendations: recommendations ?? [],
     tasks: tasks ?? [],
   };

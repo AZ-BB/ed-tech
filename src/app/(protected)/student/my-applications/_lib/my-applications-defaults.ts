@@ -59,7 +59,21 @@ export const UNIVERSITY_DECISIONS = [
   "declined_by_me",
 ] as const;
 
-export const ESSAY_STATUSES = ["not_started", "drafting", "in_review", "complete"] as const;
+/** Matches essay UI + DB check constraint */
+export const ESSAY_STATUSES = [
+  "not_started",
+  "in_progress",
+  "ready_for_review",
+] as const;
+
+/** Display labels aligned with Teacher Portal HTML */
+export const ESSAY_STATUS_LABEL = {
+  not_started: "Not started",
+  in_progress: "In progress",
+  ready_for_review: "Ready for review",
+} as const satisfies Record<(typeof ESSAY_STATUSES)[number], string>;
+
+export type EssayStatusSlug = (typeof ESSAY_STATUSES)[number];
 
 export const RECOMMENDATION_STATUSES = ["pending", "drafting", "submitted"] as const;
 
@@ -129,14 +143,18 @@ export const APPLICATION_METHOD_OPTIONS = [
   "Other",
 ] as const;
 
+/** Aligned with school portal essay requirement modal */
 export const ESSAY_TYPE_OPTIONS = [
+  "UCAS personal statement",
+  "Common App personal essay",
+  "Supplemental essay",
+  "Scholarship essay",
+  "Motivation letter",
+  "CV / Resume",
   "Personal statement",
-  "University-specific supplemental",
   '"Why this university" essay',
-  "Common App essay",
   "Coalition App essay",
   "UC personal insight",
-  "Scholarship essay",
   "Diversity / background statement",
   "Other",
 ] as const;

@@ -2,7 +2,10 @@
 
 import { SchoolTasksClient } from "@/app/(protected)/school/tasks/_components/school-tasks-client";
 import type { SchoolTaskTableRow } from "@/app/(protected)/school/tasks/_lib/fetch-school-tasks-page";
-import { updateSchoolStudentCreditLimits, addSchoolStudentNote } from "@/actions/school-students";
+import {
+  updateSchoolStudentCreditLimits,
+  addSchoolStudentNote,
+} from "@/actions/school-students";
 import type { Database } from "@/database.types";
 import { SCHOOL_STUDENT_NOTE_TAGS } from "@/lib/school-student-note-tags";
 import { format } from "date-fns";
@@ -13,6 +16,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SchoolStudentDetailPayload } from "../_lib/fetch-school-student-detail";
 
 import { SchoolStudentDocumentsTab } from "./school-student-documents-tab";
+import { SchoolStudentEssaysTab } from "./school-student-essays-tab";
+import { SchoolStudentInteractionsTab } from "./school-student-interactions-tab";
+import { SchoolStudentPanel } from "./school-student-panel";
 import { SchoolStudentShortlistTab } from "./school-student-shortlist-tab";
 
 type TabId =
@@ -49,7 +55,9 @@ export type SchoolStudentViewClientProps = {
   shortlist: SchoolStudentDetailPayload["shortlist"];
   countries: SchoolStudentDetailPayload["countries"];
   studentNotes: SchoolStudentDetailPayload["studentNotes"];
+  studentInteractions: SchoolStudentDetailPayload["studentInteractions"];
   documents: SchoolStudentDetailPayload["documents"];
+  essays: SchoolStudentDetailPayload["essays"];
   /** From `?tab=tasks` so filter Apply keeps the Tasks tab active after navigation. */
   initialTab?: TabId;
   tasksPanel: {
@@ -79,10 +87,7 @@ function joinList(items: string[] | null | undefined): string {
   return t.length ? t.join(", ") : "—";
 }
 
-function snapDisplay(
-  value: string | null | undefined,
-  empty: string,
-): string {
+function snapDisplay(value: string | null | undefined, empty: string): string {
   const t = value?.trim();
   return t ? t : empty;
 }
@@ -110,48 +115,15 @@ function RiskPill({
   );
 }
 
-function Panel({
-  head,
-  sub,
-  actions,
-  children,
-  className = "",
-}: {
-  head: string;
-  sub?: string;
-  actions?: ReactNode;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${className}`}
-    >
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--border-light)] px-5 py-[18px]">
-        <div>
-          <div className="text-[15px] font-semibold tracking-tight text-[var(--text)]">
-            {head}
-          </div>
-          {sub ? (
-            <div className="mt-0.5 text-[12px] text-[var(--text-light)]">
-              {sub}
-            </div>
-          ) : null}
-        </div>
-        {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
-      </div>
-      <div className="px-5 py-[18px]">{children}</div>
-    </div>
-  );
-}
-
 function SnapItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3.5">
       <div className="mb-1 text-[11.5px] font-medium uppercase tracking-[0.05em] text-[var(--text-light)]">
         {label}
       </div>
-      <div className="text-[13.5px] font-semibold text-[var(--text)]">{value}</div>
+      <div className="text-[13.5px] font-semibold text-[var(--text)]">
+        {value}
+      </div>
     </div>
   );
 }
@@ -166,9 +138,7 @@ function EmptyBlock({ message }: { message: string }) {
 
 function parseCreditLimitDraft(
   raw: string,
-):
-  | { ok: true; value: number | null }
-  | { ok: false; error: string } {
+): { ok: true; value: number | null } | { ok: false; error: string } {
   const trimmed = raw.trim();
   if (trimmed === "") return { ok: true, value: null };
   if (!/^\d+$/.test(trimmed)) {
@@ -344,12 +314,15 @@ function ActivityContent({
     { label: "AI matches", value: platformActivity.aiMatches },
     { label: "Essays reviewed", value: platformActivity.essaysReviewed },
     { label: "Advisor sessions", value: platformActivity.advisorSessions },
-    { label: "Ambassador sessions", value: platformActivity.ambassadorSessions },
+    {
+      label: "Ambassador sessions",
+      value: platformActivity.ambassadorSessions,
+    },
     { label: "Webinars attended", value: platformActivity.webinarsAttended },
   ];
 
   return (
-    <Panel
+    <SchoolStudentPanel
       head="Platform activity"
       sub={`What ${who} has done on Univeera (read-only)`}
     >
@@ -372,7 +345,7 @@ function ActivityContent({
           </span>
         </div>
       </div>
-    </Panel>
+    </SchoolStudentPanel>
   );
 }
 
@@ -400,7 +373,7 @@ function SnapshotContent({
 
   return (
     <>
-      <Panel
+      <SchoolStudentPanel
         head="Snapshot"
         sub="Quick overview — student profile and key info"
       >
@@ -412,9 +385,9 @@ function SnapshotContent({
           <SnapItem label="SAT / ACT" value={sat} />
           <SnapItem label="Curriculum" value={curr} />
         </div>
-      </Panel>
+      </SchoolStudentPanel>
 
-      <Panel head="Quick stats">
+      <SchoolStudentPanel head="Quick stats">
         <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
             <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
@@ -449,9 +422,9 @@ function SnapshotContent({
             </div>
           </div>
         </div>
-      </Panel>
+      </SchoolStudentPanel>
 
-      <Panel head="Credits">
+      <SchoolStudentPanel head="Credits">
         <div className="space-y-2.5">
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col justify-center rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
@@ -498,7 +471,7 @@ function SnapshotContent({
             />
           </div>
         </div>
-      </Panel>
+      </SchoolStudentPanel>
     </>
   );
 }
@@ -552,7 +525,7 @@ function NotesTabContent({
   }
 
   return (
-    <Panel
+    <SchoolStudentPanel
       head="Counselor notes"
       sub="Internal-only — students cannot see these."
     >
@@ -567,11 +540,7 @@ function NotesTabContent({
             disabled={pending}
             maxLength={8000}
             onKeyDown={(e) => {
-              if (
-                (e.metaKey || e.ctrlKey) &&
-                e.key === "Enter" &&
-                !pending
-              ) {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !pending) {
                 e.preventDefault();
                 e.currentTarget.form?.requestSubmit();
               }
@@ -607,7 +576,9 @@ function NotesTabContent({
             </button>
           </div>
           {error ? (
-            <div className="text-[12.5px] font-medium text-[#8c2d22]">{error}</div>
+            <div className="text-[12.5px] font-medium text-[#8c2d22]">
+              {error}
+            </div>
           ) : null}
         </form>
       </div>
@@ -644,31 +615,26 @@ function NotesTabContent({
           ))}
         </div>
       )}
-    </Panel>
+    </SchoolStudentPanel>
   );
 }
 
 type EmptyTabId = Exclude<
   TabId,
-  "snapshot" | "activity" | "shortlist" | "notes" | "docs" | "tasks"
+  | "snapshot"
+  | "activity"
+  | "shortlist"
+  | "notes"
+  | "docs"
+  | "tasks"
+  | "interactions"
+  | "essays"
 >;
 
 const EMPTY_TAB: Record<
   EmptyTabId,
   { title: string; subtitle?: string; message: string }
 > = {
-  essays: {
-    title: "Essays",
-    subtitle:
-      "Essay requirements + uploaded drafts. Status updates auto-flow as files come in. — coming soon.",
-    message: "Content coming soon.",
-  },
-  interactions: {
-    title: "Interactions log",
-    subtitle:
-      "Every meeting, call, email, and parent contact — used for end-of-year reporting and inspections — coming soon.",
-    message: "Content coming soon.",
-  },
   history: {
     title: "Meetings & support history",
     subtitle: "Sessions booked, attended, and reviews — coming soon.",
@@ -684,7 +650,9 @@ export function SchoolStudentViewClient({
   shortlist,
   countries,
   studentNotes,
+  studentInteractions,
   documents,
+  essays,
   initialTab = "snapshot",
   tasksPanel,
 }: SchoolStudentViewClientProps) {
@@ -758,9 +726,22 @@ export function SchoolStudentViewClient({
         countries={countries}
       />
     );
-  } else if (tab === "notes") {
+  } else if (tab === "essays") {
     tabBody = (
-      <NotesTabContent studentId={student.id} notes={studentNotes} />
+      <SchoolStudentEssaysTab
+        studentId={student.id}
+        initialEssays={essays}
+        shortlist={shortlist}
+      />
+    );
+  } else if (tab === "notes") {
+    tabBody = <NotesTabContent studentId={student.id} notes={studentNotes} />;
+  } else if (tab === "interactions") {
+    tabBody = (
+      <SchoolStudentInteractionsTab
+        studentId={student.id}
+        interactions={studentInteractions}
+      />
     );
   } else if (tab === "docs") {
     tabBody = (
@@ -789,9 +770,9 @@ export function SchoolStudentViewClient({
   } else {
     const cfg = EMPTY_TAB[tab];
     tabBody = (
-      <Panel head={cfg.title} sub={cfg.subtitle}>
+      <SchoolStudentPanel head={cfg.title} sub={cfg.subtitle}>
         <EmptyBlock message={cfg.message} />
-      </Panel>
+      </SchoolStudentPanel>
     );
   }
 
@@ -801,7 +782,12 @@ export function SchoolStudentViewClient({
         href="/school/students"
         className="sd-back mb-3.5 inline-flex cursor-pointer items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-[var(--text-mid)] hover:text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
         Back to all students

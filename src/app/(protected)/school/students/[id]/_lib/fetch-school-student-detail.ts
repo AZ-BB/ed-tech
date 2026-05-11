@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 
+import type { EssayWithComments } from "@/app/(protected)/student/my-applications/_lib/my-applications-types";
 import type { Database } from "@/database.types";
 import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
 import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
@@ -105,8 +106,21 @@ export type SchoolStudentDetailPayload = {
     createdAt: string;
     authorLabel: string;
   }[];
+  /** Counselor interaction log (`student_counselor_interactions`). */
+  studentInteractions: {
+    id: string;
+    interactionKind: string;
+    occurredOn: string;
+    durationMinutes: number | null;
+    outcome: string;
+    notes: string;
+    createdAt: string;
+    authorLabel: string;
+  }[];
   /** Application document checklist (`student_my_application_documents`), ordered by default slots. */
   documents: Database["public"]["Tables"]["student_my_application_documents"]["Row"][];
+  /** Application essays (`student_my_application_essays`) with counselor comments. */
+  essays: EssayWithComments[];
 };
 
 function stageFromProfilePercent(pct: number): string {
@@ -170,7 +184,7 @@ export async function fetchSchoolStudentDetail(
     | SchoolCreditsEmbed[]
     | null;
   const schoolsEmbed = Array.isArray(schoolsEmbedRaw)
-    ? schoolsEmbedRaw[0] ?? null
+    ? (schoolsEmbedRaw[0] ?? null)
     : schoolsEmbedRaw;
   const countriesEmbed = profile.countries as { name?: string } | null;
   const schoolName = schoolsEmbed?.name?.trim() || "School";
@@ -202,6 +216,8 @@ export async function fetchSchoolStudentDetail(
     essayReviewRes,
     matchingRes,
     notesRes,
+    interactionsRes,
+    essaysRes,
     documents,
   ] = await Promise.all([
     supabase
@@ -245,7 +261,10 @@ export async function fetchSchoolStudentDetail(
       .eq("student_id", studentId)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
-    supabase.from("countries").select("id, name").order("name", { ascending: true }),
+    supabase
+      .from("countries")
+      .select("id, name")
+      .order("name", { ascending: true }),
     supabase
       .from("student_my_application_tasks")
       .select("id", { count: "exact", head: true })
@@ -308,14 +327,58 @@ export async function fetchSchoolStudentDetail(
       .eq("student_id", studentId)
       .order("created_at", { ascending: false })
       .limit(100),
+    supabase
+      .from("student_counselor_interactions")
+      .select(
+        `
+      id,
+      interaction_kind,
+      occurred_on,
+      duration_minutes,
+      outcome,
+      notes,
+      created_at,
+      school_admin_profiles!student_counselor_interactions_author_id_fkey (
+        first_name,
+        last_name
+      )
+    `,
+      )
+      .eq("student_id", studentId)
+      .order("occurred_on", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("student_my_application_essays")
+      .select(
+        `
+          *,
+          student_my_application_essay_comments (
+            id,
+            essay_id,
+            author_id,
+            author_display_name,
+            body,
+            created_at
+          )
+        `,
+      )
+      .eq("student_id", studentId)
+      .order("updated_at", { ascending: false }),
     ensureStudentApplicationDocuments(secret, studentId),
   ]);
 
   if (latestActErr) {
-    console.error("[fetchSchoolStudentDetail] latest student_activities:", latestActErr.message);
+    console.error(
+      "[fetchSchoolStudentDetail] latest student_activities:",
+      latestActErr.message,
+    );
   }
   if (latestAiErr) {
-    console.error("[fetchSchoolStudentDetail] latest ai_usage:", latestAiErr.message);
+    console.error(
+      "[fetchSchoolStudentDetail] latest ai_usage:",
+      latestAiErr.message,
+    );
   }
   if (shortlistRowsRes.error) {
     console.error(
@@ -324,12 +387,27 @@ export async function fetchSchoolStudentDetail(
     );
   }
   if (countriesRes.error) {
-    console.error("[fetchSchoolStudentDetail] countries:", countriesRes.error.message);
+    console.error(
+      "[fetchSchoolStudentDetail] countries:",
+      countriesRes.error.message,
+    );
   }
   if (notesRes.error) {
     console.error(
       "[fetchSchoolStudentDetail] student_notes:",
       notesRes.error.message,
+    );
+  }
+  if (interactionsRes.error) {
+    console.error(
+      "[fetchSchoolStudentDetail] student_counselor_interactions:",
+      interactionsRes.error.message,
+    );
+  }
+  if (essaysRes.error) {
+    console.error(
+      "[fetchSchoolStudentDetail] student_my_application_essays:",
+      essaysRes.error.message,
     );
   }
 
@@ -355,8 +433,7 @@ export async function fetchSchoolStudentDetail(
     try {
       const t = new Date(activityIso);
       lastActiveLabel = formatDistanceToNow(t, { addSuffix: true });
-      inactiveWeek =
-        (Date.now() - t.getTime()) / (1000 * 60 * 60 * 24) >= 7;
+      inactiveWeek = (Date.now() - t.getTime()) / (1000 * 60 * 60 * 24) >= 7;
     } catch {
       lastActiveLabel = "—";
     }
@@ -404,8 +481,7 @@ export async function fetchSchoolStudentDetail(
     ambassadorCreditsUsedNet = Math.max(0, ambUsed - ambRefunded);
   }
 
-  const creditsUsedTotal =
-    advisorCreditsUsedNet + ambassadorCreditsUsedNet;
+  const creditsUsedTotal = advisorCreditsUsedNet + ambassadorCreditsUsedNet;
 
   const countOr0 = (err: { message?: string } | null, count: number | null) => {
     if (err) {
@@ -448,6 +524,16 @@ export async function fetchSchoolStudentDetail(
 
   const shortlist = shortlistRowsRes.data ?? [];
 
+  const essays: EssayWithComments[] = (essaysRes.data ?? []).map((row) => ({
+    ...row,
+    student_my_application_essay_comments: [
+      ...(row.student_my_application_essay_comments ?? []),
+    ].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    ),
+  }));
+
   const rawNotes = notesRes.data ?? [];
   const studentNotes = rawNotes.map((row) => {
     const embed = row.school_admin_profiles as
@@ -462,6 +548,28 @@ export async function fetchSchoolStudentDetail(
       id: row.id,
       noteType: row.note_type,
       content: row.content,
+      createdAt: row.created_at,
+      authorLabel,
+    };
+  });
+
+  const rawInteractions = interactionsRes.data ?? [];
+  const studentInteractions = rawInteractions.map((row) => {
+    const embed = row.school_admin_profiles as
+      | { first_name: string; last_name: string }
+      | { first_name: string; last_name: string }[]
+      | null;
+    const sap = Array.isArray(embed) ? embed[0] : embed;
+    const authorLabel =
+      `${sap?.first_name?.trim() ?? ""} ${sap?.last_name?.trim() ?? ""}`.trim() ||
+      "School admin";
+    return {
+      id: row.id,
+      interactionKind: row.interaction_kind,
+      occurredOn: row.occurred_on,
+      durationMinutes: row.duration_minutes,
+      outcome: row.outcome,
+      notes: row.notes,
       createdAt: row.created_at,
       authorLabel,
     };
@@ -501,13 +609,14 @@ export async function fetchSchoolStudentDetail(
       universitiesCount: shortlist.length,
       documentsInCount: documents.filter((d) => d.storage_path != null).length,
       openTasksCount: tasksRes.count ?? 0,
-      supportSessionsCount:
-        (advisorSessRes.count ?? 0) + (ambRes.count ?? 0),
+      supportSessionsCount: (advisorSessRes.count ?? 0) + (ambRes.count ?? 0),
     },
     platformActivity,
     shortlist,
     countries: countriesRes.data ?? [],
     studentNotes,
+    studentInteractions,
     documents,
+    essays,
   };
 }

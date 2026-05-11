@@ -10,6 +10,10 @@ import {
   isSchoolStudentNoteTag,
   SCHOOL_STUDENT_NOTE_TAGS,
 } from "@/lib/school-student-note-tags";
+import {
+  isStudentInteractionKind,
+  isStudentInteractionOutcome,
+} from "@/lib/student-interaction-constants";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
@@ -162,11 +166,7 @@ export async function inviteSchoolStudentEmail(
 
   const gradeRaw = String(formData.get("grade") ?? "").trim();
   const grade =
-    gradeRaw === ""
-      ? null
-      : GRADE_ALLOWED.has(gradeRaw)
-        ? gradeRaw
-        : null;
+    gradeRaw === "" ? null : GRADE_ALLOWED.has(gradeRaw) ? gradeRaw : null;
   if (gradeRaw !== "" && grade === null) {
     return {
       data: null,
@@ -454,8 +454,7 @@ export async function addSchoolStudentNote(
   if (!spRow) {
     return {
       data: null,
-      error:
-        "That student was not found or is not enrolled at your school.",
+      error: "That student was not found or is not enrolled at your school.",
     };
   }
 
@@ -468,6 +467,132 @@ export async function addSchoolStudentNote(
 
   if (insertError) {
     console.error("[addSchoolStudentNote] insert", insertError);
+    return { data: null, error: insertError.message };
+  }
+
+  revalidatePath(`/school/students/${studentId}`);
+  return { data: null, error: null };
+}
+
+const INTERACTION_NOTES_MAX = 8000;
+
+export async function addSchoolStudentInteraction(
+  _prev: GeneralResponse<null> | null,
+  formData: FormData,
+): Promise<GeneralResponse<null>> {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const kind = String(formData.get("interaction_kind") ?? "").trim();
+  const occurredRaw = String(formData.get("occurred_on") ?? "").trim();
+  const durationRaw = String(formData.get("duration_minutes") ?? "").trim();
+  const outcome = String(formData.get("outcome") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  if (!studentId || !UUID_RE.test(studentId)) {
+    return { data: null, error: "Invalid student." };
+  }
+  if (!isStudentInteractionKind(kind)) {
+    return {
+      data: null,
+      error: "Choose a valid interaction type.",
+    };
+  }
+  if (!occurredRaw || !/^\d{4}-\d{2}-\d{2}$/.test(occurredRaw)) {
+    return {
+      data: null,
+      error: "Choose a valid date.",
+    };
+  }
+  let durationMinutes: number | null = null;
+  if (durationRaw !== "") {
+    if (!/^\d+$/.test(durationRaw)) {
+      return {
+        data: null,
+        error: "Duration must be a whole number of minutes.",
+      };
+    }
+    const n = Number(durationRaw);
+    if (!Number.isSafeInteger(n) || n > 1440 * 7) {
+      return {
+        data: null,
+        error: "Duration is too large.",
+      };
+    }
+    durationMinutes = n;
+  }
+  if (!isStudentInteractionOutcome(outcome)) {
+    return {
+      data: null,
+      error: "Choose a valid outcome.",
+    };
+  }
+  if (!notes) {
+    return {
+      data: null,
+      error: "Add notes about what was discussed.",
+    };
+  }
+  if (notes.length > INTERACTION_NOTES_MAX) {
+    return {
+      data: null,
+      error: `Notes must be at most ${INTERACTION_NOTES_MAX} characters.`,
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: null, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return {
+      data: null,
+      error:
+        "Could not verify your school admin access. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  const { data: spRow, error: spErr } = await supabase
+    .from("student_profiles")
+    .select("id")
+    .eq("id", studentId)
+    .eq("school_id", sap.school_id)
+    .maybeSingle();
+
+  if (spErr) {
+    console.error("[addSchoolStudentInteraction] student_profiles", spErr);
+    return { data: null, error: "Could not verify this student." };
+  }
+  if (!spRow) {
+    return {
+      data: null,
+      error: "That student was not found or is not enrolled at your school.",
+    };
+  }
+
+  const { error: insertError } = await supabase
+    .from("student_counselor_interactions")
+    .insert({
+      student_id: studentId,
+      author_id: user.id,
+      interaction_kind: kind,
+      occurred_on: occurredRaw,
+      duration_minutes: durationMinutes,
+      outcome,
+      notes,
+    });
+
+  if (insertError) {
+    console.error("[addSchoolStudentInteraction] insert", insertError);
     return { data: null, error: insertError.message };
   }
 

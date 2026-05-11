@@ -54,7 +54,9 @@ export default async function SchoolStudentDetailPage({
       shortlist={payload.shortlist}
       countries={payload.countries}
       studentNotes={payload.studentNotes}
+      studentInteractions={payload.studentInteractions}
       documents={payload.documents}
+      essays={payload.essays}
       initialTab={initialTab}
       tasksPanel={{
         rows,

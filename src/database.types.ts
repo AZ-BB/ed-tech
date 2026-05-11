@@ -1474,6 +1474,57 @@ export type Database = {
           },
         ]
       }
+      student_counselor_interactions: {
+        Row: {
+          author_id: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          interaction_kind: string
+          notes: string
+          occurred_on: string
+          outcome: string
+          student_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          interaction_kind: string
+          notes: string
+          occurred_on: string
+          outcome: string
+          student_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          interaction_kind?: string
+          notes?: string
+          occurred_on?: string
+          outcome?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_counselor_interactions_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_counselor_interactions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_credits_history: {
         Row: {
           advisor_session_id: number | null
@@ -1595,15 +1646,61 @@ export type Database = {
           },
         ]
       }
+      student_my_application_essay_comments: {
+        Row: {
+          author_display_name: string
+          author_id: string
+          body: string
+          created_at: string
+          essay_id: string
+          id: string
+        }
+        Insert: {
+          author_display_name?: string
+          author_id: string
+          body: string
+          created_at?: string
+          essay_id: string
+          id?: string
+        }
+        Update: {
+          author_display_name?: string
+          author_id?: string
+          body?: string
+          created_at?: string
+          essay_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_my_application_essay_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_my_application_essay_comments_essay_id_fkey"
+            columns: ["essay_id"]
+            isOneToOne: false
+            referencedRelation: "student_my_application_essays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_my_application_essays: {
         Row: {
           body: string
-          comment_count: number
-          counselor_comment_preview: string | null
           created_at: string
+          deadline: string | null
+          essay_prompt: string | null
           essay_type: string | null
+          file_name: string | null
+          file_storage_path: string | null
+          file_uploaded_at: string | null
           for_application: string | null
           id: string
+          instructions_note: string | null
           last_edited_at: string | null
           limit_note: string | null
           requirement_note: string | null
@@ -1615,12 +1712,16 @@ export type Database = {
         }
         Insert: {
           body?: string
-          comment_count?: number
-          counselor_comment_preview?: string | null
           created_at?: string
+          deadline?: string | null
+          essay_prompt?: string | null
           essay_type?: string | null
+          file_name?: string | null
+          file_storage_path?: string | null
+          file_uploaded_at?: string | null
           for_application?: string | null
           id?: string
+          instructions_note?: string | null
           last_edited_at?: string | null
           limit_note?: string | null
           requirement_note?: string | null
@@ -1632,12 +1733,16 @@ export type Database = {
         }
         Update: {
           body?: string
-          comment_count?: number
-          counselor_comment_preview?: string | null
           created_at?: string
+          deadline?: string | null
+          essay_prompt?: string | null
           essay_type?: string | null
+          file_name?: string | null
+          file_storage_path?: string | null
+          file_uploaded_at?: string | null
           for_application?: string | null
           id?: string
+          instructions_note?: string | null
           last_edited_at?: string | null
           limit_note?: string | null
           requirement_note?: string | null
