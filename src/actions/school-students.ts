@@ -1,13 +1,26 @@
 "use server";
 
 import { fetchPendingInvitesPage } from "@/app/(protected)/school/students/_lib/fetch-pending-invites-page";
+import {
+  DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS,
+  SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
+} from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
+import {
+  isSchoolStudentNoteTag,
+  SCHOOL_STUDENT_NOTE_TAGS,
+} from "@/lib/school-student-note-tags";
+import {
+  isStudentInteractionKind,
+  isStudentInteractionOutcome,
+} from "@/lib/student-interaction-constants";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
+import { revalidatePath } from "next/cache";
 
 export type {
   PendingInviteRow,
@@ -153,11 +166,7 @@ export async function inviteSchoolStudentEmail(
 
   const gradeRaw = String(formData.get("grade") ?? "").trim();
   const grade =
-    gradeRaw === ""
-      ? null
-      : GRADE_ALLOWED.has(gradeRaw)
-        ? gradeRaw
-        : null;
+    gradeRaw === "" ? null : GRADE_ALLOWED.has(gradeRaw) ? gradeRaw : null;
   if (gradeRaw !== "" && grade === null) {
     return {
       data: null,
@@ -377,4 +386,334 @@ export async function updateSchoolStudentCreditLimits(
   }
 
   return { data: null, error: null };
+}
+
+const NOTE_CONTENT_MAX = 8000;
+
+export async function addSchoolStudentNote(
+  _prev: GeneralResponse<null> | null,
+  formData: FormData,
+): Promise<GeneralResponse<null>> {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const noteType = String(formData.get("note_type") ?? "").trim();
+  const content = String(formData.get("content") ?? "").trim();
+
+  if (!studentId || !UUID_RE.test(studentId)) {
+    return { data: null, error: "Invalid student." };
+  }
+  if (!isSchoolStudentNoteTag(noteType)) {
+    return {
+      data: null,
+      error: `Choose a note type: ${SCHOOL_STUDENT_NOTE_TAGS.join(", ")}.`,
+    };
+  }
+  if (!content) {
+    return { data: null, error: "Enter the note content." };
+  }
+  if (content.length > NOTE_CONTENT_MAX) {
+    return {
+      data: null,
+      error: `Note content must be at most ${NOTE_CONTENT_MAX} characters.`,
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: null, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return {
+      data: null,
+      error:
+        "Could not verify your school admin access. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  const { data: spRow, error: spErr } = await supabase
+    .from("student_profiles")
+    .select("id")
+    .eq("id", studentId)
+    .eq("school_id", sap.school_id)
+    .maybeSingle();
+
+  if (spErr) {
+    console.error("[addSchoolStudentNote] student_profiles", spErr);
+    return { data: null, error: "Could not verify this student." };
+  }
+  if (!spRow) {
+    return {
+      data: null,
+      error: "That student was not found or is not enrolled at your school.",
+    };
+  }
+
+  const { error: insertError } = await supabase.from("student_notes").insert({
+    student_id: studentId,
+    author_id: user.id,
+    note_type: noteType,
+    content,
+  });
+
+  if (insertError) {
+    console.error("[addSchoolStudentNote] insert", insertError);
+    return { data: null, error: insertError.message };
+  }
+
+  revalidatePath(`/school/students/${studentId}`);
+  return { data: null, error: null };
+}
+
+const INTERACTION_NOTES_MAX = 8000;
+
+export async function addSchoolStudentInteraction(
+  _prev: GeneralResponse<null> | null,
+  formData: FormData,
+): Promise<GeneralResponse<null>> {
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const kind = String(formData.get("interaction_kind") ?? "").trim();
+  const occurredRaw = String(formData.get("occurred_on") ?? "").trim();
+  const durationRaw = String(formData.get("duration_minutes") ?? "").trim();
+  const outcome = String(formData.get("outcome") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  if (!studentId || !UUID_RE.test(studentId)) {
+    return { data: null, error: "Invalid student." };
+  }
+  if (!isStudentInteractionKind(kind)) {
+    return {
+      data: null,
+      error: "Choose a valid interaction type.",
+    };
+  }
+  if (!occurredRaw || !/^\d{4}-\d{2}-\d{2}$/.test(occurredRaw)) {
+    return {
+      data: null,
+      error: "Choose a valid date.",
+    };
+  }
+  let durationMinutes: number | null = null;
+  if (durationRaw !== "") {
+    if (!/^\d+$/.test(durationRaw)) {
+      return {
+        data: null,
+        error: "Duration must be a whole number of minutes.",
+      };
+    }
+    const n = Number(durationRaw);
+    if (!Number.isSafeInteger(n) || n > 1440 * 7) {
+      return {
+        data: null,
+        error: "Duration is too large.",
+      };
+    }
+    durationMinutes = n;
+  }
+  if (!isStudentInteractionOutcome(outcome)) {
+    return {
+      data: null,
+      error: "Choose a valid outcome.",
+    };
+  }
+  if (!notes) {
+    return {
+      data: null,
+      error: "Add notes about what was discussed.",
+    };
+  }
+  if (notes.length > INTERACTION_NOTES_MAX) {
+    return {
+      data: null,
+      error: `Notes must be at most ${INTERACTION_NOTES_MAX} characters.`,
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: null, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return {
+      data: null,
+      error:
+        "Could not verify your school admin access. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  const { data: spRow, error: spErr } = await supabase
+    .from("student_profiles")
+    .select("id")
+    .eq("id", studentId)
+    .eq("school_id", sap.school_id)
+    .maybeSingle();
+
+  if (spErr) {
+    console.error("[addSchoolStudentInteraction] student_profiles", spErr);
+    return { data: null, error: "Could not verify this student." };
+  }
+  if (!spRow) {
+    return {
+      data: null,
+      error: "That student was not found or is not enrolled at your school.",
+    };
+  }
+
+  const { error: insertError } = await supabase
+    .from("student_counselor_interactions")
+    .insert({
+      student_id: studentId,
+      author_id: user.id,
+      interaction_kind: kind,
+      occurred_on: occurredRaw,
+      duration_minutes: durationMinutes,
+      outcome,
+      notes,
+    });
+
+  if (insertError) {
+    console.error("[addSchoolStudentInteraction] insert", insertError);
+    return { data: null, error: insertError.message };
+  }
+
+  revalidatePath(`/school/students/${studentId}`);
+  return { data: null, error: null };
+}
+
+/**
+ * Counselor-only: text-only **Predicted** document (`school_text_value`, slot `predicted`).
+ * Mirrors into `student_application_profile.predicted_grades` for the student profile.
+ */
+export async function updateSchoolPredictedDocumentSlot(
+  studentId: string,
+  schoolText: string,
+): Promise<{ ok: true } | { error: string }> {
+  if (!studentId || !UUID_RE.test(studentId)) {
+    return { error: "Invalid student." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return {
+      error:
+        "Could not verify your school admin access. Ensure the latest database access rules are applied.",
+    };
+  }
+
+  const { data: spRow } = await supabase
+    .from("student_profiles")
+    .select("id")
+    .eq("id", studentId)
+    .eq("school_id", sap.school_id)
+    .maybeSingle();
+
+  if (!spRow) {
+    return {
+      error: "That student was not found or is not enrolled at your school.",
+    };
+  }
+
+  const trimmed = schoolText.trim();
+  const secret = await createSupabaseSecretClient();
+  const now = new Date().toISOString();
+
+  const predDef = DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS.find(
+    (s) => s.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
+  );
+  if (!predDef) {
+    return { error: "Predicted document slot is not configured." };
+  }
+
+  const { data: docRow } = await secret
+    .from("student_my_application_documents")
+    .select("id")
+    .eq("student_id", studentId)
+    .eq("slot_key", SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY)
+    .maybeSingle();
+
+  if (docRow?.id) {
+    const { error: docErr } = await secret
+      .from("student_my_application_documents")
+      .update({
+        school_text_value: trimmed || null,
+        status: trimmed ? "approved" : "missing",
+        updated_at: now,
+      })
+      .eq("id", docRow.id);
+    if (docErr) {
+      console.error("[updateSchoolPredictedDocumentSlot] doc", docErr);
+      return { error: docErr.message };
+    }
+  } else {
+    const { error: insErr } = await secret
+      .from("student_my_application_documents")
+      .insert({
+        student_id: studentId,
+        slot_key: predDef.slot_key,
+        display_name: predDef.display_name,
+        description: predDef.description,
+        status: trimmed ? "approved" : "missing",
+        school_text_value: trimmed || null,
+        updated_at: now,
+      });
+    if (insErr) {
+      console.error("[updateSchoolPredictedDocumentSlot] insert", insErr);
+      return { error: insErr.message };
+    }
+  }
+
+  const { error: profErr } = await secret
+    .from("student_application_profile")
+    .upsert(
+      {
+        student_id: studentId,
+        predicted_grades: trimmed || null,
+        predicted_grades_set_by_school: true,
+        updated_at: now,
+      },
+      { onConflict: "student_id" },
+    );
+
+  if (profErr) {
+    console.error("[updateSchoolPredictedDocumentSlot] profile", profErr);
+    return { error: profErr.message };
+  }
+
+  revalidatePath(`/school/students/${studentId}`);
+  revalidatePath("/student/my-applications");
+  return { ok: true };
 }

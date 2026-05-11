@@ -6,25 +6,28 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 
-import type { MyApplicationsInitialPayload } from "../_lib/my-applications-types";
+import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
+import type { EssayWithComments, MyApplicationsInitialPayload } from "../_lib/my-applications-types";
 import {
   AID_OPTIONS,
   APPLICATION_METHOD_OPTIONS,
   BUDGET_OPTIONS,
   CURRICULUM_OPTIONS,
+  ESSAY_STATUSES,
+  ESSAY_STATUS_LABEL,
   ESSAY_TYPE_OPTIONS,
   GRADE_OPTIONS,
+  SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
   TARGET_INTAKE_OPTIONS,
   UNIVERSITY_APPLICATION_STATUSES,
   UNIVERSITY_DECISIONS,
+  type EssayStatusSlug,
 } from "../_lib/my-applications-defaults";
 
 type ShortlistRow =
   Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
 type DocRow =
   Database["public"]["Tables"]["student_my_application_documents"]["Row"];
-type EssayRow =
-  Database["public"]["Tables"]["student_my_application_essays"]["Row"];
 type RecRow =
   Database["public"]["Tables"]["student_my_application_recommendations"]["Row"];
 type TaskRow =
@@ -56,13 +59,6 @@ const DECISION_LABEL: Record<string, string> = {
   rejected: "Rejected",
   accepted: "Accepted",
   declined_by_me: "Declined by me",
-};
-
-const ESSAY_STATUS_LABEL: Record<string, string> = {
-  not_started: "Not started",
-  drafting: "Drafting",
-  in_review: "In review",
-  complete: "Complete",
 };
 
 const REC_STATUS_LABEL: Record<string, string> = {
@@ -281,7 +277,7 @@ export function MyApplicationsClient({
 
   const [shortlist, setShortlist] = useState<ShortlistRow[]>(initial.shortlist);
   const [documents, setDocuments] = useState<DocRow[]>(initial.documents);
-  const [essays, setEssays] = useState<EssayRow[]>(initial.essays);
+  const [essays, setEssays] = useState<EssayWithComments[]>(initial.essays);
   const [recs, setRecs] = useState<RecRow[]>(initial.recommendations);
   const [tasks, setTasks] = useState<TaskRow[]>(initial.tasks);
 
@@ -300,8 +296,10 @@ export function MyApplicationsClient({
     title: "",
     essay_type: ESSAY_TYPE_OPTIONS[0] as string,
     for_application: "",
+    essay_prompt: "",
     limit_note: "",
-    requirement_note: "",
+    deadline: "",
+    instructions_note: "",
   });
   const [recForm, setRecForm] = useState({
     teacher_name: "",
@@ -312,8 +310,7 @@ export function MyApplicationsClient({
     needed_by: "",
   });
 
-  const [essayOpenId, setEssayOpenId] = useState<string | null>(null);
-  const [essayDraft, setEssayDraft] = useState("");
+  const [essayDetailId, setEssayDetailId] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -352,6 +349,44 @@ export function MyApplicationsClient({
       }),
     [shortlist, essays],
   );
+
+  const detailEssay =
+    essayDetailId != null
+      ? essays.find((x) => x.id === essayDetailId)
+      : undefined;
+
+  function studentEssayIconWrap(
+    status: EssayStatusSlug,
+    hasFile: boolean,
+  ): string {
+    if (!hasFile) return "bg-[#f1ede7] text-[var(--text-light)]";
+    if (status === "ready_for_review")
+      return "bg-[rgba(82,183,135,0.16)] text-[var(--green)]";
+    if (status === "in_progress")
+      return "bg-[rgba(212,162,42,0.16)] text-[#D4A22A]";
+    return "bg-[rgba(142,68,173,0.12)] text-[#8E44AD]";
+  }
+
+  function studentEssayRowTone(
+    status: EssayStatusSlug,
+    hasFile: boolean,
+  ): string {
+    if (!hasFile) return "border-dashed bg-[#fdfdfa]";
+    return "border-[var(--border-light)] bg-white";
+  }
+
+  function studentStatusSelectCls(s: EssayStatusSlug) {
+    return s === "ready_for_review"
+      ? "bg-[rgba(82,183,135,0.13)] text-[#1B4332] border-[rgba(82,183,135,0.3)]"
+      : s === "in_progress"
+        ? "bg-[rgba(212,162,42,0.14)] text-[#7a5d10] border-[rgba(212,162,42,0.3)]"
+        : "bg-[#ECEAE5] text-[var(--text-mid)] border-[var(--border)]";
+  }
+
+  const studentEssayBtnRow = (primary?: boolean) =>
+    primary
+      ? `${btnSmClass(true)} flex-1 justify-center`
+      : `${btnSmClass(false)} flex-1 justify-center`;
 
   const buildApplicationProfileRow = useCallback(() => {
     return {
@@ -507,6 +542,10 @@ export function MyApplicationsClient({
   };
 
   const uploadDocument = async (doc: DocRow, file: File) => {
+    if (doc.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY) {
+      showToast("Your school enters this — it is read-only for you.");
+      return;
+    }
     const safeName = file.name.replace(/[^\w.\-()+ ]/g, "_");
     const path = `${initial.studentId}/${doc.slot_key}/${Date.now()}_${safeName}`;
     const { error: upErr } = await supabase.storage
@@ -540,8 +579,12 @@ export function MyApplicationsClient({
   };
 
   const addEssay = async () => {
-    if (!essayForm.title.trim() || !essayForm.for_application.trim()) {
-      showToast("Title and application are required");
+    if (
+      !essayForm.title.trim() ||
+      !essayForm.for_application.trim() ||
+      !essayForm.essay_type.trim()
+    ) {
+      showToast("Title, university, and essay type are required");
       return;
     }
     const { data, error } = await supabase
@@ -549,68 +592,146 @@ export function MyApplicationsClient({
       .insert({
         student_id: initial.studentId,
         title: essayForm.title.trim(),
-        essay_type: essayForm.essay_type,
+        essay_type: essayForm.essay_type.trim(),
         for_application: essayForm.for_application.trim(),
+        essay_prompt: essayForm.essay_prompt.trim() || null,
         limit_note: essayForm.limit_note.trim() || null,
-        requirement_note: essayForm.requirement_note.trim() || null,
+        deadline: essayForm.deadline.trim()
+          ? essayForm.deadline.trim().slice(0, 10)
+          : null,
+        instructions_note: essayForm.instructions_note.trim() || null,
+        requirement_note: null,
         status: "not_started",
         body: "",
         version: 1,
       })
-      .select("*")
+      .select(
+        `
+        *,
+        student_my_application_essay_comments (
+          id,
+          essay_id,
+          author_id,
+          author_display_name,
+          body,
+          created_at
+        )
+      `,
+      )
       .single();
     if (error || !data) {
       showToast(error?.message ?? "Could not create");
       return;
     }
-    setEssays((prev) => [data, ...prev]);
+    setEssays((prev) => [data as EssayWithComments, ...prev]);
     setEssayModal(false);
     setEssayForm({
       title: "",
       essay_type: ESSAY_TYPE_OPTIONS[0] as string,
       for_application: "",
+      essay_prompt: "",
       limit_note: "",
-      requirement_note: "",
+      deadline: "",
+      instructions_note: "",
     });
     showToast("Essay created");
   };
 
-  const saveEssayDraft = async (essayId: string) => {
-    const essay = essays.find((x) => x.id === essayId);
-    if (!essay) return;
-    const trimmed = essayDraft;
+  const updateEssayStatus = async (
+    essayId: string,
+    status: EssayStatusSlug,
+  ) => {
     const now = new Date().toISOString();
-    const nextStatus =
-      essay.status === "not_started" && trimmed.trim().length > 0
-        ? "drafting"
-        : essay.status === "not_started"
-          ? "not_started"
-          : essay.status;
-    const nextVersion =
-      trimmed !== essay.body
-        ? essay.body.trim().length > 0
-          ? essay.version + 1
-          : essay.version
-        : essay.version;
+    const { data, error } = await supabase
+      .from("student_my_application_essays")
+      .update({ status, updated_at: now })
+      .eq("id", essayId)
+      .select(
+        `
+        *,
+        student_my_application_essay_comments (
+          id,
+          essay_id,
+          author_id,
+          author_display_name,
+          body,
+          created_at
+        )
+      `,
+      )
+      .single();
+    if (error || !data) {
+      showToast(error?.message ?? "Could not update status");
+      return;
+    }
+    setEssays((prev) =>
+      prev.map((x) =>
+        x.id === essayId ? (data as EssayWithComments) : x,
+      ),
+    );
+  };
+
+  const uploadEssayFile = async (essayId: string, file: File) => {
+    const safeName = file.name.replace(/[^\w.\-()+ ]/g, "_");
+    const path = `${initial.studentId}/essays/${essayId}/${Date.now()}_${safeName}`;
+    const { error: upErr } = await supabase.storage
+      .from("student-my-applications")
+      .upload(path, file, { upsert: true });
+    if (upErr) {
+      showToast(upErr.message);
+      return;
+    }
+    const now = new Date().toISOString();
+    const essay = essays.find((x) => x.id === essayId);
+    const wasNotStarted = essay?.status === "not_started";
+    const bumpStatus = wasNotStarted
+      ? ({ status: "in_progress" as const } as const)
+      : {};
     const { data, error } = await supabase
       .from("student_my_application_essays")
       .update({
-        body: trimmed,
-        last_edited_at: now,
+        file_storage_path: path,
+        file_name: file.name,
+        file_uploaded_at: now,
         updated_at: now,
-        status: nextStatus,
-        version: nextVersion,
+        ...bumpStatus,
       })
       .eq("id", essayId)
-      .select("*")
+      .select(
+        `
+        *,
+        student_my_application_essay_comments (
+          id,
+          essay_id,
+          author_id,
+          author_display_name,
+          body,
+          created_at
+        )
+      `,
+      )
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Could not save");
+      showToast(error?.message ?? "Could not save file");
       return;
     }
-    setEssays((prev) => prev.map((x) => (x.id === essayId ? data : x)));
-    setEssayOpenId(null);
-    showToast("Essay saved");
+    setEssays((prev) =>
+      prev.map((x) => (x.id === essayId ? (data as EssayWithComments) : x)),
+    );
+    showToast(
+      wasNotStarted
+        ? "File uploaded · status updated to In progress"
+        : "File uploaded",
+    );
+  };
+
+  const openEssayFile = async (essayId: string) => {
+    const res = await getStudentEssayFileViewUrl(essayId);
+    if ("error" in res && res.error) {
+      showToast(res.error);
+      return;
+    }
+    if ("url" in res) window.open(res.url, "_blank", "noopener,noreferrer");
   };
 
   const sendRecRequest = async () => {
@@ -1340,8 +1461,9 @@ export function MyApplicationsClient({
               </svg>
             </div>
             <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              Upload each document below. Once uploaded, it shows as{" "}
-              <strong>Submitted</strong> and you can replace it anytime.
+              Upload each file-based document below. <strong>Predicted</strong>{" "}
+              is entered by your school and is read-only. Once uploaded, a file
+              shows as <strong>Submitted</strong> and you can replace it anytime.
             </p>
           </div>
           <div className={panelClass}>
@@ -1351,7 +1473,7 @@ export function MyApplicationsClient({
                   Document checklist
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Upload to mark as submitted · Replace to update
+                  Upload files where needed · Predicted is from your school
                 </div>
               </div>
             </div>
@@ -1371,11 +1493,10 @@ export function MyApplicationsClient({
       {tab === "essays" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <CalloutInfo>
-            Save your essay drafts here.{" "}
+            Upload PDFs or Word files and track status.{" "}
             <strong>
-              Each essay is linked to a specific university or application
-            </strong>{" "}
-            so your counselor knows what each piece is for.
+              Your counselor&apos;s comments appear in each essay&apos;s detail view.
+            </strong>
           </CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
@@ -1384,7 +1505,7 @@ export function MyApplicationsClient({
                   Your essays
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Personal statements, supplementals, and scholarship essays
+                  Linked to a university or application — counselor sees updates in their portal
                 </div>
               </div>
               <button
@@ -1403,157 +1524,138 @@ export function MyApplicationsClient({
                 >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                New essay
+                Add essay
               </button>
             </div>
-            <div className={`${panelBodyClass} space-y-[7px]`}>
+            <div className={`${panelBodyClass} flex flex-col gap-2`}>
               {essays.length === 0 ? (
                 <p className="text-sm text-[var(--text-mid)]">
                   {shortlistHintUniversities.length > 0
-                    ? "You have not saved any essay drafts yet."
-                    : 'No essays yet. Use "New essay" when you are ready.'}
+                    ? "You have not added any essays yet."
+                    : "No essays yet — use Add essay when you are ready."}
                 </p>
               ) : null}
               {essays.map((e) => {
-                const iconWrap =
-                  e.status === "in_review"
-                    ? "bg-[rgba(212,162,42,0.14)] text-[#D4A22A]"
-                    : e.status === "drafting"
-                      ? "bg-[rgba(52,152,219,0.12)] text-[#3498DB]"
-                      : e.status === "complete"
-                        ? "bg-[var(--green-bg)] text-[var(--green)]"
-                        : "bg-[var(--green-bg)] text-[var(--green)]";
-                const pill =
-                  e.status === "in_review" ? (
-                    <StatusPill
-                      variant="amber"
-                      label={ESSAY_STATUS_LABEL.in_review}
-                    />
-                  ) : e.status === "drafting" ? (
-                    <StatusPill
-                      variant="blue"
-                      label={ESSAY_STATUS_LABEL.drafting}
-                    />
-                  ) : e.status === "complete" ? (
-                    <StatusPill
-                      variant="green"
-                      label={ESSAY_STATUS_LABEL.complete}
-                    />
-                  ) : null;
+                const comments = e.student_my_application_essay_comments ?? [];
+                const hasFile = Boolean(e.file_storage_path && e.file_name);
+                const st = e.status as EssayStatusSlug;
                 return (
-                  <div key={e.id} className="space-y-2">
-                    <div className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-3 transition-colors hover:border-[var(--border)] sm:flex-row sm:items-center">
+                  <div
+                    key={e.id}
+                    className={`flex flex-col gap-3 rounded-[10px] border px-3.5 py-3.5 transition-colors hover:border-[var(--border)] sm:flex-row sm:items-start ${studentEssayRowTone(st, hasFile)}`}
+                  >
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${studentEssayIconWrap(st, hasFile)}`}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13.5px] font-semibold leading-snug text-[var(--text)]">
+                        {e.title}
+                      </div>
+                      <div className="mt-1 text-[11.5px] leading-relaxed text-[var(--text-light)]">
+                        <span className="font-medium text-[var(--text-mid)]">For:</span>{" "}
+                        {e.for_application ?? "—"}
+                        {e.essay_type ? <> · {e.essay_type}</> : null}
+                        {e.limit_note ? <> · Limit: {e.limit_note}</> : null}
+                        {e.deadline ? <> · Due {formatDate(e.deadline)}</> : null}
+                      </div>
+                      {e.essay_prompt?.trim() ? (
+                        <div className="mt-2 line-clamp-2 text-[12px] text-[var(--text-mid)]">
+                          {e.essay_prompt.trim()}
+                        </div>
+                      ) : null}
                       <div
-                        className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${iconWrap}`}
+                        className={`mt-2 flex items-center gap-1.5 text-[12px] ${hasFile ? "text-[var(--text-mid)]" : "italic text-[var(--text-hint)]"}`}
                       >
                         <svg
-                          width="14"
-                          height="14"
+                          width="12"
+                          height="12"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="2"
+                          className="shrink-0"
                           aria-hidden
                         >
-                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[13.5px] font-semibold">
-                          {e.title}
-                        </div>
-                        <div className="mt-0.5 text-[11.5px] leading-snug text-[var(--text-light)]">
-                          For: <strong>{e.for_application ?? "—"}</strong>
-                          {e.essay_type ? <> ({e.essay_type})</> : null}
-                          {e.status === "not_started" ? (
-                            <>
-                              {" · "}Not started
-                              {e.requirement_note ? (
-                                <> · {e.requirement_note}</>
-                              ) : e.limit_note ? (
-                                <> · {e.limit_note}</>
-                              ) : null}
-                            </>
-                          ) : (
-                            <>
-                              {" · "}V{e.version}
-                              {e.limit_note ? <> · {e.limit_note}</> : null}
-                              {e.last_edited_at ? (
-                                <>
-                                  {" "}
-                                  · Last edited{" "}
-                                  {formatRelativeTime(e.last_edited_at)}
-                                </>
-                              ) : null}
-                              {e.counselor_comment_preview ? (
-                                <> · {e.counselor_comment_preview}</>
-                              ) : e.comment_count > 0 ? (
-                                <>
-                                  {" · "}
-                                  {e.comment_count} comment
-                                  {e.comment_count !== 1 ? "s" : ""}
-                                </>
-                              ) : null}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                        {pill}
-                        {e.status === "not_started" ? (
-                          <button
-                            type="button"
-                            className={btnSmClass(true)}
-                            onClick={() => {
-                              setEssayOpenId(e.id);
-                              setEssayDraft(e.body);
-                            }}
-                          >
-                            Start writing
-                          </button>
+                        {hasFile ? (
+                          <span>
+                            <span className="font-medium text-[var(--text)]">{e.file_name}</span>
+                            {e.file_uploaded_at ? <> · {formatDate(e.file_uploaded_at)}</> : null}
+                          </span>
                         ) : (
-                          <button
-                            type="button"
-                            className={btnSmClass(false)}
-                            onClick={() => {
-                              setEssayOpenId((id) =>
-                                id === e.id ? null : e.id,
-                              );
-                              setEssayDraft(e.body);
-                            }}
-                          >
-                            {essayOpenId === e.id ? "Close" : "Open"}
-                          </button>
+                          <span>No file uploaded yet</span>
                         )}
                       </div>
-                    </div>
-                    {essayOpenId === e.id ? (
-                      <div className="rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] px-3.5 py-3">
-                        <label className={labelClass}>Draft</label>
-                        <textarea
-                          className={`${fieldClass} mt-1.5 min-h-[120px] w-full resize-y`}
-                          value={essayDraft}
-                          onChange={(ev) => setEssayDraft(ev.target.value)}
-                          placeholder="Write your essay here…"
-                        />
-                        <div className="mt-3 flex flex-wrap justify-end gap-2">
-                          <button
-                            type="button"
-                            className={btnSmClass(false)}
-                            onClick={() => setEssayOpenId(null)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            className={btnSmClass(true)}
-                            onClick={() => void saveEssayDraft(e.id)}
-                          >
-                            Save
-                          </button>
+                      {comments.length > 0 ? (
+                        <div className="mt-1.5 flex items-center gap-1 text-[11.5px] font-medium text-[var(--green)]">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                          </svg>
+                          {comments.length} counselor comment{comments.length !== 1 ? "s" : ""}
                         </div>
+                      ) : null}
+                    </div>
+                    <div className="flex w-full shrink-0 flex-col gap-1.5 sm:w-[170px]">
+                      <select
+                        className={`w-full cursor-pointer rounded-md border-[1.5px] px-2.5 py-1.5 text-[11.5px] font-semibold outline-none focus:border-[var(--green-light)] ${studentStatusSelectCls(st)}`}
+                        value={st}
+                        onChange={(ev) =>
+                          void updateEssayStatus(e.id, ev.target.value as EssayStatusSlug)
+                        }
+                        aria-label="Essay status"
+                      >
+                        {ESSAY_STATUSES.map((v) => (
+                          <option key={v} value={v}>
+                            {ESSAY_STATUS_LABEL[v]}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          className={studentEssayBtnRow(false)}
+                          onClick={() => {
+                            setEssayDetailId(e.id);
+                          }}
+                        >
+                          Detail
+                        </button>
+                        <label className={studentEssayBtnRow(true) + " cursor-pointer"}>
+                          <input
+                            type="file"
+                            className="sr-only"
+                            onChange={(ev) => {
+                              const f = ev.target.files?.[0];
+                              ev.target.value = "";
+                              if (f) void uploadEssayFile(e.id, f);
+                            }}
+                          />
+                          Upload
+                        </label>
                       </div>
-                    ) : null}
+                      {hasFile ? (
+                        <button
+                          type="button"
+                          className={studentEssayBtnRow(false)}
+                          onClick={() => void openEssayFile(e.id)}
+                        >
+                          View file
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}
@@ -1580,7 +1682,7 @@ export function MyApplicationsClient({
                         .join(", ")}
                     </div>
                     <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
-                      Click &quot;New essay&quot; above to draft for these
+                      Use Add essay above to create a requirement for these universities
                     </div>
                   </div>
                 </div>
@@ -2022,23 +2124,44 @@ export function MyApplicationsClient({
       {essayModal ? (
         <ModalVeil
           onClose={() => setEssayModal(false)}
-          title="Start a new essay"
+          title="Add essay requirement"
         >
           <div className="flex flex-col gap-3.5">
             <div>
-              <label className={labelClass}>Essay title</label>
+              <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
+                Essay title <span className="text-[var(--red)]">*</span>
+              </label>
               <input
-                className={`${fieldClass} mt-1.5 w-full`}
+                className={`${fieldClass} w-full`}
                 value={essayForm.title}
                 onChange={(e) =>
                   setEssayForm((f) => ({ ...f, title: e.target.value }))
                 }
+                placeholder="e.g. Why Manchester essay"
               />
             </div>
             <div>
-              <label className={labelClass}>Essay type</label>
+              <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
+                University <span className="text-[var(--red)]">*</span>
+              </label>
+              <input
+                className={`${fieldClass} w-full`}
+                value={essayForm.for_application}
+                onChange={(e) =>
+                  setEssayForm((f) => ({
+                    ...f,
+                    for_application: e.target.value,
+                  }))
+                }
+                placeholder="e.g. University of Manchester"
+              />
+            </div>
+            <div>
+              <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
+                Essay type <span className="text-[var(--red)]">*</span>
+              </label>
               <select
-                className={`${fieldClass} mt-1.5 w-full`}
+                className={`${fieldClass} w-full`}
                 value={essayForm.essay_type}
                 onChange={(e) =>
                   setEssayForm((f) => ({ ...f, essay_type: e.target.value }))
@@ -2052,44 +2175,60 @@ export function MyApplicationsClient({
               </select>
             </div>
             <div>
-              <label className={labelClass}>For which application?</label>
-              <input
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={essayForm.for_application}
+              <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
+                Essay question / prompt
+              </label>
+              <textarea
+                className={`${fieldClass} min-h-[80px] w-full resize-y`}
+                value={essayForm.essay_prompt}
+                onChange={(e) =>
+                  setEssayForm((f) => ({ ...f, essay_prompt: e.target.value }))
+                }
+                placeholder="Paste the essay question or prompt here…"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
+                  Word / character count
+                </label>
+                <input
+                  className={`${fieldClass} w-full`}
+                  value={essayForm.limit_note}
+                  onChange={(e) =>
+                    setEssayForm((f) => ({ ...f, limit_note: e.target.value }))
+                  }
+                  placeholder="e.g. 800 words"
+                />
+              </div>
+              <div>
+                <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
+                  Deadline
+                </label>
+                <input
+                  type="date"
+                  className={`${fieldClass} w-full`}
+                  value={essayForm.deadline}
+                  onChange={(e) =>
+                    setEssayForm((f) => ({ ...f, deadline: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
+                Notes / instructions
+              </label>
+              <textarea
+                className={`${fieldClass} min-h-[60px] w-full resize-y`}
+                value={essayForm.instructions_note}
                 onChange={(e) =>
                   setEssayForm((f) => ({
                     ...f,
-                    for_application: e.target.value,
+                    instructions_note: e.target.value,
                   }))
                 }
-              />
-            </div>
-            <div>
-              <label className={labelClass}>
-                Word / character limit (if known)
-              </label>
-              <input
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={essayForm.limit_note}
-                onChange={(e) =>
-                  setEssayForm((f) => ({ ...f, limit_note: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <label className={labelClass}>
-                Requirement / prompt note (optional)
-              </label>
-              <input
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={essayForm.requirement_note}
-                onChange={(e) =>
-                  setEssayForm((f) => ({
-                    ...f,
-                    requirement_note: e.target.value,
-                  }))
-                }
-                placeholder="e.g. Required for Rotman supplemental"
+                placeholder="Guidance from your counselor or your own reminders…"
               />
             </div>
           </div>
@@ -2106,7 +2245,160 @@ export function MyApplicationsClient({
               className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
               onClick={() => void addEssay()}
             >
-              Create essay
+              Save essay
+            </button>
+          </div>
+        </ModalVeil>
+      ) : null}
+
+      {detailEssay ? (
+        <ModalVeil
+          wide
+          unpaddedBody
+          onClose={() => setEssayDetailId(null)}
+          title={detailEssay.title}
+        >
+          <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
+                  University
+                </div>
+                <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
+                  {detailEssay.for_application ?? "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
+                  Essay type
+                </div>
+                <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
+                  {detailEssay.essay_type ?? "—"}
+                </div>
+              </div>
+              {detailEssay.limit_note?.trim() ? (
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
+                    Word / character count
+                  </div>
+                  <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
+                    {detailEssay.limit_note.trim()}
+                  </div>
+                </div>
+              ) : null}
+              {detailEssay.deadline ? (
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
+                    Deadline
+                  </div>
+                  <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
+                    {formatDate(detailEssay.deadline)}
+                  </div>
+                </div>
+              ) : null}
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
+                  Status
+                </div>
+                <div className="mt-1">
+                  <EssayDetailStatusPill
+                    status={detailEssay.status as EssayStatusSlug}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          {detailEssay.essay_prompt?.trim() ? (
+            <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+              <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                Essay question / prompt
+              </div>
+              <div className="rounded-md border-l-[3px] border-[var(--green-light)] bg-[var(--cream)] px-3 py-2.5 text-[13px] italic leading-relaxed text-[var(--text-mid)]">
+                {detailEssay.essay_prompt.trim()}
+              </div>
+            </div>
+          ) : null}
+          <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+            <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+              Uploaded file
+            </div>
+            {detailEssay.file_name ? (
+              <div className="text-[13px] leading-relaxed text-[var(--text)]">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="mr-1.5 inline-block align-[-2px] text-[var(--text-light)]"
+                  aria-hidden
+                >
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                </svg>
+                <strong>{detailEssay.file_name}</strong>{" "}
+                <span className="text-[12px] text-[var(--text-hint)]">
+                  · Uploaded{" "}
+                  {detailEssay.file_uploaded_at
+                    ? formatDate(detailEssay.file_uploaded_at)
+                    : ""}
+                </span>
+              </div>
+            ) : (
+              <div className="text-[13px] italic text-[var(--text-hint)]">
+                No file uploaded yet
+              </div>
+            )}
+          </div>
+          {detailEssay.instructions_note?.trim() ? (
+            <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+              <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                Notes / instructions
+              </div>
+              <div className="text-[13px] leading-relaxed text-[var(--text)]">
+                {detailEssay.instructions_note.trim()}
+              </div>
+            </div>
+          ) : null}
+          <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+            <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+              Counselor feedback
+            </div>
+            {(detailEssay.student_my_application_essay_comments ?? [])
+              .length === 0 ? (
+              <div className="text-[12px] italic text-[var(--text-hint)]">
+                No comments yet — your counselor will leave feedback here
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {(detailEssay.student_my_application_essay_comments ?? []).map(
+                  (c) => (
+                    <div
+                      key={c.id}
+                      className="rounded-lg border border-[var(--border-light)] bg-[var(--cream)] px-3 py-2.5"
+                    >
+                      <div className="mb-1 flex justify-between text-[11px] text-[var(--text-light)]">
+                        <span className="font-semibold text-[var(--text)]">
+                          {c.author_display_name || "Counselor"}
+                        </span>
+                        <span>{formatDate(c.created_at)}</span>
+                      </div>
+                      <div className="text-[12.5px] leading-relaxed whitespace-pre-wrap text-[var(--text)]">
+                        {c.body}
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5">
+            <button
+              type="button"
+              className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
+              onClick={() => setEssayDetailId(null)}
+            >
+              Close
             </button>
           </div>
         </ModalVeil>
@@ -2312,6 +2604,62 @@ function DocumentRow({
   doc: DocRow;
   onPickFile: (f: File) => void;
 }) {
+  if (doc.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY) {
+    const text = doc.school_text_value?.trim();
+    const has = !!text;
+    return (
+      <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3 sm:flex-row sm:items-center">
+        <div
+          className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${
+            has
+              ? "bg-[var(--green-bg)] text-[var(--green)]"
+              : "bg-[#ECEAE5] text-[var(--text-mid)]"
+          }`}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-semibold">{doc.display_name}</div>
+          <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
+            {has ? (
+              <span className="text-[var(--text)]">{text}</span>
+            ) : (
+              "Your school has not entered this yet."
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
+              has
+                ? "bg-[rgba(82,183,135,.13)] text-[#1B4332]"
+                : "bg-[#ECEAE5] text-[var(--text-mid)]"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+            {has ? "From school" : "Pending"}
+          </span>
+          <span
+            className="inline-flex rounded-lg border border-[var(--border)] bg-[var(--cream)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-hint)]"
+            title="Read-only"
+          >
+            View only
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   const missing = doc.status === "missing";
   return (
     <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center">
@@ -2376,14 +2724,36 @@ function DocumentRow({
   );
 }
 
+function EssayDetailStatusPill({ status }: { status: EssayStatusSlug }) {
+  const pillCls =
+    status === "ready_for_review"
+      ? "bg-[rgba(82,183,135,.13)] text-[#1B4332] [&_.jd]:bg-[var(--green-bright)]"
+      : status === "in_progress"
+        ? "bg-[rgba(212,162,42,.14)] text-[#7a5d10] [&_.jd]:bg-[#D4A22A]"
+        : "bg-[#ECEAE5] text-[var(--text-mid)] [&_.jd]:bg-[#a0a0a0]";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug ${pillCls}`}
+    >
+      <span className="jd h-1.5 w-1.5 rounded-full" />
+      {ESSAY_STATUS_LABEL[status]}
+    </span>
+  );
+}
+
 function ModalVeil({
   title,
   children,
   onClose,
+  wide,
+  unpaddedBody,
 }: {
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  wide?: boolean;
+  /** Section-style bodies (bordered blocks like school essay detail) */
+  unpaddedBody?: boolean;
 }) {
   return (
     <div
@@ -2392,8 +2762,10 @@ function ModalVeil({
       aria-modal
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="max-h-[90vh] w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-[var(--border-light)] px-[22px] py-4">
+      <div
+        className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[14px] bg-white shadow-xl ${wide ? "max-w-[640px]" : "max-w-[480px]"}`}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-light)] px-[22px] py-4">
           <h2 className="font-[family-name:var(--font-dm-serif)] text-xl tracking-tight">
             {title}
           </h2>
@@ -2416,7 +2788,15 @@ function ModalVeil({
             </svg>
           </button>
         </div>
-        <div className="px-[22px] py-[18px]">{children}</div>
+        <div
+          className={
+            unpaddedBody
+              ? "min-h-0 flex-1 overflow-y-auto"
+              : "overflow-y-auto px-[22px] py-[18px]"
+          }
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

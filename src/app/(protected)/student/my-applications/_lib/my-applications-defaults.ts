@@ -1,5 +1,11 @@
 /** Predefined document checklist rows (slot_key unique per student). */
 export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
+  {
+    slot_key: "predicted",
+    display_name: "Predicted",
+    description:
+      "Predicted grades or outcomes — your school enters this; it is read-only for you.",
+  },
   { slot_key: "passport", display_name: "Passport", description: null as string | null },
   { slot_key: "transcript", display_name: "Transcript", description: null },
   { slot_key: "cv_resume", display_name: "CV / Resume", description: null },
@@ -30,6 +36,9 @@ export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
   },
 ] as const;
 
+/** School fills this via portal; students cannot edit the row (RLS). */
+export const SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY = "predicted";
+
 export const UNIVERSITY_APPLICATION_STATUSES = [
   "considering",
   "shortlisted",
@@ -50,7 +59,21 @@ export const UNIVERSITY_DECISIONS = [
   "declined_by_me",
 ] as const;
 
-export const ESSAY_STATUSES = ["not_started", "drafting", "in_review", "complete"] as const;
+/** Matches essay UI + DB check constraint */
+export const ESSAY_STATUSES = [
+  "not_started",
+  "in_progress",
+  "ready_for_review",
+] as const;
+
+/** Display labels aligned with Teacher Portal HTML */
+export const ESSAY_STATUS_LABEL = {
+  not_started: "Not started",
+  in_progress: "In progress",
+  ready_for_review: "Ready for review",
+} as const satisfies Record<(typeof ESSAY_STATUSES)[number], string>;
+
+export type EssayStatusSlug = (typeof ESSAY_STATUSES)[number];
 
 export const RECOMMENDATION_STATUSES = ["pending", "drafting", "submitted"] as const;
 
@@ -120,14 +143,18 @@ export const APPLICATION_METHOD_OPTIONS = [
   "Other",
 ] as const;
 
+/** Aligned with school portal essay requirement modal */
 export const ESSAY_TYPE_OPTIONS = [
+  "UCAS personal statement",
+  "Common App personal essay",
+  "Supplemental essay",
+  "Scholarship essay",
+  "Motivation letter",
+  "CV / Resume",
   "Personal statement",
-  "University-specific supplemental",
   '"Why this university" essay',
-  "Common App essay",
   "Coalition App essay",
   "UC personal insight",
-  "Scholarship essay",
   "Diversity / background statement",
   "Other",
 ] as const;

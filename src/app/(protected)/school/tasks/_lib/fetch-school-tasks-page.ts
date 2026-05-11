@@ -32,6 +32,8 @@ export type SchoolTasksPageFilters = {
   status: string;
   page: number;
   limit: number;
+  /** When set, only tasks for this student (must belong to admin's school). */
+  studentId?: string;
 };
 
 function escapeIlike(s: string): string {
@@ -178,6 +180,10 @@ export async function fetchSchoolTasksPage(
       { count: "exact" },
     )
     .eq("student_profiles.school_id", schoolId);
+
+  if (filters.studentId?.trim()) {
+    q = q.eq("student_id", filters.studentId.trim());
+  }
 
   if (qTrim) {
     const e = escapeIlike(qTrim);
