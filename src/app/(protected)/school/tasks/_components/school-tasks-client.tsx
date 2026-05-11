@@ -385,11 +385,7 @@ export function SchoolTasksClient({
                 const done = Boolean(r.completed);
                 const studentName =
                   `${r.firstName} ${r.lastName}`.trim() || r.email;
-<<<<<<< HEAD
-                const descTrim = r.notes?.trim() ?? "";
-=======
                 const notesTrim = r.notes?.trim() ?? "";
->>>>>>> a34ce0b284aed09555890a787d1fb49e14c42ece
                 const metaNote =
                   isStudentProfile && notesTrim
                     ? metaDescriptionSnippet(notesTrim)
@@ -635,44 +631,7 @@ export function SchoolTasksClient({
                     </select>
                   </div>
                 )}
-<<<<<<< HEAD
-                <div>
-                  <label
-                    htmlFor="nt-title"
-                    className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]"
-                  >
-                    Title
-                  </label>
-                  <input
-                    id="nt-title"
-                    name="title"
-                    required
-                    placeholder="e.g. Upload final transcript"
-                    className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="nt-desc"
-                    className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]"
-                  >
-                    Description{" "}
-                    <span className="font-normal normal-case text-[var(--text-hint)]">
-                      (optional)
-                    </span>
-                  </label>
-                  <textarea
-                    id="nt-desc"
-                    name="notes"
-                    rows={3}
-                    placeholder="Add context or steps for the student…"
-                    className="mt-1.5 w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]"
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-=======
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
->>>>>>> a34ce0b284aed09555890a787d1fb49e14c42ece
                   <div>
                     <label htmlFor="nt-prio" className={taskModalLabelClass}>
                       Priority
