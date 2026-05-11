@@ -3,10 +3,8 @@ import "server-only";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import type { Scholarship } from "../_components/types";
-import {
-  SCHOLARSHIPS_DISCOVERY_ROW_SELECT,
-  SCHOLARSHIPS_DISCOVERY_SELECT_TRIES,
-} from "./scholarship-discovery-select";
+import { SCHOLARSHIPS_DISCOVERY_SELECT_TRIES } from "./scholarship-discovery-select";
+import { governmentCountryAlpha2FromNationalityFilter } from "./government-scholarship-country-for-nationality";
 import {
   type ScholarshipDiscoveryRow,
   discoveryUiIdFromScholarshipRow,
@@ -16,13 +14,24 @@ import {
 
 export const SCHOLARSHIP_PAGE_SIZE = 6;
 
+export type ScholarshipDiscoveryTab = "government" | "other";
+
 export type ScholarshipDiscoveryResolvedQuery = {
   q: string;
   nationality: string;
   destination: string;
   coverage: string;
-  page: number;
+  tab: ScholarshipDiscoveryTab;
+  governmentPage: number;
+  otherPage: number;
   detail: string | null;
+};
+
+export type ScholarshipDiscoveryTabSlice = {
+  scholarships: Scholarship[];
+  totalMatching: number;
+  page: number;
+  totalPages: number;
 };
 
 type RpcDiscoveryPage = {
@@ -51,20 +60,47 @@ function pickFilterAny(
   return raw;
 }
 
-function parsePage(sp: Record<string, string | string[] | undefined>): number {
-  const fromPage = Number.parseInt(pick(sp, "page", ""), 10);
-  if (Number.isFinite(fromPage) && fromPage >= 1) return fromPage;
-  const legacyGov = Number.parseInt(pick(sp, "govPage", ""), 10);
-  if (Number.isFinite(legacyGov) && legacyGov >= 1) return legacyGov;
-  const legacyIntl = Number.parseInt(pick(sp, "intlPage", ""), 10);
-  if (Number.isFinite(legacyIntl) && legacyIntl >= 1) return legacyIntl;
-  return 1;
+function parsePositiveIntFromKeys(
+  sp: Record<string, string | string[] | undefined>,
+  keys: string[],
+  fallback: number,
+): number {
+  for (const key of keys) {
+    const n = Number.parseInt(pick(sp, key, ""), 10);
+    if (Number.isFinite(n) && n >= 1) return n;
+  }
+  return fallback;
 }
 
 export function parseScholarshipDiscoverySearchParams(
   sp: Record<string, string | string[] | undefined>,
 ): ScholarshipDiscoveryResolvedQuery {
-  const page = Math.max(1, parsePage(sp));
+  const tabRaw = pick(sp, "tab", "").trim().toLowerCase();
+  const tab: ScholarshipDiscoveryTab =
+    tabRaw === "other" || tabRaw === "o" ? "other" : "government";
+
+  const legacyPageRaw = pick(sp, "page", "").trim();
+  const legacyPage = Number.parseInt(legacyPageRaw, 10);
+  const legacyPageOk = Number.isFinite(legacyPage) && legacyPage >= 1;
+
+  let governmentPage = parsePositiveIntFromKeys(sp, ["gPage", "govPage"], 1);
+  let otherPage = parsePositiveIntFromKeys(sp, ["oPage", "intlPage"], 1);
+
+  if (legacyPageOk) {
+    const hasG =
+      pick(sp, "gPage", "").trim().length > 0 ||
+      pick(sp, "govPage", "").trim().length > 0;
+    const hasO =
+      pick(sp, "oPage", "").trim().length > 0 ||
+      pick(sp, "intlPage", "").trim().length > 0;
+    if (tab === "government" && !hasG) {
+      governmentPage = legacyPage;
+    }
+    if (tab === "other" && !hasO) {
+      otherPage = legacyPage;
+    }
+  }
+
   const detailRaw = pick(sp, "detail", "").trim();
 
   const natRaw = pickFilterAny(sp, "nat");
@@ -81,7 +117,9 @@ export function parseScholarshipDiscoverySearchParams(
     nationality,
     destination,
     coverage,
-    page,
+    tab,
+    governmentPage: Math.max(1, governmentPage),
+    otherPage: Math.max(1, otherPage),
     detail: detailRaw.length ? detailRaw : null,
   };
 }
@@ -111,9 +149,11 @@ function parseRpcPayload(raw: unknown): RpcDiscoveryPage | null {
   return { total, catalog_total, rows };
 }
 
-async function fetchDiscoveryPageRpc(
-  query: ScholarshipDiscoveryResolvedQuery,
+async function fetchDiscoveryBucketRpc(
+  query: Omit<ScholarshipDiscoveryResolvedQuery, "tab" | "governmentPage" | "otherPage">,
+  bucket: ScholarshipDiscoveryTab,
   page: number,
+  homeAlpha2: string | null,
 ): Promise<RpcDiscoveryPage | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("rpc_scholarships_discovery_page", {
@@ -121,14 +161,79 @@ async function fetchDiscoveryPageRpc(
     p_nat: query.nationality,
     p_dest: query.destination,
     p_cov: query.coverage,
+    p_bucket: bucket,
+    p_home_alpha2: homeAlpha2 ?? null,
     p_limit: SCHOLARSHIP_PAGE_SIZE,
     p_offset: (Math.max(1, page) - 1) * SCHOLARSHIP_PAGE_SIZE,
   });
   if (error) {
-    console.error("[fetchDiscoveryPageRpc]", error.message);
+    console.error("[fetchDiscoveryBucketRpc]", bucket, error.message);
     return null;
   }
   return parseRpcPayload(data);
+}
+
+async function loadBucketSlice(
+  query: Omit<ScholarshipDiscoveryResolvedQuery, "tab" | "governmentPage" | "otherPage">,
+  bucket: ScholarshipDiscoveryTab,
+  page: number,
+  homeAlpha2: string | null,
+): Promise<ScholarshipDiscoveryTabSlice & { catalog_total: number }> {
+  let p = Math.max(1, page);
+  let rpc = await fetchDiscoveryBucketRpc(query, bucket, p, homeAlpha2);
+
+  if (!rpc) {
+    return {
+      scholarships: [],
+      totalMatching: 0,
+      page: 1,
+      totalPages: 1,
+      catalog_total: 0,
+    };
+  }
+
+  const catalog_total = rpc.catalog_total;
+  if (catalog_total === 0) {
+    return {
+      scholarships: [],
+      totalMatching: 0,
+      page: 1,
+      totalPages: 1,
+      catalog_total: 0,
+    };
+  }
+
+  let totalMatching = rpc.total;
+  let totalPages = Math.max(1, Math.ceil(totalMatching / SCHOLARSHIP_PAGE_SIZE));
+  if (p > totalPages && totalMatching > 0) {
+    p = totalPages;
+    rpc = await fetchDiscoveryBucketRpc(query, bucket, p, homeAlpha2);
+    if (!rpc) {
+      return {
+        scholarships: [],
+        totalMatching: 0,
+        page: 1,
+        totalPages: 1,
+        catalog_total,
+      };
+    }
+    totalMatching = rpc.total;
+    totalPages = Math.max(1, Math.ceil(totalMatching / SCHOLARSHIP_PAGE_SIZE));
+  }
+
+  const scholarships: Scholarship[] = [];
+  for (const row of rpc.rows) {
+    const s = mapDiscoveryRow(row as unknown as ScholarshipDiscoveryRow);
+    if (s) scholarships.push(s);
+  }
+
+  return {
+    scholarships,
+    totalMatching,
+    page: p,
+    totalPages,
+    catalog_total,
+  };
 }
 
 async function fetchScholarshipByDetailId(
@@ -270,13 +375,18 @@ export async function resolveScholarshipUuidForDiscoveryId(
 }
 
 export type ScholarshipDiscoveryPageData = {
-  scholarships: Scholarship[];
-  totalMatching: number;
+  tab: ScholarshipDiscoveryTab;
+  government: ScholarshipDiscoveryTabSlice;
+  other: ScholarshipDiscoveryTabSlice;
   totalCatalog: number;
-  page: number;
-  totalPages: number;
   pageSize: number;
-  filters: { q: string; nat: string; dest: string; cov: string };
+  filters: {
+    q: string;
+    nat: string;
+    dest: string;
+    cov: string;
+    tab: ScholarshipDiscoveryTab;
+  };
   detailId: string | null;
   detailScholarship: Scholarship | null;
   savedDiscoveryIds: string[];
@@ -291,37 +401,57 @@ export async function getScholarshipDiscoveryPageData(
     nat: query.nationality,
     dest: query.destination,
     cov: query.coverage,
+    tab: query.tab,
   };
 
-  const activityIds = await loadScholarshipActivityIds();
+  const homeAlpha2 = governmentCountryAlpha2FromNationalityFilter(
+    query.nationality === "any" ? "any" : query.nationality,
+  );
 
-  let page = Math.max(1, query.page);
-  let rpc = await fetchDiscoveryPageRpc(query, page);
+  const queryBase = {
+    q: query.q,
+    nationality: query.nationality,
+    destination: query.destination,
+    coverage: query.coverage,
+  };
 
-  if (!rpc) {
-    return {
-      scholarships: [],
-      totalMatching: 0,
-      totalCatalog: 0,
-      page: 1,
-      totalPages: 1,
-      pageSize: SCHOLARSHIP_PAGE_SIZE,
-      filters,
-      detailId: query.detail,
-      detailScholarship: null,
-      ...activityIds,
-    };
-  }
+  const [activityIds, govLoaded, otherLoaded] = await Promise.all([
+    loadScholarshipActivityIds(),
+    loadBucketSlice(queryBase, "government", query.governmentPage, homeAlpha2),
+    loadBucketSlice(queryBase, "other", query.otherPage, homeAlpha2),
+  ]);
 
-  const totalCatalog = rpc.catalog_total;
+  const totalCatalog = Math.max(govLoaded.catalog_total, otherLoaded.catalog_total);
+
+  const government: ScholarshipDiscoveryTabSlice = {
+    scholarships: govLoaded.scholarships,
+    totalMatching: govLoaded.totalMatching,
+    page: govLoaded.page,
+    totalPages: govLoaded.totalPages,
+  };
+  const other: ScholarshipDiscoveryTabSlice = {
+    scholarships: otherLoaded.scholarships,
+    totalMatching: otherLoaded.totalMatching,
+    page: otherLoaded.page,
+    totalPages: otherLoaded.totalPages,
+  };
 
   if (totalCatalog === 0) {
     return {
-      scholarships: [],
-      totalMatching: 0,
+      tab: query.tab,
+      government: {
+        scholarships: [],
+        totalMatching: 0,
+        page: 1,
+        totalPages: 1,
+      },
+      other: {
+        scholarships: [],
+        totalMatching: 0,
+        page: 1,
+        totalPages: 1,
+      },
       totalCatalog: 0,
-      page: 1,
-      totalPages: 1,
       pageSize: SCHOLARSHIP_PAGE_SIZE,
       filters,
       detailId: query.detail,
@@ -332,48 +462,20 @@ export async function getScholarshipDiscoveryPageData(
     };
   }
 
-  let totalMatching = rpc.total;
-  let totalPages = Math.max(1, Math.ceil(totalMatching / SCHOLARSHIP_PAGE_SIZE));
-  if (page > totalPages && totalMatching > 0) {
-    page = totalPages;
-    rpc = await fetchDiscoveryPageRpc(query, page);
-    if (!rpc) {
-      return {
-        scholarships: [],
-        totalMatching: 0,
-        totalCatalog,
-        page: 1,
-        totalPages: 1,
-        pageSize: SCHOLARSHIP_PAGE_SIZE,
-        filters,
-        detailId: query.detail,
-        detailScholarship: null,
-        ...activityIds,
-      };
-    }
-    totalMatching = rpc.total;
-    totalPages = Math.max(1, Math.ceil(totalMatching / SCHOLARSHIP_PAGE_SIZE));
-  }
-
-  const scholarships: Scholarship[] = [];
-  for (const row of rpc.rows) {
-    const s = mapDiscoveryRow(row as unknown as ScholarshipDiscoveryRow);
-    if (s) scholarships.push(s);
-  }
+  const combinedLoaded = [...government.scholarships, ...other.scholarships];
 
   let detailScholarship: Scholarship | null = null;
   if (query.detail) {
     detailScholarship =
-      scholarships.find((s) => s.id === query.detail) ??
+      combinedLoaded.find((s) => s.id === query.detail) ??
       (await fetchScholarshipByDetailId(query.detail));
   }
 
   return {
-    scholarships,
-    totalMatching,
+    tab: query.tab,
+    government,
+    other,
     totalCatalog,
-    page,
-    totalPages,
     pageSize: SCHOLARSHIP_PAGE_SIZE,
     filters,
     detailId: query.detail,

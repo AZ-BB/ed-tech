@@ -1,6 +1,6 @@
 "use client";
 
-import { logout } from "@/actions/auth";
+import { LogoutConfirmDialog } from "@/components/logout-confirm-dialog";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -219,6 +219,7 @@ export function SchoolPortalShell({
 }: SchoolPortalShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const title = useMemo(() => pageTitle(pathname ?? SCHOOL_HOME), [pathname]);
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -325,25 +326,24 @@ export function SchoolPortalShell({
                 {userRole}
               </div>
             </div>
-            <form action={logout}>
-              <button
-                type="submit"
-                title="Sign out"
-                aria-label="Sign out"
-                className="flex cursor-pointer rounded-[6px] bg-transparent p-[6px] text-[rgba(255,255,255,0.5)] transition-colors hover:bg-white/[0.08] hover:text-white"
+            <button
+              type="button"
+              title="Sign out"
+              aria-label="Sign out"
+              className="flex cursor-pointer rounded-[6px] bg-transparent p-[6px] text-[rgba(255,255,255,0.5)] transition-colors hover:bg-white/[0.08] hover:text-white"
+              onClick={() => setLogoutConfirmOpen(true)}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-                </svg>
-              </button>
-            </form>
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+            </button>
           </div>
         </div>
       </aside>
@@ -446,6 +446,12 @@ export function SchoolPortalShell({
 
         <main className="flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6">{children}</main>
       </div>
+
+      <LogoutConfirmDialog
+        open={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        variant="school"
+      />
     </div>
   );
 }

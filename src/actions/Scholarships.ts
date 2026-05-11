@@ -6,6 +6,8 @@ import {
   type ScholarshipDiscoveryPageData,
 } from "@/app/(protected)/student/scholarships/_lib/get-scholarship-discovery-programs";
 
+export type { ScholarshipDiscoveryPageData, ScholarshipDiscoveryTab } from "@/app/(protected)/student/scholarships/_lib/get-scholarship-discovery-programs";
+
 export type { ScholarshipActivityActionResult } from "./scholarship-activities";
 
 /** Loads one discovery page (filters, search, pagination) from the database. */

@@ -7,7 +7,8 @@ type Props = {
   subtitle: string;
   iconWrapClass: string;
   icon: ReactNode;
-  count: number;
+  /** When set, shows as “{count} available”. Omit to hide the count badge (e.g. per-group listings). */
+  count?: number;
   scholarships: Scholarship[];
   onSelect: (id: string) => void;
   savedIds: Set<string>;
@@ -41,9 +42,11 @@ export function ScholarshipCategorySection({
           <div className="text-base font-bold text-[var(--text)]">{title}</div>
           <div className="text-[12px] text-[var(--text-light)]">{subtitle}</div>
         </div>
-        <span className="ml-auto shrink-0 rounded-xl bg-[var(--sand)] px-3 py-0.5 text-[11px] font-medium text-[var(--text-hint)]">
-          {count} available
-        </span>
+        {typeof count === "number" ? (
+          <span className="ml-auto shrink-0 rounded-xl bg-[var(--sand)] px-3 py-0.5 text-[11px] font-medium text-[var(--text-hint)]">
+            {count} available
+          </span>
+        ) : null}
       </div>
       {scholarships.length > 0 ? (
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">

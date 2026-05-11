@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { downloadEssayReviewReportPdf } from "../_lib/build-essay-review-report-pdf";
 import type { EssayReviewFeedback } from "../_lib/essay-review-types";
 
 function wordCount(text: string): number {
@@ -13,55 +14,6 @@ function ratingBadgeClass(rating: string) {
   if (l === "strong") return "bg-[var(--green-bg)] text-[var(--green)]";
   if (l === "good" || l === "adequate") return "bg-[#FFF3E0] text-[#E65100]";
   return "bg-[#FCEBEB] text-[#C0392B]";
-}
-
-function downloadReport(
-  fb: EssayReviewFeedback,
-  essayPrompt: string,
-  university: string,
-) {
-  let c = "ESSAY REVIEW REPORT\n" + "=".repeat(50) + "\n\n";
-  const p = essayPrompt.trim();
-  const u = university.trim();
-  if (p) c += `PROMPT: ${p}\n`;
-  if (u) c += `UNIVERSITY: ${u}\n`;
-  const st = fb._stats;
-  c += `STATS: ${st.words} words, ${st.sentences} sentences, ${st.paragraphs} paragraphs\n`;
-  c += `OVERALL SCORE: ${st.score}/100\n`;
-  if (!fb.is_valid_essay) {
-    c += `\nNOT A VALID ESSAY:\n${fb.invalid_reason ?? ""}\n`;
-  }
-  c += `\nOVERALL ASSESSMENT:\n${fb.assessment}\n\nSTRUCTURE:\n`;
-  fb.structure.forEach((s) => {
-    c += `  ${s.section} > ${s.rating}${s.note ? ` - ${s.note}` : ""}\n`;
-  });
-  c += "\nSTRENGTHS:\n";
-  fb.strengths.forEach((s) => {
-    c += `  * ${s}\n`;
-  });
-  c += "\nIMPROVEMENTS:\n";
-  fb.improvements.forEach((s) => {
-    c += `  * ${s}\n`;
-  });
-  c += "\nREWRITES:\n";
-  fb.suggestions.forEach((s, i) => {
-    c += `\n  #${i + 1}\n  Original: "${s.original}"\n  Improved: "${s.improved}"\n  Why: ${s.reason}\n`;
-  });
-  c += "\nQUALITY:\n";
-  fb.quality.forEach((q) => {
-    c += `  ${q.name} > ${q.rating}\n`;
-  });
-  c += `\nAUTHENTICITY:\n${fb.authenticity.assessment}\n`;
-  fb.authenticity.flags.forEach((f) => {
-    c += `  * ${f}\n`;
-  });
-  c += `\nRECOMMENDATION:\n${fb.recommendation}\n`;
-  const blob = new Blob([c], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "Essay_Review_Report.txt";
-  a.click();
-  URL.revokeObjectURL(a.href);
 }
 
 export function EssayReviewClient() {
@@ -120,6 +72,17 @@ export function EssayReviewClient() {
     setFeedback(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  const onDownloadReport = useCallback(() => {
+    if (!feedback) return;
+    void (async () => {
+      try {
+        await downloadEssayReviewReportPdf(feedback, essayPrompt, university);
+      } catch {
+        showError("Could not generate the PDF. Please try again.");
+      }
+    })();
+  }, [feedback, essayPrompt, university, showError]);
 
   const fieldLabelClass =
     "mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text)] [&>svg]:opacity-40";
@@ -523,7 +486,7 @@ export function EssayReviewClient() {
             <button
               type="button"
               className="inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-3 font-[family-name:var(--font-dm-sans)] text-[13px] font-semibold text-[var(--green)] transition hover:border-[var(--green)] hover:bg-[var(--green-bg)]"
-              onClick={() => downloadReport(feedback, essayPrompt, university)}
+              onClick={onDownloadReport}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
