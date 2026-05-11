@@ -22,6 +22,8 @@ import {
   useState,
 } from "react";
 
+import type { AiMatchingProfileDefaults } from "../_lib/load-ai-matching-profile-defaults";
+
 const PROGRESS_LABELS = [
   "Getting started",
   "About you",
@@ -244,14 +246,34 @@ const TEST_OPTIONS = ["SAT", "IELTS", "ACT", "TOEFL", "Duolingo", "None"];
 
 const TESTS_WITH_SCORE_INPUTS = ["SAT", "IELTS", "ACT", "TOEFL", "Duolingo"] as const;
 
-function testScoreFieldMeta(test: string): { label: string; placeholder: string } {
+/** Current SAT composite scale (EBRW + Math). */
+const SAT_TOTAL_MIN = 400;
+const SAT_TOTAL_MAX = 1600;
+
+/** ACT composite score (single number). */
+const ACT_COMPOSITE_MIN = 1;
+const ACT_COMPOSITE_MAX = 36;
+
+function testScoreFieldMeta(test: string): {
+  label: string;
+  placeholder: string;
+  scoreHint?: string;
+} {
   switch (test) {
     case "SAT":
-      return { label: "SAT Score", placeholder: "e.g. 1400" };
+      return {
+        label: "SAT Score",
+        placeholder: `e.g. 1420 (max ${SAT_TOTAL_MAX})`,
+        scoreHint: `Total score out of ${SAT_TOTAL_MAX}.`,
+      };
     case "IELTS":
       return { label: "IELTS Band", placeholder: "e.g. 7.0" };
     case "ACT":
-      return { label: "ACT Score", placeholder: "e.g. 32" };
+      return {
+        label: "ACT Score",
+        placeholder: `e.g. 32 (max ${ACT_COMPOSITE_MAX})`,
+        scoreHint: `Composite out of ${ACT_COMPOSITE_MAX}.`,
+      };
     case "TOEFL":
       return { label: "TOEFL Score", placeholder: "e.g. 100" };
     case "Duolingo":
@@ -259,6 +281,56 @@ function testScoreFieldMeta(test: string): { label: string; placeholder: string 
     default:
       return { label: `${test} score`, placeholder: "" };
   }
+}
+
+/** Strips non-digits and caps at SAT composite maximum (1600 scale). */
+function sanitizeSatScoreInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  const n = Number.parseInt(digits, 10);
+  if (!Number.isFinite(n)) return "";
+  return String(Math.min(SAT_TOTAL_MAX, n));
+}
+
+/**
+ * null = valid. "required" = empty (handled by missing-score validation).
+ * Any other string = user-facing error.
+ */
+function satScoreValidationMessage(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return "required";
+  if (!/^\d+$/.test(t)) return "Enter a whole number.";
+  const n = Number.parseInt(t, 10);
+  if (n > SAT_TOTAL_MAX) {
+    return `SAT is scored out of ${SAT_TOTAL_MAX}; enter ${SAT_TOTAL_MAX} or below.`;
+  }
+  if (n < SAT_TOTAL_MIN) {
+    return `SAT composite is usually between ${SAT_TOTAL_MIN} and ${SAT_TOTAL_MAX}.`;
+  }
+  return null;
+}
+
+/** Strips non-digits and caps at ACT composite maximum. */
+function sanitizeActScoreInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  const n = Number.parseInt(digits, 10);
+  if (!Number.isFinite(n)) return "";
+  return String(Math.min(ACT_COMPOSITE_MAX, n));
+}
+
+function actScoreValidationMessage(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return "required";
+  if (!/^\d+$/.test(t)) return "Enter a whole number.";
+  const n = Number.parseInt(t, 10);
+  if (n > ACT_COMPOSITE_MAX) {
+    return `ACT is scored out of ${ACT_COMPOSITE_MAX}; enter ${ACT_COMPOSITE_MAX} or below.`;
+  }
+  if (n < ACT_COMPOSITE_MIN) {
+    return `ACT composite is usually between ${ACT_COMPOSITE_MIN} and ${ACT_COMPOSITE_MAX}.`;
+  }
+  return null;
 }
 
 const ACADEMIC_SYSTEMS = [
@@ -322,6 +394,28 @@ type FormState = {
   extraNotes: string;
 };
 
+function satScoreFieldInvalid(form: FormState): boolean {
+  if (form.testsTaken.includes("None") || !form.testsTaken.includes("SAT")) return false;
+  const m = satScoreValidationMessage(form.testScores["SAT"] ?? "");
+  return m !== null && m !== "required";
+}
+
+function satScoreInValidRange(form: FormState): boolean {
+  if (form.testsTaken.includes("None") || !form.testsTaken.includes("SAT")) return false;
+  return satScoreValidationMessage(form.testScores["SAT"] ?? "") === null;
+}
+
+function actScoreFieldInvalid(form: FormState): boolean {
+  if (form.testsTaken.includes("None") || !form.testsTaken.includes("ACT")) return false;
+  const m = actScoreValidationMessage(form.testScores["ACT"] ?? "");
+  return m !== null && m !== "required";
+}
+
+function actScoreInValidRange(form: FormState): boolean {
+  if (form.testsTaken.includes("None") || !form.testsTaken.includes("ACT")) return false;
+  return actScoreValidationMessage(form.testScores["ACT"] ?? "") === null;
+}
+
 const initialForm: FormState = {
   fullName: "",
   schoolName: "",
@@ -346,12 +440,34 @@ const initialForm: FormState = {
   extraNotes: "",
 };
 
+function formStateFromProfileDefaults(
+  defaults: AiMatchingProfileDefaults | null | undefined,
+): FormState {
+  const o: FormState = { ...initialForm };
+  if (!defaults) return o;
+  if (defaults.fullName.trim()) o.fullName = defaults.fullName.trim();
+  if (defaults.schoolName.trim()) o.schoolName = defaults.schoolName.trim();
+  if (defaults.schoolCountry.trim()) o.schoolCountry = defaults.schoolCountry.trim();
+  if (defaults.nationality.trim()) o.nationality = defaults.nationality.trim();
+  if (defaults.academicSystem.trim()) o.academicSystem = defaults.academicSystem.trim();
+  if (defaults.predictedScore.trim()) o.predictedScore = defaults.predictedScore.trim();
+  if (defaults.testsTaken.length > 0) {
+    o.testsTaken = [...defaults.testsTaken];
+    o.testScores = { ...defaults.testScores };
+  }
+  if (defaults.primaryStudyDestination.trim()) {
+    o.primaryStudyDestination = defaults.primaryStudyDestination.trim();
+  }
+  if (defaults.intendedMajor.trim()) o.intendedMajor = defaults.intendedMajor.trim();
+  if (defaults.budgetBand.trim()) o.budgetBand = defaults.budgetBand.trim();
+  return o;
+}
+
 type UniversityMatch = {
   universityName: string;
   programName: string;
   city: string;
   country: string;
-  matchScore: number;
   tuitionEstimate: string;
   admissionFit: "Reach" | "Target" | "Likely";
   whyItMatches: string[];
@@ -714,33 +830,21 @@ function SubjectChip({
   );
 }
 
-function MatchScoreRing({ score }: { score: number }) {
-  const n = Math.min(100, Math.max(0, Math.round(score)));
-  return (
-    <div className="flex size-16 shrink-0 items-center justify-center rounded-full border-[6px] border-[var(--green-bg)] bg-white shadow-[inset_0_0_0_2px_#d5e8db]">
-      <span className="text-[17px] font-bold text-[var(--green)]">{n}</span>
-    </div>
-  );
-}
-
 function MatchCard({ match }: { match: UniversityMatch }) {
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-7 transition hover:border-[#d5dbd8] hover:shadow-[0_6px_22px_rgba(0,0,0,0.05)] max-[600px]:px-5 max-[600px]:py-[22px]">
       <p className="mb-[18px] text-[13px] text-[var(--text-light)]">
         Program aligned with your interests and academic strengths.
       </p>
-      <div className="mb-3.5 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h3 className="serif text-[22px] leading-tight tracking-[-0.2px] text-[var(--text)] max-[600px]:text-[19px]">
-            {match.universityName}
-          </h3>
-          <p className="mt-1 text-[13px] text-[var(--text-light)]">{match.programName}</p>
-          <p className="mt-2 flex items-center gap-1.5 text-[13px] text-[var(--text-light)]">
-            <MapPin className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
-            {match.city}, {match.country}
-          </p>
-        </div>
-        <MatchScoreRing score={match.matchScore} />
+      <div className="mb-3.5">
+        <h3 className="serif text-[22px] leading-tight tracking-[-0.2px] text-[var(--text)] max-[600px]:text-[19px]">
+          {match.universityName}
+        </h3>
+        <p className="mt-1 text-[13px] text-[var(--text-light)]">{match.programName}</p>
+        <p className="mt-2 flex items-center gap-1.5 text-[13px] text-[var(--text-light)]">
+          <MapPin className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
+          {match.city}, {match.country}
+        </p>
       </div>
 
       <div className="mb-[18px] flex flex-wrap gap-2">
@@ -771,21 +875,23 @@ function MatchCard({ match }: { match: UniversityMatch }) {
         <span>{match.considerations}</span>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-[var(--border-light)] pt-4">
-        {match.nextSteps.slice(0, 2).map((step) => (
-          <span
-            key={step}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[var(--text-mid)]"
-          >
-            <Check className="size-3 text-[var(--green)]" aria-hidden />
-            {step}
-          </span>
-        ))}
+      <div className="flex flex-col gap-3 border-t border-[var(--border-light)] pt-4 min-[640px]:flex-row min-[640px]:items-start min-[640px]:justify-between min-[640px]:gap-4">
+        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-start gap-x-5 gap-y-2">
+          {match.nextSteps.slice(0, 2).map((step) => (
+            <span
+              key={step}
+              className="inline-flex max-w-full items-start gap-1.5 text-left text-[11.5px] font-medium text-[var(--text-mid)]"
+            >
+              <Check className="mt-0.5 size-3 shrink-0 text-[var(--green)]" aria-hidden />
+              <span className="min-w-0 leading-snug">{step}</span>
+            </span>
+          ))}
+        </div>
         <a
           href={match.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-[22px] py-2.5 text-[12.5px] font-semibold text-white! no-underline transition hover:bg-[var(--green-dark)] hover:text-white!"
+          className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-[var(--radius-pill)] bg-[var(--green)] px-[22px] py-2.5 text-[12.5px] font-semibold text-white! no-underline transition hover:bg-[var(--green-dark)] hover:text-white! min-[640px]:self-center"
         >
           Visit official page
           <ExternalLink className="size-3.5 shrink-0 text-white!" strokeWidth={2} aria-hidden />
@@ -831,6 +937,14 @@ function validateStep(step: number, form: FormState): string | null {
       if (form.testsTaken.length === 0) return "Please select at least one test option.";
       if (missingScoreTests(form).length > 0) {
         return "Please enter a score for each selected test.";
+      }
+      if (satScoreFieldInvalid(form)) {
+        const m = satScoreValidationMessage(form.testScores["SAT"] ?? "");
+        return m && m !== "required" ? m : "Please check your SAT score.";
+      }
+      if (actScoreFieldInvalid(form)) {
+        const m = actScoreValidationMessage(form.testScores["ACT"] ?? "");
+        return m && m !== "required" ? m : "Please check your ACT score.";
       }
       return null;
     case 3:
@@ -886,8 +1000,30 @@ function formToPayload(form: FormState): MatchingPayload {
   };
 }
 
-export function AiUniversityMatching() {
-  const [form, setForm] = useState<FormState>(initialForm);
+export function AiUniversityMatching({
+  profileDefaults,
+}: {
+  profileDefaults?: AiMatchingProfileDefaults | null;
+}) {
+  const [form, setForm] = useState(() =>
+    formStateFromProfileDefaults(profileDefaults ?? null),
+  );
+  const [showPrefillTip] = useState(() => {
+    const d = profileDefaults;
+    if (!d) return false;
+    return Boolean(
+      d.fullName.trim() ||
+        d.schoolName.trim() ||
+        d.schoolCountry.trim() ||
+        d.nationality.trim() ||
+        d.academicSystem.trim() ||
+        d.predictedScore.trim() ||
+        d.primaryStudyDestination.trim() ||
+        d.intendedMajor.trim() ||
+        d.budgetBand.trim() ||
+        d.testsTaken.length > 0,
+    );
+  });
   const [screen, setScreen] = useState(0);
   const [stepError, setStepError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -915,6 +1051,12 @@ export function AiUniversityMatching() {
       if (form.testsTaken.length === 0) s.add("testsTaken");
       for (const test of missingScoreTests(form)) {
         s.add(scoreFieldInvalidKey(test));
+      }
+      if (satScoreFieldInvalid(form)) {
+        s.add(scoreFieldInvalidKey("SAT"));
+      }
+      if (actScoreFieldInvalid(form)) {
+        s.add(scoreFieldInvalidKey("ACT"));
       }
     }
     if (screen === 3) {
@@ -1258,6 +1400,12 @@ export function AiUniversityMatching() {
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
                   We&apos;ll use this to find relevant opportunities for your background and region.
                 </div>
+                {showPrefillTip ? (
+                  <p className="-mt-4 mb-6 rounded-lg border border-[var(--green-light)] bg-[rgba(45,106,79,0.06)] px-3 py-2 text-[12px] leading-snug text-[var(--text-mid)]">
+                    We&apos;ve prefilled what we know from your Univeera profile and application
+                    workspace. You can edit any field.
+                  </p>
+                ) : null}
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
                     Full name
@@ -1442,6 +1590,20 @@ export function AiUniversityMatching() {
                         const meta = testScoreFieldMeta(test);
                         const scoreKey = scoreFieldInvalidKey(test);
                         const scoreInvalid = invalidFields.has(scoreKey);
+                        const scoreRangeErrMsg =
+                          test === "SAT"
+                            ? satScoreValidationMessage(form.testScores[test] ?? "")
+                            : test === "ACT"
+                              ? actScoreValidationMessage(form.testScores[test] ?? "")
+                              : null;
+                        const showScoreRangeValidationError =
+                          scoreInvalid &&
+                          (test === "SAT" || test === "ACT") &&
+                          scoreRangeErrMsg &&
+                          scoreRangeErrMsg !== "required";
+                        const scoreLooksValidInRange =
+                          (test === "SAT" && satScoreInValidRange(form)) ||
+                          (test === "ACT" && actScoreInValidRange(form));
                         return (
                           <div key={test} className="score-field">
                             <label
@@ -1453,32 +1615,67 @@ export function AiUniversityMatching() {
                                 {" "}
                                 *
                               </span>
+                              {test === "SAT" ? (
+                                <span className="ml-1.5 font-normal text-[var(--text-hint)]">
+                                  (out of {SAT_TOTAL_MAX})
+                                </span>
+                              ) : test === "ACT" ? (
+                                <span className="ml-1.5 font-normal text-[var(--text-hint)]">
+                                  (out of {ACT_COMPOSITE_MAX})
+                                </span>
+                              ) : null}
                             </label>
                             <input
                               id={`test-score-${test}`}
                               type="text"
                               required
+                              inputMode={test === "SAT" || test === "ACT" ? "numeric" : undefined}
+                              pattern={test === "SAT" || test === "ACT" ? "[0-9]*" : undefined}
                               value={form.testScores[test] ?? ""}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const nextVal =
+                                  test === "SAT"
+                                    ? sanitizeSatScoreInput(raw)
+                                    : test === "ACT"
+                                      ? sanitizeActScoreInput(raw)
+                                      : raw;
                                 setForm((f) => ({
                                   ...f,
                                   testScores: {
                                     ...f.testScores,
-                                    [test]: e.target.value,
+                                    [test]: nextVal,
                                   },
-                                }))
-                              }
+                                }));
+                              }}
                               placeholder={meta.placeholder}
                               className={clsx(
                                 "w-full rounded-lg border-[1.5px] px-3 py-2 text-[13px] outline-none transition focus:border-[var(--green-light)]",
                                 scoreInvalid
                                   ? "border-[#E53935] shadow-[0_0_0_3px_rgba(229,57,53,0.08)]"
-                                  : "border-[var(--border)]",
+                                  : scoreLooksValidInRange
+                                    ? "border-[var(--green-light)] bg-[rgba(45,106,79,0.07)]"
+                                    : "border-[var(--border)]",
                               )}
                               aria-invalid={scoreInvalid}
+                              aria-describedby={
+                                (test === "SAT" || test === "ACT") && meta.scoreHint
+                                  ? `test-score-${test}-hint`
+                                  : undefined
+                              }
                             />
+                            {(test === "SAT" || test === "ACT") && meta.scoreHint ? (
+                              <p
+                                id={`test-score-${test}-hint`}
+                                className="mt-1 text-[11px] leading-snug text-[var(--text-hint)]"
+                              >
+                                {meta.scoreHint}
+                              </p>
+                            ) : null}
                             <ValidationHint show={scoreInvalid}>
-                              Enter your {meta.label.toLowerCase()}
+                              {showScoreRangeValidationError
+                                ? scoreRangeErrMsg
+                                : `Enter your ${meta.label.toLowerCase()}`}
                             </ValidationHint>
                           </div>
                         );

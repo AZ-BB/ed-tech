@@ -15,6 +15,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
+import { buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
 import "../application-support.css";
 import {
   COUNTRY_OPTIONS,
@@ -31,51 +33,8 @@ import {
 
 type PlanRow = Database["public"]["Tables"]["applications_plans"]["Row"];
 
-const CALENDLY_BASE =
-  process.env.NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL?.trim() ||
-  "https://calendly.com/admin-univeera/30min";
-
 /** Display only — server uses same constant in application-support action */
 const ONBOARDING_DEPOSIT_AED = 200;
-
-/** Calendly inline iframe — avoids widget.js timing/ref races that leave a blank embed. */
-function CalendlyEmbed({ url }: { url: string }) {
-  const [iframeSrc, setIframeSrc] = useState("");
-
-  useEffect(() => {
-    try {
-      const u = new URL(url);
-      if (!u.searchParams.has("embed_type")) {
-        u.searchParams.set("embed_type", "Inline");
-      }
-      if (!u.searchParams.has("embed_domain")) {
-        u.searchParams.set("embed_domain", window.location.hostname);
-      }
-      setIframeSrc(u.toString());
-    } catch {
-      setIframeSrc(url);
-    }
-  }, [url]);
-
-  if (!iframeSrc) {
-    return (
-      <div className="flex min-h-[780px] w-full items-center justify-center bg-white">
-        <p className="text-sm text-[var(--text-hint)]">Loading calendar…</p>
-      </div>
-    );
-  }
-
-  return (
-    <iframe
-      title="Book your onboarding session — Calendly"
-      src={iframeSrc}
-      className="min-h-[780px] w-full min-w-[320px] rounded-none border-0 bg-white"
-      loading="lazy"
-      allow="camera; microphone; fullscreen; payment"
-      referrerPolicy="no-referrer-when-downgrade"
-    />
-  );
-}
 
 type Step =
   | "landing"
@@ -154,29 +113,6 @@ const VALUE_CARDS: { title: string; desc: string; tint: string }[] = [
     tint: "bg-[#efe9f4]",
   },
 ];
-
-function buildCalendlyUrl(opts: {
-  base: string;
-  name: string;
-  email: string;
-  ctxParts: string[];
-}): string {
-  let b = opts.base.trim();
-  if (!/^https?:\/\//i.test(b)) b = `https://${b}`;
-  const u = new URL(b);
-  if (!u.searchParams.has("hide_gdpr_banner")) {
-    u.searchParams.set("hide_gdpr_banner", "1");
-  }
-  if (!u.searchParams.has("primary_color")) {
-    u.searchParams.set("primary_color", "2d6a4f");
-  }
-  if (opts.name) u.searchParams.set("name", opts.name);
-  if (opts.email) u.searchParams.set("email", opts.email);
-  if (opts.ctxParts.length) {
-    u.searchParams.set("a1", opts.ctxParts.join(" | "));
-  }
-  return u.toString();
-}
 
 function ChevronRight({ className }: { className?: string }) {
   return (
@@ -554,8 +490,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     if (planClarity) ctx.push(`Clarity: ${planClarity}`);
     if (uniIntent) ctx.push(`Uni intent: ${uniIntent}`);
     if (applicationId != null) ctx.push(`Application ref: #${applicationId}`);
-    return buildCalendlyUrl({
-      base: CALENDLY_BASE,
+    return buildCalendlySchedulingPageUrl({
       name: fullName.trim(),
       email: email.trim(),
       ctxParts: ctx,
@@ -1608,7 +1543,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
           <div className="as-calendly-wrap">
             <div className="as-calendly-embed-box shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-              <CalendlyEmbed url={calendlyUrl} />
+              <CalendlyInlineEmbed url={calendlyUrl} title="Book your onboarding session — Calendly" />
             </div>
             <p className="mt-4 text-center text-xs text-[var(--text-hint)]">
               <a href={calendlyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--green)] underline-offset-2 hover:underline">

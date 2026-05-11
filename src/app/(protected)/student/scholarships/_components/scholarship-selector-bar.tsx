@@ -2,7 +2,55 @@
 
 import { useRef } from "react";
 
+import type { Country } from "@/lib/countries";
 import { COUNTRIES } from "@/lib/countries";
+
+/**
+ * Arab states for the nationality filter (ISO alpha-2, uppercase).
+ * Order: Gulf first, then Levant / Iraq, then North Africa, then commonly associated states present in `COUNTRIES`.
+ */
+const ARAB_NATIONALITY_ALPHA2_ORDER: readonly string[] = [
+  "AE",
+  "SA",
+  "QA",
+  "KW",
+  "BH",
+  "OM",
+  "IQ",
+  "JO",
+  "LB",
+  "SY",
+  "PS",
+  "YE",
+  "EG",
+  "LY",
+  "TN",
+  "DZ",
+  "MA",
+  "MR",
+  "SD",
+  "DJ",
+  "SO",
+  "KM",
+];
+
+const countryByAlpha2Upper = new Map(
+  COUNTRIES.map((c) => [c.alpha2.toUpperCase(), c] as const),
+);
+
+const ARAB_COUNTRIES_FOR_NATIONALITY: readonly Country[] =
+  ARAB_NATIONALITY_ALPHA2_ORDER.flatMap((code) => {
+    const c = countryByAlpha2Upper.get(code);
+    return c ? [c] : [];
+  });
+
+const arabNationalityAlpha2Lower = new Set(
+  ARAB_COUNTRIES_FOR_NATIONALITY.map((c) => c.alpha2.toLowerCase()),
+);
+
+const NON_ARAB_COUNTRIES: readonly Country[] = COUNTRIES.filter(
+  (c) => !arabNationalityAlpha2Lower.has(c.alpha2.toLowerCase()),
+);
 
 const selectClass =
   "min-w-[160px] cursor-pointer appearance-none rounded-[var(--radius-sm)] border-[1.5px] border-[var(--border)] bg-white py-2.5 pl-4 pr-9 text-[13px] text-[var(--text)] focus:border-[var(--green-light)] focus:outline-none";
@@ -72,8 +120,15 @@ export function ScholarshipSelectorBar({
             {nationalityUnknown ? (
               <option value={nationality}>{nationality}</option>
             ) : null}
+            <optgroup label="Arab nationalities">
+              {ARAB_COUNTRIES_FOR_NATIONALITY.map((c) => (
+                <option key={c.alpha2} value={c.alpha2.toLowerCase()}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
             <optgroup label="All countries">
-              {COUNTRIES.map((c) => (
+              {NON_ARAB_COUNTRIES.map((c) => (
                 <option key={c.alpha2} value={c.alpha2.toLowerCase()}>
                   {c.name}
                 </option>

@@ -9,7 +9,12 @@ import {
   saveScholarship,
   unsaveScholarship,
 } from "@/actions/scholarship-activities";
-import type { ScholarshipDiscoveryPageData } from "../_lib/get-scholarship-discovery-programs";
+import { getCountryNameByAlpha2 } from "@/lib/countries";
+import type {
+  ScholarshipDiscoveryPageData,
+  ScholarshipDiscoveryTab,
+} from "../_lib/get-scholarship-discovery-programs";
+import { governmentCountryAlpha2FromNationalityFilter } from "../_lib/government-scholarship-country-for-nationality";
 import type { Scholarship } from "./types";
 import { ScholarshipApplyModal } from "./scholarship-apply-modal";
 import { ScholarshipCategorySection } from "./scholarship-category-section";
@@ -17,12 +22,6 @@ import { ScholarshipDetailPanel } from "./scholarship-detail-panel";
 import { ScholarshipEmptyCatalog } from "./scholarship-empty-catalog";
 import { ScholarshipPaginationNav } from "./scholarship-pagination-nav";
 import { ScholarshipSelectorBar } from "./scholarship-selector-bar";
-
-function isGovernmentScholarship(s: Scholarship): boolean {
-  return String(s.type ?? "")
-    .trim()
-    .toLowerCase() === "government";
-}
 
 function mergeSearchHref(
   pathname: string,
@@ -36,7 +35,9 @@ function mergeSearchHref(
     else n.set(k, v);
   }
   if (resetPagingForFilter) {
-    n.set("page", "1");
+    n.set("gPage", "1");
+    n.set("oPage", "1");
+    n.delete("page");
     n.delete("govPage");
     n.delete("intlPage");
   }
@@ -91,9 +92,14 @@ export function ScholarshipDiscovery({
     navigate({ q: q.trim() ? q.trim() : undefined }, true);
   };
 
-  const hrefPage = useCallback(
+  const hrefGovPage = useCallback(
     (p: number) =>
-      mergeSearchHref(pathname, searchParams, { page: String(p) }, false),
+      mergeSearchHref(pathname, searchParams, { gPage: String(p) }, false),
+    [pathname, searchParams],
+  );
+  const hrefOtherPage = useCallback(
+    (p: number) =>
+      mergeSearchHref(pathname, searchParams, { oPage: String(p) }, false),
     [pathname, searchParams],
   );
 
@@ -105,16 +111,30 @@ export function ScholarshipDiscovery({
     navigate({ detail: undefined }, false);
   };
 
-  const visible = pageData.scholarships;
+  const activeTab: ScholarshipDiscoveryTab = pageData.tab;
 
-  const governmentScholarships = useMemo(
-    () => pageData.scholarships.filter(isGovernmentScholarship),
-    [pageData.scholarships],
+  const visible = useMemo(
+    () => [...pageData.government.scholarships, ...pageData.other.scholarships],
+    [pageData.government.scholarships, pageData.other.scholarships],
   );
-  const otherScholarships = useMemo(
-    () => pageData.scholarships.filter((s) => !isGovernmentScholarship(s)),
-    [pageData.scholarships],
+
+  const govCountryAlpha2 = governmentCountryAlpha2FromNationalityFilter(
+    filters.nat === "any" ? "any" : filters.nat,
   );
+  const governmentCountryLabel =
+    govCountryAlpha2 != null ? getCountryNameByAlpha2(govCountryAlpha2) : null;
+
+  const tabSlice =
+    activeTab === "government" ? pageData.government : pageData.other;
+
+  const setTab = (t: ScholarshipDiscoveryTab) => {
+    navigate(
+      {
+        tab: t === "other" ? "other" : undefined,
+      },
+      false,
+    );
+  };
 
   const applyScholarship: Scholarship | null = useMemo(() => {
     const id = applySourceId ?? pageData.detailId;
@@ -202,7 +222,9 @@ export function ScholarshipDiscovery({
     );
   };
 
-  const noResults = pageData.totalMatching === 0;
+  const totalMatches =
+    pageData.government.totalMatching + pageData.other.totalMatching;
+  const noResults = totalMatches === 0;
 
   if (pageData.totalCatalog === 0) {
     return (
@@ -248,83 +270,128 @@ export function ScholarshipDiscovery({
         </p>
       ) : null}
 
-      {pageData.totalMatching > 0 ? (
+      {totalMatches > 0 ? (
         <>
-          <p className="mb-4 text-[12px] text-[var(--text-hint)]">
-            {pageData.totalMatching} scholarship
-            {pageData.totalMatching === 1 ? "" : "s"} match your filters
-            {pageData.totalPages > 1
-              ? ` · Page ${pageData.page} of ${pageData.totalPages}`
-              : ""}
+          <p className="mb-3 text-[12px] text-[var(--text-hint)]">
+            {totalMatches} scholarship{totalMatches === 1 ? "" : "s"} match your
+            filters · Government: {pageData.government.totalMatching} · Other:{" "}
+            {pageData.other.totalMatching}
           </p>
-          <ScholarshipCategorySection
-            title="Government scholarships"
-            subtitle="National and ministry-funded programs"
-            iconWrapClass="bg-[#E8EEF5]"
-            scholarships={governmentScholarships}
-            onSelect={openDetail}
-            savedIds={savedIds}
-            onToggleSave={toggleSave}
-            footer={
-              otherScholarships.length === 0 ? (
+
+          <div
+            className="mb-4 flex gap-1 rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[#faf9f7] p-1"
+            role="tablist"
+            aria-label="Scholarship type"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "government"}
+              className={`min-w-0 flex-1 rounded-[8px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+                activeTab === "government"
+                  ? "bg-white text-[var(--text)] shadow-sm"
+                  : "text-[var(--text-mid)] hover:text-[var(--text)]"
+              }`}
+              onClick={() => setTab("government")}
+            >
+              Government
+              <span className="ml-1 text-[11px] font-normal text-[var(--text-hint)]">
+                ({pageData.government.totalMatching})
+              </span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "other"}
+              className={`min-w-0 flex-1 rounded-[8px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+                activeTab === "other"
+                  ? "bg-white text-[var(--text)] shadow-sm"
+                  : "text-[var(--text-mid)] hover:text-[var(--text)]"
+              }`}
+              onClick={() => setTab("other")}
+            >
+              Other
+              <span className="ml-1 text-[11px] font-normal text-[var(--text-hint)]">
+                ({pageData.other.totalMatching})
+              </span>
+            </button>
+          </div>
+
+          {tabSlice.totalMatching === 0 ? (
+            <p className="py-10 text-center text-[13px] text-[var(--text-light)]">
+              {activeTab === "government"
+                ? "No government programs match your current filters or search."
+                : "No other programs match your current filters or search."}
+            </p>
+          ) : (
+            <ScholarshipCategorySection
+              title={
+                activeTab === "government"
+                  ? "Government scholarships"
+                  : "Other scholarships"
+              }
+              subtitle={
+                activeTab === "government"
+                  ? governmentCountryLabel
+                    ? `Programs where ${governmentCountryLabel} is the sponsoring government`
+                    : "National and ministry-funded programs"
+                  : govCountryAlpha2
+                    ? "University, foundation, corporate, and government programs from other countries"
+                    : "University, foundation, corporate, and other programs"
+              }
+              iconWrapClass={
+                activeTab === "government" ? "bg-[#E8EEF5]" : "bg-[#F0EDE8]"
+              }
+              scholarships={tabSlice.scholarships}
+              onSelect={openDetail}
+              savedIds={savedIds}
+              onToggleSave={toggleSave}
+              footer={
                 <ScholarshipPaginationNav
-                  hrefForPage={hrefPage}
-                  currentPage={pageData.page}
-                  totalPages={pageData.totalPages}
-                  totalItems={pageData.totalMatching}
-                  ariaLabel="Scholarships pages"
+                  hrefForPage={
+                    activeTab === "government" ? hrefGovPage : hrefOtherPage
+                  }
+                  currentPage={tabSlice.page}
+                  totalPages={tabSlice.totalPages}
+                  totalItems={tabSlice.totalMatching}
+                  ariaLabel={
+                    activeTab === "government"
+                      ? "Government scholarships pages"
+                      : "Other scholarships pages"
+                  }
                 />
-              ) : undefined
-            }
-            icon={
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#3d5a80"
-                strokeWidth="1.8"
-                aria-hidden
-              >
-                <path d="M12 3L2 8l10 5 10-5-10-5z" />
-                <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
-              </svg>
-            }
-          />
-          <ScholarshipCategorySection
-            title="Other scholarships"
-            subtitle="University, foundation, corporate, and other programs"
-            iconWrapClass="bg-[#F0EDE8]"
-            scholarships={otherScholarships}
-            onSelect={openDetail}
-            savedIds={savedIds}
-            onToggleSave={toggleSave}
-            footer={
-              otherScholarships.length > 0 ? (
-                <ScholarshipPaginationNav
-                  hrefForPage={hrefPage}
-                  currentPage={pageData.page}
-                  totalPages={pageData.totalPages}
-                  totalItems={pageData.totalMatching}
-                  ariaLabel="Scholarships pages"
-                />
-              ) : undefined
-            }
-            icon={
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#6b5b4f"
-                strokeWidth="1.8"
-                aria-hidden
-              >
-                <path d="M12 3L2 8l10 5 10-5-10-5z" />
-                <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
-              </svg>
-            }
-          />
+              }
+              icon={
+                activeTab === "government" ? (
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#3d5a80"
+                    strokeWidth="1.8"
+                    aria-hidden
+                  >
+                    <path d="M12 3L2 8l10 5 10-5-10-5z" />
+                    <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#6b5b4f"
+                    strokeWidth="1.8"
+                    aria-hidden
+                  >
+                    <path d="M12 3L2 8l10 5 10-5-10-5z" />
+                    <path d="M2 13l10 5 10-5M2 18l10 5 10-5" />
+                  </svg>
+                )
+              }
+            />
+          )}
         </>
       ) : null}
 
