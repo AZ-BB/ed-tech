@@ -1,10 +1,15 @@
 "use server";
 
+import {
+    buildShortlistInsertFromCatalogUniversity,
+    type CatalogUniversityShortlistEmbed,
+} from "@/lib/catalog-university-shortlist-row";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { GeneralResponse } from "@/utils/response";
 import { revalidatePath } from "next/cache";
 
 const UNIVERSITIES_LIST_PATH = "/student/universities";
+const MY_APPLICATIONS_PATH = "/student/my-applications";
 
 function uuidLike(value: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -65,6 +70,70 @@ async function validateUniversity(secret: Awaited<ReturnType<typeof createSupaba
     return !!data;
 }
 
+async function ensureApplicationShortlistRowForCatalogUniversity(
+    server: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+    studentId: string,
+    universityId: string,
+): Promise<{ error: string | null }> {
+    const { data: existing } = await server
+        .from("student_shortlist_universities")
+        .select("id")
+        .eq("student_id", studentId)
+        .eq("catalog_university_id", universityId)
+        .maybeSingle();
+    if (existing) {
+        return { error: null };
+    }
+
+    const { data: uni, error: uniErr } = await server
+        .from("universities")
+        .select(
+            `
+      id,
+      name,
+      city,
+      country_code,
+      method,
+      deadline_date,
+      countries ( name )
+    `,
+        )
+        .eq("id", universityId)
+        .maybeSingle();
+
+    if (uniErr || !uni) {
+        return { error: uniErr?.message ?? "University not found." };
+    }
+
+    const { data: sortRows, error: sortErr } = await server
+        .from("student_shortlist_universities")
+        .select("sort_order")
+        .eq("student_id", studentId)
+        .order("sort_order", { ascending: false })
+        .limit(1);
+
+    if (sortErr) {
+        return { error: sortErr.message };
+    }
+
+    const nextSort =
+        sortRows && sortRows.length > 0 && typeof sortRows[0].sort_order === "number"
+            ? sortRows[0].sort_order + 1
+            : 0;
+
+    const insert = buildShortlistInsertFromCatalogUniversity({
+        studentId,
+        uni: uni as CatalogUniversityShortlistEmbed,
+        sortOrder: nextSort,
+    });
+
+    const { error: insErr } = await server.from("student_shortlist_universities").insert(insert);
+    if (insErr) {
+        return { error: insErr.message };
+    }
+    return { error: null };
+}
+
 export async function addUniversityToShortlist(universityId: string): Promise<GeneralResponse<boolean>> {
     const id = typeof universityId === "string" ? universityId.trim() : "";
     if (!uuidLike(id)) {
@@ -92,6 +161,7 @@ export async function addUniversityToShortlist(universityId: string): Promise<Ge
         .eq("type", "shortlist")
         .maybeSingle();
 
+    let insertedActivityThisRequest = false;
     if (!existing) {
         const { error: insertErr } = await server.from("student_activities").insert({
             student_id: actor.studentId,
@@ -106,6 +176,7 @@ export async function addUniversityToShortlist(universityId: string): Promise<Ge
             console.error(insertErr);
             return { data: false, error: insertErr.message };
         }
+        insertedActivityThisRequest = true;
         await appendStudentUniversityLog(
             secret,
             actor.studentId,
@@ -115,8 +186,23 @@ export async function addUniversityToShortlist(universityId: string): Promise<Ge
         );
     }
 
+    const syncRow = await ensureApplicationShortlistRowForCatalogUniversity(server, actor.studentId, id);
+    if (syncRow.error) {
+        if (insertedActivityThisRequest) {
+            await server
+                .from("student_activities")
+                .delete()
+                .eq("student_id", actor.studentId)
+                .eq("uni_id", id)
+                .eq("entity_type", "university")
+                .eq("type", "shortlist");
+        }
+        return { data: false, error: syncRow.error };
+    }
+
     revalidatePath(UNIVERSITIES_LIST_PATH);
     revalidatePath(`${UNIVERSITIES_LIST_PATH}/${id}`);
+    revalidatePath(MY_APPLICATIONS_PATH);
     return { data: true, error: null };
 }
 
@@ -133,6 +219,17 @@ export async function removeUniversityFromShortlist(universityId: string): Promi
 
     const server = await createSupabaseServerClient();
     const secret = await createSupabaseSecretClient();
+
+    const { error: delShortlistErr } = await server
+        .from("student_shortlist_universities")
+        .delete()
+        .eq("student_id", actor.studentId)
+        .eq("catalog_university_id", id);
+
+    if (delShortlistErr) {
+        console.error(delShortlistErr);
+        return { data: false, error: delShortlistErr.message };
+    }
 
     const { error: delErr, data: deleted } = await server
         .from("student_activities")
@@ -160,6 +257,7 @@ export async function removeUniversityFromShortlist(universityId: string): Promi
 
     revalidatePath(UNIVERSITIES_LIST_PATH);
     revalidatePath(`${UNIVERSITIES_LIST_PATH}/${id}`);
+    revalidatePath(MY_APPLICATIONS_PATH);
     return { data: true, error: null };
 }
 
@@ -215,6 +313,7 @@ export async function addUniversityToFavourites(universityId: string): Promise<G
 
     revalidatePath(UNIVERSITIES_LIST_PATH);
     revalidatePath(`${UNIVERSITIES_LIST_PATH}/${id}`);
+    revalidatePath(MY_APPLICATIONS_PATH);
     return { data: true, error: null };
 }
 
@@ -258,5 +357,6 @@ export async function removeUniversityFromFavourites(universityId: string): Prom
 
     revalidatePath(UNIVERSITIES_LIST_PATH);
     revalidatePath(`${UNIVERSITIES_LIST_PATH}/${id}`);
+    revalidatePath(MY_APPLICATIONS_PATH);
     return { data: true, error: null };
 }
