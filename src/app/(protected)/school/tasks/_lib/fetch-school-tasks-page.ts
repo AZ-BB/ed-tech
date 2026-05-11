@@ -93,7 +93,7 @@ export async function fetchSchoolStudentPickerOptions(): Promise<
 
   const { data: rows, error } = await supabase
     .from("student_profiles")
-    .select("id, first_name, last_name, email")
+    .select("id, first_name, last_name, email, grade")
     .eq("school_id", schoolId)
     .order("last_name", { ascending: true })
     .order("first_name", { ascending: true });
@@ -107,8 +107,16 @@ export async function fetchSchoolStudentPickerOptions(): Promise<
     const name =
       `${r.first_name?.trim() ?? ""} ${r.last_name?.trim() ?? ""}`.trim();
     const email = r.email?.trim() ?? "";
+    const gradeRaw = r.grade?.trim() ?? "";
+    const gradeLabel =
+      gradeRaw && !/^grade\s/i.test(gradeRaw)
+        ? `Grade ${gradeRaw}`
+        : gradeRaw;
+
     let label: string;
-    if (name && email) {
+    if (name && gradeLabel) {
+      label = `${name} · ${gradeLabel}`;
+    } else if (name && email) {
       label = `${name} (${email})`;
     } else if (email) {
       label = email;

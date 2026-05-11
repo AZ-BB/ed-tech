@@ -9,6 +9,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
 import type { EssayWithComments, MyApplicationsInitialPayload } from "../_lib/my-applications-types";
+import { getStudentApplicationProfileCompletion } from "@/lib/student-application-profile-completion";
 import {
   labelPreferredDestinationEntry,
   normalizePreferredDestinationsForEditor,
@@ -350,7 +351,7 @@ export function MyApplicationsClient({
     window.setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const { pct, missing } = profileCompletionPct({
+  const { pct, missing } = getStudentApplicationProfileCompletion({
     grade,
     curriculum,
     destinations,

@@ -70,9 +70,13 @@ export async function createSchoolStudentTask(
 
   const studentId = String(formData.get("student_id") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
+<<<<<<< HEAD
   const notesRaw = String(
     formData.get("notes") ?? formData.get("description") ?? "",
   ).trim();
+=======
+  const notesRaw = String(formData.get("notes") ?? "").trim();
+>>>>>>> a34ce0b284aed09555890a787d1fb49e14c42ece
   const dueRaw = String(formData.get("due_date") ?? "").trim();
   const priority = normalizePriority(String(formData.get("priority") ?? ""));
 
@@ -80,7 +84,13 @@ export async function createSchoolStudentTask(
     return { data: null, error: "Pick a student." };
   }
   if (!title) {
-    return { data: null, error: "Enter a task title." };
+    return { data: null, error: "Describe the task." };
+  }
+  if (notesRaw.length > 4000) {
+    return {
+      data: null,
+      error: "Notes must be at most 4000 characters.",
+    };
   }
 
   const secret = await createSupabaseSecretClient();
@@ -106,17 +116,24 @@ export async function createSchoolStudentTask(
     null;
 
   const due_date = dueRaw && /^\d{4}-\d{2}-\d{2}$/.test(dueRaw) ? dueRaw : null;
+<<<<<<< HEAD
   const notes =
     notesRaw.length > 8000
       ? notesRaw.slice(0, 8000)
       : notesRaw || null;
+=======
+>>>>>>> a34ce0b284aed09555890a787d1fb49e14c42ece
 
   const { error: insErr } = await secret
     .from("student_my_application_tasks")
     .insert({
       student_id: studentId,
       title,
+<<<<<<< HEAD
       notes,
+=======
+      notes: notesRaw || null,
+>>>>>>> a34ce0b284aed09555890a787d1fb49e14c42ece
       priority,
       due_date,
       assigned_by_name: assignedBy,

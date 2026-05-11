@@ -5,6 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+const fontSans =
+  '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
+const fontSerif = '"DM Serif Display", Georgia, serif' as const;
+
 export type SchoolPortalShellProps = {
   schoolName: string;
   displayName: string;
@@ -57,7 +61,7 @@ function NavSvg({ paths, ...rest }: NavSvgProps) {
       strokeWidth={1.8}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-4 w-4 shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
+      className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
       aria-hidden
       {...rest}
     >
@@ -239,7 +243,10 @@ export function SchoolPortalShell({
     : "max-[760px]:-translate-x-full";
 
   return (
-    <div className="min-h-screen bg-[var(--sand)] font-[family-name:var(--font-dm-sans)] text-[var(--text)] antialiased">
+    <div
+      className="min-h-screen bg-[#f4f3f0] text-[#1a1a1a] antialiased"
+      style={{ fontFamily: fontSans }}
+    >
       <div
         role="presentation"
         className={`fixed inset-0 z-[95] bg-[rgba(15,30,20,0.45)] transition-opacity duration-[250ms] max-[760px]:block lg:hidden ${
@@ -253,29 +260,29 @@ export function SchoolPortalShell({
 
       <aside
         id="school-sidebar"
-        className={`fixed bottom-0 left-0 top-0 z-[100] flex w-[240px] flex-col bg-[var(--green-dark)] py-5 transition-transform duration-[250ms] lg:translate-x-0 ${sidebarMobileClass}`}
+        className={`fixed bottom-0 left-0 top-0 z-[100] flex w-[240px] flex-col bg-[#1B4332] py-5 transition-transform duration-[250ms] lg:translate-x-0 ${sidebarMobileClass}`}
       >
-        <div className="flex items-center gap-2.5 border-b border-white/[0.08] px-[22px] pb-[22px]">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.12] text-sm font-bold text-white">
+        <div className="flex items-center gap-[10px] border-b border-white/[0.08] px-[22px] pb-[22px]">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-white/[0.12] text-sm font-bold leading-none text-white">
             U
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="text-[15px] font-bold leading-tight tracking-tight text-white">
+            <span className="text-[15px] font-bold tracking-[-0.01em] text-white">
               Univeera
             </span>
-            <span className="text-[10.5px] font-medium uppercase leading-tight tracking-[0.06em] text-white/45">
+            <span className="text-[10.5px] font-medium uppercase leading-tight tracking-[0.06em] text-[rgba(255,255,255,0.45)]">
               Counseling
             </span>
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-3.5">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-[14px]">
           {navSections.map((sec) => (
             <div key={sec.title} className={sec.className}>
-              <div className="px-[22px] pb-1.5 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/40 first:pt-0">
+              <div className="px-[22px] pb-[6px] pt-[10px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[rgba(255,255,255,0.4)] first:pt-0">
                 {sec.title}
               </div>
-              <nav className="flex flex-col gap-px px-2.5">
+              <nav className="flex flex-col gap-px px-[10px]">
                 {sec.links.map((link) => {
                   const active = pathname
                     ? navLinkActive(pathname, link.href)
@@ -286,9 +293,9 @@ export function SchoolPortalShell({
                       href={link.href}
                       prefetch={false}
                       onClick={closeSidebar}
-                      className={`group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white ${
+                      className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
                         active
-                          ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[var(--green-bright)]"
+                          ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
                           : ""
                       }`}
                     >
@@ -302,9 +309,9 @@ export function SchoolPortalShell({
           ))}
         </div>
 
-        <div className="mt-auto border-t border-white/[0.08] px-[18px] pt-3.5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bright)] text-[13px] font-bold text-[var(--green-dark)]">
+        <div className="mt-auto border-t border-white/[0.08] px-[18px] pt-[14px]">
+          <div className="flex items-center gap-[10px]">
+            <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#52B788] text-[13px] font-bold leading-none text-[#1B4332]">
               {avatarInitials}
             </div>
             <div className="min-w-0 flex-1 py-1">
@@ -323,7 +330,7 @@ export function SchoolPortalShell({
                 type="submit"
                 title="Sign out"
                 aria-label="Sign out"
-                className="flex cursor-pointer rounded-md bg-transparent p-1.5 text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white"
+                className="flex cursor-pointer rounded-[6px] bg-transparent p-[6px] text-[rgba(255,255,255,0.5)] transition-colors hover:bg-white/[0.08] hover:text-white"
               >
                 <svg
                   width="14"
@@ -342,11 +349,11 @@ export function SchoolPortalShell({
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
-        <header className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[var(--border-light)] bg-white px-4 py-3.5 lg:px-8">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
+        <header className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-[14px] max-[760px]:px-4 lg:gap-[10px] lg:px-[32px]">
+          <div className="flex min-w-0 flex-1 items-start gap-3 lg:gap-3">
             <button
               type="button"
-              className="-ml-0.5 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[var(--border-light)] bg-[#faf9f4] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] lg:hidden"
+              className="-ml-0.5 flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-[1.5px] border-[#ece9e4] bg-[#faf9f4] transition-all duration-[150ms] hover:border-[#40916C] hover:bg-[#f0f7f2] lg:hidden"
               onClick={openSidebar}
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
@@ -363,21 +370,24 @@ export function SchoolPortalShell({
                 <path d="M4 12h16M4 6h16M4 18h16" />
               </svg>
             </button>
-            <div className="flex min-w-0 flex-col gap-0.5 pt-0.5 lg:pt-0">
-              <div className="text-[11.5px] font-medium uppercase leading-tight tracking-[0.06em] text-[var(--text-hint)]">
+            <div className="flex min-w-0 flex-col gap-[2px] pt-0.5 lg:pt-0">
+              <div className="text-[11.5px] font-medium uppercase leading-none tracking-[0.06em] text-[#a0a0a0]">
                 School Counseling
               </div>
-              <h1 className="font-[family-name:var(--font-dm-serif)] text-2xl leading-tight tracking-tight text-[var(--text)]">
+              <h1
+                className="text-[24px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                style={{ fontFamily: fontSerif }}
+              >
                 {title}
               </h1>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2.5">
+          <div className="flex shrink-0 items-center gap-[10px]">
             <label className="relative hidden w-[300px] min-[761px]:block">
               <span className="sr-only">Search students</span>
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-hint)]"
+                className="pointer-events-none absolute left-[12px] top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-[#a0a0a0]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -390,13 +400,14 @@ export function SchoolPortalShell({
               <input
                 type="search"
                 placeholder="Search students..."
-                className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-[#faf9f4] py-2 pl-9 pr-3 font-[family-name:var(--font-dm-sans)] text-[13px] text-[var(--text)] outline-none transition-colors focus:border-[var(--green-light)] focus:bg-white"
+                className="w-full rounded-[8px] border-[1.5px] border-[#e0deda] bg-[#faf9f4] py-[9px] pr-3 pl-9 font-[inherit] text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] focus:bg-white"
+                style={{ fontFamily: fontSans }}
               />
             </label>
             <button
               type="button"
               title="Notifications"
-              className="relative flex cursor-pointer items-center justify-center rounded-lg border-[1.5px] border-[var(--border)] bg-[#faf9f4] p-2 text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green)]"
+              className="relative flex cursor-pointer items-center justify-center rounded-[8px] border-[1.5px] border-[#e0deda] bg-[#faf9f4] p-[9px] text-[#4a4a4a] transition-all duration-[150ms] hover:border-[#40916C] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]"
               aria-label="Notifications"
             >
               <svg
@@ -412,13 +423,13 @@ export function SchoolPortalShell({
                 <path d="M13.73 21a2 2 0 01-3.46 0" />
               </svg>
               <span
-                className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#E74C3C]"
+                className="absolute right-[7px] top-[7px] h-[6px] w-[6px] rounded-full bg-[#E74C3C]"
                 aria-hidden
               />
             </button>
-            <div className="flex max-w-[200px] items-center gap-1.5 rounded-full bg-[var(--green-bg)] px-3.5 py-1.5 text-[12.5px] font-semibold text-[var(--green-dark)] min-[761px]:max-w-none">
+            <div className="flex max-w-[200px] items-center gap-[6px] rounded-[20px] bg-[#E8F5EE] px-[14px] py-[7px] text-[12.5px] font-semibold text-[#1B4332] min-[761px]:max-w-none">
               <svg
-                className="h-3.5 w-3.5 shrink-0 text-[var(--green-dark)]"
+                className="h-[13px] w-[13px] shrink-0 text-[#1B4332]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -433,7 +444,7 @@ export function SchoolPortalShell({
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6">{children}</main>
       </div>
     </div>
   );

@@ -1171,6 +1171,7 @@ export type Database = {
           gender: Database["public"]["Enums"]["gender"] | null
           id: string
           last_name: string
+          phone: string | null
           school_id: string
           updated_at: string | null
         }
@@ -1181,6 +1182,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender"] | null
           id: string
           last_name: string
+          phone?: string | null
           school_id: string
           updated_at?: string | null
         }
@@ -1191,6 +1193,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
           last_name?: string
+          phone?: string | null
           school_id?: string
           updated_at?: string | null
         }
@@ -1209,6 +1212,7 @@ export type Database = {
           amount: number
           created_at: string | null
           id: number
+          kind: Database["public"]["Enums"]["school_recharge_kind"]
           school_id: string
           updated_at: string | null
         }
@@ -1216,6 +1220,7 @@ export type Database = {
           amount: number
           created_at?: string | null
           id?: number
+          kind?: Database["public"]["Enums"]["school_recharge_kind"]
           school_id: string
           updated_at?: string | null
         }
@@ -1223,6 +1228,7 @@ export type Database = {
           amount?: number
           created_at?: string | null
           id?: number
+          kind?: Database["public"]["Enums"]["school_recharge_kind"]
           school_id?: string
           updated_at?: string | null
         }
@@ -1286,6 +1292,7 @@ export type Database = {
       }
       schools: {
         Row: {
+          city: string | null
           code: string
           contact_email: string
           country_code: string
@@ -1293,13 +1300,18 @@ export type Database = {
           credit_pool: number | null
           default_advisor_credit_limit: number | null
           default_ambasador_credit_limit: number | null
+          extra_credits: number | null
           id: string
           is_active: boolean
           name: string
+          renewal_date: string | null
           students_limit: number | null
+          subscription_status: Database["public"]["Enums"]["school_subscription_status"]
           updated_at: string | null
+          yearly_credit_plan: number | null
         }
         Insert: {
+          city?: string | null
           code: string
           contact_email: string
           country_code: string
@@ -1307,13 +1319,18 @@ export type Database = {
           credit_pool?: number | null
           default_advisor_credit_limit?: number | null
           default_ambasador_credit_limit?: number | null
+          extra_credits?: number | null
           id?: string
           is_active?: boolean
           name: string
+          renewal_date?: string | null
           students_limit?: number | null
+          subscription_status?: Database["public"]["Enums"]["school_subscription_status"]
           updated_at?: string | null
+          yearly_credit_plan?: number | null
         }
         Update: {
+          city?: string | null
           code?: string
           contact_email?: string
           country_code?: string
@@ -1321,11 +1338,15 @@ export type Database = {
           credit_pool?: number | null
           default_advisor_credit_limit?: number | null
           default_ambasador_credit_limit?: number | null
+          extra_credits?: number | null
           id?: string
           is_active?: boolean
           name?: string
+          renewal_date?: string | null
           students_limit?: number | null
+          subscription_status?: Database["public"]["Enums"]["school_subscription_status"]
           updated_at?: string | null
+          yearly_credit_plan?: number | null
         }
         Relationships: [
           {
@@ -1881,6 +1902,8 @@ export type Database = {
           created_at: string
           id: string
           note_type: string
+          notes: string | null
+          priority: string | null
           student_id: string
         }
         Insert: {
@@ -1889,6 +1912,8 @@ export type Database = {
           created_at?: string
           id?: string
           note_type: string
+          notes?: string | null
+          priority?: string | null
           student_id: string
         }
         Update: {
@@ -1897,6 +1922,8 @@ export type Database = {
           created_at?: string
           id?: string
           note_type?: string
+          notes?: string | null
+          priority?: string | null
           student_id?: string
         }
         Relationships: [
@@ -2295,6 +2322,7 @@ export type Database = {
         }
         Returns: Json
       }
+      run_school_yearly_credit_renewals: { Args: never; Returns: number }
       scholarship_discovery_dest_match: {
         Args: { p_dest: Json; p_user: string }
         Returns: boolean
@@ -2302,6 +2330,10 @@ export type Database = {
       scholarship_discovery_nat_match: {
         Args: { p_elig: Json; p_user: string }
         Returns: boolean
+      }
+      school_dashboard_shortlist_top_stats: {
+        Args: { p_top_n?: number }
+        Returns: Json
       }
     }
     Enums: {
@@ -2352,6 +2384,8 @@ export type Database = {
         | "corporate"
         | "foundation"
         | "other"
+      school_recharge_kind: "YEARLY_SUB" | "EXTRA"
+      school_subscription_status: "ACTIVE" | "INACTIVE"
       student_activity_entity_type:
         | "university"
         | "scholarship"
@@ -2359,7 +2393,11 @@ export type Database = {
         | "ambassador"
       student_activity_type: "save" | "shortlist" | "block" | "viewed"
       student_credits_status: "used" | "refunded"
-      student_credits_type: "advisor" | "ambassador"
+      student_credits_type:
+        | "advisor"
+        | "ambassador"
+        | "base_credit"
+        | "extra_credits"
       student_status: "high_priority" | "at_risk" | "missing_docs"
       tuition_type: "full" | "partial"
       university_difficulty: "easy" | "medium" | "hard"
@@ -2543,6 +2581,8 @@ export const Constants = {
         "foundation",
         "other",
       ],
+      school_recharge_kind: ["YEARLY_SUB", "EXTRA"],
+      school_subscription_status: ["ACTIVE", "INACTIVE"],
       student_activity_entity_type: [
         "university",
         "scholarship",
@@ -2551,7 +2591,12 @@ export const Constants = {
       ],
       student_activity_type: ["save", "shortlist", "block", "viewed"],
       student_credits_status: ["used", "refunded"],
-      student_credits_type: ["advisor", "ambassador"],
+      student_credits_type: [
+        "advisor",
+        "ambassador",
+        "base_credit",
+        "extra_credits",
+      ],
       student_status: ["high_priority", "at_risk", "missing_docs"],
       tuition_type: ["full", "partial"],
       university_difficulty: ["easy", "medium", "hard"],

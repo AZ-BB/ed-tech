@@ -90,6 +90,12 @@ function priorityPill(priority: string) {
   );
 }
 
+const taskModalLabelClass =
+  "block text-[11px] font-semibold uppercase tracking-wide text-[var(--text-mid)]";
+const taskModalInputClass =
+  "mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]";
+const taskModalSelectClass = `${taskModalInputClass} appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-9 cursor-pointer`;
+
 function CalendarIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -120,6 +126,8 @@ export type SchoolTasksClientProps = {
   variant?: "all" | "studentProfile";
   /** Required when variant is studentProfile — scopes tasks and create form. */
   scopedStudentId?: string;
+  /** Shown read-only as “Assign to” in the new-task modal on the student profile. */
+  scopedStudentAssignLabel?: string;
   /** When set, modal open state is controlled (e.g. sidebar “+ Add task”). */
   newTaskModal?: {
     open: boolean;
@@ -139,6 +147,7 @@ export function SchoolTasksClient({
   studentOptions,
   variant = "all",
   scopedStudentId,
+  scopedStudentAssignLabel,
   newTaskModal: controlledNewTaskModal,
 }: SchoolTasksClientProps) {
   const router = useRouter();
@@ -376,10 +385,14 @@ export function SchoolTasksClient({
                 const done = Boolean(r.completed);
                 const studentName =
                   `${r.firstName} ${r.lastName}`.trim() || r.email;
+<<<<<<< HEAD
                 const descTrim = r.notes?.trim() ?? "";
+=======
+                const notesTrim = r.notes?.trim() ?? "";
+>>>>>>> a34ce0b284aed09555890a787d1fb49e14c42ece
                 const metaNote =
-                  isStudentProfile && descTrim
-                    ? metaDescriptionSnippet(descTrim)
+                  isStudentProfile && notesTrim
+                    ? metaDescriptionSnippet(notesTrim)
                     : null;
 
                 return (
@@ -429,7 +442,7 @@ export function SchoolTasksClient({
                       >
                         {r.title}
                       </div>
-                      {!isStudentProfile && descTrim ? (
+                      {!isStudentProfile && notesTrim ? (
                         <p
                           className={`mt-1 whitespace-pre-wrap text-[12px] leading-snug ${
                             done
@@ -437,7 +450,7 @@ export function SchoolTasksClient({
                               : "text-[var(--text-mid)]"
                           }`}
                         >
-                          {descTrim}
+                          {notesTrim}
                         </p>
                       ) : null}
                       <div
@@ -541,38 +554,74 @@ export function SchoolTasksClient({
             className="flex max-h-[min(90vh,640px)] w-full max-w-[480px] flex-col overflow-hidden rounded-[var(--radius-lg)] bg-white shadow-[0_12px_32px_rgba(15,30,20,.12)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="shrink-0 border-b border-[var(--border-light)] px-5 py-4">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border-light)] px-5 py-4">
               <h3
                 id="new-task-title"
                 className="font-[family-name:var(--font-dm-serif)] text-xl tracking-tight text-[var(--text)]"
               >
                 New task
               </h3>
-              <p className="mt-1 text-[12px] text-[var(--text-light)]">
-                Assign a task to a student at your school. They will see it in
-                My Applications.
-              </p>
+              <button
+                type="button"
+                aria-label="Close"
+                disabled={createPending}
+                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--cream)] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setNewOpen(false)}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden
+                >
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
             <form
               action={createAction}
               className="flex min-h-0 flex-1 flex-col"
             >
-              <div className="min-h-0 space-y-3 overflow-y-auto px-5 py-4">
+              <div className="min-h-0 space-y-4 overflow-y-auto px-5 py-4">
+                <div>
+                  <label htmlFor="nt-describe" className={taskModalLabelClass}>
+                    Describe task
+                  </label>
+                  <input
+                    id="nt-describe"
+                    name="title"
+                    required
+                    autoComplete="off"
+                    placeholder="e.g. Submit personal statement V2"
+                    className={taskModalInputClass}
+                  />
+                </div>
                 {isStudentProfile && scopedStudentId ? (
-                  <input type="hidden" name="student_id" value={scopedStudentId} />
+                  <>
+                    <input type="hidden" name="student_id" value={scopedStudentId} />
+                    <div>
+                      <label className={taskModalLabelClass}>Assign to</label>
+                      <div
+                        className={`${taskModalInputClass} flex min-h-[42px] items-center bg-[#faf9f4] text-[var(--text-mid)]`}
+                      >
+                        {scopedStudentAssignLabel ?? "This student"}
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <div>
-                    <label
-                      htmlFor="nt-student"
-                      className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]"
-                    >
-                      Student
+                    <label htmlFor="nt-student" className={taskModalLabelClass}>
+                      Assign to
                     </label>
                     <select
                       id="nt-student"
                       name="student_id"
                       required
-                      className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]"
+                      style={{ backgroundImage: SELECT_CHEVRON }}
+                      className={taskModalSelectClass}
                       defaultValue=""
                     >
                       <option value="" disabled>
@@ -586,6 +635,7 @@ export function SchoolTasksClient({
                     </select>
                   </div>
                 )}
+<<<<<<< HEAD
                 <div>
                   <label
                     htmlFor="nt-title"
@@ -620,18 +670,19 @@ export function SchoolTasksClient({
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+=======
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+>>>>>>> a34ce0b284aed09555890a787d1fb49e14c42ece
                   <div>
-                    <label
-                      htmlFor="nt-prio"
-                      className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]"
-                    >
+                    <label htmlFor="nt-prio" className={taskModalLabelClass}>
                       Priority
                     </label>
                     <select
                       id="nt-prio"
                       name="priority"
                       defaultValue="medium"
-                      className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]"
+                      style={{ backgroundImage: SELECT_CHEVRON }}
+                      className={taskModalSelectClass}
                     >
                       <option value="high">High</option>
                       <option value="medium">Medium</option>
@@ -639,19 +690,29 @@ export function SchoolTasksClient({
                     </select>
                   </div>
                   <div>
-                    <label
-                      htmlFor="nt-due"
-                      className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]"
-                    >
+                    <label htmlFor="nt-due" className={taskModalLabelClass}>
                       Due date
                     </label>
                     <input
                       id="nt-due"
                       name="due_date"
                       type="date"
-                      className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]"
+                      className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]"
                     />
                   </div>
+                </div>
+                <div>
+                  <label htmlFor="nt-notes" className={taskModalLabelClass}>
+                    Optional note
+                  </label>
+                  <textarea
+                    id="nt-notes"
+                    name="notes"
+                    rows={4}
+                    maxLength={4000}
+                    placeholder="Anything specific the student should know..."
+                    className="mt-1.5 min-h-[88px] w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)]"
+                  />
                 </div>
                 {createState?.error ? (
                   <p className="text-[12px] font-medium text-[#8c2d22]">
