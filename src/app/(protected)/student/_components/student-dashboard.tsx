@@ -1,12 +1,13 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
   newsItems,
   quickActions,
   type DashboardActivityLogItem,
   type DashboardAnnouncementItem,
+  type DashboardTaskItem,
 } from "../_data/student-dashboard-data";
 import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
@@ -30,8 +31,12 @@ function formatActivityLogMessageForStudent(message: string): string {
 const announcementDotClass =
   "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#378ADD]";
 
-const NEWS_AND_ACTIVITY_LIST_CLASS =
-  "max-h-[280px] overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]";
+const SCROLL_THIN =
+  "overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]";
+
+const NEWS_LIST_CLASS = `max-h-[240px] ${SCROLL_THIN}`;
+const TASKS_LIST_CLASS = `max-h-[260px] ${SCROLL_THIN}`;
+const ACTIVITY_LIST_CLASS = `max-h-[190px] ${SCROLL_THIN}`;
 
 function activityLogAccent(entityType: string): {
   iconWrap: string;
@@ -71,6 +76,7 @@ type StudentDashboardProps = {
   totalLogins: number;
   announcementItems: DashboardAnnouncementItem[];
   activityLogItems: DashboardActivityLogItem[];
+  dashboardTasks: DashboardTaskItem[];
 };
 
 export function StudentDashboard({
@@ -81,6 +87,7 @@ export function StudentDashboard({
   totalLogins,
   announcementItems,
   activityLogItems,
+  dashboardTasks,
 }: StudentDashboardProps) {
   return (
     <div className="text-[var(--text)]">
@@ -117,8 +124,9 @@ export function StudentDashboard({
                   </svg>
                   <span className="pointer-events-none absolute left-1/2 top-6 z-10 hidden w-[280px] -translate-x-1/2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 text-[11px] leading-snug text-[var(--text-mid)] shadow-[0_4px_16px_rgba(0,0,0,0.1)] group-hover:block">
                     To unlock full value, explore all features: university
-                    search, AI matching, essay review, advisor sessions,
-                    ambassadors, scholarships, and application support.
+                    search (including AI matching), essay feedback (under My
+                    applications → Essays), advisor sessions, ambassadors,
+                    scholarships, and application support.
                   </span>
                 </span>
               </div>
@@ -136,6 +144,35 @@ export function StudentDashboard({
             <div className="min-w-[50px] text-right text-xl font-bold text-[var(--green)]">
               {platformPercent}%
             </div>
+          </div>
+
+          <div className="mt-3.5 flex flex-col gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-6">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-[var(--text)]">
+                My Applications
+              </h2>
+              <p className="mt-1 max-w-xl text-[13px] leading-snug text-[var(--text-light)]">
+                Keep your school informed on all your university choices and
+                progress.
+              </p>
+            </div>
+            <Link
+              href="/student/my-applications"
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[var(--green)] px-6 py-3 text-[13px] font-semibold text-white no-underline transition-all hover:bg-[var(--green-dark)] hover:-translate-y-px sm:self-center"
+            >
+              My Applications
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden
+              >
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
 
@@ -259,7 +296,7 @@ export function StudentDashboard({
         </Link>
       </div>
 
-      <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 md:grid-cols-2">
+      <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-3">
         <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
             <svg
@@ -276,9 +313,7 @@ export function StudentDashboard({
             </svg>
             Top news & updates
           </div>
-          <div
-            className={`flex flex-col gap-2 ${NEWS_AND_ACTIVITY_LIST_CLASS}`}
-          >
+          <div className={`flex flex-col gap-2 ${NEWS_LIST_CLASS}`}>
             {newsItems.map((n) => (
               <div
                 key={`${n.text}-${n.date}`}
@@ -306,6 +341,113 @@ export function StudentDashboard({
           </div>
         </div>
 
+        <div className="rounded-[20px] border border-[var(--border-light)] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] max-[800px]:p-5">
+          <div className="mb-4 flex items-center gap-2.5">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-light)] bg-[var(--sand)] text-[var(--text)]"
+              aria-hidden
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M8 12.5l2.5 2.5L16 9" />
+              </svg>
+            </span>
+            <h2 className="font-[family-name:var(--font-dm-serif)] text-lg font-semibold tracking-tight text-[var(--text)]">
+              Tasks
+            </h2>
+          </div>
+          <div className={`flex flex-col gap-3 ${TASKS_LIST_CLASS}`}>
+            {dashboardTasks.length === 0 ? (
+              <p className="rounded-xl bg-[#f4f4f5] px-5 py-4 text-[13px] text-[var(--text-mid)]">
+                No tasks yet. Your counsellor can assign items here.
+              </p>
+            ) : (
+              dashboardTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-4 rounded-xl bg-[#f4f4f5] px-5 py-4"
+                >
+                  <span className="shrink-0" aria-hidden>
+                    {task.completed ? (
+                      <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-[#1B4332]">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      </span>
+                    ) : (
+                      <span className="relative flex h-[22px] w-[22px] items-center justify-center rounded-[5px] border-[1.5px] border-[#d4d4d8] bg-white">
+                        <svg
+                          className="absolute opacity-[0.18]"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      </span>
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`text-[14px] font-medium leading-snug ${
+                        task.completed
+                          ? "text-[#a1a1aa] line-through decoration-[#a1a1aa]"
+                          : "text-[#18181b]"
+                      }`}
+                    >
+                      {task.title}
+                    </p>
+                    {task.notes?.trim() ? (
+                      <p
+                        className={`mt-1 line-clamp-2 text-[12px] leading-snug ${
+                          task.completed
+                            ? "text-[#c4c4c4] line-through"
+                            : "text-[var(--text-mid)]"
+                        }`}
+                      >
+                        {task.notes.trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="mt-4 border-t border-[var(--border-light)] pt-4">
+            <Link
+              href="/student/my-applications"
+              className="text-[12px] font-semibold text-[var(--green)] no-underline hover:text-[var(--green-dark)]"
+            >
+              Manage in My applications →
+            </Link>
+          </div>
+        </div>
+
         <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
             <svg
@@ -322,7 +464,7 @@ export function StudentDashboard({
             </svg>
             Recent activity
           </div>
-          <div className={`flex flex-col ${NEWS_AND_ACTIVITY_LIST_CLASS}`}>
+          <div className={`flex flex-col ${ACTIVITY_LIST_CLASS}`}>
             {activityLogItems.length === 0 ? (
               <p className="text-xs text-[var(--text-hint)]">
                 No recent activity yet.

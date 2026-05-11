@@ -1435,6 +1435,7 @@ export type Database = {
       }
       student_application_profile: {
         Row: {
+          act_score: string | null
           budget_range: string | null
           created_at: string
           curriculum: string | null
@@ -1447,11 +1448,13 @@ export type Database = {
           predicted_grades_set_by_school: boolean
           preferred_destinations: string[]
           sat_act_scores: string | null
+          sat_score: string | null
           student_id: string
           target_intake: string | null
           updated_at: string
         }
         Insert: {
+          act_score?: string | null
           budget_range?: string | null
           created_at?: string
           curriculum?: string | null
@@ -1464,11 +1467,13 @@ export type Database = {
           predicted_grades_set_by_school?: boolean
           preferred_destinations?: string[]
           sat_act_scores?: string | null
+          sat_score?: string | null
           student_id: string
           target_intake?: string | null
           updated_at?: string
         }
         Update: {
+          act_score?: string | null
           budget_range?: string | null
           created_at?: string
           curriculum?: string | null
@@ -1481,6 +1486,7 @@ export type Database = {
           predicted_grades_set_by_school?: boolean
           preferred_destinations?: string[]
           sat_act_scores?: string | null
+          sat_score?: string | null
           student_id?: string
           target_intake?: string | null
           updated_at?: string

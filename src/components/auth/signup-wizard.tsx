@@ -397,9 +397,9 @@ export function SignupWizard() {
       <p className="mb-3 text-[11px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase">
         Step 3 of 3
       </p>
-      <h1 className="serif mb-2 text-2xl leading-snug sm:text-[28px]">How are you joining UniApply?</h1>
+      <h1 className="serif mb-2 text-2xl leading-snug sm:text-[28px]">How are you joining Univeera?</h1>
       <p className={slHint}>
-        If your school is registered with UniApply, you&apos;ll have full access through your
+        If your school is registered with Univeera, you&apos;ll have full access through your
         school&apos;s partnership — no payment needed.
       </p>
     </>
@@ -653,7 +653,7 @@ export function SignupWizard() {
       {step === "school" && (
         <>
           <ProgressBar label="Access type" stepText="Step 3 of 3" pct={100} />
-          <h2 className="serif text-2xl text-[var(--text)]">Is your school registered with UniApply?</h2>
+          <h2 className="serif text-2xl text-[var(--text)]">Is your school registered with Univeera?</h2>
           <p className="mb-5 text-sm text-[var(--text-light)]">
             Schools that partner with us provide free access for their students
           </p>
@@ -782,7 +782,7 @@ export function SignupWizard() {
         >
           <LogoIcon />
         </div>
-        <span className="text-[0.95rem] font-bold text-[var(--text)]">UniApply</span>
+        <span className="text-[0.95rem] font-bold text-[var(--text)]">Univeera</span>
       </Link>
       {legal ? (
         <div

@@ -110,13 +110,17 @@ export async function createSchoolStudentTask(
     null;
 
   const due_date = dueRaw && /^\d{4}-\d{2}-\d{2}$/.test(dueRaw) ? dueRaw : null;
+  const notes =
+    notesRaw.length > 8000
+      ? notesRaw.slice(0, 8000)
+      : notesRaw || null;
 
   const { error: insErr } = await secret
     .from("student_my_application_tasks")
     .insert({
       student_id: studentId,
       title,
-      notes: notesRaw || null,
+      notes,
       priority,
       due_date,
       assigned_by_name: assignedBy,

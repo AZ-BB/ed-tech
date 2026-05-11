@@ -405,8 +405,12 @@ body {
 }
 
 .hv-score-circle {
+  box-sizing: border-box;
+  flex: 0 0 40px;
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  aspect-ratio: 1;
   border-radius: 50%;
   border: 3px solid var(--green);
   display: flex;
@@ -492,7 +496,7 @@ body {
   font-size: 36px;
   line-height: 1.2;
   margin-bottom: 12px;
-  max-width: 500px;
+  max-width: 1000px;
 }
 
 .section-sub {
@@ -577,11 +581,11 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+  align-items: stretch;
 }
 
-.feat-grid > a {
-  text-decoration: none;
-  color: inherit;
+.feat-grid > .feat-card {
+  height: 100%;
 }
 
 .feat-card {
@@ -589,8 +593,10 @@ body {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 24px;
-  transition: all 0.2s;
-  cursor: pointer;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .feat-card:hover {

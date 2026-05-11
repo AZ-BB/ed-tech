@@ -22,7 +22,7 @@ export default function TermsPage() {
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          UniApply
+          Univeera
         </Link>
         <div className="nav-links">
           <Link className="nav-link" href="/#how-it-works">
@@ -54,16 +54,16 @@ export default function TermsPage() {
       <div className="content">
         <h2>Acceptance of terms</h2>
         <p>
-          By accessing or using UniApply (&quot;the platform&quot;), you agree
+          By accessing or using Univeera (&quot;the platform&quot;), you agree
           to be bound by these Terms and Conditions. If you do not agree to
           these terms, please do not use the platform. These terms apply to all
           users, including students, advisors, ambassadors, school
           administrators, and visitors.
         </p>
 
-        <h2>About UniApply</h2>
+        <h2>About Univeera</h2>
         <p>
-          UniApply is an education technology platform that helps students
+          Univeera is an education technology platform that helps students
           discover universities, find scholarships, receive essay feedback,
           connect with advisors and ambassadors, and manage their university
           application journey. The platform is designed primarily for students
@@ -97,7 +97,7 @@ export default function TermsPage() {
 
         <h2>Acceptable use</h2>
         <p>
-          You agree to use UniApply only for its intended purpose and in
+          You agree to use Univeera only for its intended purpose and in
           compliance with all applicable laws. You may not:
         </p>
         <ul>
@@ -120,27 +120,27 @@ export default function TermsPage() {
           <li>Interfere with the operation or security of the platform</li>
           <li>
             Use the platform for any commercial purpose not authorised by
-            UniApply
+            Univeera
           </li>
         </ul>
 
         <h2>Content and intellectual property</h2>
         <p>
-          All content on UniApply, including text, design, logos, features, and
-          software, is owned by or licensed to UniApply and is protected by
+          All content on Univeera, including text, design, logos, features, and
+          software, is owned by or licensed to Univeera and is protected by
           intellectual property laws. You may not copy, modify, distribute, or
           create derivative works from our content without written permission.
         </p>
         <p>
           Content you submit to the platform (such as essays, profile
           information, and messages) remains yours. By submitting content, you
-          grant UniApply a limited licence to use it solely for the purpose of
+          grant Univeera a limited licence to use it solely for the purpose of
           providing and improving our services.
         </p>
 
         <h2>Essay review and AI tools</h2>
         <p>
-          UniApply offers AI-powered essay feedback and university matching
+          Univeera offers AI-powered essay feedback and university matching
           tools. These tools are designed to assist and guide you, but they are
           not a substitute for professional advice. You acknowledge that:
         </p>
@@ -150,7 +150,7 @@ export default function TermsPage() {
             input among many
           </li>
           <li>
-            UniApply does not guarantee specific outcomes, admissions results,
+            Univeera does not guarantee specific outcomes, admissions results,
             or scholarship awards
           </li>
           <li>
@@ -161,7 +161,7 @@ export default function TermsPage() {
 
         <h2>Advisor and ambassador sessions</h2>
         <p>
-          UniApply facilitates connections between students and advisors or
+          Univeera facilitates connections between students and advisors or
           university ambassadors. We do not employ advisors or ambassadors
           directly and are not responsible for the advice they provide. Sessions
           are subject to availability and any applicable fees.
@@ -172,7 +172,7 @@ export default function TermsPage() {
             personal experience and expertise
           </li>
           <li>
-            UniApply does not guarantee the accuracy or completeness of advice
+            Univeera does not guarantee the accuracy or completeness of advice
             given during sessions
           </li>
           <li>
@@ -183,7 +183,7 @@ export default function TermsPage() {
 
         <h2>School partnerships</h2>
         <p>
-          Schools that partner with UniApply may have access to aggregate
+          Schools that partner with Univeera may have access to aggregate
           student engagement data and counsellor tools. Student data shared with
           partner schools is governed by our Privacy Policy and any applicable
           data sharing agreements.
@@ -191,19 +191,19 @@ export default function TermsPage() {
 
         <h2>Limitation of liability</h2>
         <p>
-          UniApply is provided on an &quot;as is&quot; and &quot;as
+          Univeera is provided on an &quot;as is&quot; and &quot;as
           available&quot; basis. We make no warranties, express or implied,
           regarding the platform&apos;s availability, accuracy, or fitness for a
           particular purpose. To the fullest extent permitted by law:
         </p>
         <ul>
           <li>
-            UniApply shall not be liable for any indirect, incidental, or
+            Univeera shall not be liable for any indirect, incidental, or
             consequential damages arising from your use of the platform
           </li>
           <li>
             Our total liability for any claim shall not exceed the amount you
-            paid to UniApply in the 12 months preceding the claim
+            paid to Univeera in the 12 months preceding the claim
           </li>
           <li>
             We are not responsible for decisions made based on information or
@@ -222,7 +222,7 @@ export default function TermsPage() {
         <p>
           We may revise these Terms and Conditions from time to time. When we
           make material changes, we will notify you through the platform or by
-          email. Your continued use of UniApply after changes are posted
+          email. Your continued use of Univeera after changes are posted
           constitutes your acceptance of the revised terms.
         </p>
 
@@ -237,7 +237,7 @@ export default function TermsPage() {
         <h2>Contact us</h2>
         <p>
           If you have questions about these Terms and Conditions, please contact
-          us at hello@uniapply.com.
+          us at hello@univeera.com.
         </p>
       </div>
 
@@ -269,7 +269,7 @@ export default function TermsPage() {
                   <path d="M2 17l10 5 10-5" />
                 </svg>
               </div>
-              UniApply
+              Univeera
             </div>
             <div className="footer-brand-desc">
               Empowering MENA students to access better education opportunities
@@ -277,32 +277,14 @@ export default function TermsPage() {
             </div>
           </div>
           <div>
-            <div className="footer-col-title">Product</div>
-            <Link className="footer-link" href="#">
-              University search
-            </Link>
-            <Link className="footer-link" href="#">
-              AI matching
-            </Link>
-            <Link className="footer-link" href="#">
-              Essay feedback
-            </Link>
-            <Link className="footer-link" href="#">
-              Scholarships
-            </Link>
-            <Link className="footer-link" href="#">
-              Test prep
-            </Link>
-          </div>
-          <div>
             <div className="footer-col-title">Resources</div>
-            <Link className="footer-link" href="for_schools.html">
+            <Link className="footer-link" href="/for-schools">
               For schools
             </Link>
-            <Link className="footer-link" href="for_advisors.html">
+            <Link className="footer-link" href="/for-advisors">
               For advisors
             </Link>
-            <Link className="footer-link" href="blog.html">
+            <Link className="footer-link" href="/blog">
               Blog
             </Link>
           </div>
@@ -311,7 +293,7 @@ export default function TermsPage() {
             <Link className="footer-link" href="/about">
               About
             </Link>
-            <Link className="footer-link" href="contact.html">
+            <Link className="footer-link" href="/contact">
               Contact
             </Link>
             <Link className="footer-link" href="/privacy">
@@ -322,7 +304,7 @@ export default function TermsPage() {
             </Link>
           </div>
         </div>
-        <div className="footer-bottom">2026 UniApply. All rights reserved.</div>
+        <div className="footer-bottom">2026 Univeera. All rights reserved.</div>
       </footer>
     </>
   );

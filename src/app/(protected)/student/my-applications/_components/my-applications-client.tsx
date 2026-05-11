@@ -1,6 +1,7 @@
 "use client";
 
 import type { Database } from "@/database.types";
+import { COUNTRIES } from "@/lib/countries";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -9,6 +10,22 @@ import { useCallback, useMemo, useState } from "react";
 import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
 import type { EssayWithComments, MyApplicationsInitialPayload } from "../_lib/my-applications-types";
 import { getStudentApplicationProfileCompletion } from "@/lib/student-application-profile-completion";
+import {
+  labelPreferredDestinationEntry,
+  normalizePreferredDestinationsForEditor,
+} from "../_lib/preferred-destinations-iso";
+import {
+  ACT_SCORE_MAX,
+  ACT_SCORE_MIN,
+  SAT_SCORE_MAX,
+  SAT_SCORE_MIN,
+  clampActScoreOnBlur,
+  clampSatScoreOnBlur,
+  formatLegacySatActSummary,
+  parseLegacySatActScores,
+  sanitizeActScoreInput,
+  sanitizeSatScoreInput,
+} from "../_lib/sat-act-score-input";
 import {
   AID_OPTIONS,
   APPLICATION_METHOD_OPTIONS,
@@ -215,6 +232,30 @@ function btnSmClass(primary?: boolean) {
     : "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]";
 }
 
+function profileCompletionPct(args: {
+  grade: string;
+  curriculum: string;
+  destinations: string[];
+  programs: string[];
+  english: string;
+  sat: string;
+  act: string;
+}): { pct: number; missing: number } {
+  let ok = 0;
+  const total = 6;
+  if (args.grade.trim()) ok++;
+  if (args.curriculum.trim()) ok++;
+  if (args.destinations.length) ok++;
+  if (args.programs.length) ok++;
+  const hasStd = args.sat.trim() || args.act.trim();
+  if (args.english.trim() || hasStd) ok++;
+  if (args.english.trim() && hasStd) ok++;
+  else if (args.english.trim() || hasStd) ok += 0.5;
+  const pct = Math.round((ok / total) * 100);
+  const missing = total - Math.ceil(ok);
+  return { pct: Math.min(100, pct), missing: Math.max(0, missing) };
+}
+
 export function MyApplicationsClient({
   initial,
 }: {
@@ -234,8 +275,11 @@ export function MyApplicationsClient({
   const [grade, setGrade] = useState(ap0?.grade ?? "");
   const [curriculum, setCurriculum] = useState(ap0?.curriculum ?? "");
   const [targetIntake, setTargetIntake] = useState(ap0?.target_intake ?? "");
-  const [destinations, setDestinations] = useState<string[]>(
-    ap0?.preferred_destinations ?? [],
+  const [destinations, setDestinations] = useState<string[]>(() =>
+    normalizePreferredDestinationsForEditor(
+      ap0?.preferred_destinations ?? [],
+      initial.countries,
+    ),
   );
   const [programs, setPrograms] = useState<string[]>(
     ap0?.interested_programs ?? [],
@@ -245,12 +289,23 @@ export function MyApplicationsClient({
   const [englishScores, setEnglishScores] = useState(
     ap0?.english_test_scores ?? "",
   );
-  const [satAct, setSatAct] = useState(ap0?.sat_act_scores ?? "");
+  const [satScore, setSatScore] = useState(() => {
+    const s = ap0?.sat_score?.trim();
+    const a = ap0?.act_score?.trim();
+    if (s || a) return s ?? "";
+    return parseLegacySatActScores(ap0?.sat_act_scores ?? null).sat;
+  });
+  const [actScore, setActScore] = useState(() => {
+    const s = ap0?.sat_score?.trim();
+    const a = ap0?.act_score?.trim();
+    if (s || a) return a ?? "";
+    return parseLegacySatActScores(ap0?.sat_act_scores ?? null).act;
+  });
   const [predictedGrades, setPredictedGrades] = useState(
     ap0?.predicted_grades ?? "",
   );
-  const [predictedSchool, setPredictedSchool] = useState(
-    ap0?.predicted_grades_set_by_school ?? false,
+  const predictedGradesLocked = Boolean(
+    initial.applicationProfile?.predicted_grades_set_by_school,
   );
   const [otherTests, setOtherTests] = useState(ap0?.other_tests ?? "");
 
@@ -302,8 +357,31 @@ export function MyApplicationsClient({
     destinations,
     programs,
     english: englishScores,
-    sat: satAct,
+    sat: satScore,
+    act: actScore,
   });
+
+  const satScoreInvalid = useMemo(() => {
+    const t = satScore.trim();
+    if (!t) return false;
+    const n = parseInt(t, 10);
+    return (
+      !Number.isFinite(n) ||
+      n < SAT_SCORE_MIN ||
+      n > SAT_SCORE_MAX
+    );
+  }, [satScore]);
+
+  const actScoreInvalid = useMemo(() => {
+    const t = actScore.trim();
+    if (!t) return false;
+    const n = parseInt(t, 10);
+    return (
+      !Number.isFinite(n) ||
+      n < ACT_SCORE_MIN ||
+      n > ACT_SCORE_MAX
+    );
+  }, [actScore]);
 
   const openTasks = tasks.filter((t) => !t.completed).length;
   const tasksDueThisWeek = useMemo(
@@ -378,14 +456,18 @@ export function MyApplicationsClient({
       budget_range: budgetRange || null,
       need_based_aid: needAid || null,
       english_test_scores: englishScores || null,
-      sat_act_scores: satAct || null,
+      sat_score: satScore.trim() || null,
+      act_score: actScore.trim() || null,
+      sat_act_scores: formatLegacySatActSummary(satScore, actScore),
       predicted_grades: predictedGrades || null,
-      predicted_grades_set_by_school: predictedSchool,
+      predicted_grades_set_by_school:
+        initial.applicationProfile?.predicted_grades_set_by_school ?? false,
       other_tests: otherTests || null,
       updated_at: new Date().toISOString(),
     };
   }, [
     initial.studentId,
+    initial.applicationProfile?.predicted_grades_set_by_school,
     grade,
     curriculum,
     targetIntake,
@@ -394,9 +476,9 @@ export function MyApplicationsClient({
     budgetRange,
     needAid,
     englishScores,
-    satAct,
+    satScore,
+    actScore,
     predictedGrades,
-    predictedSchool,
     otherTests,
   ]);
 
@@ -439,9 +521,43 @@ export function MyApplicationsClient({
   };
 
   const saveScores = async () => {
+    const satFinal = satScore.trim() ? clampSatScoreOnBlur(satScore) : "";
+    const actFinal = actScore.trim() ? clampActScoreOnBlur(actScore) : "";
+    const nSat = satFinal ? parseInt(satFinal, 10) : NaN;
+    if (
+      satFinal &&
+      (!Number.isFinite(nSat) ||
+        nSat < SAT_SCORE_MIN ||
+        nSat > SAT_SCORE_MAX)
+    ) {
+      showToast(
+        `SAT total must be a whole number between ${SAT_SCORE_MIN} and ${SAT_SCORE_MAX}.`,
+      );
+      return;
+    }
+    const nAct = actFinal ? parseInt(actFinal, 10) : NaN;
+    if (
+      actFinal &&
+      (!Number.isFinite(nAct) ||
+        nAct < ACT_SCORE_MIN ||
+        nAct > ACT_SCORE_MAX)
+    ) {
+      showToast(
+        `ACT composite must be a whole number between ${ACT_SCORE_MIN} and ${ACT_SCORE_MAX}.`,
+      );
+      return;
+    }
+    setSatScore(satFinal);
+    setActScore(actFinal);
+    const row = {
+      ...buildApplicationProfileRow(),
+      sat_score: satFinal || null,
+      act_score: actFinal || null,
+      sat_act_scores: formatLegacySatActSummary(satFinal, actFinal),
+    };
     const { error } = await supabase
       .from("student_application_profile")
-      .upsert(buildApplicationProfileRow(), {
+      .upsert(row, {
         onConflict: "student_id",
       });
     if (error) {
@@ -977,7 +1093,7 @@ export function MyApplicationsClient({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className={labelClass}>Target intake</label>
+                  <label className={labelClass}>When are you looking to start University</label>
                   <select
                     className={fieldClass}
                     value={targetIntake}
@@ -1017,12 +1133,11 @@ export function MyApplicationsClient({
               </div>
             </div>
             <div className={panelBodyClass}>
-              <TagField
-                label="Preferred destinations"
-                hint="Type a country and press Enter to add"
+              <PreferredDestinationsMultiSelect
+                labelClass={labelClass}
+                fieldClass={fieldClass}
                 values={destinations}
                 onChange={setDestinations}
-                placeholder="Add a country…"
               />
               <div className="mt-3.5">
                 <TagField
@@ -1090,7 +1205,7 @@ export function MyApplicationsClient({
             </div>
             <div className={panelBodyClass}>
               <div className="grid gap-3.5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>IELTS / TOEFL</label>
                   <input
                     className={fieldClass}
@@ -1100,35 +1215,71 @@ export function MyApplicationsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>SAT / ACT</label>
+                  <label className={labelClass}>SAT (total)</label>
                   <input
-                    className={fieldClass}
-                    placeholder="e.g. SAT 1450"
-                    value={satAct}
-                    onChange={(e) => setSatAct(e.target.value)}
+                    className={`${fieldClass} ${
+                      satScoreInvalid
+                        ? "border-[#c0392b] shadow-[0_0_0_3px_rgba(192,57,43,0.12)]"
+                        : ""
+                    }`}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder={`e.g. 1480 (${SAT_SCORE_MIN}–${SAT_SCORE_MAX})`}
+                    value={satScore}
+                    onChange={(e) =>
+                      setSatScore(sanitizeSatScoreInput(e.target.value))
+                    }
+                    onBlur={() =>
+                      setSatScore((s) => (s.trim() ? clampSatScoreOnBlur(s) : ""))
+                    }
+                    aria-invalid={satScoreInvalid}
                   />
+                  <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
+                    Digital SAT total: {SAT_SCORE_MIN}–{SAT_SCORE_MAX}. Values above{" "}
+                    {SAT_SCORE_MAX} are capped automatically.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}>ACT (composite)</label>
+                  <input
+                    className={`${fieldClass} ${
+                      actScoreInvalid
+                        ? "border-[#c0392b] shadow-[0_0_0_3px_rgba(192,57,43,0.12)]"
+                        : ""
+                    }`}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder={`e.g. 32 (${ACT_SCORE_MIN}–${ACT_SCORE_MAX})`}
+                    value={actScore}
+                    onChange={(e) =>
+                      setActScore(sanitizeActScoreInput(e.target.value))
+                    }
+                    onBlur={() =>
+                      setActScore((s) => (s.trim() ? clampActScoreOnBlur(s) : ""))
+                    }
+                    aria-invalid={actScoreInvalid}
+                  />
+                  <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
+                    Whole-number composite: {ACT_SCORE_MIN}–{ACT_SCORE_MAX}. Values above{" "}
+                    {ACT_SCORE_MAX} are capped automatically.
+                  </p>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>
                     Predicted IB / A-Level grades
                   </label>
                   <input
-                    className={`${fieldClass} ${predictedSchool ? "bg-[var(--cream)] text-[var(--text-light)]" : ""}`}
+                    className={`${fieldClass} ${predictedGradesLocked ? "bg-[var(--cream)] text-[var(--text-light)]" : ""}`}
                     value={predictedGrades}
                     onChange={(e) => setPredictedGrades(e.target.value)}
-                    disabled={predictedSchool}
+                    disabled={predictedGradesLocked}
                   />
-                  <div className="flex items-center gap-2 text-[11.5px] text-[var(--text-hint)]">
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={predictedSchool}
-                        onChange={(e) => setPredictedSchool(e.target.checked)}
-                        className="rounded border-[var(--border)]"
-                      />
-                      Mark as set by school (student read-only)
-                    </label>
-                  </div>
+                  {predictedGradesLocked ? (
+                    <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
+                      Your school entered this — ask your counselor if it needs
+                      updating.
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>
@@ -1479,7 +1630,7 @@ export function MyApplicationsClient({
           </CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold tracking-tight">
                   Your essays
                 </div>
@@ -1487,24 +1638,44 @@ export function MyApplicationsClient({
                   Linked to a university or application — counselor sees updates in their portal
                 </div>
               </div>
-              <button
-                type="button"
-                className={btnSmClass(true)}
-                onClick={() => setEssayModal(true)}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  aria-hidden
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <Link
+                  href="/student/essay-review"
+                  className={`${btnSmClass(false)} text-inherit no-underline`}
                 >
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                Add essay
-              </button>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    aria-hidden
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                  Essay review
+                </Link>
+                <button
+                  type="button"
+                  className={btnSmClass(true)}
+                  onClick={() => setEssayModal(true)}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    aria-hidden
+                  >
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Add essay
+                </button>
+              </div>
             </div>
             <div className={`${panelBodyClass} flex flex-col gap-2`}>
               {essays.length === 0 ? (
@@ -2491,6 +2662,124 @@ export function MyApplicationsClient({
           {toast}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function PreferredDestinationsMultiSelect({
+  labelClass,
+  fieldClass,
+  values,
+  onChange,
+}: {
+  labelClass: string;
+  fieldClass: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const orderedCountries = useMemo(
+    () => [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name, "en")),
+    [],
+  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return orderedCountries;
+    return orderedCountries.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.alpha2.toLowerCase().includes(q),
+    );
+  }, [orderedCountries, query]);
+
+  const selectedUpper = useMemo(
+    () => new Set(values.map((v) => v.trim().toUpperCase())),
+    [values],
+  );
+
+  function toggle(alpha2: string) {
+    const u = alpha2.toUpperCase();
+    if (selectedUpper.has(u)) {
+      onChange(values.filter((x) => x.trim().toUpperCase() !== u));
+    } else {
+      onChange([...values, u]);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className={labelClass}>Preferred destinations</label>
+      <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
+        Full country list (ISO). Tick every destination you are considering; remove
+        with the chip ×.
+      </p>
+      {values.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {values.map((v) => (
+            <span
+              key={v}
+              className="inline-flex items-center gap-1 rounded-full bg-[var(--green-pale)] px-2.5 py-1 text-xs font-medium text-[var(--green-dark)]"
+            >
+              {labelPreferredDestinationEntry(v)}
+              <button
+                type="button"
+                className="text-[var(--green-dark)] opacity-60 hover:opacity-100"
+                aria-label={`Remove ${labelPreferredDestinationEntry(v)}`}
+                onClick={() => onChange(values.filter((x) => x !== v))}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  aria-hidden
+                >
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <input
+        type="search"
+        className={fieldClass}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search by country name or code…"
+        autoComplete="off"
+        aria-label="Filter country list"
+      />
+      <div
+        className="max-h-[min(280px,45vh)] overflow-y-auto rounded-lg border-[1.5px] border-[var(--border)] bg-white [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]"
+        role="group"
+        aria-label="Countries"
+      >
+        {filtered.map((c) => {
+          const checked = selectedUpper.has(c.alpha2);
+          return (
+            <label
+              key={c.alpha2}
+              className="flex cursor-pointer items-center gap-2.5 border-b border-[var(--border-light)] px-3 py-2.5 last:border-b-0 hover:bg-[var(--sand)]"
+            >
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 shrink-0 rounded border-[var(--border)] accent-[var(--green)]"
+                checked={checked}
+                onChange={() => toggle(c.alpha2)}
+              />
+              <span className="min-w-0 flex-1 text-[13px] leading-snug text-[var(--text)]">
+                {c.name}
+              </span>
+              <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
+                {c.alpha2}
+              </span>
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }

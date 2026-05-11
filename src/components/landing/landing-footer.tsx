@@ -28,7 +28,7 @@ export function LandingFooter() {
                 <path d="M2 17l10 5 10-5" />
               </svg>
             </div>
-            UniApply
+            Univeera
           </div>
           <div className="footer-brand-desc">
             Empowering MENA students to access better education opportunities
@@ -36,32 +36,14 @@ export function LandingFooter() {
           </div>
         </div>
         <div>
-          <div className="footer-col-title">Product</div>
-          <a className="footer-link" href="university_search_page.html">
-            University search
-          </a>
-          <a className="footer-link" href="ai_university_matching.html">
-            AI matching
-          </a>
-          <a className="footer-link" href="essay_review_page.html">
-            Essay feedback
-          </a>
-          <a className="footer-link" href="scholarship_discovery_page.html">
-            Scholarships
-          </a>
-          <a className="footer-link" href="#">
-            Test prep
-          </a>
-        </div>
-        <div>
           <div className="footer-col-title">Resources</div>
-          <a className="footer-link" href="for_schools.html">
+          <a className="footer-link" href="/for-schools">
             For schools
           </a>
-          <a className="footer-link" href="for_advisors.html">
+          <a className="footer-link" href="/for-advisors">
             For advisors
           </a>
-          <a className="footer-link" href="blog.html">
+          <a className="footer-link" href="/blog">
             Blog
           </a>
         </div>
@@ -70,18 +52,18 @@ export function LandingFooter() {
           <a className="footer-link" href="/about">
             About
           </a>
-          <a className="footer-link" href="contact.html">
+          <a className="footer-link" href="/contact">
             Contact
           </a>
-          <a className="footer-link" href="privacy.html">
+          <a className="footer-link" href="/privacy">
             Privacy
           </a>
-          <a className="footer-link" href="terms.html">
+          <a className="footer-link" href="/terms">
             Terms
           </a>
         </div>
       </div>
-      <div className="footer-bottom">2026 UniApply. All rights reserved.</div>
+      <div className="footer-bottom">2026 Univeera. All rights reserved.</div>
     </footer>
   );
 }

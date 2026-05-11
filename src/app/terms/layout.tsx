@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./terms.css";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions — UniApply",
+  title: "Terms & Conditions — Univeera",
 };
 
 export default function TermsLayout({
