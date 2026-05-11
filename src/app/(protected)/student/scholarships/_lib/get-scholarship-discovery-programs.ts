@@ -40,6 +40,11 @@ type RpcDiscoveryPage = {
   rows: Record<string, unknown>[];
 };
 
+type ScholarshipDiscoveryBucketQuery = Pick<
+  ScholarshipDiscoveryResolvedQuery,
+  "q" | "nationality" | "destination" | "coverage"
+>;
+
 function pick(
   sp: Record<string, string | string[] | undefined>,
   key: string,
@@ -150,7 +155,7 @@ function parseRpcPayload(raw: unknown): RpcDiscoveryPage | null {
 }
 
 async function fetchDiscoveryBucketRpc(
-  query: Omit<ScholarshipDiscoveryResolvedQuery, "tab" | "governmentPage" | "otherPage">,
+  query: ScholarshipDiscoveryBucketQuery,
   bucket: ScholarshipDiscoveryTab,
   page: number,
   homeAlpha2: string | null,
@@ -174,7 +179,7 @@ async function fetchDiscoveryBucketRpc(
 }
 
 async function loadBucketSlice(
-  query: Omit<ScholarshipDiscoveryResolvedQuery, "tab" | "governmentPage" | "otherPage">,
+  query: ScholarshipDiscoveryBucketQuery,
   bucket: ScholarshipDiscoveryTab,
   page: number,
   homeAlpha2: string | null,
