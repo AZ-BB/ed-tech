@@ -4,6 +4,7 @@ import {
 } from "@/lib/student-platform-completion";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 import { AiUniversityMatching } from "./_components/ai-university-matching";
+import { loadAiMatchingProfileDefaults } from "./_lib/load-ai-matching-profile-defaults";
 
 export const dynamic = "force-dynamic";
 
@@ -19,5 +20,6 @@ export default async function StudentAiMatchingPage() {
       STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_ai_matching,
     );
   }
-  return <AiUniversityMatching />;
+  const profileDefaults = await loadAiMatchingProfileDefaults();
+  return <AiUniversityMatching profileDefaults={profileDefaults} />;
 }

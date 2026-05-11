@@ -1,6 +1,6 @@
 "use client";
 
-import { logout } from "@/actions/auth";
+import { LogoutConfirmDialog } from "@/components/logout-confirm-dialog";
 import {
   Brain,
   ClipboardList,
@@ -136,8 +136,10 @@ function shellHeaderFromPathname(pathname: string): {
 
 function SidebarNav({
   onNavigate,
+  onRequestLogout,
 }: {
   onNavigate?: () => void;
+  onRequestLogout: () => void;
 }) {
   const pathname = usePathname();
 
@@ -201,10 +203,11 @@ function SidebarNav({
           </Link>
         );
       })}
-      <form action={logout} className="mt-1 px-3 pb-2">
+      <div className="mt-1 pb-2">
         <button
-          type="submit"
-          className="group flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-left text-[13.5px] font-medium text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] hover:text-[var(--text)]"
+          type="button"
+          className="group mb-0.5 flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-left text-[13.5px] font-medium text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] hover:text-[var(--text)]"
+          onClick={onRequestLogout}
         >
           <LogOut
             className="h-[18px] w-[18px] shrink-0 text-[var(--text-hint)] transition-colors group-hover:text-[var(--text-mid)]"
@@ -213,7 +216,7 @@ function SidebarNav({
           />
           Log out
         </button>
-      </form>
+      </div>
     </nav>
   );
 }
@@ -273,6 +276,7 @@ export function StudentLayoutShell({
 }) {
   /** Collapsible drawer from the right + dimmed overlay — same pattern as dashboard.html */
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const pathname = usePathname();
   const shellHeader = useMemo(
     () => shellHeaderFromPathname(pathname),
@@ -366,8 +370,20 @@ export function StudentLayoutShell({
         }`}
       >
         <SidebarHeader onClose={closeSidebar} />
-        <SidebarNav onNavigate={closeSidebar} />
+        <SidebarNav
+          onNavigate={closeSidebar}
+          onRequestLogout={() => {
+            setLogoutConfirmOpen(true);
+            closeSidebar();
+          }}
+        />
       </div>
+
+      <LogoutConfirmDialog
+        open={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        variant="student"
+      />
     </div>
   );
 }

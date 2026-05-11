@@ -1,9 +1,11 @@
 "use client";
 
 import { createAdvisorSessionBooking } from "@/actions/advisor-sessions";
+import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
 import { COUNTRIES } from "@/lib/countries";
+import { buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 const STAGES = [
   "",
@@ -43,6 +45,24 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
   const [helpWith, setHelpWith] = useState("");
 
   const displayName = `${advisor.firstName} ${advisor.lastName}`;
+
+  const calendlyPageUrl = useMemo(() => {
+    const destinationLabel = destinationAlpha2
+      ? (COUNTRIES.find((c) => c.alpha2 === destinationAlpha2)?.name ?? destinationAlpha2)
+      : "";
+    return buildCalendlySchedulingPageUrl({
+      name: fullName.trim(),
+      email: email.trim(),
+      ctxParts: [
+        `Advisor session with ${displayName}`,
+        `Advisor ID: ${advisor.id}`,
+        destinationLabel ? `Destination: ${destinationLabel}` : "",
+        stage ? `Stage: ${stage}` : "",
+        specificUnis.trim() ? `Universities: ${specificUnis.trim().slice(0, 120)}` : "",
+        helpWith.trim() ? `Help: ${helpWith.trim().slice(0, 160)}` : "",
+      ].filter(Boolean),
+    });
+  }, [advisor.id, destinationAlpha2, displayName, email, fullName, helpWith, specificUnis, stage]);
 
   const goConfirm = useCallback(() => {
     setError(null);
@@ -126,7 +146,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                   {[
                     "Matched with your selected advisor",
                     "Request saved to your account",
-                    "Confirmation via WhatsApp & email",
+                    "Pick your time in Calendly",
                   ].map((t) => (
                     <div
                       key={t}
@@ -325,25 +345,36 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
             ) : null}
 
             {step === 3 ? (
-              <div className="rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white px-8 py-12 text-center shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5">
-                <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--green-bg)]">
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                    <path d="M22 4L12 14.01l-3-3" />
-                  </svg>
+              <div className="rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white px-8 py-12 shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5">
+                <div className="text-center">
+                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--green-bg)]">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                      <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                      <path d="M22 4L12 14.01l-3-3" />
+                    </svg>
+                  </div>
+                  <h2 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">Your session request was submitted</h2>
+                  <p className="mx-auto mt-2 max-w-[480px] text-[13.5px] leading-relaxed text-[#8a8a8a]">
+                    We&apos;ve saved your details to advisor sessions. Choose a time below — you&apos;ll get a confirmation from Calendly, and
+                    we&apos;ll follow up on WhatsApp if needed.
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-[var(--green)]">You&apos;re one step closer to your university journey</p>
                 </div>
-                <h2 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">Your session request was submitted</h2>
-                <p className="mx-auto mt-2 max-w-[400px] text-[13.5px] leading-relaxed text-[#8a8a8a]">
-                  We&apos;ve saved your booking to advisor sessions. You&apos;ll receive a confirmation via WhatsApp and email once your
-                  session is scheduled with {displayName}.
-                </p>
-                <p className="mt-2 text-xs font-medium text-[var(--green)]">You&apos;re one step closer to your university journey</p>
-                <Link
-                  href="/student/advisor-sessions"
-                  className="mx-auto mt-6 inline-flex max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-8 py-3.5 text-sm font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
-                >
-                  Back to advisors
-                </Link>
+                <div className="mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+                  <CalendlyInlineEmbed
+                    url={calendlyPageUrl}
+                    title={`Book a session with ${displayName} — Calendly`}
+                    className="min-h-[720px] w-full min-w-[280px] rounded-none border-0 bg-white"
+                  />
+                </div>
+                <div className="mt-8 text-center">
+                  <Link
+                    href="/student/advisor-sessions"
+                    className="mx-auto inline-flex max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-8 py-3.5 text-sm font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
+                  >
+                    Back to advisors
+                  </Link>
+                </div>
               </div>
             ) : null}
           </div>

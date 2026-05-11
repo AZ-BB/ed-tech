@@ -2323,8 +2323,10 @@ export type Database = {
       current_school_admin_school_id: { Args: never; Returns: string }
       rpc_scholarships_discovery_page: {
         Args: {
+          p_bucket?: string
           p_cov?: string
           p_dest?: string
+          p_home_alpha2?: string | null
           p_limit?: number
           p_nat?: string
           p_offset?: number

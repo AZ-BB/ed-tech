@@ -35,7 +35,6 @@ type UniversityMatch = {
   programName: string;
   city: string;
   country: string;
-  matchScore: number;
   tuitionEstimate: string;
   admissionFit: "Reach" | "Target" | "Likely";
   whyItMatches: string[];
@@ -198,10 +197,9 @@ Return exactly valid JSON with this shape:
       "programName": "Relevant program or faculty",
       "city": "City",
       "country": "Country",
-      "matchScore": 0-100,
       "tuitionEstimate": "Annual estimate with currency, or 'Check official page'",
       "admissionFit": "Reach" | "Target" | "Likely",
-      "whyItMatches": ["3 concrete reasons tied to this student's answers"],
+      "whyItMatches": ["4 or 5 concrete bullets tied to this student's answers; never fewer than 4"],
       "considerations": "One honest risk, tradeoff, or requirement to verify",
       "nextSteps": ["2 practical next actions"],
       "sourceUrl": "Official university or program URL"
@@ -211,7 +209,9 @@ Return exactly valid JSON with this shape:
 
 Rules:
 - Recommend 5 to 7 universities aligned with destination preferences, budget band, academics, lifestyle, and goals.
+- For each match, whyItMatches must be an array of at least 4 and at most 5 strings (each one sentence when possible).
 - Prefer official university or admissions pages for sourceUrl.
+- Do not include matchScore, numeric fit scores, or any other scoring field; the product does not display scores.
 - Do not include markdown, comments, or text outside JSON.
 - Do not invent exact deadlines or scholarship guarantees; say what must be verified on official sites.
 `;
@@ -250,7 +250,39 @@ Rules:
       );
     }
 
-    const matches = safeJsonParse(outputText) as MatchResponse;
+    const parsed = safeJsonParse(outputText) as MatchResponse & {
+      matches?: (UniversityMatch & { matchScore?: unknown })[];
+    };
+    const matches: MatchResponse = {
+      profileSummary: parsed.profileSummary,
+      recommendedStrategy: parsed.recommendedStrategy ?? [],
+      matches: (parsed.matches ?? []).map((m) => {
+        const {
+          universityName,
+          programName,
+          city,
+          country,
+          tuitionEstimate,
+          admissionFit,
+          whyItMatches,
+          considerations,
+          nextSteps,
+          sourceUrl,
+        } = m as UniversityMatch & { matchScore?: unknown };
+        return {
+          universityName,
+          programName,
+          city,
+          country,
+          tuitionEstimate,
+          admissionFit,
+          whyItMatches: asStringArray(whyItMatches),
+          considerations,
+          nextSteps: asStringArray(nextSteps),
+          sourceUrl,
+        };
+      }),
+    };
     const usage = extractOpenAiResponseUsage(result);
     const outputsSummary: Json = {
       profileSummary: matches.profileSummary?.slice(0, 4000) ?? "",
@@ -261,7 +293,6 @@ Rules:
         programName: m.programName,
         city: m.city,
         country: m.country,
-        matchScore: m.matchScore,
         admissionFit: m.admissionFit,
       })),
     };

@@ -1,11 +1,12 @@
 "use client";
 
 import type { Database } from "@/database.types";
+import { sortApplicationDocumentsBySlotOrder } from "@/lib/ensure-student-application-documents";
 import { COUNTRIES } from "@/lib/countries";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
 import { removeUniversityFromShortlist } from "@/actions/universities";
@@ -41,7 +42,11 @@ import {
   ESSAY_STATUS_LABEL,
   ESSAY_TYPE_OPTIONS,
   GRADE_OPTIONS,
+  DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS,
+  OTHER_DOCUMENT_SLOT_KEY,
   SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
+  isOtherDocumentSlot,
+  makeSupplementalOtherDocumentSlotKey,
   TARGET_INTAKE_OPTIONS,
   UNIVERSITY_APPLICATION_STATUSES,
   UNIVERSITY_DECISIONS,
@@ -715,6 +720,98 @@ export function MyApplicationsClient({
     showToast(`${doc.display_name} uploaded`);
   };
 
+  const saveOtherDocumentDisplayName = async (docId: string, displayName: string) => {
+    const t = displayName.trim();
+    if (!t) {
+      showToast("Enter a short name for this document.");
+      return;
+    }
+    if (t.length > 120) {
+      showToast("Name is too long (max 120 characters).");
+      return;
+    }
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("student_my_application_documents")
+      .update({ display_name: t, updated_at: now })
+      .eq("id", docId)
+      .eq("student_id", initial.studentId)
+      .select("*")
+      .single();
+    if (error || !data) {
+      showToast(error?.message ?? "Could not save name");
+      return;
+    }
+    setDocuments((prev) =>
+      sortApplicationDocumentsBySlotOrder(
+        prev.map((d) => (d.id === docId ? data : d)),
+      ),
+    );
+    showToast("Document name saved");
+  };
+
+  const addOtherDocument = async () => {
+    const otherDef = DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS.find(
+      (s) => s.slot_key === OTHER_DOCUMENT_SLOT_KEY,
+    );
+    if (!otherDef) return;
+    const slot_key = makeSupplementalOtherDocumentSlotKey();
+    const { data, error } = await supabase
+      .from("student_my_application_documents")
+      .insert({
+        student_id: initial.studentId,
+        slot_key,
+        display_name: "Other",
+        description: otherDef.description,
+        status: "missing",
+      })
+      .select("*")
+      .single();
+    if (error || !data) {
+      showToast(error?.message ?? "Could not add document row");
+      return;
+    }
+    setDocuments((prev) =>
+      sortApplicationDocumentsBySlotOrder([...prev, data as DocRow]),
+    );
+    showToast("Added another document row");
+  };
+
+  const removeOtherDocument = async (doc: DocRow) => {
+    if (!isOtherDocumentSlot(doc.slot_key)) return;
+    const otherCount = documents.filter((d) =>
+      isOtherDocumentSlot(d.slot_key),
+    ).length;
+    if (otherCount <= 1) {
+      showToast("Keep at least one other document row.");
+      return;
+    }
+    const storagePath = doc.storage_path?.trim();
+    const { error } = await supabase
+      .from("student_my_application_documents")
+      .delete()
+      .eq("id", doc.id)
+      .eq("student_id", initial.studentId);
+    if (error) {
+      showToast(error.message ?? "Could not remove document");
+      return;
+    }
+    if (storagePath) {
+      const { error: rmErr } = await supabase.storage
+        .from("student-my-applications")
+        .remove([storagePath]);
+      if (rmErr) {
+        console.error("[removeOtherDocument] storage remove", rmErr);
+      }
+    }
+    setDocuments((prev) =>
+      sortApplicationDocumentsBySlotOrder(
+        prev.filter((d) => d.id !== doc.id),
+      ),
+    );
+    showToast("Document row removed");
+  };
+
   const addEssay = async () => {
     if (
       !essayForm.title.trim() ||
@@ -945,7 +1042,21 @@ export function MyApplicationsClient({
     "flex items-center justify-between gap-2.5 border-b border-[var(--border-light)] px-5 py-4";
   const panelBodyClass = "px-5 py-[18px]";
 
-  const missingDocs = documents.filter((d) => d.status === "missing").length;
+  const missingDocs = documents.filter(
+    (d) => d.status === "missing" && !isOtherDocumentSlot(d.slot_key),
+  ).length;
+
+  const coreDocuments = useMemo(
+    () => documents.filter((d) => !isOtherDocumentSlot(d.slot_key)),
+    [documents],
+  );
+  const otherDocuments = useMemo(
+    () =>
+      sortApplicationDocumentsBySlotOrder(
+        documents.filter((d) => isOtherDocumentSlot(d.slot_key)),
+      ),
+    [documents],
+  );
 
   const universitiesTabCount = useMemo(
     () => shortlist.length + favourites.length,
@@ -1634,6 +1745,8 @@ export function MyApplicationsClient({
               Upload each file-based document below. <strong>Predicted</strong>{" "}
               is entered by your school and is read-only. Once uploaded, a file
               shows as <strong>Submitted</strong> and you can replace it anytime.
+              Use <strong>Other documents</strong> at the bottom for anything
+              extra (name the row, then upload).
             </p>
           </div>
           <div className={panelClass}>
@@ -1648,13 +1761,60 @@ export function MyApplicationsClient({
               </div>
             </div>
             <div className={`${panelBodyClass} space-y-2`}>
-              {documents.map((d) => (
+              {coreDocuments.map((d) => (
                 <DocumentRow
                   key={d.id}
                   doc={d}
                   onPickFile={(file) => void uploadDocument(d, file)}
                 />
               ))}
+            </div>
+          </div>
+
+          <div className={panelClass}>
+            <div className={panelHeadClass}>
+              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="min-w-0">
+                  <div className="text-[15px] font-semibold tracking-tight">
+                    Other documents
+                  </div>
+                  <div className="mt-0.5 text-xs text-[var(--text-light)]">
+                    Name what you are uploading, then attach a file — medical
+                    forms, extra certificates, or anything else your counselor
+                    should have. Use <strong>Add another document</strong> for
+                    more files.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={`${btnSmClass(false)} shrink-0 self-start sm:mt-0.5`}
+                  onClick={() => void addOtherDocument()}
+                >
+                  Add another document
+                </button>
+              </div>
+            </div>
+            <div className={`${panelBodyClass} space-y-2`}>
+              {otherDocuments.length > 0 ? (
+                otherDocuments.map((d) => (
+                  <DocumentRow
+                    key={d.id}
+                    doc={d}
+                    onPickFile={(file) => void uploadDocument(d, file)}
+                    allowDisplayNameEdit
+                    onSaveDisplayName={(name) =>
+                      void saveOtherDocumentDisplayName(d.id, name)
+                    }
+                    allowRemove={otherDocuments.length > 1}
+                    onRemove={() => void removeOtherDocument(d)}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-[var(--text-mid)]">
+                  Your extra upload slot is not on this list yet. Reload this
+                  page once — it is added automatically for every student.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -2908,10 +3068,27 @@ function TagField({
 function DocumentRow({
   doc,
   onPickFile,
+  allowDisplayNameEdit,
+  onSaveDisplayName,
+  allowRemove,
+  onRemove,
 }: {
   doc: DocRow;
   onPickFile: (f: File) => void;
+  allowDisplayNameEdit?: boolean;
+  onSaveDisplayName?: (name: string) => void | Promise<void>;
+  allowRemove?: boolean;
+  onRemove?: () => void | Promise<void>;
 }) {
+  const nameFieldId = useId();
+  const [nameDraft, setNameDraft] = useState(doc.display_name);
+  useEffect(() => {
+    setNameDraft(doc.display_name);
+  }, [doc.display_name, doc.id]);
+
+  const docFieldClass =
+    "rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 text-[12px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
+
   if (doc.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY) {
     const text = doc.school_text_value?.trim();
     const has = !!text;
@@ -2991,14 +3168,44 @@ function DocumentRow({
         </svg>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[13.5px] font-semibold">{doc.display_name}</div>
+        {allowDisplayNameEdit ? (
+          <div className="flex min-w-0 w-full flex-col gap-1">
+            <label
+              htmlFor={nameFieldId}
+              className="block text-[9.5px] font-semibold uppercase tracking-wide text-[var(--text-hint)]"
+            >
+              Name for your counselor
+            </label>
+            <input
+              id={nameFieldId}
+              className={`${docFieldClass} block w-full min-w-0 py-1.5`}
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="e.g. Medical certificate, national ID"
+              maxLength={120}
+            />
+          </div>
+        ) : (
+          <div className="text-[13.5px] font-semibold">{doc.display_name}</div>
+        )}
         <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
           {doc.file_name && doc.uploaded_at
             ? `${doc.file_name} · Uploaded ${formatDate(doc.uploaded_at)}`
-            : doc.description || "Not uploaded yet"}
+            : allowDisplayNameEdit
+              ? doc.description || "Not uploaded yet — use Upload when ready."
+              : doc.description || "Not uploaded yet"}
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+        {allowDisplayNameEdit ? (
+          <button
+            type="button"
+            className={btnSmClass(false)}
+            onClick={() => void onSaveDisplayName?.(nameDraft.trim())}
+          >
+            Save name
+          </button>
+        ) : null}
         <span
           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
             missing
@@ -3027,6 +3234,15 @@ function DocumentRow({
             {missing ? "Upload" : "Replace"}
           </span>
         </label>
+        {allowRemove ? (
+          <button
+            type="button"
+            className={`${btnSmClass(false)} border-[rgba(231,76,60,0.35)] text-[#8c2d22] hover:bg-[rgba(231,76,60,0.08)]`}
+            onClick={() => void onRemove?.()}
+          >
+            Remove
+          </button>
+        ) : null}
       </div>
     </div>
   );
