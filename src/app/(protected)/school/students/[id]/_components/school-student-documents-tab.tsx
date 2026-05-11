@@ -9,7 +9,8 @@ import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type DocRow = Database["public"]["Tables"]["student_my_application_documents"]["Row"];
+type DocRow =
+  Database["public"]["Tables"]["student_my_application_documents"]["Row"];
 
 const CHECKLIST_STATUS_VALUES = [
   "missing",
@@ -45,7 +46,9 @@ function effectiveChecklistStatus(doc: DocRow): ChecklistStatusValue {
   return s;
 }
 
-function checklistRowVisual(label: string): "missing" | "uploaded" | "approved" | "review" | "default" {
+function checklistRowVisual(
+  label: string,
+): "missing" | "uploaded" | "approved" | "review" | "default" {
   if (label === "Missing") return "missing";
   if (label === "Uploaded" || label === "Needs review") return "uploaded";
   if (label === "Approved") return "approved";
@@ -80,7 +83,7 @@ function iconWrapForVisual(
 }
 
 const selectSmClass =
-  "max-w-[200px] cursor-pointer rounded-lg border-[1.5px] border-[var(--border)] bg-white py-1.5 pr-7 pl-2.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-medium text-[var(--text-mid)] outline-none focus:border-[var(--green-light)]";
+  "max-w-[200px] cursor-pointer rounded-[8px] border-[1.5px] border-[var(--border)] bg-white py-1.5 pr-7 pl-2.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-medium text-[var(--text-mid)] outline-none focus:border-[var(--green-light)]";
 
 function formatUpdated(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -186,7 +189,7 @@ export function SchoolStudentDocumentsTab({
     <div className="mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
       <div className="border-b border-[var(--border-light)] px-5 py-[18px]">
         <div className="text-[15px] font-semibold tracking-tight text-[var(--text)]">
-          Essays & documents
+          Documents
         </div>
         <div className="mt-0.5 text-[12px] text-[var(--text-light)]">
           Document checklist — change status anytime, click upload to add files
@@ -197,7 +200,7 @@ export function SchoolStudentDocumentsTab({
           {predictedDoc ? (
             <div className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-[linear-gradient(to_right,rgba(82,183,135,0.04),transparent)] px-3.5 py-3 sm:flex-row sm:items-center sm:gap-3.5">
               <div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${predIconClass}`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] ${predIconClass}`}
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -229,7 +232,7 @@ export function SchoolStudentDocumentsTab({
                   onChange={(e) => setPredDraft(e.target.value)}
                   onBlur={() => void savePredictedText()}
                   placeholder="e.g. 40/45 IB or A*A*A"
-                  className="w-full min-w-[160px] rounded-md border-[1.5px] border-[var(--border)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[12px] outline-none focus:border-[var(--green-light)] sm:w-[200px]"
+                  className="w-full min-w-[160px] rounded-[8px] border-[1.5px] border-[var(--border)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[12px] outline-none focus:border-[var(--green-light)] sm:w-[200px]"
                 />
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug ${checklistPillClass(predPillLabel === "Entered" ? "Approved" : "Missing")}`}
@@ -257,7 +260,7 @@ export function SchoolStudentDocumentsTab({
                 className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-3 sm:flex-row sm:items-center sm:gap-3.5"
               >
                 <div
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconCls}`}
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] ${iconCls}`}
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -308,7 +311,7 @@ export function SchoolStudentDocumentsTab({
                         : "Student uploads from My applications"
                     }
                     onClick={() => void openDocument(doc)}
-                    className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:pointer-events-none disabled:opacity-45"
+                    className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:pointer-events-none disabled:opacity-45"
                     disabled={!hasFile}
                   >
                     {hasFile ? (

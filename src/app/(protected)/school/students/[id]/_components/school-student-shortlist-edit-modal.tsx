@@ -19,10 +19,11 @@ import {
 import type { Database } from "@/database.types";
 import { useEffect, useState } from "react";
 
-type ShortlistRow = Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
+type ShortlistRow =
+  Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
 
 const fieldClass =
-  "rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
+  "rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
 const labelClass =
   "text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]";
 
@@ -80,8 +81,12 @@ export function SchoolStudentShortlistEditModal({
     setDecision(row.decision ?? "");
     const d = row.docs_status;
     const e = row.essay_status;
-    setDocsStatus(d === "completed" || d === "not_completed" ? d : "not_completed");
-    setEssayStatus(e === "approved" || e === "not_reviewed" ? e : "not_reviewed");
+    setDocsStatus(
+      d === "completed" || d === "not_completed" ? d : "not_completed",
+    );
+    setEssayStatus(
+      e === "approved" || e === "not_reviewed" ? e : "not_reviewed",
+    );
   }, [open, row]);
 
   function handleClose() {
@@ -127,7 +132,11 @@ export function SchoolStudentShortlistEditModal({
         </div>
         <div>
           <label className={labelClass}>University location</label>
-          <select className={`${fieldClass} mt-1.5 w-full`} value={country} onChange={(e) => setCountry(e.target.value)}>
+          <select
+            className={`${fieldClass} mt-1.5 w-full`}
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+          >
             <option value="">Select country…</option>
             {countries.map((c) => (
               <option key={c.id} value={c.name}>
@@ -170,7 +179,11 @@ export function SchoolStudentShortlistEditModal({
         </div>
         <div>
           <label className={labelClass}>Application status</label>
-          <select className={`${fieldClass} mt-1.5 w-full`} value={status} onChange={(e) => setStatus(e.target.value)}>
+          <select
+            className={`${fieldClass} mt-1.5 w-full`}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
             {UNIVERSITY_APPLICATION_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {UNIVERSITY_STATUS_LABEL[s] ?? s}
@@ -225,14 +238,14 @@ export function SchoolStudentShortlistEditModal({
         <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
-            className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
+            className="rounded-[8px] border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
             onClick={handleClose}
           >
             Cancel
           </button>
           <button
             type="button"
-            className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
+            className="rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
             onClick={() => void submit()}
           >
             Save
@@ -241,7 +254,7 @@ export function SchoolStudentShortlistEditModal({
         <div className="flex justify-end border-t border-[var(--border-light)] pt-2.5">
           <button
             type="button"
-            className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--red)] hover:border-[#f0c4c4] hover:bg-[#FCEBEB]"
+            className="rounded-[8px] border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--red)] hover:border-[#f0c4c4] hover:bg-[#FCEBEB]"
             onClick={() => void onRemove()}
           >
             Remove from shortlist

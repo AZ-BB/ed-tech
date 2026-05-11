@@ -223,7 +223,7 @@ export function SchoolStudentInteractionsTab({
               setError(null);
               setModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
+            className="inline-flex items-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -252,7 +252,7 @@ export function SchoolStudentInteractionsTab({
                 className="flex gap-3 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-3"
               >
                 <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconWrapClass(it.interactionKind)}`}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] ${iconWrapClass(it.interactionKind)}`}
                 >
                   <InteractionKindIcon kind={it.interactionKind} />
                 </div>
@@ -297,7 +297,7 @@ export function SchoolStudentInteractionsTab({
             aria-modal="true"
             aria-labelledby="int-modal-title"
             tabIndex={-1}
-            className="flex max-h-[min(90vh,640px)] w-full max-w-[480px] flex-col overflow-hidden rounded-[var(--radius-lg)] bg-white shadow-[0_12px_32px_rgba(15,30,20,.12)]"
+            className="flex max-h-[min(90vh,640px)] w-full max-w-[480px] flex-col overflow-hidden rounded-[14px] bg-white shadow-[0_12px_32px_rgba(15,30,20,.12)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-start justify-between gap-2 border-b border-[var(--border-light)] px-5 py-4">
@@ -310,7 +310,7 @@ export function SchoolStudentInteractionsTab({
               <button
                 type="button"
                 disabled={pending}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-mid)] hover:bg-[var(--cream)] disabled:opacity-55"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--text-mid)] hover:bg-[var(--cream)] disabled:opacity-55"
                 onClick={() => setModalOpen(false)}
                 aria-label="Close"
               >
@@ -346,7 +346,7 @@ export function SchoolStudentInteractionsTab({
                       name="interaction_kind"
                       required
                       disabled={pending}
-                      className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)] disabled:opacity-55"
+                      className="mt-1.5 w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)] disabled:opacity-55"
                       defaultValue="meeting"
                     >
                       {STUDENT_INTERACTION_KINDS.map((k) => (
@@ -370,7 +370,7 @@ export function SchoolStudentInteractionsTab({
                       required
                       disabled={pending}
                       defaultValue={todayIso}
-                      className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)] disabled:opacity-55"
+                      className="mt-1.5 w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)] disabled:opacity-55"
                     />
                   </div>
                 </div>
@@ -390,7 +390,7 @@ export function SchoolStudentInteractionsTab({
                       step={1}
                       placeholder="e.g. 30"
                       disabled={pending}
-                      className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-55"
+                      className="mt-1.5 w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-55"
                     />
                   </div>
                   <div>
@@ -405,7 +405,7 @@ export function SchoolStudentInteractionsTab({
                       name="outcome"
                       required
                       disabled={pending}
-                      className="mt-1.5 w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)] disabled:opacity-55"
+                      className="mt-1.5 w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)] disabled:opacity-55"
                       defaultValue="Productive"
                     >
                       {STUDENT_INTERACTION_OUTCOMES.map((o) => (
@@ -429,7 +429,7 @@ export function SchoolStudentInteractionsTab({
                     required
                     disabled={pending}
                     placeholder="What was discussed, decided, or actioned..."
-                    className="mt-1.5 min-h-[80px] w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-55"
+                    className="mt-1.5 min-h-[80px] w-full resize-y rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-55"
                     maxLength={8000}
                   />
                 </div>
@@ -439,19 +439,19 @@ export function SchoolStudentInteractionsTab({
                   </div>
                 ) : null}
               </div>
-              <div className="flex shrink-0 justify-end gap-2 border-t border-[var(--border-light)] px-5 py-4">
+              <div className="flex shrink-0 justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-5 py-4">
                 <button
                   type="button"
                   disabled={pending}
                   onClick={() => setModalOpen(false)}
-                  className="rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:opacity-55"
+                  className="rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:opacity-55"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={pending}
-                  className="rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-55"
+                  className="rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-55"
                 >
                   {pending ? "Saving…" : "Log interaction"}
                 </button>
