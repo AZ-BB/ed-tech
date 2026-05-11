@@ -303,8 +303,8 @@ export function MyApplicationsClient({
   const [predictedGrades, setPredictedGrades] = useState(
     ap0?.predicted_grades ?? "",
   );
-  const [predictedSchool, setPredictedSchool] = useState(
-    ap0?.predicted_grades_set_by_school ?? false,
+  const predictedGradesLocked = Boolean(
+    initial.applicationProfile?.predicted_grades_set_by_school,
   );
   const [otherTests, setOtherTests] = useState(ap0?.other_tests ?? "");
 
@@ -459,12 +459,14 @@ export function MyApplicationsClient({
       act_score: actScore.trim() || null,
       sat_act_scores: formatLegacySatActSummary(satScore, actScore),
       predicted_grades: predictedGrades || null,
-      predicted_grades_set_by_school: predictedSchool,
+      predicted_grades_set_by_school:
+        initial.applicationProfile?.predicted_grades_set_by_school ?? false,
       other_tests: otherTests || null,
       updated_at: new Date().toISOString(),
     };
   }, [
     initial.studentId,
+    initial.applicationProfile?.predicted_grades_set_by_school,
     grade,
     curriculum,
     targetIntake,
@@ -476,7 +478,6 @@ export function MyApplicationsClient({
     satScore,
     actScore,
     predictedGrades,
-    predictedSchool,
     otherTests,
   ]);
 
@@ -1267,22 +1268,17 @@ export function MyApplicationsClient({
                     Predicted IB / A-Level grades
                   </label>
                   <input
-                    className={`${fieldClass} ${predictedSchool ? "bg-[var(--cream)] text-[var(--text-light)]" : ""}`}
+                    className={`${fieldClass} ${predictedGradesLocked ? "bg-[var(--cream)] text-[var(--text-light)]" : ""}`}
                     value={predictedGrades}
                     onChange={(e) => setPredictedGrades(e.target.value)}
-                    disabled={predictedSchool}
+                    disabled={predictedGradesLocked}
                   />
-                  <div className="flex items-center gap-2 text-[11.5px] text-[var(--text-hint)]">
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={predictedSchool}
-                        onChange={(e) => setPredictedSchool(e.target.checked)}
-                        className="rounded border-[var(--border)]"
-                      />
-                      Mark as set by school (student read-only)
-                    </label>
-                  </div>
+                  {predictedGradesLocked ? (
+                    <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
+                      Your school entered this — ask your counselor if it needs
+                      updating.
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>
