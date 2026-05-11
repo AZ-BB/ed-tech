@@ -2032,6 +2032,7 @@ export type Database = {
         Row: {
           application_deadline: string | null
           application_method: string | null
+          catalog_university_id: string | null
           country: string | null
           created_at: string
           decision: string | null
@@ -2048,6 +2049,7 @@ export type Database = {
         Insert: {
           application_deadline?: string | null
           application_method?: string | null
+          catalog_university_id?: string | null
           country?: string | null
           created_at?: string
           decision?: string | null
@@ -2064,6 +2066,7 @@ export type Database = {
         Update: {
           application_deadline?: string | null
           application_method?: string | null
+          catalog_university_id?: string | null
           country?: string | null
           created_at?: string
           decision?: string | null
@@ -2078,6 +2081,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "student_shortlist_universities_catalog_university_id_fkey"
+            columns: ["catalog_university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "student_shortlist_universities_student_id_fkey"
             columns: ["student_id"]

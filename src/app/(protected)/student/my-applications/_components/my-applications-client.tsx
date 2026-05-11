@@ -8,7 +8,13 @@ import type { ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 
 import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
-import type { EssayWithComments, MyApplicationsInitialPayload } from "../_lib/my-applications-types";
+import { removeUniversityFromShortlist } from "@/actions/universities";
+import { moveCatalogFavouriteToApplicationShortlist } from "@/actions/student-my-application-universities";
+import type {
+  ActivityCatalogUniversity,
+  EssayWithComments,
+  MyApplicationsInitialPayload,
+} from "../_lib/my-applications-types";
 import { getStudentApplicationProfileCompletion } from "@/lib/student-application-profile-completion";
 import {
   labelPreferredDestinationEntry,
@@ -310,6 +316,9 @@ export function MyApplicationsClient({
   const [otherTests, setOtherTests] = useState(ap0?.other_tests ?? "");
 
   const [shortlist, setShortlist] = useState<ShortlistRow[]>(initial.shortlist);
+  const [favourites, setFavourites] = useState<ActivityCatalogUniversity[]>(
+    () => initial.activityFavouriteUniversities,
+  );
   const [documents, setDocuments] = useState<DocRow[]>(initial.documents);
   const [essays, setEssays] = useState<EssayWithComments[]>(initial.essays);
   const [recs, setRecs] = useState<RecRow[]>(initial.recommendations);
@@ -624,7 +633,19 @@ export function MyApplicationsClient({
   };
 
   const removeUniversity = async (id: string) => {
-    if (!confirm("Remove from shortlist?")) return;
+    if (!confirm("Remove this university from your shortlist?")) return;
+    const row = shortlist.find((r) => r.id === id);
+    if (row?.catalog_university_id) {
+      const res = await removeUniversityFromShortlist(row.catalog_university_id);
+      if (res.error) {
+        showToast(
+          typeof res.error === "string" ? res.error : "Could not remove.",
+        );
+        return;
+      }
+      setShortlist((prev) => prev.filter((r) => r.id !== id));
+      return;
+    }
     const { error } = await supabase
       .from("student_shortlist_universities")
       .delete()
@@ -634,6 +655,27 @@ export function MyApplicationsClient({
       return;
     }
     setShortlist((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const moveFavouriteToShortlist = async (u: ActivityCatalogUniversity) => {
+    const res = await moveCatalogFavouriteToApplicationShortlist(u.uniId);
+    if (res.error || !res.data) {
+      showToast(
+        typeof res.error === "string"
+          ? res.error
+          : "Could not move to shortlist.",
+      );
+      return;
+    }
+    const inserted = res.data;
+    setFavourites((prev) => prev.filter((x) => x.uniId !== u.uniId));
+    setShortlist((prev) => {
+      if (prev.some((r) => r.id === inserted.id)) {
+        return prev.map((r) => (r.id === inserted.id ? inserted : r));
+      }
+      return [inserted, ...prev];
+    });
+    showToast(`${u.name} moved to your shortlist`);
   };
 
   const uploadDocument = async (doc: DocRow, file: File) => {
@@ -906,8 +948,8 @@ export function MyApplicationsClient({
   const missingDocs = documents.filter((d) => d.status === "missing").length;
 
   const universitiesTabCount = useMemo(
-    () => shortlist.length + initial.activityShortlistedUniversities.length,
-    [shortlist.length, initial.activityShortlistedUniversities.length],
+    () => shortlist.length + favourites.length,
+    [shortlist.length, favourites.length],
   );
 
   return (
@@ -1324,47 +1366,59 @@ export function MyApplicationsClient({
               </svg>
             </div>
             <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              Universities you shortlist in <strong>University Search</strong>{" "}
-              appear below. Use <strong>Your application shortlist</strong> to
-              track status and decisions for every school — including ones you
-              add manually.
+              Tap the star on a university in{" "}
+              <Link
+                href="/student/universities"
+                className="font-semibold text-[var(--green-dark)] underline decoration-[var(--green)] underline-offset-2 hover:text-[var(--green)]"
+              >
+                University Search
+              </Link>{" "}
+              to add it to <strong>Favorites</strong> here. Use{" "}
+              <strong>Move to shortlist</strong> when you are ready to track
+              status and decisions, or add a school manually in{" "}
+              <strong>Shortlist</strong>.
             </p>
           </div>
 
-          {initial.activityShortlistedUniversities.length > 0 ? (
-            <div className={panelClass}>
-              <div className={panelHeadClass}>
-                <div>
-                  <div className="text-[15px] font-semibold tracking-tight">
-                    From University Search{" "}
-                    <span className="font-normal text-[var(--text-light)]">
-                      ({initial.activityShortlistedUniversities.length})
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                    Pulled from your shortlist in the catalog (student
-                    activities)
-                  </div>
+          <div className={panelClass}>
+            <div className={panelHeadClass}>
+              <div>
+                <div className="text-[15px] font-semibold tracking-tight">
+                  Favorites{" "}
+                  <span className="font-normal text-[var(--text-light)]">
+                    ({favourites.length})
+                  </span>
+                </div>
+                <div className="mt-0.5 text-xs text-[var(--text-light)]">
+                  Schools you starred in the catalog — not visible to your
+                  counselor until they are on your shortlist
                 </div>
               </div>
-              <div className={`${panelBodyClass} space-y-2`}>
-                {initial.activityShortlistedUniversities.map((u) => (
+            </div>
+            <div className={`${panelBodyClass} space-y-2`}>
+              {favourites.length === 0 ? (
+                <p className="text-sm text-[var(--text-mid)]">
+                  No favorites yet — open University Search and tap the star on
+                  any card to save it here.
+                </p>
+              ) : (
+                favourites.map((u) => (
                   <div
                     key={u.uniId}
                     className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[#E6F1FB] text-[#185FA5]">
+                      <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fffbeb] text-[#b8860b]">
                         <svg
                           width="14"
                           height="14"
                           viewBox="0 0 24 24"
-                          fill="none"
+                          fill="currentColor"
                           stroke="currentColor"
-                          strokeWidth="2"
+                          strokeWidth="1.2"
                           aria-hidden
                         >
-                          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                          <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
                         </svg>
                       </div>
                       <div className="min-w-0">
@@ -1372,7 +1426,7 @@ export function MyApplicationsClient({
                           <span className="text-[13.5px] font-semibold">
                             {u.name}
                           </span>
-                          <span className="rounded-full bg-[var(--green-pale)] px-2 py-0.5 text-[10px] font-semibold text-[var(--green-dark)]">
+                          <span className="rounded-full bg-[#fffbeb] px-2 py-0.5 text-[10px] font-semibold text-[#8a6d1b]">
                             Catalog
                           </span>
                         </div>
@@ -1389,39 +1443,42 @@ export function MyApplicationsClient({
                               </span>
                             </>
                           ) : null}
-                          {u.deadlineDate ? (
-                            <> · Deadline {formatDate(u.deadlineDate)}</>
-                          ) : null}
-                          {u.createdAt ? (
-                            <> · Shortlisted {formatDate(u.createdAt)}</>
-                          ) : null}
                         </div>
                       </div>
                     </div>
-                    <Link
-                      href={`/student/universities/${u.uniId}`}
-                      className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
-                    >
-                      View in catalog
-                    </Link>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <Link
+                        href={`/student/universities/${u.uniId}`}
+                        className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+                      >
+                        View in catalog
+                      </Link>
+                      <button
+                        type="button"
+                        className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-colors hover:bg-[var(--green-dark)]"
+                        onClick={() => void moveFavouriteToShortlist(u)}
+                      >
+                        Move to shortlist
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          ) : null}
+          </div>
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Your application shortlist{" "}
+                  Shortlist{" "}
                   <span className="font-normal text-[var(--text-light)]">
                     ({shortlist.length})
                   </span>
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Track status and decisions — add schools not in the catalog
-                  here
+                  Track application status and decisions — your counselor sees
+                  this list. Add schools manually if they are not in the catalog.
                 </div>
               </div>
               <button
@@ -1446,9 +1503,9 @@ export function MyApplicationsClient({
             <div className={`${panelBodyClass} space-y-2`}>
               {shortlist.length === 0 ? (
                 <p className="text-sm text-[var(--text-mid)]">
-                  {initial.activityShortlistedUniversities.length > 0
-                    ? "No manual entries yet — add deadlines, status, and decisions above, or use Add university for schools outside the catalog."
-                    : "No universities yet — shortlist schools from University Search or add one here."}
+                  {favourites.length > 0
+                    ? "Nothing on your shortlist yet — move a favorite here when you are ready to track it, or use Add university."
+                    : "No schools on your shortlist yet — move a favorite here or add one manually."}
                 </p>
               ) : (
                 shortlist.map((u) => (
@@ -1487,17 +1544,11 @@ export function MyApplicationsClient({
                               </span>
                             </>
                           ) : null}
-                          {u.application_deadline ? (
-                            <>
-                              {" "}
-                              · Deadline {formatDate(u.application_deadline)}
-                            </>
-                          ) : null}
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                      <div>
+                    <div className="flex w-full min-w-0 flex-col gap-2 lg:max-w-[min(100%,420px)] lg:flex-1 lg:flex-row lg:items-end lg:gap-2">
+                      <div className="min-w-0 flex-1">
                         <div className="mb-1 text-[9.5px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
                           Status
                         </div>
@@ -1521,7 +1572,7 @@ export function MyApplicationsClient({
                           ))}
                         </select>
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="mb-1 text-[9.5px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
                           Decision
                         </div>
@@ -1549,21 +1600,10 @@ export function MyApplicationsClient({
                       </div>
                       <button
                         type="button"
-                        title="Remove"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center self-end rounded-lg border border-[var(--border)] text-[var(--text-light)] hover:border-[#f0c4c4] hover:bg-[#FCEBEB] hover:text-[var(--red)]"
+                        className="inline-flex w-full shrink-0 items-center justify-center self-stretch rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[#f0c4c4] hover:bg-[#FCEBEB] hover:text-[var(--red)] lg:w-auto lg:self-end"
                         onClick={() => void removeUniversity(u.id)}
                       >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          aria-hidden
-                        >
-                          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                        </svg>
+                        Remove from shortlist
                       </button>
                     </div>
                   </div>

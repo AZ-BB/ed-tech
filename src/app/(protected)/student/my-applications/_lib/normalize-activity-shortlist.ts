@@ -1,4 +1,4 @@
-import type { ActivityShortlistedUniversity } from "./my-applications-types";
+import type { ActivityCatalogUniversity } from "./my-applications-types";
 
 type UniEmbed = {
   id: string;
@@ -17,9 +17,9 @@ export type ActivityShortlistQueryRow = {
   universities: UniEmbed;
 };
 
-export function normalizeActivityShortlistUniversities(
+export function normalizeActivityCatalogUniversities(
   rows: ActivityShortlistQueryRow[] | null,
-): ActivityShortlistedUniversity[] {
+): ActivityCatalogUniversity[] {
   if (!rows?.length) return [];
 
   const bestByUni = new Map<
@@ -38,7 +38,7 @@ export function normalizeActivityShortlistUniversities(
     }
   }
 
-  const out: ActivityShortlistedUniversity[] = Array.from(bestByUni.values()).map(({ activityId, createdAt, uni }) => ({
+  const out: ActivityCatalogUniversity[] = Array.from(bestByUni.values()).map(({ activityId, createdAt, uni }) => ({
     activityId,
     uniId: uni.id,
     createdAt,
@@ -58,3 +58,6 @@ export function normalizeActivityShortlistUniversities(
 
   return out;
 }
+
+/** @deprecated Use normalizeActivityCatalogUniversities */
+export const normalizeActivityShortlistUniversities = normalizeActivityCatalogUniversities;

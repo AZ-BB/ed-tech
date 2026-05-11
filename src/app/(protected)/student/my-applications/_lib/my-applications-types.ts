@@ -16,8 +16,8 @@ export type EssayWithComments = EssayRow & {
 type RecRow = Database["public"]["Tables"]["student_my_application_recommendations"]["Row"];
 type TaskRow = Database["public"]["Tables"]["student_my_application_tasks"]["Row"];
 
-/** One row per university: latest `student_activities` shortlist for that catalog uni. */
-export type ActivityShortlistedUniversity = {
+/** One catalog university per `uni_id`: latest matching `student_activities` row (e.g. type save). */
+export type ActivityCatalogUniversity = {
   activityId: number;
   uniId: string;
   createdAt: string | null;
@@ -34,7 +34,7 @@ export type MyApplicationsInitialPayload = {
   profile: StudentProfileRow;
   countries: { id: string; name: string }[];
   applicationProfile: ApplicationProfileRow | null;
-  activityShortlistedUniversities: ActivityShortlistedUniversity[];
+  activityFavouriteUniversities: ActivityCatalogUniversity[];
   shortlist: ShortlistRow[];
   documents: DocRow[];
   essays: EssayWithComments[];
