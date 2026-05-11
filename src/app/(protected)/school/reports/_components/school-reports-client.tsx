@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { SchoolReportsPayload } from "../_lib/fetch-school-reports";
 
@@ -85,60 +85,11 @@ const REPORT_CSS = `
 @media (max-width:760px){.${REPORT_SCOPE} .rpt-stats{grid-template-columns:repeat(2,1fr)}.${REPORT_SCOPE} .rpt-two-col{grid-template-columns:1fr}.${REPORT_SCOPE} .out-summary{grid-template-columns:repeat(2,1fr)}}
 `;
 
-async function exportReportToPdf(container: HTMLElement, filename: string) {
-  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-    import("html2canvas"),
-    import("jspdf"),
-  ]);
-
-  const canvas = await html2canvas(container, {
-    scale: Math.min(
-      2,
-      typeof window !== "undefined" ? window.devicePixelRatio || 2 : 2,
-    ),
-    useCORS: true,
-    logging: false,
-    scrollY: -window.scrollY,
-    scrollX: -window.scrollX,
-    windowWidth: container.scrollWidth,
-    windowHeight: container.scrollHeight,
-  });
-
-  const imgData = canvas.toDataURL("image/jpeg", 0.92);
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
-
-  const margin = 10;
-  const pdfW = pdf.internal.pageSize.getWidth();
-  const pdfH = pdf.internal.pageSize.getHeight();
-  const imgW = pdfW - margin * 2;
-  const imgH = (canvas.height * imgW) / canvas.width;
-
-  let heightLeft = imgH;
-  let position = margin;
-
-  pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
-  heightLeft -= pdfH - margin * 2;
-
-  while (heightLeft > 0) {
-    position = margin - (imgH - heightLeft);
-    pdf.addPage();
-    pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
-    heightLeft -= pdfH - margin * 2;
-  }
-
-  pdf.save(filename);
-}
-
 type Props = {
   data: SchoolReportsPayload;
 };
 
 export function SchoolReportsClient({ data }: Props) {
-  const rootRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [exporting, setExporting] = useState(false);
   const [outcomesPage, setOutcomesPage] = useState(1);
@@ -160,34 +111,19 @@ export function SchoolReportsClient({ data }: Props) {
   }, [outcomesPage]);
 
   const handleExportPdf = useCallback(async () => {
-    const el = rootRef.current;
-    if (!el) return;
-
-    const restores: { el: HTMLElement; display: string }[] = [];
-    el.querySelectorAll("tr[data-outcome-index]").forEach((node) => {
-      const row = node as HTMLElement;
-      const idx = Number(row.dataset.outcomeIndex);
-      if (Number.isNaN(idx)) return;
-      const visible =
-        idx >= pagedOutcomeIndexes.start && idx < pagedOutcomeIndexes.end;
-      if (!visible) {
-        restores.push({ el: row, display: row.style.display });
-        row.style.display = "table-row";
-      }
-    });
-
     setExporting(true);
     try {
-      await exportReportToPdf(el, `school-report-${data.monthKey}.pdf`);
+      const { buildSchoolReportPdf } = await import(
+        "../_lib/build-school-report-pdf"
+      );
+      const doc = buildSchoolReportPdf(data);
+      doc.save(`school-report-${data.monthKey}.pdf`);
     } catch (e) {
       console.error("[SchoolReportsClient] PDF export failed:", e);
     } finally {
-      restores.forEach(({ el: row, display }) => {
-        row.style.display = display;
-      });
       setExporting(false);
     }
-  }, [data.monthKey, pagedOutcomeIndexes.end, pagedOutcomeIndexes.start]);
+  }, [data]);
 
   const fullTitle = `${data.schoolName} — University Guidance Report`;
 
@@ -198,7 +134,7 @@ export function SchoolReportsClient({ data }: Props) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: REPORT_CSS }} />
-      <div ref={rootRef} id={REPORT_SCOPE} className={REPORT_SCOPE}>
+      <div id={REPORT_SCOPE} className={REPORT_SCOPE}>
         <div className="panel">
           <div className="panel-head">
             <div>
