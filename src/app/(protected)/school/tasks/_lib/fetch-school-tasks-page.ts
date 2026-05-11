@@ -9,7 +9,7 @@ export type SchoolTaskTableRow = {
   lastName: string;
   email: string;
   title: string;
-  description: string | null;
+  notes: string | null;
   priority: string;
   dueDate: string | null;
   completed: boolean;
@@ -60,7 +60,7 @@ type TaskQueryRow = {
   id: string;
   student_id: string;
   title: string;
-  description: string | null;
+  notes: string | null;
   priority: string;
   due_date: string | null;
   completed: boolean;
@@ -164,7 +164,7 @@ export async function fetchSchoolTasksPage(
       id,
       student_id,
       title,
-      description,
+      notes,
       priority,
       due_date,
       completed,
@@ -189,7 +189,7 @@ export async function fetchSchoolTasksPage(
     const e = escapeIlike(qTrim);
     const p = `%${e}%`;
     q = q.or(
-      `title.ilike.${p},description.ilike.${p},student_profiles.first_name.ilike.${p},student_profiles.last_name.ilike.${p},student_profiles.email.ilike.${p}`,
+      `title.ilike.${p},notes.ilike.${p},student_profiles.first_name.ilike.${p},student_profiles.last_name.ilike.${p},student_profiles.email.ilike.${p}`,
     );
   }
 
@@ -241,7 +241,7 @@ export async function fetchSchoolTasksPage(
       lastName: sp?.last_name?.trim() ?? "",
       email: sp?.email?.trim() ?? "",
       title: t.title,
-      description: t.description,
+      notes: t.notes,
       priority: t.priority,
       dueDate: t.due_date,
       completed: t.completed,

@@ -7,7 +7,6 @@ export type SidebarNavItem =
       id: string;
       label: string;
       href: string;
-      iconPaths: string[];
     };
 
 export const sidebarNavItems: SidebarNavItem[] = [
@@ -16,86 +15,66 @@ export const sidebarNavItems: SidebarNavItem[] = [
     id: "dashboard",
     label: "Dashboard",
     href: "/student",
-    iconPaths: [
-      "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z",
-      "M9 22V12h6v10",
-    ],
   },
   {
     type: "link",
     id: "my-applications",
-    label: "My Applications",
+    label: "My applications",
     href: "/student/my-applications",
-    iconPaths: [
-      "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z",
-      "M14 2v6h6",
-    ],
+  },
+  {
+    type: "link",
+    id: "personality-check",
+    label: "Personality Check",
+    href: "#",
+  },
+  {
+    type: "link",
+    id: "program-discovery",
+    label: "Program Discovery",
+    href: "#",
   },
   {
     type: "link",
     id: "university-search",
     label: "University Search",
     href: "/student/universities",
-    iconPaths: ["M2 7l10-5 10 5-10 5z", "M2 17l10 5 10-5", "M2 12l10 5 10-5"],
   },
   {
     type: "link",
-    id: "scholarship-search",
-    label: "Scholarship Search",
+    id: "scholarships",
+    label: "Scholarships",
     href: "/student/scholarships",
-    iconPaths: [
-      "M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z",
-    ],
-  },
-  {
-    type: "link",
-    id: "ai-matching",
-    label: "AI University Matching",
-    href: "/student/ai-matching",
-    iconPaths: [
-      "M12 2l1 3.5L16.5 4l-1.5 3 3.5 1-3.5 1.5L16.5 13l-3.5-1.5L12 15l-1-3.5L7.5 13l1.5-3.5L5.5 8l3.5-1L7.5 4l3.5 1.5z",
-      "M19 9l.5 1.5L21 11l-1.5.5L19 13l-.5-1.5L17 11l1.5-.5z",
-      "M5 18l.5 1.5L7 20l-1.5.5L5 22l-.5-1.5L3 20l1.5-.5z",
-    ],
   },
   {
     type: "link",
     id: "advisor-sessions",
-    label: "1:1 Advisor Sessions",
+    label: "1-1 Advisors",
     href: "/student/advisor-sessions",
-    iconPaths: [
-      "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2",
-      "M12 7a4 4 0 100-8 4 4 0 000 8",
-    ],
   },
   {
     type: "link",
     id: "ambassadors",
-    label: "University Ambassadors",
+    label: "Ambassadors",
     href: "/student/ambassadors",
-    iconPaths: [
-      "M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2",
-      "M9 7a4 4 0 100-8 4 4 0 000 8",
-      "M22 21v-2a4 4 0 00-3-3.87",
-      "M16 3.13a4 4 0 010 7.75",
-    ],
-  },
-  {
-    type: "link",
-    id: "essay-review",
-    label: "Essay Review",
-    href: "/student/essay-review",
-    iconPaths: [
-      "M12 20h9",
-      "M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z",
-    ],
   },
   {
     type: "link",
     id: "application-support",
     label: "Application Support",
     href: "/student/application-support",
-    iconPaths: ["M22 2L11 13", "M22 2l-7 20-4-9-9-4 20-7z"],
+  },
+  {
+    type: "link",
+    id: "post-admission-support",
+    label: "Post Admission Support",
+    href: "#",
+  },
+  {
+    type: "link",
+    id: "webinars",
+    label: "Webinars",
+    href: "#",
   },
   { type: "divider" },
   {
@@ -103,10 +82,6 @@ export const sidebarNavItems: SidebarNavItem[] = [
     id: "account-settings",
     label: "Account Settings",
     href: "#",
-    iconPaths: [
-      "M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z",
-      "M12 15a3 3 0 100-6 3 3 0 000 6",
-    ],
   },
 ];
 
@@ -145,6 +120,17 @@ export type DashboardActivityLogItem = {
   createdAt: string | null;
 };
 
+export type DashboardTaskItem = {
+  id: string;
+  title: string;
+  notes: string | null;
+  dueDate: string | null;
+  priority: string;
+  completed: boolean;
+  assignedByName: string | null;
+  createdAt: string;
+};
+
 export type QuickAction = {
   name: string;
   desc: string;
@@ -156,7 +142,35 @@ export type QuickAction = {
 
 export const quickActions: QuickAction[] = [
   {
-    name: "Discover universities",
+    name: "Personality Check",
+    desc: "Understand your profile and how you learn best",
+    href: "#",
+    iconWrap: "bg-[#F3E8FF]",
+    iconStroke: "#6B21A8",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+        <path d="M9 9h.01" />
+        <path d="M15 9h.01" />
+      </>
+    ),
+  },
+  {
+    name: "Program Discovery",
+    desc: "Search and filter wide range of programs",
+    href: "#",
+    iconWrap: "bg-[#E0F2FE]",
+    iconStroke: "#0369A1",
+    icon: (
+      <>
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+      </>
+    ),
+  },
+  {
+    name: "Discover Universities",
     desc: "Search and filter 500+ universities",
     href: "/student/universities",
     iconWrap: "bg-[var(--green-bg)]",
@@ -169,34 +183,17 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "AI matching",
-    desc: "Find universities that fit your profile",
-    href: "/student/ai-matching",
-    iconWrap: "bg-[#E6F1FB]",
-    iconStroke: "#185FA5",
+    name: "Scholarships",
+    desc: "Discover funding opportunities",
+    href: "/student/scholarships",
+    iconWrap: "bg-[#FEF9C3]",
+    iconStroke: "#854D0E",
     icon: (
-      <>
-        <circle cx="11" cy="11" r="8" />
-        <path d="M21 21l-4.35-4.35" />
-        <path d="M8 11h6M11 8v6" />
-      </>
+      <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
     ),
   },
   {
-    name: "Essay review",
-    desc: "Get AI-powered feedback on your essay",
-    href: "/student/essay-review",
-    iconWrap: "bg-[#EEEDFE]",
-    iconStroke: "#534AB7",
-    icon: (
-      <>
-        <path d="M12 20h9" />
-        <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-      </>
-    ),
-  },
-  {
-    name: "Advisor sessions",
+    name: "1-1 Advisors",
     desc: "Book 1:1 guidance with an expert",
     href: "/student/advisor-sessions",
     iconWrap: "bg-[#FAEEDA]",
@@ -223,7 +220,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Application support",
+    name: "Application Support",
     desc: "We handle your full application",
     href: "/student/application-support",
     iconWrap: "bg-[#FCEBEB]",
@@ -236,25 +233,16 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Scholarships",
-    desc: "Discover funding opportunities",
-    href: "/student/scholarships",
-    iconWrap: "bg-[#FEF9C3]",
-    iconStroke: "#854D0E",
-    icon: (
-      <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
-    ),
-  },
-  {
-    name: "Exam Prep",
-    desc: "Prepare for IELTS, SAT, and more",
+    name: "Post Admission Support",
+    desc: "Visa, housing, and arrival guidance after you get in",
     href: "#",
-    iconWrap: "bg-[#E0F2FE]",
-    iconStroke: "#0369A1",
+    iconWrap: "bg-[#DCFCE7]",
+    iconStroke: "#166534",
     icon: (
       <>
-        <path d="M9 11l3 3L22 4" />
-        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+        <path d="M3.27 6.96L12 12.01l8.73-5.05" />
+        <path d="M12 22.08V12" />
       </>
     ),
   },

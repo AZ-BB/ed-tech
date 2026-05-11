@@ -17,7 +17,11 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "From Confusion to Acceptance",
+  applicationName: "Univeera",
+  title: {
+    default: "Univeera — From Confusion to Acceptance",
+    template: "%s · Univeera",
+  },
   description:
     "Discover, prepare, and apply to universities — all in one platform designed to guide you from your first search to your acceptance letter.",
 };

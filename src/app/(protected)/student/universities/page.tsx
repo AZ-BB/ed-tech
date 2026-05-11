@@ -5,6 +5,7 @@ import {
     STUDENT_PLATFORM_COMPLETION_FLAGS,
 } from "@/lib/student-platform-completion";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import Link from "next/link";
 import { Suspense } from "react";
 import { UniversitiesFilter } from "./_components/universities-filter";
 import { UniversityCard, type UniversityCardUniversity } from "./_components/university-card";
@@ -361,6 +362,35 @@ export default async function StudentUniversitiesPage({
                     Search and compare universities based on your interests,
                     goals, and admission profile.
                 </p>
+            </div>
+
+            <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#ece9e4] bg-white px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-5">
+                <div className="min-w-0">
+                    <div className="text-sm font-semibold text-[#1a1a1a]">
+                        AI university matching
+                    </div>
+                    <p className="mt-1 max-w-xl text-xs leading-snug text-[#7a7a7a]">
+                        Get ranked suggestions from your profile — same journey as
+                        search, focused on fit.
+                    </p>
+                </div>
+                <Link
+                    href="/student/ai-matching"
+                    className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[#2D6A4F] px-5 py-2.5 text-[13px] font-semibold text-white no-underline transition-all hover:bg-[#1B4332] hover:-translate-y-px sm:self-center"
+                >
+                    Open AI matching
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        aria-hidden
+                    >
+                        <path d="M5 12h14M13 5l7 7-7 7" />
+                    </svg>
+                </Link>
             </div>
 
             <Suspense fallback={

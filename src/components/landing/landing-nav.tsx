@@ -79,7 +79,7 @@ export function LandingNav() {
             <path d="M2 12l10 5 10-5" />
           </svg>
         </div>
-        UniApply
+        Univeera
       </a>
       <div className="nav-links">
         <a className="nav-link" href="#how-it-works">

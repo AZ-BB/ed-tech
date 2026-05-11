@@ -22,7 +22,7 @@ export default function PrivacyPage() {
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          UniApply
+          Univeera
         </Link>
         <div className="nav-links">
           <Link className="nav-link" href="/#how-it-works">
@@ -54,13 +54,13 @@ export default function PrivacyPage() {
       <div className="content">
         <h2>Introduction</h2>
         <p>
-          UniApply (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) is
+          Univeera (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) is
           committed to protecting the privacy of our users. This Privacy Policy
           explains how we collect, use, store, and protect your personal
           information when you use our platform, website, and services.
         </p>
         <p>
-          By using UniApply, you agree to the collection and use of information
+          By using Univeera, you agree to the collection and use of information
           in accordance with this policy. If you do not agree, please do not use
           our services.
         </p>
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
         <h2>How we use your information</h2>
         <p>
           We use the information we collect to operate, improve, and personalise
-          your experience on UniApply.
+          your experience on Univeera.
         </p>
         <ul>
           <li>
@@ -166,7 +166,7 @@ export default function PrivacyPage() {
         </ul>
         <p>
           To exercise any of these rights, please contact us at
-          hello@uniapply.com.
+          hello@univeera.com.
         </p>
 
         <h2>Cookies</h2>
@@ -178,7 +178,7 @@ export default function PrivacyPage() {
 
         <h2>Children&apos;s privacy</h2>
         <p>
-          UniApply is designed for students who are typically 16 years or older.
+          Univeera is designed for students who are typically 16 years or older.
           We do not knowingly collect personal information from children under
           the age of 13. If we become aware that we have collected data from a
           child under 13, we will take steps to delete it promptly.
@@ -188,14 +188,14 @@ export default function PrivacyPage() {
         <p>
           We may update this Privacy Policy from time to time. When we make
           significant changes, we will notify you through the platform or by
-          email. Your continued use of UniApply after changes are posted
+          email. Your continued use of Univeera after changes are posted
           constitutes your acceptance of the updated policy.
         </p>
 
         <h2>Contact us</h2>
         <p>
           If you have questions about this Privacy Policy or how we handle your
-          data, please contact us at hello@uniapply.com.
+          data, please contact us at hello@univeera.com.
         </p>
       </div>
 
@@ -227,7 +227,7 @@ export default function PrivacyPage() {
                   <path d="M2 17l10 5 10-5" />
                 </svg>
               </div>
-              UniApply
+              Univeera
             </div>
             <div className="footer-brand-desc">
               Empowering MENA students to access better education opportunities
@@ -235,32 +235,14 @@ export default function PrivacyPage() {
             </div>
           </div>
           <div>
-            <div className="footer-col-title">Product</div>
-            <Link className="footer-link" href="#">
-              University search
-            </Link>
-            <Link className="footer-link" href="#">
-              AI matching
-            </Link>
-            <Link className="footer-link" href="#">
-              Essay feedback
-            </Link>
-            <Link className="footer-link" href="#">
-              Scholarships
-            </Link>
-            <Link className="footer-link" href="#">
-              Test prep
-            </Link>
-          </div>
-          <div>
             <div className="footer-col-title">Resources</div>
-            <Link className="footer-link" href="for_schools.html">
+            <Link className="footer-link" href="/for-schools">
               For schools
             </Link>
-            <Link className="footer-link" href="for_advisors.html">
+            <Link className="footer-link" href="/for-advisors">
               For advisors
             </Link>
-            <Link className="footer-link" href="blog.html">
+            <Link className="footer-link" href="/blog">
               Blog
             </Link>
           </div>
@@ -269,7 +251,7 @@ export default function PrivacyPage() {
             <Link className="footer-link" href="/about">
               About
             </Link>
-            <Link className="footer-link" href="contact.html">
+            <Link className="footer-link" href="/contact">
               Contact
             </Link>
             <Link className="footer-link" href="/privacy">
@@ -280,7 +262,7 @@ export default function PrivacyPage() {
             </Link>
           </div>
         </div>
-        <div className="footer-bottom">2026 UniApply. All rights reserved.</div>
+        <div className="footer-bottom">2026 Univeera. All rights reserved.</div>
       </footer>
     </>
   );

@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import Link from "next/link";
 import {
+  ArrowLeft,
   ArrowRight,
   Check,
   ChevronDown,
@@ -1075,6 +1076,15 @@ export function AiUniversityMatching() {
   if (result) {
     return (
       <div className="mx-auto w-full px-5 pb-[60px] pt-1">
+        <div className="mb-4">
+          <Link
+            href="/student/universities"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--text-mid)] no-underline transition hover:text-[var(--green)]"
+          >
+            <ArrowLeft className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+            Back to university search
+          </Link>
+        </div>
         <header className="results-header mb-6 text-center">
           <h1 className="serif mb-1.5 text-[28px] text-[var(--text)]">Your best matches</h1>
           <p className="mx-auto text-[14px] text-[var(--text-light)]">
@@ -1167,6 +1177,15 @@ export function AiUniversityMatching() {
 
   return (
     <div className="mx-auto w-full  px-5 pb-[60px] pt-1">
+      <div className="mb-4">
+        <Link
+          href="/student/universities"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--text-mid)] no-underline transition hover:text-[var(--green)]"
+        >
+          <ArrowLeft className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+          Back to university search
+        </Link>
+      </div>
       {toast ? (
         <div className="fixed bottom-8 left-1/2 z-[1000] -translate-x-1/2 rounded-[50px] bg-[var(--green-dark)] px-[22px] py-2.5 text-[12.5px] font-medium text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
           {toast}

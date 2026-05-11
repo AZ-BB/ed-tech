@@ -174,7 +174,7 @@ export async function generateMetadata(props: { params: Promise<PageParams> }): 
     const supabase = await createSupabaseSecretClient();
     const { data } = await supabase.from("universities").select("name").eq("id", id).maybeSingle();
     const name = data?.name;
-    return { title: name ? `${name} · UniApply` : "University · UniApply" };
+    return { title: name ? `${name} · Univeera` : "University · Univeera" };
 }
 
 export default async function StudentUniversityDetailPage(props: { params: Promise<PageParams> }) {

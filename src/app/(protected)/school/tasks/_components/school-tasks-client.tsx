@@ -376,7 +376,7 @@ export function SchoolTasksClient({
                 const done = Boolean(r.completed);
                 const studentName =
                   `${r.firstName} ${r.lastName}`.trim() || r.email;
-                const descTrim = r.description?.trim() ?? "";
+                const descTrim = r.notes?.trim() ?? "";
                 const metaNote =
                   isStudentProfile && descTrim
                     ? metaDescriptionSnippet(descTrim)
@@ -613,7 +613,7 @@ export function SchoolTasksClient({
                   </label>
                   <textarea
                     id="nt-desc"
-                    name="description"
+                    name="notes"
                     rows={3}
                     placeholder="Add context or steps for the student…"
                     className="mt-1.5 w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]"

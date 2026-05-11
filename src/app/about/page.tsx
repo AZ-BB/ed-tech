@@ -74,7 +74,7 @@ export default function AboutPage() {
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          UniApply
+          Univeera
         </Link>
         <div className="nav-links">
           <Link className="nav-link" href="/#how-it-works">
@@ -102,7 +102,7 @@ export default function AboutPage() {
         <h1>We built what we wish we had</h1>
         <p>
           Applying to university shouldn&apos;t feel confusing, overwhelming, or
-          lonely. We created UniApply to simplify the journey — and give
+          lonely. We created Univeera to simplify the journey — and give
           students the clarity we never had.
         </p>
       </div>
@@ -127,7 +127,7 @@ export default function AboutPage() {
           <div className="highlight-quote">
             &quot;What if everything a student needs existed in one place?&quot;
           </div>
-          <p>That&apos;s where UniApply started.</p>
+          <p>That&apos;s where Univeera started.</p>
         </div>
         <div className="split-visual">
           <div className="illus-card">
@@ -145,7 +145,7 @@ export default function AboutPage() {
             Not just a platform — a better way to apply
           </div>
           <div className="features-sub">
-            UniApply brings together everything students need into one simple
+            Univeera brings together everything students need into one simple
             experience.
           </div>
           <div className="feat-grid">
@@ -262,7 +262,7 @@ export default function AboutPage() {
           <p>
             We believe technology should guide you — not replace human support.
           </p>
-          <p>That&apos;s why UniApply combines:</p>
+          <p>That&apos;s why Univeera combines:</p>
           <ul className="check-list">
             <li>
               <CheckIcon />
@@ -442,7 +442,7 @@ export default function AboutPage() {
                   <path d="M2 17l10 5 10-5" />
                 </svg>
               </div>
-              UniApply
+              Univeera
             </div>
             <div className="footer-brand-desc">
               Empowering MENA students to access better education opportunities
@@ -450,32 +450,14 @@ export default function AboutPage() {
             </div>
           </div>
           <div>
-            <div className="footer-col-title">Product</div>
-            <Link className="footer-link" href="#">
-              University search
-            </Link>
-            <Link className="footer-link" href="#">
-              AI matching
-            </Link>
-            <Link className="footer-link" href="#">
-              Essay feedback
-            </Link>
-            <Link className="footer-link" href="#">
-              Scholarships
-            </Link>
-            <Link className="footer-link" href="#">
-              Test prep
-            </Link>
-          </div>
-          <div>
             <div className="footer-col-title">Resources</div>
-            <Link className="footer-link" href="for_schools.html">
+            <Link className="footer-link" href="/for-schools">
               For schools
             </Link>
-            <Link className="footer-link" href="for_advisors.html">
+            <Link className="footer-link" href="/for-advisors">
               For advisors
             </Link>
-            <Link className="footer-link" href="blog.html">
+            <Link className="footer-link" href="/blog">
               Blog
             </Link>
           </div>
@@ -484,7 +466,7 @@ export default function AboutPage() {
             <Link className="footer-link" href="/about">
               About
             </Link>
-            <Link className="footer-link" href="contact.html">
+            <Link className="footer-link" href="/contact">
               Contact
             </Link>
             <Link className="footer-link" href="/privacy">
@@ -495,7 +477,7 @@ export default function AboutPage() {
             </Link>
           </div>
         </div>
-        <div className="footer-bottom">2026 UniApply. All rights reserved.</div>
+        <div className="footer-bottom">2026 Univeera. All rights reserved.</div>
       </footer>
     </>
   );
