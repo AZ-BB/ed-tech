@@ -7,6 +7,7 @@ export type StudentApplicationProfileCompletionInput = {
   programs: string[];
   english: string;
   sat: string;
+  act: string;
 };
 
 export type StudentApplicationProfileCompletionRow = Pick<
@@ -16,6 +17,8 @@ export type StudentApplicationProfileCompletionRow = Pick<
   | "preferred_destinations"
   | "interested_programs"
   | "english_test_scores"
+  | "sat_score"
+  | "act_score"
   | "sat_act_scores"
 >;
 
@@ -29,9 +32,11 @@ export function getStudentApplicationProfileCompletion(
   if (args.curriculum.trim()) ok++;
   if (args.destinations.length) ok++;
   if (args.programs.length) ok++;
-  if (args.english.trim() || args.sat.trim()) ok++;
-  if (args.english.trim() && args.sat.trim()) ok++;
-  else if (args.english.trim() || args.sat.trim()) ok += 0.5;
+  const hasEnglish = !!args.english.trim();
+  const hasStandardizedTest = !!(args.sat.trim() || args.act.trim());
+  if (hasEnglish || hasStandardizedTest) ok++;
+  if (hasEnglish && hasStandardizedTest) ok++;
+  else if (hasEnglish || hasStandardizedTest) ok += 0.5;
   const pct = Math.round((ok / total) * 100);
   const missing = total - Math.ceil(ok);
   return { pct: Math.min(100, pct), missing: Math.max(0, missing) };
@@ -46,6 +51,7 @@ export function studentApplicationProfileRowToCompletionInput(
     destinations: row?.preferred_destinations ?? [],
     programs: row?.interested_programs ?? [],
     english: row?.english_test_scores ?? "",
-    sat: row?.sat_act_scores ?? "",
+    sat: row?.sat_score ?? row?.sat_act_scores ?? "",
+    act: row?.act_score ?? "",
   };
 }
