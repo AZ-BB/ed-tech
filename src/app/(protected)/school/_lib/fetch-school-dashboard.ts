@@ -10,53 +10,10 @@ import {
 } from "@/lib/student-application-profile-completion";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
+import { parseSchoolDashboardShortlistTopStats } from "./parse-shortlist-top-stats";
+
 const PAGE_SIZE = 1000;
 const DASHBOARD_SHORTLIST_TOP_N = 6;
-
-function parseSchoolDashboardShortlistTopStats(raw: unknown): {
-  topDestinations: { label: string; count: number }[];
-  topPrograms: { label: string; count: number }[];
-  shortlistRowCount: number;
-} {
-  const empty = {
-    topDestinations: [] as { label: string; count: number }[],
-    topPrograms: [] as { label: string; count: number }[],
-    shortlistRowCount: 0,
-  };
-  if (!raw || typeof raw !== "object") return empty;
-  const o = raw as Record<string, unknown>;
-
-  const parseList = (v: unknown): { label: string; count: number }[] => {
-    if (!Array.isArray(v)) return [];
-    const out: { label: string; count: number }[] = [];
-    for (const item of v) {
-      if (!item || typeof item !== "object") continue;
-      const r = item as Record<string, unknown>;
-      const label = typeof r.label === "string" ? r.label : "";
-      const c =
-        typeof r.count === "number"
-          ? r.count
-          : typeof r.count === "string"
-            ? Number(r.count)
-            : NaN;
-      if (!label.trim() || !Number.isFinite(c)) continue;
-      out.push({ label, count: Math.trunc(c) });
-    }
-    return out;
-  };
-
-  const src = o.shortlist_row_count;
-  const shortlistRowCount =
-    typeof src === "number" ? src : typeof src === "string" ? Number(src) : NaN;
-
-  return {
-    topDestinations: parseList(o.destinations),
-    topPrograms: parseList(o.programs),
-    shortlistRowCount: Number.isFinite(shortlistRowCount)
-      ? Math.trunc(shortlistRowCount)
-      : 0,
-  };
-}
 
 export type SchoolDashboardAttentionRow = {
   id: string;
