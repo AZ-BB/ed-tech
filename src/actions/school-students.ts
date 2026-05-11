@@ -2,6 +2,10 @@
 
 import { fetchPendingInvitesPage } from "@/app/(protected)/school/students/_lib/fetch-pending-invites-page";
 import {
+  fetchAllSchoolStudentTableRows,
+  type SchoolStudentTableRow,
+} from "@/app/(protected)/school/students/_lib/fetch-school-students-page";
+import {
   DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS,
   SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
 } from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
@@ -716,4 +720,49 @@ export async function updateSchoolPredictedDocumentSlot(
   revalidatePath(`/school/students/${studentId}`);
   revalidatePath("/student/my-applications");
   return { ok: true };
+}
+
+/** Full student list for CSV export (current search / grade / destination filters, no pagination). */
+export async function getSchoolStudentsFullExportRows(
+  q: string,
+  grade: string,
+  dest: string,
+): Promise<GeneralResponse<SchoolStudentTableRow[] | null>> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: null, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError) {
+    console.error("[getSchoolStudentsFullExportRows]", sapError);
+    return {
+      data: null,
+      error: "Could not load your school admin profile.",
+    };
+  }
+
+  if (!sap?.school_id) {
+    return {
+      data: null,
+      error: "Your account is not linked to a school.",
+    };
+  }
+
+  const rows = await fetchAllSchoolStudentTableRows(supabase, sap.school_id, {
+    q: typeof q === "string" ? q : "",
+    grade: typeof grade === "string" ? grade : "",
+    destination: typeof dest === "string" ? dest : "",
+  });
+
+  return { data: rows, error: null };
 }
