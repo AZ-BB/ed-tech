@@ -81,7 +81,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "account-settings",
     label: "Account Settings",
-    href: "#",
+    href: "/student/settings",
   },
 ];
 
