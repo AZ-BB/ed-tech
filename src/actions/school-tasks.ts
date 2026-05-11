@@ -134,6 +134,123 @@ export async function createSchoolStudentTask(
   return { data: null, error: null };
 }
 
+const BULK_MAX_STUDENTS = 50;
+
+export async function bulkCreateSchoolStudentTasks(
+  _prev: GeneralResponse<{ created: number } | null> | null,
+  formData: FormData,
+): Promise<GeneralResponse<{ created: number } | null>> {
+  const auth = await requireSchoolAdminSchoolId();
+  if ("error" in auth) {
+    return { data: null, error: auth.error };
+  }
+
+  let studentIds: string[] = [];
+  try {
+    const raw = String(formData.get("student_ids") ?? "").trim();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      return { data: null, error: "Invalid student list." };
+    }
+    studentIds = parsed.map((x) => String(x ?? "").trim()).filter(Boolean);
+  } catch {
+    return { data: null, error: "Invalid student list." };
+  }
+
+  const unique = [...new Set(studentIds)];
+  if (unique.length === 0) {
+    return { data: null, error: "Select at least one student." };
+  }
+  if (unique.length > BULK_MAX_STUDENTS) {
+    return {
+      data: null,
+      error: `You can assign to at most ${BULK_MAX_STUDENTS} students at once.`,
+    };
+  }
+
+  for (const id of unique) {
+    if (!UUID_RE.test(id)) {
+      return { data: null, error: "Invalid student selection." };
+    }
+  }
+
+  const title = String(formData.get("title") ?? "").trim();
+  const notesRaw = String(formData.get("notes") ?? "").trim();
+  const dueRaw = String(formData.get("due_date") ?? "").trim();
+  const priority = normalizePriority(String(formData.get("priority") ?? ""));
+
+  if (!title) {
+    return { data: null, error: "Describe the task." };
+  }
+  if (!dueRaw || !/^\d{4}-\d{2}-\d{2}$/.test(dueRaw)) {
+    return { data: null, error: "Pick a valid due date." };
+  }
+  if (notesRaw.length > 4000) {
+    return {
+      data: null,
+      error: "Notes must be at most 4000 characters.",
+    };
+  }
+
+  const secret = await createSupabaseSecretClient();
+
+  const { data: allowedRows, error: qErr } = await secret
+    .from("student_profiles")
+    .select("id")
+    .eq("school_id", auth.schoolId)
+    .in("id", unique);
+
+  if (qErr) {
+    console.error("[bulkCreateSchoolStudentTasks] list", qErr);
+    return { data: null, error: "Could not verify students." };
+  }
+
+  const allowed = new Set((allowedRows ?? []).map((r) => r.id));
+  if (allowed.size !== unique.length) {
+    return {
+      data: null,
+      error: "Some selected students are not at your school.",
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: sap } = await supabase
+    .from("school_admin_profiles")
+    .select("first_name, last_name")
+    .eq("id", auth.userId)
+    .maybeSingle();
+
+  const assignedBy =
+    `${sap?.first_name?.trim() ?? ""} ${sap?.last_name?.trim() ?? ""}`.trim() ||
+    null;
+
+  const due_date = dueRaw;
+  const notes =
+    notesRaw.length > 8000
+      ? notesRaw.slice(0, 8000)
+      : notesRaw || null;
+
+  const rows = unique.map((student_id) => ({
+    student_id,
+    title,
+    notes,
+    priority,
+    due_date,
+    assigned_by_name: assignedBy,
+  }));
+
+  const { error: insErr } = await secret
+    .from("student_my_application_tasks")
+    .insert(rows);
+
+  if (insErr) {
+    console.error("[bulkCreateSchoolStudentTasks]", insErr);
+    return { data: null, error: "Could not create the tasks." };
+  }
+
+  return { data: { created: unique.length }, error: null };
+}
+
 export async function toggleSchoolStudentTask(
   taskId: string,
 ): Promise<{ ok: true } | { error: string }> {
