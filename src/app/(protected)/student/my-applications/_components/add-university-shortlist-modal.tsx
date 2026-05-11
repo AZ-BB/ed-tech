@@ -7,8 +7,9 @@ import { APPLICATION_METHOD_OPTIONS } from "../_lib/my-applications-defaults";
 import { ModalVeil } from "./modal-veil";
 
 const fieldClass =
-  "rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
-const labelClass = "text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]";
+  "rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
+const labelClass =
+  "text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]";
 
 export type AddUniversityShortlistForm = {
   university_name: string;
@@ -81,7 +82,9 @@ export function AddUniversityShortlistModal({
           <input
             className={`${fieldClass} mt-1.5 w-full`}
             value={form.university_name}
-            onChange={(e) => setForm((f) => ({ ...f, university_name: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, university_name: e.target.value }))
+            }
             placeholder="e.g. University of Edinburgh"
           />
         </div>
@@ -90,7 +93,9 @@ export function AddUniversityShortlistModal({
           <select
             className={`${fieldClass} mt-1.5 w-full`}
             value={form.country}
-            onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, country: e.target.value }))
+            }
           >
             <option value="">Select country…</option>
             {countries.map((c) => (
@@ -105,7 +110,9 @@ export function AddUniversityShortlistModal({
           <input
             className={`${fieldClass} mt-1.5 w-full`}
             value={form.major_program}
-            onChange={(e) => setForm((f) => ({ ...f, major_program: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, major_program: e.target.value }))
+            }
             placeholder="e.g. BSc Finance"
           />
         </div>
@@ -114,7 +121,9 @@ export function AddUniversityShortlistModal({
           <select
             className={`${fieldClass} mt-1.5 w-full`}
             value={form.application_method}
-            onChange={(e) => setForm((f) => ({ ...f, application_method: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, application_method: e.target.value }))
+            }
           >
             <option value="">Select application system…</option>
             {APPLICATION_METHOD_OPTIONS.map((m) => (
@@ -130,21 +139,23 @@ export function AddUniversityShortlistModal({
             type="date"
             className={`${fieldClass} mt-1.5 w-full`}
             value={form.application_deadline}
-            onChange={(e) => setForm((f) => ({ ...f, application_deadline: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, application_deadline: e.target.value }))
+            }
           />
         </div>
       </div>
       <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
         <button
           type="button"
-          className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
+          className="rounded-[8px] border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
           onClick={handleClose}
         >
           Cancel
         </button>
         <button
           type="button"
-          className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
+          className="rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
           onClick={() => void submit()}
         >
           {submitLabel}

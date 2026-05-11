@@ -9,7 +9,6 @@ import type {
   EssayCommentRow,
   EssayWithComments,
 } from "@/app/(protected)/student/my-applications/_lib/my-applications-types";
-import type { SchoolStudentDetailPayload } from "@/app/(protected)/school/students/[id]/_lib/fetch-school-student-detail";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useRouter } from "next/navigation";
 import {
@@ -19,8 +18,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-
-import "./school-student-essays-teacher-portal.css";
 
 /** Essay type options — Teacher Portal Final.html `m-essay-type` (exact strings). */
 const TEACHER_PORTAL_ESSAY_TYPES = [
@@ -32,6 +29,110 @@ const TEACHER_PORTAL_ESSAY_TYPES = [
   "CV / resume",
   "Other",
 ] as const;
+
+const ESSAY_ROW_BASE =
+  "flex items-start gap-3.5 rounded-[10px] border p-3.5 transition-all duration-150 hover:border-[var(--border)] max-[680px]:flex-wrap";
+
+const ESSAY_ICON_BASE =
+  "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] [&_svg]:h-4 [&_svg]:w-4";
+
+const SELECT_CHEVRON_BG = `url("data:image/svg+xml,utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%236a6a6a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>")`;
+
+const BTN_SECONDARY_SM =
+  "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold leading-none text-[var(--text-mid)] transition-all duration-150 hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] [&_svg]:h-[13px] [&_svg]:w-[13px]";
+
+const BTN_PRIMARY_SM =
+  "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold leading-none text-white transition-all duration-150 hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] [&_svg]:h-[13px] [&_svg]:w-[13px]";
+
+const MODAL_VEIL =
+  "fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(15,30,20,0.5)] p-5";
+
+const MODAL_SHELL_BASE =
+  "w-full overflow-hidden rounded-[14px] bg-white shadow-[0_12px_32px_rgba(15,30,20,0.08)]";
+
+const MODAL_HEAD =
+  "flex items-center justify-between border-b border-[var(--border-light)] px-[22px] py-[18px]";
+
+const MODAL_TITLE =
+  "font-[family-name:var(--font-dm-serif)] text-xl tracking-tight text-[var(--text)]";
+
+const MODAL_BODY = "flex flex-col gap-[14px] px-[22px] py-[18px]";
+
+const MODAL_FOOT =
+  "flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5";
+
+const MODAL_CLOSE =
+  "flex cursor-pointer rounded-md p-1.5 text-[var(--text-light)] hover:bg-[var(--cream)] hover:text-[var(--text)]";
+
+const M_FIELD_LABEL =
+  "mb-1.5 block text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-mid)]";
+
+const M_FIELD_CONTROL =
+  "w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)]";
+
+const TEXTAREA_FIELD = `${M_FIELD_CONTROL} min-h-[60px] resize-y`;
+
+function essayRowKind(
+  status: EssayStatusSlug,
+  hasFile: boolean,
+): "ready" | "no-file" | "in-progress" | "default" {
+  if (status === "ready_for_review") return "ready";
+  if (!hasFile) return "no-file";
+  if (status === "in_progress") return "in-progress";
+  return "default";
+}
+
+function essayRowClassName(kind: ReturnType<typeof essayRowKind>): string {
+  const surface =
+    kind === "no-file"
+      ? "border-dashed border-[var(--border-light)] bg-[#fdfdfa]"
+      : "border-solid border-[var(--border-light)] bg-white";
+  return `${ESSAY_ROW_BASE} ${surface}`;
+}
+
+/** Matches `essayStatusSelectClass` / status pill tones so the row icon reflects essay status. */
+function essayIconClassName(tone: "green" | "amber" | "grey"): string {
+  const accent = {
+    green: "bg-[rgba(82,183,135,0.13)] text-[#1b4332]",
+    amber: "bg-[rgba(212,162,42,0.14)] text-[#7a5d10]",
+    grey: "bg-[#eceae5] text-[var(--text-mid)]",
+  }[tone];
+  return `${ESSAY_ICON_BASE} ${accent}`;
+}
+
+function essayStatusSelectClass(tone: "green" | "amber" | "grey"): string {
+  const base =
+    "w-full appearance-none cursor-pointer rounded-[8px] border-[1.5px] bg-no-repeat bg-[length:10px_6px] bg-[position:right_8px_center] py-[7px] pl-2.5 pr-6 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold outline-none focus:border-[var(--green-light)]";
+  const by = {
+    green:
+      "border-[rgba(82,183,135,0.3)] bg-[rgba(82,183,135,0.13)] text-[#1b4332]",
+    amber:
+      "border-[rgba(212,162,42,0.3)] bg-[rgba(212,162,42,0.14)] text-[#7a5d10]",
+    grey: "border-[var(--border)] bg-[#eceae5] text-[var(--text-mid)]",
+  };
+  return `${base} ${by[tone]}`;
+}
+
+function statusPillClass(tone: "green" | "amber" | "grey"): string {
+  const base =
+    "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug";
+  const by = {
+    green: "bg-[rgba(82,183,135,0.13)] text-[#1b4332]",
+    amber: "bg-[rgba(212,162,42,0.14)] text-[#7a5d10]",
+    grey: "bg-[#eceae5] text-[var(--text-mid)]",
+  };
+  return `${base} ${by[tone]}`;
+}
+
+function statusPillDotClass(tone: "green" | "amber" | "grey"): string {
+  return `h-1.5 w-1.5 shrink-0 rounded-full ${
+    tone === "green"
+      ? "bg-[var(--green-bright)]"
+      : tone === "amber"
+        ? "bg-[#d4a22a]"
+        : "bg-[#a0a0a0]"
+  }`;
+}
 
 function formatDate(iso: string | null | undefined) {
   if (!iso) return "—";
@@ -58,55 +159,18 @@ function normalizeEssays(list: EssayWithComments[]): EssayWithComments[] {
   }));
 }
 
-function essayRowClass(
-  status: EssayStatusSlug,
-  hasFile: boolean,
-): "ready" | "no-file" | "in-progress" | "" {
-  if (status === "ready_for_review") return "ready";
-  if (!hasFile) return "no-file";
-  if (status === "in_progress") return "in-progress";
-  return "";
-}
-
-function essayStatusTone(
-  status: EssayStatusSlug,
-): "green" | "amber" | "grey" {
+function essayStatusTone(status: EssayStatusSlug): "green" | "amber" | "grey" {
   if (status === "ready_for_review") return "green";
   if (status === "in_progress") return "amber";
   return "grey";
 }
 
-function computeMissingShortlistUniversities(
-  essays: EssayWithComments[],
-  shortlist: SchoolStudentDetailPayload["shortlist"],
-): string[] {
-  const covered = new Set<string>();
-  for (const e of essays) {
-    const raw = e.for_application?.trim();
-    if (!raw) continue;
-    for (const part of raw.split(/, ?/)) {
-      const t = part.trim().toLowerCase();
-      if (t) covered.add(t);
-    }
-  }
-  const missing: string[] = [];
-  for (const row of shortlist) {
-    if (row.status === "considering") continue;
-    const name = row.university_name?.trim();
-    if (!name) continue;
-    if (!covered.has(name.toLowerCase())) missing.push(name);
-  }
-  return missing;
-}
-
 export function SchoolStudentEssaysTab({
   studentId,
   initialEssays,
-  shortlist,
 }: {
   studentId: string;
   initialEssays: EssayWithComments[];
-  shortlist: SchoolStudentDetailPayload["shortlist"];
 }) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -142,15 +206,12 @@ export function SchoolStudentEssaysTab({
     window.setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const detailEssay = detailId ? essays.find((x) => x.id === detailId) : undefined;
+  const detailEssay = detailId
+    ? essays.find((x) => x.id === detailId)
+    : undefined;
   const uploadEssay = uploadEssayId
     ? essays.find((x) => x.id === uploadEssayId)
     : undefined;
-
-  const missingShortlistUnis = useMemo(
-    () => computeMissingShortlistUniversities(essays, shortlist),
-    [essays, shortlist],
-  );
 
   const openDetail = (e: EssayWithComments) => {
     setDetailId(e.id);
@@ -184,9 +245,7 @@ export function SchoolStudentEssaysTab({
       !form.for_application.trim() ||
       !form.essay_type.trim()
     ) {
-      setNewModalError(
-        "Essay title, university, and essay type are required.",
-      );
+      setNewModalError("Essay title, university, and essay type are required.");
       return;
     }
     const { data, error } = await supabase
@@ -198,7 +257,9 @@ export function SchoolStudentEssaysTab({
         for_application: form.for_application.trim(),
         essay_prompt: form.essay_prompt.trim() || null,
         limit_note: form.limit_note.trim() || null,
-        deadline: form.deadline.trim() ? form.deadline.trim().slice(0, 10) : null,
+        deadline: form.deadline.trim()
+          ? form.deadline.trim().slice(0, 10)
+          : null,
         instructions_note: form.instructions_note.trim() || null,
         requirement_note: null,
         status: "not_started",
@@ -263,9 +324,7 @@ export function SchoolStudentEssaysTab({
     hasFile: boolean,
   ) => {
     if (next === "ready_for_review" && !hasFile) {
-      showToast(
-        "Upload an essay draft before marking as Ready for review",
-      );
+      showToast("Upload an essay draft before marking as Ready for review");
       return;
     }
     void updateStatus(essayId, next);
@@ -375,7 +434,7 @@ export function SchoolStudentEssaysTab({
     const comments = e.student_my_application_essay_comments ?? [];
     const hasFile = Boolean(e.file_storage_path && e.file_name);
     const st = e.status as EssayStatusSlug;
-    const rowExtra = essayRowClass(st, hasFile);
+    const rowKind = essayRowKind(st, hasFile);
     const selTone = essayStatusTone(st);
 
     const metaParts: ReactNode[] = [
@@ -388,9 +447,7 @@ export function SchoolStudentEssaysTab({
     if (e.limit_note?.trim())
       metaParts.push(<span key="lim">{e.limit_note.trim()}</span>);
     if (e.deadline)
-      metaParts.push(
-        <span key="due">Deadline: {formatDate(e.deadline)}</span>,
-      );
+      metaParts.push(<span key="due">Deadline: {formatDate(e.deadline)}</span>);
     if (e.last_edited_at)
       metaParts.push(
         <span key="led">Last edited {formatDate(e.last_edited_at)}</span>,
@@ -399,11 +456,8 @@ export function SchoolStudentEssaysTab({
     const firstAuthor = comments[0]?.author_display_name?.trim();
 
     return (
-      <div
-        key={e.id}
-        className={`essay-row${rowExtra ? ` ${rowExtra}` : ""}`}
-      >
-        <div className="essay-icon">
+      <div key={e.id} className={essayRowClassName(rowKind)}>
+        <div className={essayIconClassName(selTone)}>
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -415,9 +469,11 @@ export function SchoolStudentEssaysTab({
             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </div>
-        <div className="essay-info">
-          <div className="essay-title">{e.title}</div>
-          <div className="essay-meta">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-semibold leading-snug text-[var(--text)]">
+            {e.title}
+          </div>
+          <div className="mt-0.5 text-[11.5px] leading-relaxed text-[var(--text-light)]">
             {metaParts.map((node, idx) => (
               <span key={idx}>
                 {idx > 0 ? " · " : null}
@@ -426,8 +482,9 @@ export function SchoolStudentEssaysTab({
             ))}
           </div>
           {hasFile ? (
-            <div className="essay-file-line">
+            <div className="mt-2 flex items-center gap-1.5 rounded-md bg-[var(--cream)] px-2.5 py-1.5 text-[12px] text-[var(--text-mid)]">
               <svg
+                className="h-3 w-3 shrink-0 text-[var(--text-light)]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -437,8 +494,10 @@ export function SchoolStudentEssaysTab({
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                 <path d="M14 2v6h6" />
               </svg>
-              <span className="essay-file-name">{e.file_name}</span>
-              <span style={{ color: "var(--text-hint)" }}>
+              <span className="font-medium text-[var(--text)]">
+                {e.file_name}
+              </span>
+              <span className="text-[var(--text-hint)]">
                 · Uploaded{" "}
                 {e.file_uploaded_at
                   ? formatDate(e.file_uploaded_at)
@@ -446,8 +505,9 @@ export function SchoolStudentEssaysTab({
               </span>
             </div>
           ) : (
-            <div className="essay-file-line empty">
+            <div className="mt-2 flex items-center gap-1.5 py-1.5 text-[12px] italic text-[var(--text-hint)]">
               <svg
+                className="h-3 w-3 shrink-0 text-[var(--text-light)]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -462,7 +522,7 @@ export function SchoolStudentEssaysTab({
             </div>
           )}
           {comments.length > 0 ? (
-            <div className="essay-comments-line">
+            <div className="mt-1.5 flex items-center gap-1 text-[11.5px] font-medium text-[var(--green)] [&_svg]:h-[11px] [&_svg]:w-[11px]">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -477,16 +537,13 @@ export function SchoolStudentEssaysTab({
             </div>
           ) : null}
         </div>
-        <div className="essay-actions">
+        <div className="flex min-w-[170px] shrink-0 flex-col gap-1.5 max-[680px]:mt-2 max-[680px]:w-full max-[680px]:min-w-0 max-[680px]:flex-row max-[680px]:flex-wrap">
           <select
-            className={`essay-status-select ${selTone}`}
+            className={`max-[680px]:basis-full ${essayStatusSelectClass(selTone)}`}
+            style={{ backgroundImage: SELECT_CHEVRON_BG }}
             value={st}
             onChange={(ev) =>
-              onStatusChange(
-                e.id,
-                ev.target.value as EssayStatusSlug,
-                hasFile,
-              )
+              onStatusChange(e.id, ev.target.value as EssayStatusSlug, hasFile)
             }
             aria-label="Essay status"
           >
@@ -495,21 +552,16 @@ export function SchoolStudentEssaysTab({
                 key={v}
                 value={v}
                 disabled={v === "ready_for_review" && !hasFile}
-                title={
-                  v === "ready_for_review" && !hasFile
-                    ? "Upload a draft before marking as Ready for review"
-                    : undefined
-                }
               >
                 {ESSAY_STATUS_LABEL[v]}
                 {v === "ready_for_review" && !hasFile ? " (upload first)" : ""}
               </option>
             ))}
           </select>
-          <div className="essay-actions-row">
+          <div className="flex gap-1.5 max-[680px]:basis-full max-[680px]:grow [&>button]:flex-1 [&>button]:justify-center">
             <button
               type="button"
-              className="btn sm"
+              className={BTN_SECONDARY_SM}
               onClick={() => {
                 setUploadEssayId(e.id);
                 setPendingFile(null);
@@ -519,17 +571,12 @@ export function SchoolStudentEssaysTab({
             </button>
             <button
               type="button"
-              className="btn sm"
+              className={BTN_SECONDARY_SM}
               onClick={() => openDetail(e)}
             >
               Open
             </button>
           </div>
-          {!hasFile ? (
-            <div className="essay-helper">
-              Upload a draft before marking as Ready for review
-            </div>
-          ) : null}
         </div>
       </div>
     );
@@ -539,19 +586,21 @@ export function SchoolStudentEssaysTab({
   const detailPill = stDetail ? essayStatusTone(stDetail) : "grey";
 
   return (
-    <div className="sd-essay-portal">
-      <div className="panel">
-        <div className="panel-head">
+    <>
+      <div className="mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-light)] px-5 py-[18px]">
           <div>
-            <div className="panel-title">Essays</div>
-            <div className="panel-sub">
-              Essay requirements + uploaded drafts. Status updates auto-flow
-              as files come in.
+            <div className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-[var(--text)]">
+              Essays
+            </div>
+            <div className="mt-0.5 text-xs text-[var(--text-light)]">
+              Essay requirements + uploaded drafts. Status updates auto-flow as
+              files come in.
             </div>
           </div>
           <button
             type="button"
-            className="btn primary sm"
+            className={BTN_PRIMARY_SM}
             onClick={() => {
               setNewModalError(null);
               setNewModal(true);
@@ -563,6 +612,7 @@ export function SchoolStudentEssaysTab({
               stroke="currentColor"
               strokeWidth="2.5"
               aria-hidden
+              className="h-[13px] w-[13px]"
             >
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -570,11 +620,11 @@ export function SchoolStudentEssaysTab({
             New essay
           </button>
         </div>
-        <div className="panel-body">
-          <div className="essays">{rowsHtml}</div>
+        <div className="px-5 py-[18px]">
+          <div className="flex flex-col gap-2">{rowsHtml}</div>
           {essays.length === 0 ? (
-            <div className="empty">
-              <div className="empty-icon">
+            <div className="px-5 py-10 text-center text-[13px] text-[var(--text-light)]">
+              <div className="mb-2.5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--green-pale)] text-[var(--green)] [&_svg]:h-5 [&_svg]:w-5">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -585,27 +635,9 @@ export function SchoolStudentEssaysTab({
                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                 </svg>
               </div>
-              No essay requirements yet — click &quot;+ New essay&quot; to add
-              one
-            </div>
-          ) : null}
-          {missingShortlistUnis.length > 0 ? (
-            <div className="essay-empty-card">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
               <div>
-                Need to write essays for:{" "}
-                <strong>{missingShortlistUnis.join(", ")}</strong>. Click
-                &quot;+ New essay&quot; above to add essay requirements.
+                No essay requirements yet — click &quot;+ New essay&quot; to add
+                one
               </div>
             </div>
           ) : null}
@@ -614,19 +646,17 @@ export function SchoolStudentEssaysTab({
 
       {newModal ? (
         <div
-          className="sd-essay-portal-modal-veil"
+          className={MODAL_VEIL}
           role="dialog"
           aria-modal
-          onClick={(ev) =>
-            ev.target === ev.currentTarget && setNewModal(false)
-          }
+          onClick={(ev) => ev.target === ev.currentTarget && setNewModal(false)}
         >
-          <div className="modal">
-            <div className="modal-head">
-              <div className="modal-title">Add new essay requirement</div>
+          <div className={`${MODAL_SHELL_BASE} max-w-[480px]`}>
+            <div className={MODAL_HEAD}>
+              <div className={MODAL_TITLE}>Add new essay requirement</div>
               <button
                 type="button"
-                className="modal-x"
+                className={MODAL_CLOSE}
                 onClick={() => setNewModal(false)}
                 aria-label="Close"
               >
@@ -643,14 +673,15 @@ export function SchoolStudentEssaysTab({
                 </svg>
               </button>
             </div>
-            <div className="modal-body">
-              <div className="m-field">
-                <label htmlFor="tp-essay-title">
+            <div className={MODAL_BODY}>
+              <div>
+                <label className={M_FIELD_LABEL} htmlFor="tp-essay-title">
                   Essay title{" "}
-                  <span style={{ color: "var(--red, #e74c3c)" }}>*</span>
+                  <span className="text-[var(--red,#e74c3c)]">*</span>
                 </label>
                 <input
                   id="tp-essay-title"
+                  className={M_FIELD_CONTROL}
                   placeholder="e.g. Why Manchester essay"
                   value={form.title}
                   onChange={(x) =>
@@ -658,13 +689,14 @@ export function SchoolStudentEssaysTab({
                   }
                 />
               </div>
-              <div className="m-field">
-                <label htmlFor="tp-essay-uni">
+              <div>
+                <label className={M_FIELD_LABEL} htmlFor="tp-essay-uni">
                   University{" "}
-                  <span style={{ color: "var(--red, #e74c3c)" }}>*</span>
+                  <span className="text-[var(--red,#e74c3c)]">*</span>
                 </label>
                 <input
                   id="tp-essay-uni"
+                  className={M_FIELD_CONTROL}
                   placeholder="e.g. University of Manchester"
                   value={form.for_application}
                   onChange={(x) =>
@@ -675,13 +707,15 @@ export function SchoolStudentEssaysTab({
                   }
                 />
               </div>
-              <div className="m-field">
-                <label htmlFor="tp-essay-type">
+              <div>
+                <label className={M_FIELD_LABEL} htmlFor="tp-essay-type">
                   Essay type{" "}
-                  <span style={{ color: "var(--red, #e74c3c)" }}>*</span>
+                  <span className="text-[var(--red,#e74c3c)]">*</span>
                 </label>
                 <select
                   id="tp-essay-type"
+                  className={`${M_FIELD_CONTROL} appearance-none bg-no-repeat bg-[length:10px_6px] bg-[position:right_12px_center] pr-8`}
+                  style={{ backgroundImage: SELECT_CHEVRON_BG }}
                   value={form.essay_type}
                   onChange={(x) =>
                     setForm((f) => ({ ...f, essay_type: x.target.value }))
@@ -695,25 +729,28 @@ export function SchoolStudentEssaysTab({
                   ))}
                 </select>
               </div>
-              <div className="m-field">
-                <label htmlFor="tp-essay-prompt">Essay question / prompt</label>
+              <div>
+                <label className={M_FIELD_LABEL} htmlFor="tp-essay-prompt">
+                  Essay question / prompt
+                </label>
                 <textarea
                   id="tp-essay-prompt"
+                  className={`${M_FIELD_CONTROL} min-h-[80px] resize-y`}
                   placeholder="Paste the essay question or prompt here..."
-                  style={{ minHeight: 80 }}
                   value={form.essay_prompt}
                   onChange={(x) =>
                     setForm((f) => ({ ...f, essay_prompt: x.target.value }))
                   }
                 />
               </div>
-              <div className="m-field-row">
-                <div className="m-field">
-                  <label htmlFor="tp-essay-count">
+              <div className="grid grid-cols-1 gap-2.5 min-[460px]:grid-cols-2">
+                <div>
+                  <label className={M_FIELD_LABEL} htmlFor="tp-essay-count">
                     Word / character count
                   </label>
                   <input
                     id="tp-essay-count"
+                    className={M_FIELD_CONTROL}
                     placeholder="e.g. 800 words or 4,000 characters"
                     value={form.limit_note}
                     onChange={(x) =>
@@ -721,11 +758,14 @@ export function SchoolStudentEssaysTab({
                     }
                   />
                 </div>
-                <div className="m-field">
-                  <label htmlFor="tp-essay-deadline">Deadline</label>
+                <div>
+                  <label className={M_FIELD_LABEL} htmlFor="tp-essay-deadline">
+                    Deadline
+                  </label>
                   <input
                     id="tp-essay-deadline"
                     type="date"
+                    className={M_FIELD_CONTROL}
                     value={form.deadline}
                     onChange={(x) =>
                       setForm((f) => ({ ...f, deadline: x.target.value }))
@@ -733,10 +773,13 @@ export function SchoolStudentEssaysTab({
                   />
                 </div>
               </div>
-              <div className="m-field">
-                <label htmlFor="tp-essay-notes">Notes / instructions</label>
+              <div>
+                <label className={M_FIELD_LABEL} htmlFor="tp-essay-notes">
+                  Notes / instructions
+                </label>
                 <textarea
                   id="tp-essay-notes"
+                  className={TEXTAREA_FIELD}
                   placeholder="Add internal notes, guidance, or requirements..."
                   value={form.instructions_note}
                   onChange={(x) =>
@@ -748,29 +791,22 @@ export function SchoolStudentEssaysTab({
                 />
               </div>
               {newModalError ? (
-                <div
-                  style={{
-                    display: "block",
-                    fontSize: 12,
-                    color: "var(--red, #e74c3c)",
-                    fontWeight: 500,
-                  }}
-                >
+                <div className="block text-xs font-medium text-[var(--red,#e74c3c)]">
                   {newModalError}
                 </div>
               ) : null}
             </div>
-            <div className="modal-foot">
+            <div className={MODAL_FOOT}>
               <button
                 type="button"
-                className="btn sm"
+                className={BTN_SECONDARY_SM}
                 onClick={() => setNewModal(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="btn primary sm"
+                className={BTN_PRIMARY_SM}
                 onClick={() => void addEssay()}
               >
                 Save essay
@@ -782,19 +818,19 @@ export function SchoolStudentEssaysTab({
 
       {uploadEssay ? (
         <div
-          className="sd-essay-portal-modal-veil"
+          className={MODAL_VEIL}
           role="dialog"
           aria-modal
           onClick={(ev) =>
             ev.target === ev.currentTarget && setUploadEssayId(null)
           }
         >
-          <div className="modal">
-            <div className="modal-head">
-              <div className="modal-title">Upload essay file</div>
+          <div className={`${MODAL_SHELL_BASE} max-w-[480px]`}>
+            <div className={MODAL_HEAD}>
+              <div className={MODAL_TITLE}>Upload essay file</div>
               <button
                 type="button"
-                className="modal-x"
+                className={MODAL_CLOSE}
                 onClick={() => {
                   setUploadEssayId(null);
                   setPendingFile(null);
@@ -814,36 +850,33 @@ export function SchoolStudentEssaysTab({
                 </svg>
               </button>
             </div>
-            <div className="modal-body">
-              <div className="m-recipients">
+            <div className={MODAL_BODY}>
+              <div className="rounded-lg border border-[var(--green-bg)] bg-[var(--green-pale)] px-3 py-2.5 text-xs text-[var(--text-mid)] [&_strong]:font-semibold [&_strong]:text-[var(--green-dark)]">
                 Uploading for: <strong>{uploadEssay.title}</strong>
               </div>
-              <div className="m-field">
-                <label htmlFor="tp-essay-file">Choose file</label>
+              <div>
+                <label className={M_FIELD_LABEL} htmlFor="tp-essay-file">
+                  Choose file
+                </label>
                 <input
                   id="tp-essay-file"
                   type="file"
+                  className={M_FIELD_CONTROL}
                   accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                   onChange={(ev) => {
                     const f = ev.target.files?.[0] ?? null;
                     setPendingFile(f);
                   }}
                 />
-                <div
-                  style={{
-                    fontSize: 11.5,
-                    color: "var(--text-hint)",
-                    marginTop: 5,
-                  }}
-                >
+                <p className="mt-1.5 text-[11.5px] text-[var(--text-hint)]">
                   Future: real file picker — PDF, DOC, DOCX, TXT supported
-                </div>
+                </p>
               </div>
             </div>
-            <div className="modal-foot">
+            <div className={MODAL_FOOT}>
               <button
                 type="button"
-                className="btn sm"
+                className={BTN_SECONDARY_SM}
                 onClick={() => {
                   setUploadEssayId(null);
                   setPendingFile(null);
@@ -853,7 +886,7 @@ export function SchoolStudentEssaysTab({
               </button>
               <button
                 type="button"
-                className="btn primary sm"
+                className={BTN_PRIMARY_SM}
                 onClick={() => {
                   if (!pendingFile) {
                     showToast("Choose a file to upload");
@@ -871,19 +904,17 @@ export function SchoolStudentEssaysTab({
 
       {detailEssay ? (
         <div
-          className="sd-essay-portal-modal-veil"
+          className={MODAL_VEIL}
           role="dialog"
           aria-modal
-          onClick={(ev) =>
-            ev.target === ev.currentTarget && setDetailId(null)
-          }
+          onClick={(ev) => ev.target === ev.currentTarget && setDetailId(null)}
         >
-          <div className="modal modal-wide">
-            <div className="modal-head">
-              <div className="modal-title">{detailEssay.title}</div>
+          <div className={`${MODAL_SHELL_BASE} max-w-[640px]`}>
+            <div className={MODAL_HEAD}>
+              <div className={MODAL_TITLE}>{detailEssay.title}</div>
               <button
                 type="button"
-                className="modal-x"
+                className={MODAL_CLOSE}
                 onClick={() => setDetailId(null)}
                 aria-label="Close"
               >
@@ -900,33 +931,51 @@ export function SchoolStudentEssaysTab({
                 </svg>
               </button>
             </div>
-            <div className="modal-section">
-              <div className="modal-meta-grid">
-                <div className="modal-meta-item">
-                  <div className="lab">University</div>
-                  <div className="val">{detailEssay.for_application ?? "—"}</div>
+            <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-light)]">
+                    University
+                  </div>
+                  <div className="mt-0.5 text-[13px] font-medium text-[var(--text)]">
+                    {detailEssay.for_application ?? "—"}
+                  </div>
                 </div>
-                <div className="modal-meta-item">
-                  <div className="lab">Essay type</div>
-                  <div className="val">{detailEssay.essay_type ?? "—"}</div>
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-light)]">
+                    Essay type
+                  </div>
+                  <div className="mt-0.5 text-[13px] font-medium text-[var(--text)]">
+                    {detailEssay.essay_type ?? "—"}
+                  </div>
                 </div>
                 {detailEssay.limit_note?.trim() ? (
-                  <div className="modal-meta-item">
-                    <div className="lab">Word / character count</div>
-                    <div className="val">{detailEssay.limit_note.trim()}</div>
+                  <div>
+                    <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-light)]">
+                      Word / character count
+                    </div>
+                    <div className="mt-0.5 text-[13px] font-medium text-[var(--text)]">
+                      {detailEssay.limit_note.trim()}
+                    </div>
                   </div>
                 ) : null}
                 {detailEssay.deadline ? (
-                  <div className="modal-meta-item">
-                    <div className="lab">Deadline</div>
-                    <div className="val">{formatDate(detailEssay.deadline)}</div>
+                  <div>
+                    <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-light)]">
+                      Deadline
+                    </div>
+                    <div className="mt-0.5 text-[13px] font-medium text-[var(--text)]">
+                      {formatDate(detailEssay.deadline)}
+                    </div>
                   </div>
                 ) : null}
-                <div className="modal-meta-item">
-                  <div className="lab">Status</div>
-                  <div className="val">
-                    <span className={`pill ${detailPill}`}>
-                      <span className="dot" />
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-light)]">
+                    Status
+                  </div>
+                  <div className="mt-0.5">
+                    <span className={statusPillClass(detailPill)}>
+                      <span className={statusPillDotClass(detailPill)} />
                       {stDetail ? ESSAY_STATUS_LABEL[stDetail] : "—"}
                     </span>
                   </div>
@@ -934,39 +983,34 @@ export function SchoolStudentEssaysTab({
               </div>
             </div>
             {detailEssay.essay_prompt?.trim() ? (
-              <div className="modal-section">
-                <div className="modal-section-label">
+              <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+                <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   Essay question / prompt
                 </div>
-                <div className="modal-section-content prompt">
+                <div className="rounded-md border-l-[3px] border-l-[var(--green-light)] bg-[var(--cream)] px-3 py-2.5 text-[13px] italic leading-relaxed text-[var(--text-mid)]">
                   {detailEssay.essay_prompt.trim()}
                 </div>
               </div>
             ) : null}
-            <div className="modal-section">
-              <div className="modal-section-label">Uploaded file</div>
+            <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+              <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                Uploaded file
+              </div>
               {detailEssay.file_name ? (
-                <div className="modal-section-content">
+                <div className="text-[13px] leading-relaxed text-[var(--text)]">
                   <svg
-                    width="13"
-                    height="13"
+                    className="-mt-0.5 mr-1 inline-block h-[13px] w-[13px] shrink-0 align-middle text-[var(--text-light)]"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
-                    style={{
-                      verticalAlign: -2,
-                      marginRight: 5,
-                      color: "var(--text-light)",
-                    }}
                     aria-hidden
                   >
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <path d="M14 2v6h6" />
                   </svg>
                   <strong>{detailEssay.file_name}</strong>{" "}
-                  <span
-                    style={{ color: "var(--text-hint)", fontSize: 12 }}
-                  >
+                  <span className="text-xs text-[var(--text-hint)]">
                     · Uploaded{" "}
                     {detailEssay.file_uploaded_at
                       ? formatDate(detailEssay.file_uploaded_at)
@@ -974,88 +1018,72 @@ export function SchoolStudentEssaysTab({
                   </span>
                 </div>
               ) : (
-                <div
-                  className="modal-section-content"
-                  style={{ color: "var(--text-hint)", fontStyle: "italic" }}
-                >
+                <div className="text-[13px] italic text-[var(--text-hint)]">
                   No file uploaded yet
                 </div>
               )}
             </div>
             {detailEssay.instructions_note?.trim() ? (
-              <div className="modal-section">
-                <div className="modal-section-label">Notes / instructions</div>
-                <div className="modal-section-content">
+              <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+                <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                  Notes / instructions
+                </div>
+                <div className="text-[13px] leading-relaxed text-[var(--text)]">
                   {detailEssay.instructions_note.trim()}
                 </div>
               </div>
             ) : null}
-            <div className="modal-section">
-              <div className="modal-section-label">Counselor feedback</div>
-              <div className="comment-list">
+            <div className="border-b border-[var(--border-light)] px-[22px] py-4">
+              <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                Counselor feedback
+              </div>
+              <div className="mb-3 flex flex-col gap-2">
                 {(detailEssay.student_my_application_essay_comments ?? [])
                   .length > 0 ? (
                   (detailEssay.student_my_application_essay_comments ?? []).map(
                     (c) => (
-                      <div key={c.id} className="comment">
-                        <div className="comment-head">
-                          <span className="comment-author">
+                      <div
+                        key={c.id}
+                        className="rounded-lg border border-[var(--border-light)] bg-[var(--cream)] px-3 py-2.5"
+                      >
+                        <div className="mb-1 flex justify-between text-[11px] text-[var(--text-light)]">
+                          <span className="font-semibold text-[var(--text)]">
                             {c.author_display_name || "Counselor"}
                           </span>
                           <span>{formatDate(c.created_at)}</span>
                         </div>
-                        <div className="comment-text">{c.body}</div>
+                        <div className="text-[12.5px] leading-normal text-[var(--text)]">
+                          {c.body}
+                        </div>
                       </div>
                     ),
                   )
                 ) : (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-hint)",
-                      fontStyle: "italic",
-                    }}
-                  >
+                  <div className="text-xs italic text-[var(--text-hint)]">
                     No comments yet — be the first to leave feedback
                   </div>
                 )}
               </div>
               <textarea
+                className={TEXTAREA_FIELD}
                 placeholder="Add counselor feedback..."
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1.5px solid var(--border)",
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontFamily: "var(--font-dm-sans), DM Sans, sans-serif",
-                  background: "var(--white)",
-                  resize: "vertical",
-                  minHeight: 60,
-                }}
                 value={commentBody}
                 onChange={(x) => setCommentBody(x.target.value)}
               />
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginTop: 8,
-                }}
-              >
+              <div className="mt-2 flex justify-end">
                 <button
                   type="button"
-                  className="btn primary sm"
+                  className={BTN_PRIMARY_SM}
                   onClick={() => void addComment()}
                 >
                   Save comment
                 </button>
               </div>
             </div>
-            <div className="modal-foot">
+            <div className={MODAL_FOOT}>
               <button
                 type="button"
-                className="btn sm"
+                className={BTN_SECONDARY_SM}
                 onClick={() => setDetailId(null)}
               >
                 Close
@@ -1066,7 +1094,10 @@ export function SchoolStudentEssaysTab({
       ) : null}
 
       {toast ? (
-        <div className="sd-essay-portal-toast" role="status">
+        <div
+          className="fixed bottom-6 right-6 z-[400] flex items-center gap-2 rounded-[10px] bg-[var(--green-dark)] px-[18px] py-3 text-[13px] font-medium text-white shadow-[0_12px_32px_rgba(15,30,20,0.08)] [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:text-[var(--green-bright)]"
+          role="status"
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -1079,6 +1110,6 @@ export function SchoolStudentEssaysTab({
           <span>{toast}</span>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

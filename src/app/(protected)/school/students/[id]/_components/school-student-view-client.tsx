@@ -547,14 +547,14 @@ function NotesTabContent({
       head="Counselor notes"
       sub="Internal-only — students cannot see these."
     >
-      <div className="mb-3.5 flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] p-3.5">
+      <div className="mb-3.5 flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[rgb(250,249,244)] p-3.5">
         <form ref={formRef} action={submit} className="flex flex-col gap-2.5">
           <input type="hidden" name="student_id" value={studentId} />
           <input type="hidden" name="note_type" value={selectedNoteTag} />
           <textarea
             name="content"
             placeholder="Add internal counselor note... (Cmd+Enter to save)"
-            className="min-h-[64px] w-full resize-y rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)]"
+            className="min-h-[64px] w-full resize-y rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)]"
             disabled={pending}
             maxLength={8000}
             onKeyDown={(e) => {
@@ -574,7 +574,7 @@ function NotesTabContent({
                     type="button"
                     disabled={pending}
                     onClick={() => setSelectedNoteTag(tag)}
-                    className={`cursor-pointer rounded-[14px] border px-[9px] py-1 font-[family-name:var(--font-dm-sans)] text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
+                    className={`cursor-pointer rounded-[8px] border px-[9px] py-1 font-[family-name:var(--font-dm-sans)] text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
                       active
                         ? "border-[var(--green-light)] bg-[var(--green-pale)] text-[var(--green-dark)]"
                         : "border-[var(--border)] bg-white text-[var(--text-mid)]"
@@ -588,7 +588,7 @@ function NotesTabContent({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-55"
+              className="inline-flex shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-55"
             >
               {pending ? "Saving…" : "Save note"}
             </button>
@@ -746,11 +746,7 @@ export function SchoolStudentViewClient({
     );
   } else if (tab === "essays") {
     tabBody = (
-      <SchoolStudentEssaysTab
-        studentId={student.id}
-        initialEssays={essays}
-        shortlist={shortlist}
-      />
+      <SchoolStudentEssaysTab studentId={student.id} initialEssays={essays} />
     );
   } else if (tab === "notes") {
     tabBody = <NotesTabContent studentId={student.id} notes={studentNotes} />;
@@ -852,7 +848,7 @@ export function SchoolStudentViewClient({
             {student.email ? (
               <a
                 href={`mailto:${student.email}`}
-                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90"
+                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Email student
               </a>
@@ -860,7 +856,7 @@ export function SchoolStudentViewClient({
               <button
                 type="button"
                 disabled
-                className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white opacity-55"
+                className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white opacity-55"
                 title="No email on file"
               >
                 Email student
@@ -872,7 +868,7 @@ export function SchoolStudentViewClient({
                 setTab("tasks");
                 setNewTaskOpen(true);
               }}
-              className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+              className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
             >
               + Add task
             </button>

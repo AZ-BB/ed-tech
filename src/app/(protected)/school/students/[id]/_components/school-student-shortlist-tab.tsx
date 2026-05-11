@@ -17,7 +17,8 @@ import { useMemo, useState } from "react";
 
 import { UNIVERSITY_STATUS_LABEL } from "@/app/(protected)/student/my-applications/_lib/my-applications-university-labels";
 
-type ShortlistRow = Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
+type ShortlistRow =
+  Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
 
 function methodPillLabel(applicationMethod: string | null): string {
   if (!applicationMethod) return "—";
@@ -69,12 +70,16 @@ function applicationStatusPillDot(status: string): string {
   return "bg-[#a0a0a0]";
 }
 
-function normalizeDocsStatus(row: ShortlistRow): keyof typeof SHORTLIST_DOCS_STATUS_LABEL {
+function normalizeDocsStatus(
+  row: ShortlistRow,
+): keyof typeof SHORTLIST_DOCS_STATUS_LABEL {
   const d = row.docs_status;
   return d === "completed" || d === "not_completed" ? d : "not_completed";
 }
 
-function normalizeEssayStatus(row: ShortlistRow): keyof typeof SHORTLIST_ESSAY_STATUS_LABEL {
+function normalizeEssayStatus(
+  row: ShortlistRow,
+): keyof typeof SHORTLIST_ESSAY_STATUS_LABEL {
   const e = row.essay_status;
   return e === "approved" || e === "not_reviewed" ? e : "not_reviewed";
 }
@@ -101,7 +106,9 @@ export function SchoolStudentShortlistTab({
   }
 
   const addUniversity = async (uniForm: AddUniversityShortlistForm) => {
-    const nextSort = shortlist.length ? Math.max(...shortlist.map((r) => r.sort_order)) + 1 : 0;
+    const nextSort = shortlist.length
+      ? Math.max(...shortlist.map((r) => r.sort_order)) + 1
+      : 0;
     const insert = {
       student_id: studentId,
       university_name: uniForm.university_name.trim(),
@@ -115,7 +122,11 @@ export function SchoolStudentShortlistTab({
       essay_status: "not_reviewed",
       sort_order: nextSort,
     };
-    const { data, error } = await supabase.from("student_shortlist_universities").insert(insert).select("*").single();
+    const { data, error } = await supabase
+      .from("student_shortlist_universities")
+      .insert(insert)
+      .select("*")
+      .single();
     if (error || !data) {
       showToast(error?.message ?? "Could not add");
       return;
@@ -126,14 +137,23 @@ export function SchoolStudentShortlistTab({
     router.refresh();
   };
 
-  const updateShortlistRow = async (id: string, patch: Partial<ShortlistRow>) => {
-    const { error } = await supabase.from("student_shortlist_universities").update(patch).eq("id", id);
+  const updateShortlistRow = async (
+    id: string,
+    patch: Partial<ShortlistRow>,
+  ) => {
+    const { error } = await supabase
+      .from("student_shortlist_universities")
+      .update(patch)
+      .eq("id", id);
     if (error) showToast(error.message);
     else router.refresh();
   };
 
   const removeUniversity = async (id: string) => {
-    const { error } = await supabase.from("student_shortlist_universities").delete().eq("id", id);
+    const { error } = await supabase
+      .from("student_shortlist_universities")
+      .delete()
+      .eq("id", id);
     if (error) {
       showToast(error.message);
       return;
@@ -155,12 +175,17 @@ export function SchoolStudentShortlistTab({
     essay_status: string;
   }) => {
     if (!editRow) return;
-    const { error } = await supabase.from("student_shortlist_universities").update(patch).eq("id", editRow.id);
+    const { error } = await supabase
+      .from("student_shortlist_universities")
+      .update(patch)
+      .eq("id", editRow.id);
     if (error) {
       showToast(error.message);
       return;
     }
-    setShortlist((prev) => prev.map((r) => (r.id === editRow.id ? { ...r, ...patch } : r)));
+    setShortlist((prev) =>
+      prev.map((r) => (r.id === editRow.id ? { ...r, ...patch } : r)),
+    );
     setEditRow(null);
     showToast("Saved");
     router.refresh();
@@ -183,7 +208,9 @@ export function SchoolStudentShortlistTab({
           <div>
             <div className="text-[15px] font-semibold tracking-tight text-[var(--text)]">
               University shortlist{" "}
-              <span className="ml-1 font-normal text-[var(--text-light)]">({shortlist.length})</span>
+              <span className="ml-1 font-normal text-[var(--text-light)]">
+                ({shortlist.length})
+              </span>
             </div>
             <div className="mt-0.5 text-[12px] text-[var(--text-light)]">
               Universities being considered, applied to, or with offers
@@ -191,7 +218,7 @@ export function SchoolStudentShortlistTab({
           </div>
           <button
             type="button"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
             onClick={() => setUniModal(true)}
           >
             + Add university
@@ -209,7 +236,9 @@ export function SchoolStudentShortlistTab({
               const statusLabel = UNIVERSITY_STATUS_LABEL[u.status] ?? u.status;
               const wrap = applicationStatusPillWrap(u.status);
               const dot = applicationStatusPillDot(u.status);
-              const deadline = u.application_deadline ? formatDate(u.application_deadline) : "—";
+              const deadline = u.application_deadline
+                ? formatDate(u.application_deadline)
+                : "—";
               const progLine = [
                 u.country,
                 u.major_program,
@@ -220,19 +249,27 @@ export function SchoolStudentShortlistTab({
               return (
                 <div
                   key={u.id}
-                  className="mb-1.5 grid grid-cols-1 gap-3 border border-[var(--border-light)] bg-white px-[14px] py-[11px] last:mb-0 lg:grid-cols-[1.4fr_0.8fr_0.7fr_0.9fr_auto] lg:items-center lg:gap-3"
-                  style={{ borderRadius: "10px" }}
+                  className="mb-1.5 grid grid-cols-1 gap-3 rounded-[10px] border border-[var(--border-light)] bg-white px-[14px] py-[11px] last:mb-0 lg:grid-cols-[1.4fr_0.8fr_0.7fr_0.9fr_auto] lg:items-center lg:gap-3"
                 >
                   <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-[var(--text)]">{u.university_name}</div>
-                    <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">{progLine}</div>
+                    <div className="text-[13px] font-semibold text-[var(--text)]">
+                      {u.university_name}
+                    </div>
+                    <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
+                      {progLine}
+                    </div>
                   </div>
-                  <div className="text-[12px] text-[var(--text-light)]">{deadline}</div>
+                  <div className="text-[12px] text-[var(--text-light)]">
+                    {deadline}
+                  </div>
                   <div>
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug ${wrap}`}
                     >
-                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden />
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`}
+                        aria-hidden
+                      />
                       {statusLabel}
                     </span>
                   </div>
@@ -244,10 +281,18 @@ export function SchoolStudentShortlistTab({
                     <button
                       type="button"
                       aria-label="Edit"
-                      className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+                      className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
                       onClick={() => setEditRow(u)}
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     </button>

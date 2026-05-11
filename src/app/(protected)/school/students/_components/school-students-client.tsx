@@ -18,7 +18,7 @@ const SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22 fill=%22none%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236a6a6a%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E")';
 
 const filterSelectClass =
-  "rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 text-[12.5px] font-medium text-[var(--text-mid)] outline-none appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-9 cursor-pointer transition-colors focus:border-[var(--green-light)] disabled:opacity-55";
+  "rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2 text-[12.5px] font-medium text-[var(--text-mid)] outline-none appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-9 cursor-pointer transition-colors focus:border-[var(--green-light)] disabled:opacity-55";
 
 export function SchoolStudentsClient({
   rows,
@@ -150,11 +150,11 @@ export function SchoolStudentsClient({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white">
+      <div className="overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--border-light)] px-5 py-4 sm:flex-nowrap">
           <div>
             <h2 className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-[var(--text)]">
-              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--green-bg)] text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]">
+              <span className="flex h-6 w-6 items-center justify-center rounded-[8px] bg-[var(--green-bg)] text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -178,14 +178,14 @@ export function SchoolStudentsClient({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
               onClick={openPendingModal}
             >
               Pending invites
             </button>
             <button
               type="button"
-              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-[var(--green-dark)]"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-[var(--green-dark)]"
               onClick={() => setInviteOpen(true)}
             >
               + Add student
@@ -217,7 +217,7 @@ export function SchoolStudentsClient({
               name="q"
               placeholder="Search by name or email"
               defaultValue={q}
-              className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white py-2 pl-8 pr-3 font-[family-name:var(--font-dm-sans)] text-[12.5px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)]"
+              className="w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white py-2 pl-8 pr-3 font-[family-name:var(--font-dm-sans)] text-[12.5px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)]"
             />
           </div>
           <select
@@ -256,7 +256,7 @@ export function SchoolStudentsClient({
           </select>
           <button
             type="submit"
-            className="rounded-lg border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+            className="rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
           >
             Apply
           </button>
@@ -407,7 +407,7 @@ export function SchoolStudentsClient({
             aria-modal="true"
             aria-label="Pending student invites"
             tabIndex={-1}
-            className="flex max-h-[min(90vh,720px)] w-full max-w-[720px] flex-col overflow-hidden rounded-[var(--radius-lg)] bg-white shadow-[0_12px_32px_rgba(15,30,20,.12)]"
+            className="flex max-h-[min(90vh,720px)] w-full max-w-[720px] flex-col overflow-hidden rounded-[14px] bg-white shadow-[0_12px_32px_rgba(15,30,20,.12)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-light)] px-5 py-4">
@@ -421,7 +421,7 @@ export function SchoolStudentsClient({
               </div>
               <button
                 type="button"
-                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-light)] hover:bg-[#faf9f4] hover:text-[var(--text)]"
+                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-[var(--text-light)] hover:bg-[#faf9f4] hover:text-[var(--text)]"
                 onClick={() => setPendingOpen(false)}
                 aria-label="Close"
               >
@@ -464,7 +464,7 @@ export function SchoolStudentsClient({
                   onChange={(e) => setPendingSearchDraft(e.target.value)}
                   placeholder="Search by email"
                   disabled={pendingLoading}
-                  className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white py-2 pl-8 pr-3 font-[family-name:var(--font-dm-sans)] text-[12.5px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-60"
+                  className="w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white py-2 pl-8 pr-3 font-[family-name:var(--font-dm-sans)] text-[12.5px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-60"
                 />
               </div>
             </div>
@@ -523,14 +523,15 @@ export function SchoolStudentsClient({
                           <td className="whitespace-nowrap px-3 py-2.5 text-right">
                             <button
                               type="button"
-                              className="cursor-pointer rounded-md border border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#c0392b] transition-colors hover:bg-[#fdf2f2] disabled:cursor-not-allowed disabled:opacity-50"
+                              className="cursor-pointer rounded-[8px] border border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#c0392b] transition-colors hover:bg-[#fdf2f2] disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={
-                                pendingLoading ||
-                                pendingDeleteId === r.id
+                                pendingLoading || pendingDeleteId === r.id
                               }
                               onClick={() => handleRemoveInvite(r)}
                             >
-                              {pendingDeleteId === r.id ? "Removing…" : "Remove"}
+                              {pendingDeleteId === r.id
+                                ? "Removing…"
+                                : "Remove"}
                             </button>
                           </td>
                         </tr>
@@ -574,7 +575,7 @@ export function SchoolStudentsClient({
             aria-modal="true"
             aria-label="Invite student"
             tabIndex={-1}
-            className="w-full max-w-[440px] overflow-hidden rounded-[var(--radius-lg)] bg-white shadow-[0_12px_32px_rgba(15,30,20,.12)]"
+            className="w-full max-w-[440px] overflow-hidden rounded-[14px] bg-white shadow-[0_12px_32px_rgba(15,30,20,.12)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-light)] px-5 py-4">
@@ -583,7 +584,7 @@ export function SchoolStudentsClient({
               </h3>
               <button
                 type="button"
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[var(--text-light)] hover:bg-[#faf9f4] hover:text-[var(--text)]"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] text-[var(--text-light)] hover:bg-[#faf9f4] hover:text-[var(--text)]"
                 onClick={() => setInviteOpen(false)}
                 aria-label="Close"
               >
@@ -626,7 +627,7 @@ export function SchoolStudentsClient({
                   autoComplete="email"
                   placeholder="student@school.edu"
                   disabled={invitePending}
-                  className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-60"
+                  className="w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-60"
                 />
               </div>
               <div>
@@ -685,7 +686,7 @@ export function SchoolStudentsClient({
               <div className="-mx-5 -mb-4 mt-2 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[#faf9f4] px-5 py-3">
                 <button
                   type="button"
-                  className="cursor-pointer rounded-lg border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--text-hint)]"
+                  className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--text-hint)]"
                   onClick={() => setInviteOpen(false)}
                 >
                   Cancel
@@ -693,7 +694,7 @@ export function SchoolStudentsClient({
                 <button
                   type="submit"
                   disabled={invitePending}
-                  className="cursor-pointer rounded-lg border-[1.5px] border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[var(--green-dark)] disabled:opacity-55"
+                  className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[var(--green-dark)] disabled:opacity-55"
                 >
                   {invitePending ? "Saving…" : "Send invite"}
                 </button>
