@@ -782,7 +782,7 @@ export function SignupWizard() {
         >
           <LogoIcon />
         </div>
-        <span className="text-[0.95rem] font-bold text-[var(--text)]">Univeera</span>
+        <span className="text-[0.95rem] font-bold text-white">Univeera</span>
       </Link>
       {legal ? (
         <div

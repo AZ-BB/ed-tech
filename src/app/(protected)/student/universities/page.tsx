@@ -1,9 +1,5 @@
 import { Pagination } from "@/components/pagination";
 import type { Database } from "@/database.types";
-import {
-    recordStudentPlatformCompletionOnce,
-    STUDENT_PLATFORM_COMPLETION_FLAGS,
-} from "@/lib/student-platform-completion";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -202,17 +198,6 @@ export default async function StudentUniversitiesPage({
     const sp = await searchParams;
 
     const supabase = await createSupabaseServerClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-        await recordStudentPlatformCompletionOnce(
-            supabase,
-            user.id,
-            STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_universities,
-        );
-    }
 
     const { data: majors, error: majorsError } = await supabase
         .from("majors")

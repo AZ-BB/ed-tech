@@ -2,11 +2,6 @@ import { Suspense } from "react";
 
 import { ScholarshipDiscovery } from "./_components/scholarship-discovery";
 import { loadScholarshipDiscoveryPageFromSearchParams } from "@/actions/Scholarships";
-import {
-  recordStudentPlatformCompletionOnce,
-  STUDENT_PLATFORM_COMPLETION_FLAGS,
-} from "@/lib/student-platform-completion";
-import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,18 +10,6 @@ type PageProps = {
 };
 
 export default async function StudentScholarshipsPage({ searchParams }: PageProps) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    await recordStudentPlatformCompletionOnce(
-      supabase,
-      user.id,
-      STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_scholarships,
-    );
-  }
-
   const pageData = await loadScholarshipDiscoveryPageFromSearchParams(searchParams);
 
   return (

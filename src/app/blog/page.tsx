@@ -1,9 +1,7 @@
 import Link from "next/link";
 
-import {
-  MarketingSubpageFooter,
-  MarketingSubpageNav,
-} from "@/components/landing/marketing-subpage-chrome";
+import { MarketingSubpageNav } from "@/components/landing/marketing-subpage-chrome";
+import { LandingFooter } from "@/components/landing/landing-footer";
 
 export default function BlogPage() {
   return (
@@ -40,7 +38,7 @@ export default function BlogPage() {
         </div>
       </div>
 
-      <MarketingSubpageFooter />
+      <LandingFooter />
     </>
   );
 }

@@ -399,7 +399,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
               key={a.id}
               role="button"
               tabIndex={0}
-              className="cursor-pointer rounded-2xl border border-[var(--border-light)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
+              className="flex flex-col justify-between cursor-pointer rounded-2xl border border-[var(--border-light)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
               onClick={() => setDetail(a)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -408,99 +408,103 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                 }
               }}
             >
-              <div className="mb-3.5 flex gap-3.5">
-                <div
-                  className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full text-base font-bold"
-                  style={{ background: pal.bg, color: pal.fg }}
-                >
-                  {ini}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-semibold text-[var(--text)]">
-                    {a.firstName} {a.lastName}
+              <div>
+                <div className="mb-3.5 flex gap-3.5">
+                  <div
+                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full text-base font-bold"
+                    style={{ background: pal.bg, color: pal.fg }}
+                  >
+                    {ini}
                   </div>
-                  <div className="text-xs text-[var(--text-light)]">{a.title ?? "Advisor"}</div>
-                  <div className="mt-1.5 flex flex-wrap gap-1 text-[11px] text-[var(--text-hint)]">
-                    <span className="inline-flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      {yrsLabel(a.experienceYears)} years
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M2 12h20" />
-                      </svg>
-                      Based in {baseCountry(a.nationalityCode)}
-                    </span>
-                    {a.languages ? (
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[15px] font-semibold text-[var(--text)]">
+                      {a.firstName} {a.lastName}
+                    </div>
+                    <div className="text-xs text-[var(--text-light)]">{a.title ?? "Advisor"}</div>
+                    <div className="mt-1.5 flex flex-wrap gap-1 text-[11px] text-[var(--text-hint)]">
                       <span className="inline-flex items-center gap-1">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
                         </svg>
-                        {a.languages}
+                        {yrsLabel(a.experienceYears)} years
                       </span>
-                    ) : null}
+                      <span className="inline-flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M2 12h20" />
+                        </svg>
+                        Based in {baseCountry(a.nationalityCode)}
+                      </span>
+                      {a.languages ? (
+                        <span className="inline-flex items-center gap-1">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                          </svg>
+                          {a.languages}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-              </div>
-              {a.description ? (
-                <p className="mb-3 line-clamp-2 text-[12.5px] leading-relaxed text-[var(--text-mid)]">{a.description}</p>
-              ) : null}
-              {a.bestFor ? (
-                <div className="mb-2.5 rounded-lg border border-[#e0eddf] bg-[var(--green-pale)] px-3 py-2.5 text-[11.5px] leading-snug text-[var(--text-mid)]">
-                  <strong className="mb-0.5 block text-[10.5px] font-semibold uppercase tracking-wide text-[var(--green-dark)]">
-                    Best for
-                  </strong>
-                  {a.bestFor}
+                {a.description ? (
+                  <p className="mb-3 line-clamp-2 text-[12.5px] leading-relaxed text-[var(--text-mid)]">{a.description}</p>
+                ) : null}
+                {a.bestFor ? (
+                  <div className="mb-2.5 rounded-lg border border-[#e0eddf] bg-[var(--green-pale)] px-3 py-2.5 text-[11.5px] leading-snug text-[var(--text-mid)]">
+                    <strong className="mb-0.5 block text-[10.5px] font-semibold uppercase tracking-wide text-[var(--green-dark)]">
+                      Best for
+                    </strong>
+                    {a.bestFor}
+                  </div>
+                ) : null}
+                <div className="mb-3 flex flex-wrap gap-1">
+                  {helps.map((c) => (
+                    <span key={c} className="rounded-md border border-[var(--border-light)] bg-white px-2.5 py-0.5 text-[10.5px] text-[var(--text-mid)]">
+                      {c}
+                    </span>
+                  ))}
                 </div>
-              ) : null}
-              <div className="mb-3 flex flex-wrap gap-1">
-                {helps.map((c) => (
-                  <span key={c} className="rounded-md border border-[var(--border-light)] bg-white px-2.5 py-0.5 text-[10.5px] text-[var(--text-mid)]">
-                    {c}
-                  </span>
-                ))}
+                <div className="mb-3.5 flex flex-wrap gap-1.5">
+                  {a.tags.slice(0, 8).map((t) => (
+                    <span key={t} className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10.5px] font-medium text-[var(--text-mid)]">
+                      {t}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="mb-3.5 flex flex-wrap gap-1.5">
-                {a.tags.slice(0, 8).map((t) => (
-                  <span key={t} className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10.5px] font-medium text-[var(--text-mid)]">
-                    {t}
-                  </span>
-                ))}
+              <div>
+                <div className="flex items-center justify-between border-t border-[var(--border-light)] pt-3">
+                  <button
+                    type="button"
+                    className={`flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-white transition hover:bg-[var(--sand)] ${savedIds.includes(a.id) ? "border-[#d5e8db] bg-[var(--green-bg)] [&_path]:fill-[var(--green)] [&_path]:stroke-[var(--green)]" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSave(a.id);
+                    }}
+                    aria-label={savedIds.includes(a.id) ? "Remove from saved" : "Save advisor"}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7a7a7a" strokeWidth="1.8" aria-hidden>
+                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
+                    </svg>
+                  </button>
+                  <Link
+                    href={`/student/advisor-sessions/${a.id}/book`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Book session
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
+                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                    </svg>
+                  </Link>
+                </div>
+                <p className="mt-2.5 text-center text-[10.5px] text-[var(--text-hint)]">
+                  Opens booking in a new tab — your details are saved to your advisor session request.
+                </p>
               </div>
-              <div className="flex items-center justify-between border-t border-[var(--border-light)] pt-3">
-                <button
-                  type="button"
-                  className={`flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-white transition hover:bg-[var(--sand)] ${savedIds.includes(a.id) ? "border-[#d5e8db] bg-[var(--green-bg)] [&_path]:fill-[var(--green)] [&_path]:stroke-[var(--green)]" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSave(a.id);
-                  }}
-                  aria-label={savedIds.includes(a.id) ? "Remove from saved" : "Save advisor"}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7a7a7a" strokeWidth="1.8" aria-hidden>
-                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
-                  </svg>
-                </button>
-                <Link
-                  href={`/student/advisor-sessions/${a.id}/book`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Book session
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                  </svg>
-                </Link>
-              </div>
-              <p className="mt-2.5 text-center text-[10.5px] text-[var(--text-hint)]">
-                Opens booking in a new tab — your details are saved to your advisor session request.
-              </p>
             </div>
           );
         })}

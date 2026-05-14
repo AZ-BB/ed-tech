@@ -1,7 +1,7 @@
 export function LandingFooter() {
   return (
     <footer className="footer">
-      <div className="footer-inner">
+      <div className="flex justify-center gap-64">
         <div className="footer-brand">
           <div className="footer-brand-name">
             <div
@@ -35,32 +35,34 @@ export function LandingFooter() {
             through technology and guidance.
           </div>
         </div>
-        <div>
-          <div className="footer-col-title">Resources</div>
-          <a className="footer-link" href="/for-schools">
-            For schools
-          </a>
-          <a className="footer-link" href="/for-advisors">
-            For advisors
-          </a>
-          <a className="footer-link" href="/blog">
-            Blog
-          </a>
-        </div>
-        <div>
-          <div className="footer-col-title">Company</div>
-          <a className="footer-link" href="/about">
-            About
-          </a>
-          <a className="footer-link" href="/contact">
-            Contact
-          </a>
-          <a className="footer-link" href="/privacy">
-            Privacy
-          </a>
-          <a className="footer-link" href="/terms">
-            Terms
-          </a>
+        <div className="flex gap-20">
+          <div>
+            <div className="footer-col-title">Resources</div>
+            <a className="footer-link" href="/for-schools">
+              For schools
+            </a>
+            <a className="footer-link" href="/for-advisors">
+              For advisors
+            </a>
+            <a className="footer-link" href="/blog">
+              Blog
+            </a>
+          </div>
+          <div>
+            <div className="footer-col-title">Company</div>
+            <a className="footer-link" href="/about">
+              About
+            </a>
+            <a className="footer-link" href="/contact">
+              Contact
+            </a>
+            <a className="footer-link" href="/privacy">
+              Privacy
+            </a>
+            <a className="footer-link" href="/terms">
+              Terms
+            </a>
+          </div>
         </div>
       </div>
       <div className="footer-bottom">2026 Univeera. All rights reserved.</div>

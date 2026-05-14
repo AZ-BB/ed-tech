@@ -150,7 +150,7 @@ export async function loadAiMatchingProfileDefaults(): Promise<AiMatchingProfile
   const { data: app } = await supabase
     .from("student_application_profile")
     .select(
-      "curriculum, predicted_grades, sat_score, act_score, english_test_scores, preferred_destinations, interested_programs, budget_range",
+      "curriculum, predicted_grades, sat_score, act_score, english_test_scores, ielts_score, toefl_score, preferred_destinations, interested_programs, budget_range",
     )
     .eq("student_id", user.id)
     .maybeSingle();
@@ -180,12 +180,24 @@ export async function loadAiMatchingProfileDefaults(): Promise<AiMatchingProfile
       : act;
   }
 
-  const eng = mergeEnglishTests(app?.english_test_scores);
-  for (const t of eng.tests) {
-    if (!testsTaken.includes(t)) testsTaken.push(t);
+  const ielts = (app?.ielts_score ?? "").trim();
+  const toefl = (app?.toefl_score ?? "").trim();
+  if (ielts) {
+    if (!testsTaken.includes("IELTS")) testsTaken.push("IELTS");
+    if (!testScores.IELTS) testScores.IELTS = ielts;
   }
-  for (const [k, v] of Object.entries(eng.scores)) {
-    if (!testScores[k]) testScores[k] = v;
+  if (toefl) {
+    if (!testsTaken.includes("TOEFL")) testsTaken.push("TOEFL");
+    if (!testScores.TOEFL) testScores.TOEFL = toefl;
+  }
+  if (!ielts && !toefl) {
+    const eng = mergeEnglishTests(app?.english_test_scores);
+    for (const t of eng.tests) {
+      if (!testsTaken.includes(t)) testsTaken.push(t);
+    }
+    for (const [k, v] of Object.entries(eng.scores)) {
+      if (!testScores[k]) testScores[k] = v;
+    }
   }
 
   const prefOrder = ["SAT", "ACT", "IELTS", "TOEFL", "Duolingo"];

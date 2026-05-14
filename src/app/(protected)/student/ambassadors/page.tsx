@@ -1,9 +1,5 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
-import {
-  recordStudentPlatformCompletionOnce,
-  STUDENT_PLATFORM_COMPLETION_FLAGS,
-} from "@/lib/student-platform-completion";
-import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AmbassadorsClient } from "./_components/ambassadors-client";
@@ -20,13 +16,6 @@ export default async function AmbassadorsPage() {
   if (!auth.ok) {
     redirect("/login");
   }
-
-  const supabase = await createSupabaseServerClient();
-  await recordStudentPlatformCompletionOnce(
-    supabase,
-    auth.studentId,
-    STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_ambassadors,
-  );
 
   const secret = await createSupabaseSecretClient();
 

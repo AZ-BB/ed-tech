@@ -181,7 +181,7 @@ export function LandingPageContent() {
               <div className="how-num">3</div>
               <div className="how-step-title">Prepare with confidence</div>
               <div className="how-step-desc">
-                Access test prep, essay tools, and resources to strengthen your
+                Program discovery, essay tools, and resources to strengthen your
                 application.
               </div>
             </div>
@@ -215,27 +215,25 @@ export function LandingPageContent() {
 
           <div className="feat-grid">
             <div className="feat-card">
-              <div
-                className="feat-icon"
-                style={{ background: "var(--green-bg)" }}
-              >
+              <div className="feat-icon" style={{ background: "#FCEBEB" }}>
                 <svg
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#2D6A4F"
+                  stroke="#A32D2D"
                   strokeWidth="1.8"
                   aria-hidden
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 2a14.5 14.5 0 000 20M12 2a14.5 14.5 0 010 20M2 12h20" />
                 </svg>
               </div>
-              <div className="feat-name">AI university matching</div>
+              <div className="feat-name">Program discovery</div>
               <div className="feat-desc">
-                Answer a few questions and get top university recommendations
-                tailored for you.
+                View 100+ programs, identify what fits you best and see what
+                careers that leads to — all while connecting with working
+                professionals.
               </div>
             </div>
             <div className="feat-card">
@@ -261,25 +259,22 @@ export function LandingPageContent() {
               </div>
             </div>
             <div className="feat-card">
-              <div className="feat-icon" style={{ background: "#FAEEDA" }}>
+              <div className="feat-icon" style={{ background: "#E6F1FB" }}>
                 <svg
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#854F0B"
+                  stroke="#185FA5"
                   strokeWidth="1.8"
                   aria-hidden
                 >
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                  <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
                 </svg>
               </div>
-              <div className="feat-name">University ambassadors</div>
+              <div className="feat-name">Scholarship opportunities</div>
               <div className="feat-desc">
-                Speak to students who have already studied at your target
-                university.
+                Find and filter scholarships that match your profile and needs.
               </div>
             </div>
             <div className="feat-card">
@@ -327,41 +322,25 @@ export function LandingPageContent() {
               </div>
             </div>
             <div className="feat-card">
-              <div className="feat-icon" style={{ background: "#FCEBEB" }}>
+              <div className="feat-icon" style={{ background: "#FAEEDA" }}>
                 <svg
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#A32D2D"
+                  stroke="#854F0B"
                   strokeWidth="1.8"
                   aria-hidden
                 >
-                  <path d="M4 7h16M4 12h16M4 17h10" />
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
                 </svg>
               </div>
-              <div className="feat-name">Test prep (SAT, IELTS, ACT)</div>
+              <div className="feat-name">University ambassadors</div>
               <div className="feat-desc">
-                Practice with real tests and get AI insights on how to improve.
-              </div>
-            </div>
-            <div className="feat-card">
-              <div className="feat-icon" style={{ background: "#E6F1FB" }}>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#185FA5"
-                  strokeWidth="1.8"
-                  aria-hidden
-                >
-                  <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
-                </svg>
-              </div>
-              <div className="feat-name">Scholarship opportunities</div>
-              <div className="feat-desc">
-                Find and filter scholarships that match your profile and needs.
+                Speak to students who have already studied at your target
+                university.
               </div>
             </div>
             <div className="feat-card">
@@ -383,6 +362,31 @@ export function LandingPageContent() {
               <div className="feat-desc">
                 Tell us your targets — we&apos;ll handle the full application
                 process for you.
+              </div>
+            </div>
+            <div className="feat-card">
+              <div
+                className="feat-icon"
+                style={{ background: "var(--green-bg)" }}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#2D6A4F"
+                  strokeWidth="1.8"
+                  aria-hidden
+                >
+                  <path d="M20 21v-2a4 4 0 00-4-4h-4" />
+                  <circle cx="8" cy="7" r="4" />
+                  <path d="M22 11l-4 4-2-2" />
+                </svg>
+              </div>
+              <div className="feat-name">Post-admission support</div>
+              <div className="feat-desc">
+                We&apos;ll handle visas, accommodations, and flights — and
+                connect you with fellow Middle East students at your university.
               </div>
             </div>
           </div>

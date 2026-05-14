@@ -17,6 +17,8 @@ export type StudentApplicationProfileCompletionRow = Pick<
   | "preferred_destinations"
   | "interested_programs"
   | "english_test_scores"
+  | "ielts_score"
+  | "toefl_score"
   | "sat_score"
   | "act_score"
   | "sat_act_scores"
@@ -50,7 +52,9 @@ export function studentApplicationProfileRowToCompletionInput(
     curriculum: row?.curriculum ?? "",
     destinations: row?.preferred_destinations ?? [],
     programs: row?.interested_programs ?? [],
-    english: row?.english_test_scores ?? "",
+    english: row?.ielts_score || row?.toefl_score
+      ? [row.ielts_score && `IELTS ${row.ielts_score}`, row.toefl_score && `TOEFL ${row.toefl_score}`].filter(Boolean).join(" · ")
+      : row?.english_test_scores ?? "",
     sat: row?.sat_score ?? row?.sat_act_scores ?? "",
     act: row?.act_score ?? "",
   };

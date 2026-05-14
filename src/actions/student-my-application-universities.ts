@@ -110,6 +110,39 @@ async function ensureCatalogShortlistActivity(
 }
 
 /**
+ * Returns the list of majors associated with a catalog university.
+ * Used by the "Move to shortlist" modal so the student can pick a major.
+ */
+export async function getUniversityMajors(
+  universityId: string,
+): Promise<GeneralResponse<{ id: number; name: string }[]>> {
+  const id = typeof universityId === "string" ? universityId.trim() : "";
+  if (!uuidLike(id)) {
+    return { data: [], error: "Invalid university." };
+  }
+
+  const server = await createSupabaseServerClient();
+  const { data, error } = await server
+    .from("university_majors")
+    .select("major_id, majors ( name )")
+    .eq("university_id", id);
+
+  if (error) {
+    return { data: [], error: error.message };
+  }
+
+  const majors = (data ?? [])
+    .map((row) => ({
+      id: row.major_id,
+      name: (row.majors as unknown as { name: string } | null)?.name?.trim() ?? "",
+    }))
+    .filter((m) => m.name.length > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return { data: majors, error: null };
+}
+
+/**
  * Creates a `student_shortlist_universities` row from a catalog university and
  * removes the student's `student_activities` favourite (`type` save) for that uni.
  * If the student already has a catalog-linked shortlist row (e.g. from University Search), only removes the favourite.
@@ -117,6 +150,7 @@ async function ensureCatalogShortlistActivity(
  */
 export async function moveCatalogFavouriteToApplicationShortlist(
   universityId: string,
+  majorProgram?: string,
 ): Promise<GeneralResponse<ShortlistRow | null>> {
   const id = typeof universityId === "string" ? universityId.trim() : "";
   if (!uuidLike(id)) {
@@ -139,6 +173,18 @@ export async function moveCatalogFavouriteToApplicationShortlist(
     .maybeSingle();
 
   if (existingRow) {
+    if (majorProgram?.trim()) {
+      const { data: updated } = await server
+        .from("student_shortlist_universities")
+        .update({ major_program: majorProgram.trim() })
+        .eq("id", existingRow.id)
+        .select("*")
+        .single();
+      if (updated) {
+        Object.assign(existingRow, updated);
+      }
+    }
+
     const actRes = await ensureCatalogShortlistActivity(server, secret, actor.studentId, id);
     if (actRes.error) {
       return { data: null, error: actRes.error };
@@ -202,6 +248,7 @@ export async function moveCatalogFavouriteToApplicationShortlist(
     studentId: actor.studentId,
     uni: uni as CatalogUniversityShortlistEmbed,
     sortOrder: nextSort,
+    majorProgram,
   });
 
   const { data: row, error: insErr } = await server

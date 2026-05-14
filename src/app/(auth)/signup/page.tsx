@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SignupWizard } from "@/components/auth/signup-wizard";
+import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export const metadata: Metadata = {
   title: "Get started | Univeera",
@@ -8,5 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function SignupPage() {
+
   return <SignupWizard />;
 }

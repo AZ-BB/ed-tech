@@ -6,6 +6,11 @@ import {
   logStudentAiUsageAndActivity,
   requireStudentSession,
 } from "@/lib/student-ai-usage-log";
+import {
+  recordStudentPlatformCompletionOnce,
+  STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
+import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 const fallbackModel = "gpt-4.1-mini";
 
@@ -341,6 +346,14 @@ Rules:
         message: activityMessage,
       },
     });
+
+    createSupabaseServerClient().then((supabase) =>
+      recordStudentPlatformCompletionOnce(
+        supabase,
+        studentId,
+        STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_essay_review,
+      ).catch(() => {}),
+    );
 
     return NextResponse.json(feedback);
   } catch (error) {
