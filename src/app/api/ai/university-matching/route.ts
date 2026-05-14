@@ -5,6 +5,11 @@ import {
   logStudentAiUsageAndActivity,
   requireStudentSession,
 } from "@/lib/student-ai-usage-log";
+import {
+  recordStudentPlatformCompletionOnce,
+  STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
+import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type StudentMatchingPayload = {
   fullName: string;
@@ -310,6 +315,14 @@ Rules:
         message: `Generated AI university matches (${matches.matches?.length ?? 0} recommendations).`,
       },
     });
+
+    createSupabaseServerClient().then((supabase) =>
+      recordStudentPlatformCompletionOnce(
+        supabase,
+        studentId,
+        STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_ai_matching,
+      ).catch(() => {}),
+    );
 
     return NextResponse.json(matches);
   } catch (error) {

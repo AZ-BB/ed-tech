@@ -916,7 +916,9 @@ body {
 
 .footer-brand {
   max-width: 260px;
+  flex: 1;
 }
+
 
 .footer-brand-name {
   font-size: 16px;

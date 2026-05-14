@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
@@ -11,6 +12,7 @@ import {
 } from "../_data/student-dashboard-data";
 import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
+import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 
 function formatDashboardTimestamp(iso: string | null): string {
   if (!iso) return "";
@@ -36,7 +38,7 @@ const SCROLL_THIN =
 
 const NEWS_LIST_CLASS = `max-h-[240px] ${SCROLL_THIN}`;
 const TASKS_LIST_CLASS = `max-h-[260px] ${SCROLL_THIN}`;
-const ACTIVITY_LIST_CLASS = `max-h-[190px] ${SCROLL_THIN}`;
+const ACTIVITY_LIST_CLASS = `max-h-[260px] ${SCROLL_THIN}`;
 
 function activityLogAccent(entityType: string): {
   iconWrap: string;
@@ -79,6 +81,27 @@ type StudentDashboardProps = {
   dashboardTasks: DashboardTaskItem[];
 };
 
+function formatTaskDate(iso: string | null) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function isOverdue(dueDate: string | null, completed: boolean) {
+  if (!dueDate || completed) return false;
+  const d = new Date(dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d < today;
+}
+
 export function StudentDashboard({
   welcomeFirstName,
   platformCompleted,
@@ -89,6 +112,33 @@ export function StudentDashboard({
   activityLogItems,
   dashboardTasks,
 }: StudentDashboardProps) {
+  const [tasks, setTasks] = useState(dashboardTasks);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const toggleTask = async (task: DashboardTaskItem) => {
+    setTogglingId(task.id);
+    const next = !task.completed;
+    const now = new Date().toISOString();
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase
+      .from("student_my_application_tasks")
+      .update({
+        completed: next,
+        completed_at: next ? now : null,
+        updated_at: now,
+      })
+      .eq("id", task.id);
+
+    if (error) {
+      setTogglingId(null);
+      return;
+    }
+    setTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, completed: next } : t)),
+    );
+    setTogglingId(null);
+  };
+
   return (
     <div className="text-[var(--text)]">
       <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-[2fr_1fr]">
@@ -176,7 +226,7 @@ export function StudentDashboard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
+        <div className="flex h-full flex-col rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
             <svg
               width="14"
@@ -191,7 +241,7 @@ export function StudentDashboard({
             </svg>
             Announcements
           </div>
-          <div className="flex max-h-[140px] flex-col gap-2 overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
             {announcementItems.length === 0 ? (
               <p className="px-0.5 text-xs text-[var(--text-hint)]">
                 No announcements yet.
@@ -225,8 +275,7 @@ export function StudentDashboard({
         Quick actions
       </div>
       <div className="mb-5 w-full min-w-0">
-        {/* Column-first 2-row layout (matches original hub); minmax prevents overflow */}
-        <div className="grid w-full min-w-0 grid-flow-col grid-rows-2 gap-3 [grid-auto-columns:minmax(0,1fr)] max-[800px]:grid-flow-row max-[800px]:grid-rows-none max-[800px]:grid-cols-1 max-[800px]:auto-cols-auto sm:max-[800px]:grid-cols-2">
+        <div className="grid w-full min-w-0 grid-cols-4 grid-rows-2 gap-3 max-[800px]:grid-cols-1 max-[800px]:grid-rows-none sm:max-[800px]:grid-cols-2">
           {quickActions.map((action) => (
             <Link
               key={action.name}
@@ -341,101 +390,143 @@ export function StudentDashboard({
           </div>
         </div>
 
-        <div className="rounded-[20px] border border-[var(--border-light)] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] max-[800px]:p-5">
-          <div className="mb-4 flex items-center gap-2.5">
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-light)] bg-[var(--sand)] text-[var(--text)]"
+        <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
               aria-hidden
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M8 12.5l2.5 2.5L16 9" />
-              </svg>
-            </span>
-            <h2 className="font-[family-name:var(--font-dm-serif)] text-lg font-semibold tracking-tight text-[var(--text)]">
-              Tasks
-            </h2>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M8 12.5l2.5 2.5L16 9" />
+            </svg>
+            Tasks
           </div>
           <div className={`flex flex-col gap-3 ${TASKS_LIST_CLASS}`}>
-            {dashboardTasks.length === 0 ? (
+            {tasks.length === 0 ? (
               <p className="rounded-xl bg-[#f4f4f5] px-5 py-4 text-[13px] text-[var(--text-mid)]">
                 No tasks yet. Your counsellor can assign items here.
               </p>
             ) : (
-              dashboardTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-4 rounded-xl bg-[#f4f4f5] px-5 py-4"
-                >
-                  <span className="shrink-0" aria-hidden>
-                    {task.completed ? (
-                      <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-[#1B4332]">
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="white"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden
-                        >
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      </span>
-                    ) : (
-                      <span className="relative flex h-[22px] w-[22px] items-center justify-center rounded-[5px] border-[1.5px] border-[#d4d4d8] bg-white">
-                        <svg
-                          className="absolute opacity-[0.18]"
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden
-                        >
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      </span>
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`text-[14px] font-medium leading-snug ${
-                        task.completed
-                          ? "text-[#a1a1aa] line-through decoration-[#a1a1aa]"
-                          : "text-[#18181b]"
-                      }`}
-                    >
-                      {task.title}
-                    </p>
-                    {task.notes?.trim() ? (
+              tasks.map((task) => {
+                const overdue = isOverdue(task.dueDate, task.completed);
+                const toggling = togglingId === task.id;
+                return (
+                  <button
+                    key={task.id}
+                    type="button"
+                    disabled={toggling}
+                    onClick={() => void toggleTask(task)}
+                    className={`flex w-full cursor-pointer items-start gap-4 rounded-xl px-5 py-4 text-left transition-colors ${
+                      task.completed
+                        ? "bg-[#eef1ee]"
+                        : "bg-[#f4f4f5] hover:bg-[#ebebed]"
+                    } ${toggling ? "opacity-60" : ""}`}
+                  >
+                    <span className="mt-0.5 shrink-0" aria-hidden>
+                      {task.completed ? (
+                        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-[#1B4332]">
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="relative flex h-[22px] w-[22px] items-center justify-center rounded-[5px] border-[1.5px] border-[#d4d4d8] bg-white transition-colors hover:border-[#1B4332]">
+                          <svg
+                            className="absolute opacity-[0.18]"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </span>
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
                       <p
-                        className={`mt-1 line-clamp-2 text-[12px] leading-snug ${
+                        className={`text-[14px] font-medium leading-snug ${
                           task.completed
-                            ? "text-[#c4c4c4] line-through"
-                            : "text-[var(--text-mid)]"
+                            ? "text-[#a1a1aa] line-through decoration-[#a1a1aa]"
+                            : "text-[#18181b]"
                         }`}
                       >
-                        {task.notes.trim()}
+                        {task.title}
                       </p>
-                    ) : null}
-                  </div>
-                </div>
-              ))
+                      {task.notes?.trim() ? (
+                        <p
+                          className={`mt-1 line-clamp-2 text-[12px] leading-snug ${
+                            task.completed
+                              ? "text-[#c4c4c4] line-through"
+                              : "text-[var(--text-mid)]"
+                          }`}
+                        >
+                          {task.notes.trim()}
+                        </p>
+                      ) : null}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-light)]">
+                        {task.priority === "high" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(231,76,60,0.12)] px-[7px] py-px text-[10px] font-bold text-[#8c2d22]">
+                            <span
+                              className="h-1 w-1 shrink-0 rounded-full bg-[var(--red)]"
+                              aria-hidden
+                            />
+                            High
+                          </span>
+                        ) : task.priority === "medium" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(212,162,42,0.14)] px-[7px] py-px text-[10px] font-bold text-[#7a5d10]">
+                            <span
+                              className="h-1 w-1 shrink-0 rounded-full bg-[#D4A22A]"
+                              aria-hidden
+                            />
+                            Medium
+                          </span>
+                        ) : task.priority === "low" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(100,116,139,0.12)] px-[7px] py-px text-[10px] font-bold text-[#475569]">
+                            <span
+                              className="h-1 w-1 shrink-0 rounded-full bg-[#64748B]"
+                              aria-hidden
+                            />
+                            Low
+                          </span>
+                        ) : null}
+                        {task.dueDate ? (
+                          <span
+                            className={
+                              overdue
+                                ? "font-medium text-[var(--red)]"
+                                : undefined
+                            }
+                          >
+                            Due {formatTaskDate(task.dueDate)}
+                            {overdue ? " — overdue" : ""}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
           <div className="mt-4 border-t border-[var(--border-light)] pt-4">
@@ -448,7 +539,7 @@ export function StudentDashboard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
+        <div className="flex h-full flex-col rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
             <svg
               width="14"
@@ -464,7 +555,7 @@ export function StudentDashboard({
             </svg>
             Recent activity
           </div>
-          <div className={`flex flex-col ${ACTIVITY_LIST_CLASS}`}>
+          <div className={`flex min-h-0 flex-1 flex-col ${ACTIVITY_LIST_CLASS}`}>
             {activityLogItems.length === 0 ? (
               <p className="text-xs text-[var(--text-hint)]">
                 No recent activity yet.

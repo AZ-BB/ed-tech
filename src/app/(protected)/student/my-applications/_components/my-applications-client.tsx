@@ -16,6 +16,7 @@ import type {
   EssayWithComments,
   MyApplicationsInitialPayload,
 } from "../_lib/my-applications-types";
+import { MoveToShortlistModal } from "./move-to-shortlist-modal";
 import { getStudentApplicationProfileCompletion } from "@/lib/student-application-profile-completion";
 import {
   labelPreferredDestinationEntry,
@@ -33,6 +34,18 @@ import {
   sanitizeActScoreInput,
   sanitizeSatScoreInput,
 } from "../_lib/sat-act-score-input";
+import {
+  IELTS_SCORE_MAX,
+  IELTS_SCORE_MIN,
+  TOEFL_SCORE_MAX,
+  TOEFL_SCORE_MIN,
+  clampIeltsScoreOnBlur,
+  clampToeflScoreOnBlur,
+  formatLegacyEnglishSummary,
+  parseLegacyEnglishScores,
+  sanitizeIeltsScoreInput,
+  sanitizeToeflScoreInput,
+} from "../_lib/ielts-toefl-score-input";
 import {
   AID_OPTIONS,
   APPLICATION_METHOD_OPTIONS,
@@ -297,9 +310,18 @@ export function MyApplicationsClient({
   );
   const [budgetRange, setBudgetRange] = useState(ap0?.budget_range ?? "");
   const [needAid, setNeedAid] = useState(ap0?.need_based_aid ?? "");
-  const [englishScores, setEnglishScores] = useState(
-    ap0?.english_test_scores ?? "",
-  );
+  const [ieltsScore, setIeltsScore] = useState(() => {
+    const i = ap0?.ielts_score?.trim();
+    const t = ap0?.toefl_score?.trim();
+    if (i || t) return i ?? "";
+    return parseLegacyEnglishScores(ap0?.english_test_scores ?? null).ielts;
+  });
+  const [toeflScore, setToeflScore] = useState(() => {
+    const i = ap0?.ielts_score?.trim();
+    const t = ap0?.toefl_score?.trim();
+    if (i || t) return t ?? "";
+    return parseLegacyEnglishScores(ap0?.english_test_scores ?? null).toefl;
+  });
   const [satScore, setSatScore] = useState(() => {
     const s = ap0?.sat_score?.trim();
     const a = ap0?.act_score?.trim();
@@ -332,6 +354,8 @@ export function MyApplicationsClient({
   const [uniModal, setUniModal] = useState(false);
   const [essayModal, setEssayModal] = useState(false);
   const [recModal, setRecModal] = useState(false);
+  const [moveToShortlistTarget, setMoveToShortlistTarget] =
+    useState<ActivityCatalogUniversity | null>(null);
 
   const [uniForm, setUniForm] = useState({
     university_name: "",
@@ -370,10 +394,32 @@ export function MyApplicationsClient({
     curriculum,
     destinations,
     programs,
-    english: englishScores,
+    english: formatLegacyEnglishSummary(ieltsScore, toeflScore) ?? "",
     sat: satScore,
     act: actScore,
   });
+
+  const ieltsScoreInvalid = useMemo(() => {
+    const t = ieltsScore.trim();
+    if (!t) return false;
+    const n = parseFloat(t);
+    return (
+      !Number.isFinite(n) ||
+      n < IELTS_SCORE_MIN ||
+      n > IELTS_SCORE_MAX
+    );
+  }, [ieltsScore]);
+
+  const toeflScoreInvalid = useMemo(() => {
+    const t = toeflScore.trim();
+    if (!t) return false;
+    const n = parseInt(t, 10);
+    return (
+      !Number.isFinite(n) ||
+      n < TOEFL_SCORE_MIN ||
+      n > TOEFL_SCORE_MAX
+    );
+  }, [toeflScore]);
 
   const satScoreInvalid = useMemo(() => {
     const t = satScore.trim();
@@ -469,7 +515,9 @@ export function MyApplicationsClient({
       interested_programs: programs,
       budget_range: budgetRange || null,
       need_based_aid: needAid || null,
-      english_test_scores: englishScores || null,
+      ielts_score: ieltsScore.trim() || null,
+      toefl_score: toeflScore.trim() || null,
+      english_test_scores: formatLegacyEnglishSummary(ieltsScore, toeflScore),
       sat_score: satScore.trim() || null,
       act_score: actScore.trim() || null,
       sat_act_scores: formatLegacySatActSummary(satScore, actScore),
@@ -489,7 +537,8 @@ export function MyApplicationsClient({
     programs,
     budgetRange,
     needAid,
-    englishScores,
+    ieltsScore,
+    toeflScore,
     satScore,
     actScore,
     predictedGrades,
@@ -535,6 +584,32 @@ export function MyApplicationsClient({
   };
 
   const saveScores = async () => {
+    const ieltsFinal = ieltsScore.trim() ? clampIeltsScoreOnBlur(ieltsScore) : "";
+    const toeflFinal = toeflScore.trim() ? clampToeflScoreOnBlur(toeflScore) : "";
+    const nIelts = ieltsFinal ? parseFloat(ieltsFinal) : NaN;
+    if (
+      ieltsFinal &&
+      (!Number.isFinite(nIelts) ||
+        nIelts < IELTS_SCORE_MIN ||
+        nIelts > IELTS_SCORE_MAX)
+    ) {
+      showToast(
+        `IELTS band must be between ${IELTS_SCORE_MIN} and ${IELTS_SCORE_MAX}.`,
+      );
+      return;
+    }
+    const nToefl = toeflFinal ? parseInt(toeflFinal, 10) : NaN;
+    if (
+      toeflFinal &&
+      (!Number.isFinite(nToefl) ||
+        nToefl < TOEFL_SCORE_MIN ||
+        nToefl > TOEFL_SCORE_MAX)
+    ) {
+      showToast(
+        `TOEFL total must be a whole number between ${TOEFL_SCORE_MIN} and ${TOEFL_SCORE_MAX}.`,
+      );
+      return;
+    }
     const satFinal = satScore.trim() ? clampSatScoreOnBlur(satScore) : "";
     const actFinal = actScore.trim() ? clampActScoreOnBlur(actScore) : "";
     const nSat = satFinal ? parseInt(satFinal, 10) : NaN;
@@ -561,10 +636,15 @@ export function MyApplicationsClient({
       );
       return;
     }
+    setIeltsScore(ieltsFinal);
+    setToeflScore(toeflFinal);
     setSatScore(satFinal);
     setActScore(actFinal);
     const row = {
       ...buildApplicationProfileRow(),
+      ielts_score: ieltsFinal || null,
+      toefl_score: toeflFinal || null,
+      english_test_scores: formatLegacyEnglishSummary(ieltsFinal, toeflFinal),
       sat_score: satFinal || null,
       act_score: actFinal || null,
       sat_act_scores: formatLegacySatActSummary(satFinal, actFinal),
@@ -662,8 +742,14 @@ export function MyApplicationsClient({
     setShortlist((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const moveFavouriteToShortlist = async (u: ActivityCatalogUniversity) => {
-    const res = await moveCatalogFavouriteToApplicationShortlist(u.uniId);
+  const moveFavouriteToShortlist = async (
+    u: ActivityCatalogUniversity,
+    majorProgram: string,
+  ) => {
+    const res = await moveCatalogFavouriteToApplicationShortlist(
+      u.uniId,
+      majorProgram,
+    );
     if (res.error || !res.data) {
       showToast(
         typeof res.error === "string"
@@ -680,6 +766,7 @@ export function MyApplicationsClient({
       }
       return [inserted, ...prev];
     });
+    setMoveToShortlistTarget(null);
     showToast(`${u.name} moved to your shortlist`);
   };
 
@@ -1351,20 +1438,52 @@ export function MyApplicationsClient({
                   Test scores
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Add your test scores as you take them — your counselor will
-                  use these for matching
+                  Add your test scores as you take them
                 </div>
               </div>
             </div>
             <div className={panelBodyClass}>
               <div className="grid gap-3.5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className={labelClass}>IELTS / TOEFL</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}>IELTS (overall band)</label>
                   <input
-                    className={fieldClass}
-                    placeholder="e.g. IELTS 7.5 or TOEFL 102"
-                    value={englishScores}
-                    onChange={(e) => setEnglishScores(e.target.value)}
+                    className={`${fieldClass} ${
+                      ieltsScoreInvalid
+                        ? "border-[#c0392b] shadow-[0_0_0_3px_rgba(192,57,43,0.12)]"
+                        : ""
+                    }`}
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder={`e.g. 7.5 (${IELTS_SCORE_MIN}–${IELTS_SCORE_MAX})`}
+                    value={ieltsScore}
+                    onChange={(e) =>
+                      setIeltsScore(sanitizeIeltsScoreInput(e.target.value))
+                    }
+                    onBlur={() =>
+                      setIeltsScore((s) => (s.trim() ? clampIeltsScoreOnBlur(s) : ""))
+                    }
+                    aria-invalid={ieltsScoreInvalid}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelClass}>TOEFL iBT (total)</label>
+                  <input
+                    className={`${fieldClass} ${
+                      toeflScoreInvalid
+                        ? "border-[#c0392b] shadow-[0_0_0_3px_rgba(192,57,43,0.12)]"
+                        : ""
+                    }`}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder={`e.g. 102 (${TOEFL_SCORE_MIN}–${TOEFL_SCORE_MAX})`}
+                    value={toeflScore}
+                    onChange={(e) =>
+                      setToeflScore(sanitizeToeflScoreInput(e.target.value))
+                    }
+                    onBlur={() =>
+                      setToeflScore((s) => (s.trim() ? clampToeflScoreOnBlur(s) : ""))
+                    }
+                    aria-invalid={toeflScoreInvalid}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -1387,10 +1506,6 @@ export function MyApplicationsClient({
                     }
                     aria-invalid={satScoreInvalid}
                   />
-                  <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
-                    Digital SAT total: {SAT_SCORE_MIN}–{SAT_SCORE_MAX}. Values above{" "}
-                    {SAT_SCORE_MAX} are capped automatically.
-                  </p>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className={labelClass}>ACT (composite)</label>
@@ -1412,10 +1527,6 @@ export function MyApplicationsClient({
                     }
                     aria-invalid={actScoreInvalid}
                   />
-                  <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
-                    Whole-number composite: {ACT_SCORE_MIN}–{ACT_SCORE_MAX}. Values above{" "}
-                    {ACT_SCORE_MAX} are capped automatically.
-                  </p>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>
@@ -1567,7 +1678,7 @@ export function MyApplicationsClient({
                       <button
                         type="button"
                         className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-colors hover:bg-[var(--green-dark)]"
-                        onClick={() => void moveFavouriteToShortlist(u)}
+                        onClick={() => setMoveToShortlistTarget(u)}
                       >
                         Move to shortlist
                       </button>
@@ -2469,6 +2580,16 @@ export function MyApplicationsClient({
             </button>
           </div>
         </ModalVeil>
+      ) : null}
+
+      {moveToShortlistTarget ? (
+        <MoveToShortlistModal
+          university={moveToShortlistTarget}
+          onClose={() => setMoveToShortlistTarget(null)}
+          onConfirm={(majorProgram) =>
+            moveFavouriteToShortlist(moveToShortlistTarget, majorProgram)
+          }
+        />
       ) : null}
 
       {essayModal ? (

@@ -1,6 +1,10 @@
 "use server";
 
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  recordStudentPlatformCompletionOnce,
+  STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
 
 export type ScholarshipActivityActionResult =
   | { ok: true }
@@ -125,6 +129,12 @@ export async function saveScholarship(
   );
   if (logErr) return logErr;
 
+  recordStudentPlatformCompletionOnce(
+    supabase,
+    studentId,
+    STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_scholarships,
+  ).catch(() => {});
+
   return { ok: true };
 }
 
@@ -215,6 +225,12 @@ export async function addScholarshipToShortlist(
     "Student added a scholarship to their shortlist.",
   );
   if (logErr) return logErr;
+
+  recordStudentPlatformCompletionOnce(
+    supabase,
+    studentId,
+    STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_scholarships,
+  ).catch(() => {});
 
   return { ok: true };
 }

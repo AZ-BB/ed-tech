@@ -12,7 +12,7 @@ import {
   scholarshipFromPayloadRow,
 } from "./scholarship-row-to-scholarship";
 
-export const SCHOLARSHIP_PAGE_SIZE = 6;
+export const SCHOLARSHIP_PAGE_SIZE = 12;
 
 export type ScholarshipDiscoveryTab = "government" | "other";
 

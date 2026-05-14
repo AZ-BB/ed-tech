@@ -1,9 +1,7 @@
 import Link from "next/link";
 
-import {
-  MarketingSubpageFooter,
-  MarketingSubpageNav,
-} from "@/components/landing/marketing-subpage-chrome";
+import { MarketingSubpageNav } from "@/components/landing/marketing-subpage-chrome";
+import { LandingFooter } from "@/components/landing/landing-footer";
 
 function ArrowRight() {
   return (
@@ -460,7 +458,7 @@ export default function ForSchoolsPage() {
         </div>
       </div>
 
-      <MarketingSubpageFooter />
+      <LandingFooter />
     </>
   );
 }

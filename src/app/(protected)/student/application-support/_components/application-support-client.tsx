@@ -742,21 +742,23 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             </div>
           </div>
 
-          <div className="py-10 pb-20 text-center">
-            <p className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[28px] text-[var(--text)]">
-              Ready to start your application journey?
-            </p>
-            <p className="mx-auto mb-6 max-w-[480px] text-sm leading-relaxed text-[var(--text-light)]">
-              Tell us where you stand today and we&apos;ll help you build a clear path forward.
-            </p>
-            <button
-              type="button"
-              onClick={() => setStep("basic")}
-              className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-12 py-[18px] text-base font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
-            >
-              Start your application journey
-              <ChevronRight className="scale-110" />
-            </button>
+          <div className="mx-auto max-w-[822px] rounded-2xl bg-white p-8 shadow-sm">
+            <div className="py-10 pb-16 text-center">
+              <p className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[28px] text-[var(--text)]">
+                Ready to start your application journey?
+              </p>
+              <p className="mx-auto mb-6 max-w-[480px] text-sm leading-relaxed text-[var(--text-light)]">
+                Tell us where you stand today and we&apos;ll help you build a clear path forward.
+              </p>
+              <button
+                type="button"
+                onClick={() => setStep("basic")}
+                className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-12 py-[18px] text-base font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
+              >
+                Start your application journey
+                <ChevronRight className="scale-110" />
+              </button>
+            </div>
           </div>
         </>
       ) : null}

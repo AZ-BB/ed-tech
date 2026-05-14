@@ -1,6 +1,10 @@
 "use server";
 
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  recordStudentPlatformCompletionOnce,
+  STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
 
 function uuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -255,6 +259,13 @@ export async function createAmbassadorSessionRequest(
     "ambassador_session_requested",
     `Student submitted an ambassador session request for ${amb.first_name} ${amb.last_name}.`,
   );
+
+  const server = await createSupabaseServerClient();
+  recordStudentPlatformCompletionOnce(
+    server,
+    actor.studentId,
+    STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_ambassadors,
+  ).catch(() => {});
 
   return { ok: true };
 }

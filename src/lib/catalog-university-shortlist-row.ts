@@ -39,15 +39,16 @@ export function buildShortlistInsertFromCatalogUniversity(args: {
   studentId: string;
   uni: CatalogUniversityShortlistEmbed;
   sortOrder: number;
+  majorProgram?: string;
 }): Database["public"]["Tables"]["student_shortlist_universities"]["Insert"] {
-  const { studentId, uni, sortOrder } = args;
+  const { studentId, uni, sortOrder, majorProgram } = args;
   const countryLabel =
     uni.countries?.name?.trim() || uni.country_code || "";
   return {
     student_id: studentId,
     university_name: uni.name,
     country: countryLabel || null,
-    major_program: "Undecided",
+    major_program: majorProgram?.trim() || "Undecided",
     application_method: resolveApplicationMethodFromCatalog(uni.method),
     application_deadline: catalogDeadlineToApplicationYmd(uni.deadline_date),
     status: "considering",

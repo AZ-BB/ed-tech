@@ -22,6 +22,12 @@ const filterToggleOffClass = `${filterToggleClass} border-[#e0deda] bg-white tex
 
 const filterToggleOnClass = `${filterToggleClass} border-[#2D6A4F] bg-[#f0faf3] text-[#2D6A4F]`;
 
+const filterToggleOffShortlistClass = `${filterToggleClass} border-[#2D6A4F]/40 bg-[#e8f5e9]/50 text-[#2D6A4F]/60 hover:bg-[#e8f5e9]/70 hover:text-[#2D6A4F]`;
+const filterToggleOnShortlistClass = `${filterToggleClass} border-[#2D6A4F] bg-[#e8f5e9] text-[#2D6A4F]`;
+
+const filterToggleOffFavouritesClass = `${filterToggleClass} border-[#b8860b]/40 bg-[#fef9e7]/50 text-[#b8860b]/60 hover:bg-[#fef9e7]/70 hover:text-[#b8860b]`;
+const filterToggleOnFavouritesClass = `${filterToggleClass} border-[#b8860b] bg-[#fef9e7] text-[#b8860b]`;
+
 export type UniversitiesFilterProps = {
     majors: { id: number; name: string }[];
     countries: { id: string; name: string }[];
@@ -299,7 +305,7 @@ export function UniversitiesFilter({
                         type="button"
                         aria-pressed={shortlistOnly}
                         aria-label={shortlistOnly ? "Show all universities" : "Show shortlisted universities only"}
-                        className={shortlistOnly ? filterToggleOnClass : filterToggleOffClass}
+                        className={shortlistOnly ? filterToggleOnShortlistClass : filterToggleOffShortlistClass}
                         onClick={() =>
                             patchAndNavigate({
                                 shortlisted: shortlistOnly ? null : "1",
@@ -312,7 +318,7 @@ export function UniversitiesFilter({
                         type="button"
                         aria-pressed={favouritesOnly}
                         aria-label={favouritesOnly ? "Show all universities" : "Show favourite universities only"}
-                        className={favouritesOnly ? filterToggleOnClass : filterToggleOffClass}
+                        className={favouritesOnly ? filterToggleOnFavouritesClass : filterToggleOffFavouritesClass}
                         onClick={() =>
                             patchAndNavigate({
                                 favourites: favouritesOnly ? null : "1",

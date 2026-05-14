@@ -381,9 +381,12 @@ function SnapshotContent({
     ? joinList(applicationProfile.interested_programs)
     : "—";
   const budget = snapDisplay(applicationProfile?.budget_range, "-");
-  const english = applicationProfile?.english_test_scores?.trim()
-    ? applicationProfile.english_test_scores.trim()
-    : "Pending";
+  const english = (() => {
+    const i = applicationProfile?.ielts_score?.trim();
+    const t = applicationProfile?.toefl_score?.trim();
+    if (i || t) return [i && `IELTS ${i}`, t && `TOEFL ${t}`].filter(Boolean).join(" · ");
+    return applicationProfile?.english_test_scores?.trim() || "Pending";
+  })();
   const sat = satScoreSnap;
   const act = actScoreSnap;
   const curr = snapDisplay(applicationProfile?.curriculum, "-");

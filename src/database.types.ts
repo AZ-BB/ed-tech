@@ -1441,6 +1441,7 @@ export type Database = {
           curriculum: string | null
           english_test_scores: string | null
           grade: string | null
+          ielts_score: string | null
           interested_programs: string[]
           need_based_aid: string | null
           other_tests: string | null
@@ -1451,6 +1452,7 @@ export type Database = {
           sat_score: string | null
           student_id: string
           target_intake: string | null
+          toefl_score: string | null
           updated_at: string
         }
         Insert: {
@@ -1460,6 +1462,7 @@ export type Database = {
           curriculum?: string | null
           english_test_scores?: string | null
           grade?: string | null
+          ielts_score?: string | null
           interested_programs?: string[]
           need_based_aid?: string | null
           other_tests?: string | null
@@ -1470,6 +1473,7 @@ export type Database = {
           sat_score?: string | null
           student_id: string
           target_intake?: string | null
+          toefl_score?: string | null
           updated_at?: string
         }
         Update: {
@@ -1479,6 +1483,7 @@ export type Database = {
           curriculum?: string | null
           english_test_scores?: string | null
           grade?: string | null
+          ielts_score?: string | null
           interested_programs?: string[]
           need_based_aid?: string | null
           other_tests?: string | null
@@ -1489,6 +1494,7 @@ export type Database = {
           sat_score?: string | null
           student_id?: string
           target_intake?: string | null
+          toefl_score?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -1,6 +1,10 @@
 "use server";
 
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  recordStudentPlatformCompletionOnce,
+  STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
 
 import type { Database } from "@/database.types";
 
@@ -276,6 +280,13 @@ export async function submitApplicationSupport(
   if (payErr) {
     console.error(payErr);
   }
+
+  const supabase = await createSupabaseServerClient();
+  recordStudentPlatformCompletionOnce(
+    supabase,
+    studentId,
+    STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_application_support,
+  ).catch(() => {});
 
   return { ok: true, applicationId };
 }

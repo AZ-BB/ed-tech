@@ -176,6 +176,8 @@ function toCompletionRow(
     preferred_destinations,
     interested_programs,
     english_test_scores,
+    ielts_score,
+    toefl_score,
     sat_score,
     act_score,
     sat_act_scores,
@@ -186,6 +188,8 @@ function toCompletionRow(
     preferred_destinations,
     interested_programs,
     english_test_scores,
+    ielts_score,
+    toefl_score,
     sat_score,
     act_score,
     sat_act_scores,
@@ -217,7 +221,7 @@ async function fetchApplicationProfilesForSchool(
     const { data, error } = await supabase
       .from("student_application_profile")
       .select(
-        "student_id, grade, curriculum, preferred_destinations, interested_programs, english_test_scores, sat_score, act_score, sat_act_scores",
+        "student_id, grade, curriculum, preferred_destinations, interested_programs, english_test_scores, ielts_score, toefl_score, sat_score, act_score, sat_act_scores",
       )
       .in("student_id", chunk);
     if (error) {

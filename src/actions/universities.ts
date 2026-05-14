@@ -5,6 +5,10 @@ import {
     type CatalogUniversityShortlistEmbed,
 } from "@/lib/catalog-university-shortlist-row";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+    recordStudentPlatformCompletionOnce,
+    STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
 import type { GeneralResponse } from "@/utils/response";
 import { revalidatePath } from "next/cache";
 
@@ -200,6 +204,12 @@ export async function addUniversityToShortlist(universityId: string): Promise<Ge
         return { data: false, error: syncRow.error };
     }
 
+    recordStudentPlatformCompletionOnce(
+        server,
+        actor.studentId,
+        STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_universities,
+    ).catch(() => {});
+
     revalidatePath(UNIVERSITIES_LIST_PATH);
     revalidatePath(`${UNIVERSITIES_LIST_PATH}/${id}`);
     revalidatePath(MY_APPLICATIONS_PATH);
@@ -310,6 +320,12 @@ export async function addUniversityToFavourites(universityId: string): Promise<G
             "Student added a university to their favourites.",
         );
     }
+
+    recordStudentPlatformCompletionOnce(
+        server,
+        actor.studentId,
+        STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_universities,
+    ).catch(() => {});
 
     revalidatePath(UNIVERSITIES_LIST_PATH);
     revalidatePath(`${UNIVERSITIES_LIST_PATH}/${id}`);

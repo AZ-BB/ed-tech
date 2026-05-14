@@ -2,6 +2,10 @@
 
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { isValidAlpha2Code } from "@/lib/countries";
+import {
+  recordStudentPlatformCompletionOnce,
+  STUDENT_PLATFORM_COMPLETION_FLAGS,
+} from "@/lib/student-platform-completion";
 
 /** Used when `schools.default_advisor_credit_limit` is null. */
 const FALLBACK_ADVISOR_BOOKINGS_PER_UTC_MONTH = 3;
@@ -248,6 +252,12 @@ export async function createAdvisorSessionBooking(
     "advisor_session_booking_requested",
     `Student submitted a booking request for advisor ${advisor.first_name} ${advisor.last_name}.`,
   );
+
+  recordStudentPlatformCompletionOnce(
+    server,
+    actor.studentId,
+    STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_advisor_sessions,
+  ).catch(() => {});
 
   return { ok: true };
 }

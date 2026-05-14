@@ -52,6 +52,57 @@ const NON_ARAB_COUNTRIES: readonly Country[] = COUNTRIES.filter(
   (c) => !arabNationalityAlpha2Lower.has(c.alpha2.toLowerCase()),
 );
 
+const DEMONYM: Record<string, string> = {
+  AE: "Emirati", SA: "Saudi", QA: "Qatari", KW: "Kuwaiti", BH: "Bahraini",
+  OM: "Omani", IQ: "Iraqi", JO: "Jordanian", LB: "Lebanese", SY: "Syrian",
+  PS: "Palestinian", YE: "Yemeni", EG: "Egyptian", LY: "Libyan", TN: "Tunisian",
+  DZ: "Algerian", MA: "Moroccan", MR: "Mauritanian", SD: "Sudanese",
+  DJ: "Djiboutian", SO: "Somali", KM: "Comorian",
+  AF: "Afghan", AL: "Albanian", AD: "Andorran", AO: "Angolan", AG: "Antiguan",
+  AR: "Argentine", AM: "Armenian", AU: "Australian", AT: "Austrian",
+  AZ: "Azerbaijani", BS: "Bahamian", BD: "Bangladeshi", BB: "Barbadian",
+  BY: "Belarusian", BE: "Belgian", BZ: "Belizean", BJ: "Beninese", BT: "Bhutanese",
+  BO: "Bolivian", BA: "Bosnian", BW: "Botswanan", BR: "Brazilian", BN: "Bruneian",
+  BG: "Bulgarian", BF: "Burkinabé", BI: "Burundian", KH: "Cambodian",
+  CM: "Cameroonian", CA: "Canadian", CV: "Cape Verdean", CF: "Central African",
+  TD: "Chadian", CL: "Chilean", CN: "Chinese", CO: "Colombian", CG: "Congolese",
+  CD: "Congolese (DRC)", CR: "Costa Rican", CI: "Ivorian", HR: "Croatian",
+  CU: "Cuban", CY: "Cypriot", CZ: "Czech", DK: "Danish", DO: "Dominican",
+  EC: "Ecuadorian", SV: "Salvadoran", GQ: "Equatoguinean", ER: "Eritrean",
+  EE: "Estonian", SZ: "Swazi", ET: "Ethiopian", FJ: "Fijian", FI: "Finnish",
+  FR: "French", GA: "Gabonese", GM: "Gambian", GE: "Georgian", DE: "German",
+  GH: "Ghanaian", GR: "Greek", GD: "Grenadian", GT: "Guatemalan", GN: "Guinean",
+  GW: "Bissau-Guinean", GY: "Guyanese", HT: "Haitian", HN: "Honduran",
+  HU: "Hungarian", IS: "Icelandic", IN: "Indian", ID: "Indonesian", IR: "Iranian",
+  IE: "Irish", IL: "Israeli", IT: "Italian", JM: "Jamaican", JP: "Japanese",
+  KZ: "Kazakh", KE: "Kenyan", KI: "I-Kiribati", KP: "North Korean",
+  KR: "South Korean", XK: "Kosovar", KG: "Kyrgyz", LA: "Laotian", LV: "Latvian",
+  LS: "Basotho", LR: "Liberian", LI: "Liechtensteiner", LT: "Lithuanian",
+  LU: "Luxembourgish", MG: "Malagasy", MW: "Malawian", MY: "Malaysian",
+  MV: "Maldivian", ML: "Malian", MT: "Maltese", MH: "Marshallese", MX: "Mexican",
+  FM: "Micronesian", MD: "Moldovan", MC: "Monégasque", MN: "Mongolian",
+  ME: "Montenegrin", MZ: "Mozambican", MM: "Burmese", NA: "Namibian", NR: "Nauruan",
+  NP: "Nepali", NL: "Dutch", NZ: "New Zealander", NI: "Nicaraguan", NE: "Nigerien",
+  NG: "Nigerian", MK: "North Macedonian", NO: "Norwegian", PK: "Pakistani",
+  PW: "Palauan", PA: "Panamanian", PG: "Papua New Guinean", PY: "Paraguayan",
+  PE: "Peruvian", PH: "Filipino", PL: "Polish", PT: "Portuguese", RO: "Romanian",
+  RU: "Russian", RW: "Rwandan", KN: "Kittitian", LC: "Saint Lucian",
+  VC: "Vincentian", WS: "Samoan", SM: "Sammarinese", ST: "São Toméan",
+  SN: "Senegalese", RS: "Serbian", SC: "Seychellois", SL: "Sierra Leonean",
+  SG: "Singaporean", SK: "Slovak", SI: "Slovenian", SB: "Solomon Islander",
+  ZA: "South African", SS: "South Sudanese", ES: "Spanish", LK: "Sri Lankan",
+  SR: "Surinamese", SE: "Swedish", CH: "Swiss", TJ: "Tajik", TZ: "Tanzanian",
+  TH: "Thai", TL: "Timorese", TG: "Togolese", TO: "Tongan", TT: "Trinidadian",
+  TR: "Turkish", TM: "Turkmen", TV: "Tuvaluan", UG: "Ugandan", UA: "Ukrainian",
+  GB: "British", US: "American", UY: "Uruguayan", UZ: "Uzbek", VU: "Vanuatuan",
+  VA: "Vatican", VE: "Venezuelan", VN: "Vietnamese", ZM: "Zambian", ZW: "Zimbabwean",
+  TW: "Taiwanese", HK: "Hong Konger", MO: "Macanese",
+};
+
+function demonym(c: Country): string {
+  return DEMONYM[c.alpha2.toUpperCase()] ?? c.name;
+}
+
 const selectClass =
   "min-w-[160px] cursor-pointer appearance-none rounded-[var(--radius-sm)] border-[1.5px] border-[var(--border)] bg-white py-2.5 pl-4 pr-9 text-[13px] text-[var(--text)] focus:border-[var(--green-light)] focus:outline-none";
 
@@ -123,14 +174,14 @@ export function ScholarshipSelectorBar({
             <optgroup label="Arab nationalities">
               {ARAB_COUNTRIES_FOR_NATIONALITY.map((c) => (
                 <option key={c.alpha2} value={c.alpha2.toLowerCase()}>
-                  {c.name}
+                  {demonym(c)}
                 </option>
               ))}
             </optgroup>
             <optgroup label="All countries">
               {NON_ARAB_COUNTRIES.map((c) => (
                 <option key={c.alpha2} value={c.alpha2.toLowerCase()}>
-                  {c.name}
+                  {demonym(c)}
                 </option>
               ))}
             </optgroup>

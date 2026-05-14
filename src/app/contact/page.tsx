@@ -1,8 +1,6 @@
 import { ContactForm } from "./contact-form";
-import {
-  MarketingSubpageFooter,
-  MarketingSubpageNav,
-} from "@/components/landing/marketing-subpage-chrome";
+import { MarketingSubpageNav } from "@/components/landing/marketing-subpage-chrome";
+import { LandingFooter } from "@/components/landing/landing-footer";
 
 export default function ContactPage() {
   return (
@@ -25,15 +23,15 @@ export default function ContactPage() {
             <p>
               You can also reach us at{" "}
               <strong>
-                <a href="mailto:hello@univeera.com">hello@univeera.com</a>
+                <a href="mailto:admin@univeera.me">admin@univeera.me</a>
               </strong>
             </p>
-            <p>We usually respond within 1–2 business days.</p>
+            <p>We usually respond within 2-4 hours.</p>
           </div>
         </div>
       </div>
 
-      <MarketingSubpageFooter />
+      <LandingFooter />
     </>
   );
 }

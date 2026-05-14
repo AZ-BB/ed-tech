@@ -25,7 +25,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "personality-check",
-    label: "Personality Check",
+    label: "Personality Overview",
     href: "#",
   },
   {
@@ -67,7 +67,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "post-admission-support",
-    label: "Post Admission Support",
+    label: "Post Admission",
     href: "#",
   },
   {
@@ -142,7 +142,7 @@ export type QuickAction = {
 
 export const quickActions: QuickAction[] = [
   {
-    name: "Personality Check",
+    name: "Personality Overview",
     desc: "Understand your profile and how you learn best",
     href: "#",
     iconWrap: "bg-[#F3E8FF]",
@@ -233,8 +233,8 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Post Admission Support",
-    desc: "Visa, housing, and arrival guidance after you get in",
+    name: "Post Admission",
+    desc: "Visa, housing, and arrival guidance",
     href: "#",
     iconWrap: "bg-[#DCFCE7]",
     iconStroke: "#166534",
