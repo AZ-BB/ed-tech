@@ -9,6 +9,7 @@ import {
   toggleSchoolStudentTask,
 } from "@/actions/school-tasks";
 import { Pagination } from "@/components/pagination";
+import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import type { GeneralResponse } from "@/utils/response";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
@@ -98,12 +99,16 @@ const taskModalInputClass = `mt-1.5 ${taskModalControlClass}`;
 const taskModalSelectClass = `${taskModalInputClass} appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-9 cursor-pointer`;
 const taskModalSelectControlClass = `${taskModalControlClass} appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-9 cursor-pointer`;
 
+const ASSIGN_ALL_STUDENTS = "__all__";
+
 export type SchoolTasksClientProps = {
   rows: SchoolTaskTableRow[];
   totalRows: number;
   page: number;
   limit: number;
   q: string;
+  /** Navbar student filter; only used on the all-tasks page */
+  studentQ?: string;
   when: string;
   priority: string;
   status: string;
@@ -126,6 +131,7 @@ export function SchoolTasksClient({
   page,
   limit,
   q,
+  studentQ = "",
   when,
   priority,
   status,
@@ -138,6 +144,9 @@ export function SchoolTasksClient({
   const router = useRouter();
   const [internalNewOpen, setInternalNewOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [assignTarget, setAssignTarget] = useState("");
+  const [bulkGrade, setBulkGrade] = useState("");
+  const [assignError, setAssignError] = useState<string | null>(null);
   const createPrevPending = useRef(false);
 
   const isStudentProfile = variant === "studentProfile";
@@ -156,6 +165,7 @@ export function SchoolTasksClient({
 
   const filterActive =
     q.trim().length > 0 ||
+    studentQ.trim().length > 0 ||
     when === "overdue" ||
     when === "week" ||
     priority === "high" ||
@@ -166,7 +176,7 @@ export function SchoolTasksClient({
 
   const [createState, createAction, createPending] = useActionState(
     createSchoolStudentTask,
-    null as GeneralResponse<null> | null,
+    null as GeneralResponse<null | { created: number }> | null,
   );
 
   useEffect(() => {
@@ -177,6 +187,22 @@ export function SchoolTasksClient({
     }
     createPrevPending.current = createPending;
   }, [createPending, createState, router]);
+
+  useEffect(() => {
+    if (newOpen) return;
+    setAssignTarget("");
+    setBulkGrade("");
+    setAssignError(null);
+  }, [newOpen]);
+
+  function handleCreateSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (!isStudentProfile && !assignTarget) {
+      e.preventDefault();
+      setAssignError("Pick a student or All students.");
+      return;
+    }
+    setAssignError(null);
+  }
 
   useEffect(() => {
     if (!newOpen) return;
@@ -287,6 +313,9 @@ export function SchoolTasksClient({
           >
             <input type="hidden" name="page" value="1" />
             <input type="hidden" name="limit" value={String(limit)} />
+            {studentQ.trim() ? (
+              <input type="hidden" name="studentQ" value={studentQ} />
+            ) : null}
             <div className="relative min-w-[180px] flex-1 basis-[200px]">
               <svg
                 className="pointer-events-none absolute left-3 top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[var(--text-hint)]"
@@ -304,6 +333,7 @@ export function SchoolTasksClient({
               </label>
               <input
                 id={searchInputId}
+                key={`${q}-${studentQ}`}
                 type="search"
                 name="q"
                 defaultValue={q}
@@ -565,6 +595,7 @@ export function SchoolTasksClient({
             </div>
             <form
               action={createAction}
+              onSubmit={handleCreateSubmit}
               className="flex min-h-0 flex-1 flex-col"
             >
               <div className="min-h-0 space-y-4 overflow-y-auto px-5 py-4">
@@ -598,28 +629,65 @@ export function SchoolTasksClient({
                     </div>
                   </>
                 ) : (
-                  <div>
-                    <label htmlFor="nt-student" className={taskModalLabelClass}>
-                      Assign to
-                    </label>
-                    <select
-                      id="nt-student"
-                      name="student_id"
-                      required
-                      style={{ backgroundImage: SELECT_CHEVRON }}
-                      className={taskModalSelectClass}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Select student…
-                      </option>
-                      {studentOptions.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.label}
+                  <>
+                    <input type="hidden" name="student_id" value={assignTarget} />
+                    {assignTarget === ASSIGN_ALL_STUDENTS ? (
+                      <input type="hidden" name="grade" value={bulkGrade} />
+                    ) : null}
+                    <div>
+                      <label htmlFor="nt-student" className={taskModalLabelClass}>
+                        Assign to
+                      </label>
+                      <select
+                        id="nt-student"
+                        value={assignTarget}
+                        onChange={(e) => {
+                          setAssignTarget(e.target.value);
+                          setAssignError(null);
+                          if (e.target.value !== ASSIGN_ALL_STUDENTS) {
+                            setBulkGrade("");
+                          }
+                        }}
+                        style={{ backgroundImage: SELECT_CHEVRON }}
+                        className={taskModalSelectClass}
+                      >
+                        <option value="">Select student…</option>
+                        <option value={ASSIGN_ALL_STUDENTS}>
+                          All students
                         </option>
-                      ))}
-                    </select>
-                  </div>
+                        {studentOptions.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {assignTarget === ASSIGN_ALL_STUDENTS ? (
+                      <div>
+                        <label
+                          htmlFor="nt-grade"
+                          className={taskModalLabelClass}
+                        >
+                          Grade
+                        </label>
+                        <select
+                          id="nt-grade"
+                          value={bulkGrade}
+                          onChange={(e) => setBulkGrade(e.target.value)}
+                          style={{ backgroundImage: SELECT_CHEVRON }}
+                          className={taskModalSelectClass}
+                          aria-label="Filter by grade"
+                        >
+                          <option value="">All grades</option>
+                          {GRADE_FILTER_OPTIONS.map((g) => (
+                            <option key={g} value={g}>
+                              {g}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                  </>
                 )}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex min-w-0 flex-col gap-1.5">
@@ -663,6 +731,11 @@ export function SchoolTasksClient({
                     className="mt-1.5 min-h-[88px] w-full resize-y rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)]"
                   />
                 </div>
+                {assignError ? (
+                  <p className="text-[12px] font-medium text-[#8c2d22]">
+                    {assignError}
+                  </p>
+                ) : null}
                 {createState?.error ? (
                   <p className="text-[12px] font-medium text-[#8c2d22]">
                     {String(createState.error)}
@@ -683,7 +756,11 @@ export function SchoolTasksClient({
                   className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-60"
                   disabled={createPending}
                 >
-                  {createPending ? "Saving…" : "Create task"}
+                  {createPending
+                    ? "Saving…"
+                    : !isStudentProfile && assignTarget === ASSIGN_ALL_STUDENTS
+                      ? "Create tasks"
+                      : "Create task"}
                 </button>
               </div>
             </form>

@@ -1,10 +1,16 @@
 "use server";
 
+import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import type { GeneralResponse } from "@/utils/response";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
+
+const GRADE_ALLOWED = new Set<string>(GRADE_FILTER_OPTIONS);
+const BULK_ASSIGN_ALL_SENTINEL = "__all__";
+const BULK_ID_CHUNK = 250;
+const BULK_INSERT_CHUNK = 250;
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -59,10 +65,65 @@ async function assertStudentInSchool(
   return Boolean(data);
 }
 
+async function fetchSchoolStudentIdsForTaskBulk(
+  secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
+  schoolId: string,
+  grade: string,
+): Promise<string[]> {
+  const ids: string[] = [];
+  let offset = 0;
+
+  for (;;) {
+    let q = secret
+      .from("student_profiles")
+      .select("id")
+      .eq("school_id", schoolId);
+
+    if (grade) {
+      q = q.eq("grade", grade);
+    }
+
+    const { data, error } = await q
+      .order("id", { ascending: true })
+      .range(offset, offset + BULK_ID_CHUNK - 1);
+
+    if (error) {
+      console.error("[fetchSchoolStudentIdsForTaskBulk]", error);
+      throw new Error("Could not load students.");
+    }
+    if (!data?.length) break;
+
+    for (const row of data) {
+      ids.push(row.id);
+    }
+
+    if (data.length < BULK_ID_CHUNK) break;
+    offset += BULK_ID_CHUNK;
+  }
+
+  return ids;
+}
+
+async function resolveAssignedByName(
+  userId: string,
+): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data: sap } = await supabase
+    .from("school_admin_profiles")
+    .select("first_name, last_name")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return (
+    `${sap?.first_name?.trim() ?? ""} ${sap?.last_name?.trim() ?? ""}`.trim() ||
+    null
+  );
+}
+
 export async function createSchoolStudentTask(
-  _prev: GeneralResponse<null> | null,
+  _prev: GeneralResponse<null | { created: number }> | null,
   formData: FormData,
-): Promise<GeneralResponse<null>> {
+): Promise<GeneralResponse<null | { created: number }>> {
   const auth = await requireSchoolAdminSchoolId();
   if ("error" in auth) {
     return { data: null, error: auth.error };
@@ -74,9 +135,6 @@ export async function createSchoolStudentTask(
   const dueRaw = String(formData.get("due_date") ?? "").trim();
   const priority = normalizePriority(String(formData.get("priority") ?? ""));
 
-  if (!UUID_RE.test(studentId)) {
-    return { data: null, error: "Pick a student." };
-  }
   if (!title) {
     return { data: null, error: "Describe the task." };
   }
@@ -87,7 +145,68 @@ export async function createSchoolStudentTask(
     };
   }
 
+  const due_date = dueRaw && /^\d{4}-\d{2}-\d{2}$/.test(dueRaw) ? dueRaw : null;
+  const notes =
+    notesRaw.length > 8000
+      ? notesRaw.slice(0, 8000)
+      : notesRaw || null;
+
   const secret = await createSupabaseSecretClient();
+  const assignedBy = await resolveAssignedByName(auth.userId);
+
+  if (studentId === BULK_ASSIGN_ALL_SENTINEL) {
+    const gradeRaw = String(formData.get("grade") ?? "").trim();
+    if (gradeRaw && !GRADE_ALLOWED.has(gradeRaw)) {
+      return { data: null, error: "Pick a valid grade." };
+    }
+
+    let studentIds: string[];
+    try {
+      studentIds = await fetchSchoolStudentIdsForTaskBulk(
+        secret,
+        auth.schoolId,
+        gradeRaw,
+      );
+    } catch {
+      return { data: null, error: "Could not load students." };
+    }
+
+    if (studentIds.length === 0) {
+      return {
+        data: null,
+        error: gradeRaw
+          ? "No students match this grade."
+          : "No enrolled students at your school.",
+      };
+    }
+
+    const rows = studentIds.map((id) => ({
+      student_id: id,
+      title,
+      notes,
+      priority,
+      due_date,
+      assigned_by_name: assignedBy,
+    }));
+
+    for (let i = 0; i < rows.length; i += BULK_INSERT_CHUNK) {
+      const chunk = rows.slice(i, i + BULK_INSERT_CHUNK);
+      const { error: insErr } = await secret
+        .from("student_my_application_tasks")
+        .insert(chunk);
+
+      if (insErr) {
+        console.error("[createSchoolStudentTask] bulk", insErr);
+        return { data: null, error: "Could not create the tasks." };
+      }
+    }
+
+    return { data: { created: studentIds.length }, error: null };
+  }
+
+  if (!UUID_RE.test(studentId)) {
+    return { data: null, error: "Pick a student." };
+  }
 
   const okStudent = await assertStudentInSchool(
     secret,
@@ -97,23 +216,6 @@ export async function createSchoolStudentTask(
   if (!okStudent) {
     return { data: null, error: "That student is not at your school." };
   }
-
-  const supabase = await createSupabaseServerClient();
-  const { data: sap } = await supabase
-    .from("school_admin_profiles")
-    .select("first_name, last_name")
-    .eq("id", auth.userId)
-    .maybeSingle();
-
-  const assignedBy =
-    `${sap?.first_name?.trim() ?? ""} ${sap?.last_name?.trim() ?? ""}`.trim() ||
-    null;
-
-  const due_date = dueRaw && /^\d{4}-\d{2}-\d{2}$/.test(dueRaw) ? dueRaw : null;
-  const notes =
-    notesRaw.length > 8000
-      ? notesRaw.slice(0, 8000)
-      : notesRaw || null;
 
   const { error: insErr } = await secret
     .from("student_my_application_tasks")

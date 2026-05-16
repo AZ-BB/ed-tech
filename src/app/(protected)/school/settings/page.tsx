@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
+import { buildStudentAllocations } from "./_lib/build-student-allocations";
 import { netSessionCreditsUsedFromRows } from "./_lib/net-session-credits-used";
 import { SchoolSettingsClient } from "./_components/school-settings-client";
 
@@ -61,6 +62,8 @@ export default async function SchoolSettingsPage() {
     { data: creditRowsYear },
     { data: rechargeHistory },
     { data: usageRows },
+    { data: studentProfiles },
+    { data: allocationCreditRows },
   ] = await Promise.all([
     supabase.from("countries").select("id, name").order("name", { ascending: true }),
     supabase
@@ -102,6 +105,18 @@ export default async function SchoolSettingsPage() {
       .eq("school_id", schoolId)
       .order("created_at", { ascending: false })
       .limit(150),
+    supabase
+      .from("student_profiles")
+      .select(
+        "id, first_name, last_name, advisor_credit_limit, ambassador_credit_limit",
+      )
+      .eq("school_id", schoolId)
+      .order("last_name", { ascending: true })
+      .order("first_name", { ascending: true }),
+    supabase
+      .from("student_credits_history")
+      .select("student_id, amount, status, type")
+      .eq("school_id", schoolId),
   ]);
 
   const creditsUsedThisYear = netSessionCreditsUsedFromRows(creditRowsYear ?? []);
@@ -131,6 +146,15 @@ export default async function SchoolSettingsPage() {
       studentName,
     };
   });
+
+  const studentAllocations = buildStudentAllocations(
+    studentProfiles ?? [],
+    allocationCreditRows ?? [],
+    {
+      defaultAdvisorLimit: school?.default_advisor_credit_limit ?? null,
+      defaultAmbassadorLimit: school?.default_ambasador_credit_limit ?? null,
+    },
+  );
 
   const initialFullName = [profile.first_name, profile.last_name]
     .map((s) => s?.trim() ?? "")
@@ -165,6 +189,7 @@ export default async function SchoolSettingsPage() {
       }}
       rechargeHistory={rechargeHistorySafe}
       studentUsageHistory={studentUsageHistory}
+      studentAllocations={studentAllocations}
     />
   );
 }

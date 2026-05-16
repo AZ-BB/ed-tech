@@ -8,6 +8,7 @@ import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { studentSignUp } from "@/actions/auth";
 import { CountryCombobox } from "@/components/auth/country-combobox";
 import type { Country } from "@/lib/countries";
+import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import { GeneralResponse } from "@/utils/response";
 
 function LogoIcon() {
@@ -213,6 +214,7 @@ export function SignupWizard() {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [grade, setGrade] = useState("");
   const [nationality, setNationality] = useState<Country | null>(null);
   const [residence, setResidence] = useState<Country | null>(null);
 
@@ -259,12 +261,12 @@ export function SignupWizard() {
     const next = {
       f: !firstName.trim() ? "First name is required" : "",
       l: !lastName.trim() ? "Last name is required" : "",
-      s: "",
+      s: !grade ? "Grade is required" : "",
       n: !nationality ? "Nationality is required" : "",
       r: !residence ? "Country of residence is required" : "",
     };
     setPe(next);
-    return !next.f && !next.l && !next.n && !next.r;
+    return !next.f && !next.l && !next.s && !next.n && !next.r;
   }
 
   const buildSignUpFormData = useCallback((): FormData | null => {
@@ -272,6 +274,7 @@ export function SignupWizard() {
     const fd = new FormData();
     fd.append("firstName", firstName.trim());
     fd.append("lastName", lastName.trim());
+    fd.append("grade", grade);
     fd.append("email", email.trim());
     fd.append("nationalityCountryCode", nationality.alpha2);
     fd.append("residenceCountryCode", residence.alpha2);
@@ -282,6 +285,7 @@ export function SignupWizard() {
   }, [
     firstName,
     lastName,
+    grade,
     email,
     nationality,
     residence,
@@ -443,6 +447,25 @@ export function SignupWizard() {
                 />
                 {pe.l ? <p className="mt-1 text-[11px] text-red-600">{pe.l}</p> : null}
               </div>
+            </div>
+            <div>
+              <label htmlFor={`${uid}-grade`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
+                Grade
+              </label>
+              <select
+                id={`${uid}-grade`}
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                className={clsx(pe.s ? fieldErr : fieldNormal)}
+              >
+                <option value="">Select your grade</option>
+                {STUDENT_SCHOOL_GRADE_OPTIONS.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+              {pe.s ? <p className="mt-1 text-[11px] text-red-600">{pe.s}</p> : null}
             </div>
             <CountryCombobox
               id={`${uid}-nat`}

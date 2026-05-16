@@ -1,9 +1,12 @@
 "use server";
 
+import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import { GeneralResponse } from "@/utils/response";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
+const GRADE_ALLOWED = new Set<string>(STUDENT_SCHOOL_GRADE_OPTIONS);
 
 export async function login(
     _prev: GeneralResponse<null> | null,
@@ -109,11 +112,19 @@ export async function studentSignUp(
     const phoneNumber = String(formData.get("phoneNumber") ?? "").trim();
     const password = String(formData.get("password") ?? "");
     const schoolAccessCode = String(formData.get("schoolAccessCode") ?? "").trim();
+    const grade = String(formData.get("grade") ?? "").trim();
 
-    if (!firstName || !lastName || !email || !nationalityCountryCode || !residenceCountryCode || !phoneNumber || !password || !schoolAccessCode) {
+    if (!firstName || !lastName || !email || !nationalityCountryCode || !residenceCountryCode || !phoneNumber || !password || !schoolAccessCode || !grade) {
         return {
             data: false,
             error: "Missing required profile or country data."
+        };
+    }
+
+    if (!GRADE_ALLOWED.has(grade)) {
+        return {
+            data: false,
+            error: "Please select a valid grade (Grade 9 through Grade 12).",
         };
     }
 
@@ -136,7 +147,7 @@ export async function studentSignUp(
 
     const { data: schoolStudent, error: schoolStudentError } = await supabase
         .from("school_students")
-        .select("id, signed_up, grade, counselor_school_admin_id")
+        .select("id, signed_up, grade")
         .eq("school_id", school.id)
         .eq("email", emailNormalized)
         .maybeSingle();
@@ -222,9 +233,7 @@ export async function studentSignUp(
             last_name: lastName,
             school_id: school.id,
             nationality_country_code: nationalityCountryCode,
-            grade: schoolStudent.grade ?? null,
-            counselor_school_admin_id:
-                schoolStudent.counselor_school_admin_id ?? null,
+            grade,
         });
 
     if (studentProfileError) {
@@ -239,6 +248,7 @@ export async function studentSignUp(
         .from("school_students")
         .update({
             signed_up: true,
+            grade,
             updated_at: new Date().toISOString(),
         })
         .eq("id", schoolStudent.id);

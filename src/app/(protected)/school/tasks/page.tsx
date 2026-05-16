@@ -18,6 +18,7 @@ export default async function SchoolTasksPage({
 }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
+  const studentQ = typeof sp.studentQ === "string" ? sp.studentQ : "";
   const when = typeof sp.when === "string" ? sp.when : "";
   const priority = typeof sp.priority === "string" ? sp.priority : "";
   const status = typeof sp.status === "string" ? sp.status : "";
@@ -25,7 +26,7 @@ export default async function SchoolTasksPage({
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 12)));
 
   const [{ rows, totalRows }, studentOptions] = await Promise.all([
-    fetchSchoolTasksPage({ q, when, priority, status, page, limit }),
+    fetchSchoolTasksPage({ q, studentQ, when, priority, status, page, limit }),
     fetchSchoolStudentPickerOptions(),
   ]);
 
@@ -36,6 +37,7 @@ export default async function SchoolTasksPage({
       page={page}
       limit={limit}
       q={q}
+      studentQ={studentQ}
       when={when}
       priority={priority}
       status={status}

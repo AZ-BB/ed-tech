@@ -34,12 +34,6 @@ export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
     display_name: "Portfolio",
     description: "Required only for art / design / architecture programs",
   },
-  {
-    slot_key: "other",
-    display_name: "Other",
-    description:
-      "Any extra file for your counselor — certificates, medical forms, etc. You can rename this row to describe what you upload.",
-  },
 ] as const;
 
 /** School fills this via portal; students cannot edit the row (RLS). */

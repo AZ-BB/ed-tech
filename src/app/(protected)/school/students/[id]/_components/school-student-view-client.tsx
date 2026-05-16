@@ -20,8 +20,13 @@ import { SchoolStudentEssaysTab } from "./school-student-essays-tab";
 import { SchoolStudentInteractionsTab } from "./school-student-interactions-tab";
 import { SchoolStudentPanel } from "./school-student-panel";
 import { SchoolStudentShortlistTab } from "./school-student-shortlist-tab";
+import { parseLegacyEnglishScores } from "@/app/(protected)/student/my-applications/_lib/ielts-toefl-score-input";
 import { parseLegacySatActScores } from "@/app/(protected)/student/my-applications/_lib/sat-act-score-input";
 import { formatPreferredDestinationsForDisplay } from "@/app/(protected)/student/my-applications/_lib/preferred-destinations-iso";
+import {
+  isStudentCreditLimitExhausted,
+  studentCreditLimitExhaustedMessage,
+} from "@/lib/student-credit-limit";
 
 type TabId =
   | "snapshot"
@@ -134,6 +139,46 @@ function EmptyBlock({ message }: { message: string }) {
   return (
     <div className="px-5 py-10 text-center text-[13px] text-[var(--text-light)]">
       {message}
+    </div>
+  );
+}
+
+function CreditLimitAlertIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function StudentCreditLimitAlert({
+  kind,
+}: {
+  kind: "advisor" | "ambassador";
+}) {
+  const message = studentCreditLimitExhaustedMessage(kind);
+  return (
+    <div
+      role="status"
+      title={message}
+      aria-label={message}
+      className="flex items-start gap-2 rounded-[8px] border border-[rgba(212,162,42,.35)] bg-[rgba(212,162,42,.1)] px-2.5 py-2 text-left"
+    >
+      <CreditLimitAlertIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A22A]" />
+      <p className="text-[11.5px] leading-snug font-medium text-[#7a5d10]">
+        {message}
+      </p>
     </div>
   );
 }
@@ -380,16 +425,29 @@ function SnapshotContent({
   const programs = applicationProfile
     ? joinList(applicationProfile.interested_programs)
     : "—";
-  const budget = snapDisplay(applicationProfile?.budget_range, "-");
-  const english = (() => {
-    const i = applicationProfile?.ielts_score?.trim();
-    const t = applicationProfile?.toefl_score?.trim();
-    if (i || t) return [i && `IELTS ${i}`, t && `TOEFL ${t}`].filter(Boolean).join(" · ");
-    return applicationProfile?.english_test_scores?.trim() || "Pending";
-  })();
+  const legacyEnglish = applicationProfile
+    ? parseLegacyEnglishScores(applicationProfile.english_test_scores)
+    : { ielts: "", toefl: "" };
+  const ielts =
+    applicationProfile?.ielts_score?.trim() ||
+    legacyEnglish.ielts.trim() ||
+    "—";
+  const toefl =
+    applicationProfile?.toefl_score?.trim() ||
+    legacyEnglish.toefl.trim() ||
+    "—";
   const sat = satScoreSnap;
   const act = actScoreSnap;
-  const curr = snapDisplay(applicationProfile?.curriculum, "-");
+  const curr = snapDisplay(applicationProfile?.curriculum, "—");
+
+  const advisorCreditExhausted = isStudentCreditLimitExhausted(
+    student.advisorCreditsUsedNet,
+    student.advisorCreditLimit,
+  );
+  const ambassadorCreditExhausted = isStudentCreditLimitExhausted(
+    student.ambassadorCreditsUsedNet,
+    student.ambassadorCreditLimit,
+  );
 
   return (
     <>
@@ -400,11 +458,11 @@ function SnapshotContent({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <SnapItem label="Preferred destinations" value={preferred} />
           <SnapItem label="Interested programs" value={programs} />
-          <SnapItem label="SAT (total)" value={sat} />
-          <SnapItem label="ACT (composite)" value={act} />
-          <SnapItem label="Budget range" value={budget} />
-          <SnapItem label="English test" value={english} />
           <SnapItem label="Curriculum" value={curr} />
+          <SnapItem label="SAT" value={sat} />
+          <SnapItem label="IELTS" value={ielts} />
+          <SnapItem label="TOEFL" value={toefl} />
+          <SnapItem label="ACT" value={act} />
         </div>
       </SchoolStudentPanel>
 
@@ -415,7 +473,7 @@ function SnapshotContent({
               {quickStats.universitiesCount}
             </div>
             <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
-              Universities
+              Universities shortlisted
             </div>
           </div>
           <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
@@ -423,7 +481,7 @@ function SnapshotContent({
               {quickStats.documentsInCount}
             </div>
             <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
-              Documents in
+              Documents Uploaded
             </div>
           </div>
           <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
@@ -431,7 +489,7 @@ function SnapshotContent({
               {quickStats.openTasksCount}
             </div>
             <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
-              Open tasks
+              Open Tasks
             </div>
           </div>
           <div className="rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
@@ -439,7 +497,7 @@ function SnapshotContent({
               {quickStats.supportSessionsCount}
             </div>
             <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
-              Support sessions
+              Advisor Sessions Booked
             </div>
           </div>
         </div>
@@ -448,17 +506,51 @@ function SnapshotContent({
       <SchoolStudentPanel head="Credits">
         <div className="space-y-2.5">
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="flex flex-col justify-center rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
-              <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
-                {student.advisorCreditsUsedNet}
+            <div
+              className={`flex flex-col justify-center rounded-[10px] border bg-white p-3.5 ${
+                advisorCreditExhausted
+                  ? "border-[rgba(212,162,42,.45)] bg-[rgba(212,162,42,.06)]"
+                  : "border-[var(--border-light)]"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+                  {student.advisorCreditsUsedNet}
+                </div>
+                {advisorCreditExhausted ? (
+                  <span
+                    title={studentCreditLimitExhaustedMessage("advisor")}
+                    aria-label={studentCreditLimitExhaustedMessage("advisor")}
+                    className="shrink-0"
+                  >
+                    <CreditLimitAlertIcon className="h-4 w-4 text-[#D4A22A]" />
+                  </span>
+                ) : null}
               </div>
               <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
                 Advisor credits used
               </div>
             </div>
-            <div className="flex flex-col justify-center rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
-              <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
-                {student.ambassadorCreditsUsedNet}
+            <div
+              className={`flex flex-col justify-center rounded-[10px] border bg-white p-3.5 ${
+                ambassadorCreditExhausted
+                  ? "border-[rgba(212,162,42,.45)] bg-[rgba(212,162,42,.06)]"
+                  : "border-[var(--border-light)]"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+                  {student.ambassadorCreditsUsedNet}
+                </div>
+                {ambassadorCreditExhausted ? (
+                  <span
+                    title={studentCreditLimitExhaustedMessage("ambassador")}
+                    aria-label={studentCreditLimitExhaustedMessage("ambassador")}
+                    className="shrink-0"
+                  >
+                    <CreditLimitAlertIcon className="h-4 w-4 text-[#D4A22A]" />
+                  </span>
+                ) : null}
               </div>
               <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
                 Ambassador credits used
@@ -706,6 +798,24 @@ export function SchoolStudentViewClient({
     [student.firstName, student.lastName],
   );
 
+  const advisorCreditExhausted = useMemo(
+    () =>
+      isStudentCreditLimitExhausted(
+        student.advisorCreditsUsedNet,
+        student.advisorCreditLimit,
+      ),
+    [student.advisorCreditsUsedNet, student.advisorCreditLimit],
+  );
+
+  const ambassadorCreditExhausted = useMemo(
+    () =>
+      isStudentCreditLimitExhausted(
+        student.ambassadorCreditsUsedNet,
+        student.ambassadorCreditLimit,
+      ),
+    [student.ambassadorCreditsUsedNet, student.ambassadorCreditLimit],
+  );
+
   const fullName = [student.firstName, student.lastName]
     .filter(Boolean)
     .join(" ")
@@ -716,7 +826,6 @@ export function SchoolStudentViewClient({
     { lab: "Nationality", val: student.nationalityName ?? "—" },
     { lab: "Curriculum", val: student.curriculumDisplay ?? "—" },
     { lab: "Target intake", val: student.targetIntakeDisplay ?? "—" },
-    { lab: "Counselor", val: student.counselorLabel },
     { lab: "Profile", val: `${student.profilePercent}%` },
     {
       lab: "Stage",
@@ -832,6 +941,17 @@ export function SchoolStudentViewClient({
             </div>
             <RiskPill riskClass={student.riskClass} label={student.riskLabel} />
           </div>
+
+          {advisorCreditExhausted || ambassadorCreditExhausted ? (
+            <div className="flex flex-col gap-2">
+              {advisorCreditExhausted ? (
+                <StudentCreditLimitAlert kind="advisor" />
+              ) : null}
+              {ambassadorCreditExhausted ? (
+                <StudentCreditLimitAlert kind="ambassador" />
+              ) : null}
+            </div>
+          ) : null}
 
           {sidebarRows.map((r) => (
             <div

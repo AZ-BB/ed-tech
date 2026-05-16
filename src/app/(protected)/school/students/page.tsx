@@ -18,40 +18,13 @@ export default async function SchoolStudentsPage({
 }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
+  const studentQ = typeof sp.studentQ === "string" ? sp.studentQ : "";
   const grade = typeof sp.grade === "string" ? sp.grade : "";
   const dest = typeof sp.dest === "string" ? sp.dest : "";
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 12)));
 
   const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let counselorOptions: { id: string; label: string }[] = [];
-  if (user?.id) {
-    const { data: sap } = await supabase
-      .from("school_admin_profiles")
-      .select("school_id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (sap?.school_id) {
-      const { data: admins } = await supabase
-        .from("school_admin_profiles")
-        .select("id, first_name, last_name")
-        .eq("school_id", sap.school_id)
-        .order("last_name", { ascending: true })
-        .order("first_name", { ascending: true });
-
-      counselorOptions = (admins ?? []).map((a) => {
-        const label =
-          `${a.first_name?.trim() ?? ""} ${a.last_name?.trim() ?? ""}`.trim();
-        return { id: a.id, label: label || a.id };
-      });
-    }
-  }
 
   const { data: countries } = await supabase
     .from("countries")
@@ -62,6 +35,7 @@ export default async function SchoolStudentsPage({
 
   const { rows, totalRows } = await fetchSchoolStudentsPage({
     q,
+    studentQ,
     grade,
     destination: dest,
     page,
@@ -75,10 +49,10 @@ export default async function SchoolStudentsPage({
       page={page}
       limit={limit}
       q={q}
+      studentQ={studentQ}
       grade={grade}
       dest={dest}
       destinationItems={destinationItems}
-      counselorOptions={counselorOptions}
     />
   );
 }

@@ -121,5 +121,15 @@ export function buildFullDestinationSelectItems(
   ];
 }
 
+/** School roster grade values (match stored `student_profiles.grade`). */
+export const STUDENT_SCHOOL_GRADE_OPTIONS = [
+  "Grade 9",
+  "Grade 10",
+  "Grade 11",
+  "Grade 12",
+] as const;
+
+export type StudentSchoolGrade = (typeof STUDENT_SCHOOL_GRADE_OPTIONS)[number];
+
 /** Grade filter options (match stored `student_profiles.grade` values). */
-export const GRADE_FILTER_OPTIONS = ["Grade 11", "Grade 12"] as const;
+export const GRADE_FILTER_OPTIONS = STUDENT_SCHOOL_GRADE_OPTIONS;

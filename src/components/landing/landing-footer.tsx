@@ -1,71 +1,60 @@
+import Link from "next/link";
+
 export function LandingFooter() {
   return (
     <footer className="footer">
-      <div className="flex justify-center gap-64">
-        <div className="footer-brand">
-          <div className="footer-brand-name">
-            <div
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "6px",
-                background: "var(--green)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#fff"
-                strokeWidth="2"
-                aria-hidden
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-              </svg>
-            </div>
-            Univeera
-          </div>
-          <div className="footer-brand-desc">
-            Empowering MENA students to access better education opportunities
-            through technology and guidance.
-          </div>
+      <div className="footer-inner">
+        <div>
+          <div className="footer-brand">Univeera</div>
+          <p className="footer-tagline">
+            A MENA-focused university guidance platform built for schools,
+            students, and families.
+          </p>
         </div>
-        <div className="flex gap-20">
-          <div>
-            <div className="footer-col-title">Resources</div>
-            <a className="footer-link" href="/for-schools">
-              For schools
-            </a>
-            <a className="footer-link" href="/for-advisors">
-              For advisors
-            </a>
-            <a className="footer-link" href="/blog">
-              Blog
-            </a>
-          </div>
-          <div>
-            <div className="footer-col-title">Company</div>
-            <a className="footer-link" href="/about">
-              About
-            </a>
-            <a className="footer-link" href="/contact">
-              Contact
-            </a>
-            <a className="footer-link" href="/privacy">
-              Privacy
-            </a>
-            <a className="footer-link" href="/terms">
-              Terms
-            </a>
-          </div>
+        <div className="footer-col">
+          <h5>Platform</h5>
+          <ul>
+            <li>
+              <Link href="/for-schools">For Schools</Link>
+            </li>
+            <li>
+              <Link href="/for-advisors">For Advisors</Link>
+            </li>
+            <li>
+              <Link href="/signup">Ambassadors</Link>
+            </li>
+          </ul>
+        </div>
+        <div className="footer-col">
+          <h5>Company</h5>
+          <ul>
+            <li>
+              <Link href="/about">About</Link>
+            </li>
+            <li>
+              <Link href="/blog">Blog</Link>
+            </li>
+            <li>
+              <Link href="/contact">Contact</Link>
+            </li>
+          </ul>
+        </div>
+        <div className="footer-col">
+          <h5>Legal</h5>
+          <ul>
+            <li>
+              <Link href="/privacy">Privacy</Link>
+            </li>
+            <li>
+              <Link href="/terms">Terms</Link>
+            </li>
+          </ul>
         </div>
       </div>
-      <div className="footer-bottom">2026 Univeera. All rights reserved.</div>
+      <div className="footer-bottom">
+        <div>© 2026 Univeera. All rights reserved.</div>
+        <div>Based in Bahrain · Serving MENA</div>
+      </div>
     </footer>
   );
 }

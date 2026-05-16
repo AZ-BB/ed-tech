@@ -6,7 +6,6 @@ export type PendingInviteRow = {
   id: string;
   email: string;
   grade: string | null;
-  counselorLabel: string;
   invitedLabel: string;
 };
 
@@ -49,7 +48,7 @@ export async function fetchPendingInvitesPage(
 
   let listQuery = supabase
     .from("school_students")
-    .select("id, email, grade, counselor_school_admin_id, created_at", {
+    .select("id, email, grade, created_at", {
       count: "exact",
     })
     .eq("school_id", schoolId)
@@ -72,34 +71,7 @@ export async function fetchPendingInvitesPage(
 
   const totalRows = count ?? 0;
 
-  const counselorIds = [
-    ...new Set(
-      raw.map((r) => r.counselor_school_admin_id).filter(Boolean),
-    ),
-  ] as string[];
-
-  const counselorNames = new Map<string, string>();
-  if (counselorIds.length > 0) {
-    const { data: counselors } = await supabase
-      .from("school_admin_profiles")
-      .select("id, first_name, last_name")
-      .in("id", counselorIds);
-
-    for (const c of counselors ?? []) {
-      counselorNames.set(
-        c.id,
-        `${c.first_name?.trim() ?? ""} ${c.last_name?.trim() ?? ""}`.trim(),
-      );
-    }
-  }
-
   const rows: PendingInviteRow[] = raw.map((r) => {
-    const cid = r.counselor_school_admin_id;
-    const counselorLabel =
-      cid && counselorNames.get(cid)
-        ? (counselorNames.get(cid) as string)
-        : "—";
-
     const created = r.created_at ? new Date(r.created_at) : null;
     let invitedLabel = "—";
     if (created && !Number.isNaN(created.getTime())) {
@@ -114,7 +86,6 @@ export async function fetchPendingInvitesPage(
       id: r.id,
       email: r.email?.trim() ?? "",
       grade: r.grade?.trim() ?? null,
-      counselorLabel,
       invitedLabel,
     };
   });

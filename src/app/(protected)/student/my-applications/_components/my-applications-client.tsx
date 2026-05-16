@@ -56,7 +56,6 @@ import {
   ESSAY_TYPE_OPTIONS,
   GRADE_OPTIONS,
   DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS,
-  OTHER_DOCUMENT_SLOT_KEY,
   SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
   isOtherDocumentSlot,
   makeSupplementalOtherDocumentSlotKey,
@@ -820,7 +819,7 @@ export function MyApplicationsClient({
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("student_my_application_documents")
-      .update({ display_name: t, updated_at: now })
+      .update({ display_name: t, description: null, updated_at: now })
       .eq("id", docId)
       .eq("student_id", initial.studentId)
       .select("*")
@@ -838,10 +837,6 @@ export function MyApplicationsClient({
   };
 
   const addOtherDocument = async () => {
-    const otherDef = DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS.find(
-      (s) => s.slot_key === OTHER_DOCUMENT_SLOT_KEY,
-    );
-    if (!otherDef) return;
     const slot_key = makeSupplementalOtherDocumentSlotKey();
     const { data, error } = await supabase
       .from("student_my_application_documents")
@@ -849,7 +844,7 @@ export function MyApplicationsClient({
         student_id: initial.studentId,
         slot_key,
         display_name: "Other",
-        description: otherDef.description,
+        description: null,
         status: "missing",
       })
       .select("*")
@@ -866,13 +861,6 @@ export function MyApplicationsClient({
 
   const removeOtherDocument = async (doc: DocRow) => {
     if (!isOtherDocumentSlot(doc.slot_key)) return;
-    const otherCount = documents.filter((d) =>
-      isOtherDocumentSlot(d.slot_key),
-    ).length;
-    if (otherCount <= 1) {
-      showToast("Keep at least one other document row.");
-      return;
-    }
     const storagePath = doc.storage_path?.trim();
     const { error } = await supabase
       .from("student_my_application_documents")
@@ -1916,14 +1904,15 @@ export function MyApplicationsClient({
                     onSaveDisplayName={(name) =>
                       void saveOtherDocumentDisplayName(d.id, name)
                     }
-                    allowRemove={otherDocuments.length > 1}
+                    allowRemove
                     onRemove={() => void removeOtherDocument(d)}
                   />
                 ))
               ) : (
                 <p className="text-sm text-[var(--text-mid)]">
-                  Your extra upload slot is not on this list yet. Reload this
-                  page once — it is added automatically for every student.
+                  No extra documents yet. Use{" "}
+                  <strong>Add another document</strong> when you need to upload
+                  something outside the checklist above.
                 </p>
               )}
             </div>

@@ -58,6 +58,7 @@ export function SchoolApplicationsClient({
   page,
   limit,
   q,
+  studentQ,
   status,
   country,
   destinationItems,
@@ -67,12 +68,16 @@ export function SchoolApplicationsClient({
   page: number;
   limit: number;
   q: string;
+  studentQ: string;
   status: string;
   country: string;
   destinationItems: DestinationSelectItem[];
 }) {
   const filterActive =
-    q.trim().length > 0 || status !== "" || country.trim() !== "";
+    q.trim().length > 0 ||
+    studentQ.trim().length > 0 ||
+    status !== "" ||
+    country.trim() !== "";
 
   return (
     <div className="space-y-4">
@@ -110,6 +115,9 @@ export function SchoolApplicationsClient({
         >
           <input type="hidden" name="page" value="1" />
           <input type="hidden" name="limit" value={String(limit)} />
+          {studentQ.trim() ? (
+            <input type="hidden" name="studentQ" value={studentQ} />
+          ) : null}
           <div className="relative min-w-[180px] flex-1 basis-[200px]">
             <svg
               className="pointer-events-none absolute left-3 top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[var(--text-hint)]"
@@ -127,6 +135,7 @@ export function SchoolApplicationsClient({
             </label>
             <input
               id="app-search"
+              key={`${q}-${studentQ}`}
               type="search"
               name="q"
               defaultValue={q}

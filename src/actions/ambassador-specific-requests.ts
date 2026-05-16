@@ -1,0 +1,114 @@
+"use server";
+
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+
+async function requireStudentActor(): Promise<{ studentId: string } | { error: string }> {
+  const authClient = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: authErr,
+  } = await authClient.auth.getUser();
+  if (authErr || !user) {
+    return { error: "You must be signed in." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: profile, error } = await secret
+    .from("student_profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error) {
+    console.error(error);
+    return { error: "Could not verify your student profile." };
+  }
+  if (!profile) {
+    return { error: "Student profile not found." };
+  }
+  return { studentId: user.id };
+}
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+export type CreateAmbassadorSpecificRequestInput = {
+  studentName: string;
+  studentEmail: string;
+  studentPhone: string;
+  targetUniversity: string;
+  preferredMajor?: string | null;
+  additionalNotes?: string | null;
+};
+
+export async function createAmbassadorSpecificRequest(
+  input: CreateAmbassadorSpecificRequestInput,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const studentName = input.studentName?.trim() ?? "";
+  const studentEmail = input.studentEmail?.trim() ?? "";
+  const studentPhone = input.studentPhone?.trim() ?? "";
+  const targetUniversity = input.targetUniversity?.trim() ?? "";
+  const preferredMajor = input.preferredMajor?.trim() || null;
+  const additionalNotes = input.additionalNotes?.trim() || null;
+
+  if (!studentName) {
+    return { ok: false, error: "Please enter your full name." };
+  }
+  if (!studentEmail) {
+    return { ok: false, error: "Please enter your email address." };
+  }
+  if (!isValidEmail(studentEmail)) {
+    return { ok: false, error: "Please enter a valid email address." };
+  }
+  if (!studentPhone) {
+    return { ok: false, error: "Please enter your phone number." };
+  }
+  if (!targetUniversity) {
+    return { ok: false, error: "Please tell us which university or ambassador you're looking for." };
+  }
+
+  const actor = await requireStudentActor();
+  if ("error" in actor) {
+    return { ok: false, error: actor.error };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: inserted, error: insertErr } = await secret
+    .from("ambassador_specific_requests")
+    .insert({
+      student_id: actor.studentId,
+      student_name: studentName,
+      student_email: studentEmail,
+      student_phone: studentPhone,
+      target_university: targetUniversity,
+      preferred_major: preferredMajor,
+      additional_notes: additionalNotes,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+
+  if (insertErr || inserted?.id == null) {
+    console.error("[ambassador_specific_requests] insert:", insertErr);
+    return {
+      ok: false,
+      error: insertErr?.message ?? "Could not submit your request. Please try again.",
+    };
+  }
+
+  const { error: logErr } = await secret.from("acitivity_logs").insert({
+    entitiy_type: "ambassador_specific_requests",
+    entity_id: String(inserted.id),
+    action: "ambassador_specific_request_submitted",
+    message: `Student submitted a specific ambassador request for ${targetUniversity}.`,
+    created_by_type: "student",
+    student_id: actor.studentId,
+    admin_id: null,
+    school_admin_id: null,
+  });
+  if (logErr) {
+    console.error("[acitivity_logs] ambassador_specific_requests:", logErr);
+  }
+
+  return { ok: true };
+}

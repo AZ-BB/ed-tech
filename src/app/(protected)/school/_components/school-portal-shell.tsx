@@ -3,7 +3,12 @@
 import { LogoutConfirmDialog } from "@/components/logout-confirm-dialog";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+
+import {
+  buildNavHrefWithStudentQ,
+  SchoolNavSearch,
+} from "./school-nav-search";
 
 const fontSans =
   '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
@@ -210,6 +215,105 @@ function navLinkActive(pathname: string, href: string): boolean {
   return n === h || n.startsWith(`${h}/`);
 }
 
+function SchoolSidebarNav({
+  pathname,
+  closeSidebar,
+}: {
+  pathname: string | null;
+  closeSidebar: () => void;
+}) {
+  const urlStudentQ = useSearchParams().get("studentQ") ?? "";
+  const studentQ =
+    urlStudentQ.trim() ||
+    (typeof window !== "undefined"
+      ? (() => {
+          try {
+            return sessionStorage.getItem("school-portal-studentQ") ?? "";
+          } catch {
+            return "";
+          }
+        })()
+      : "");
+
+  return (
+    <>
+      {navSections.map((sec) => (
+        <div key={sec.title} className={sec.className}>
+          <div className="px-[22px] pb-[6px] pt-[10px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[rgba(255,255,255,0.4)] first:pt-0">
+            {sec.title}
+          </div>
+          <nav className="flex flex-col gap-px px-[10px]">
+            {sec.links.map((link) => {
+              const active = pathname
+                ? navLinkActive(pathname, link.href)
+                : false;
+              return (
+                <Link
+                  key={link.href}
+                  href={buildNavHrefWithStudentQ(link.href, studentQ)}
+                  prefetch={false}
+                  onClick={closeSidebar}
+                  className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
+                    active
+                      ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
+                      : ""
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function SchoolSidebarNavFallback({
+  pathname,
+  closeSidebar,
+}: {
+  pathname: string | null;
+  closeSidebar: () => void;
+}) {
+  return (
+    <>
+      {navSections.map((sec) => (
+        <div key={sec.title} className={sec.className}>
+          <div className="px-[22px] pb-[6px] pt-[10px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[rgba(255,255,255,0.4)] first:pt-0">
+            {sec.title}
+          </div>
+          <nav className="flex flex-col gap-px px-[10px]">
+            {sec.links.map((link) => {
+              const active = pathname
+                ? navLinkActive(pathname, link.href)
+                : false;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  prefetch={false}
+                  onClick={closeSidebar}
+                  className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
+                    active
+                      ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
+                      : ""
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      ))}
+    </>
+  );
+}
+
 export function SchoolPortalShell({
   schoolName,
   displayName,
@@ -220,10 +324,28 @@ export function SchoolPortalShell({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [sidebarStudentQ, setSidebarStudentQ] = useState("");
   const title = useMemo(() => pageTitle(pathname ?? SCHOOL_HOME), [pathname]);
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromUrl =
+      new URLSearchParams(window.location.search).get("studentQ")?.trim() ?? "";
+    if (fromUrl) {
+      setSidebarStudentQ(fromUrl);
+      return;
+    }
+    try {
+      setSidebarStudentQ(
+        sessionStorage.getItem("school-portal-studentQ")?.trim() ?? "",
+      );
+    } catch {
+      setSidebarStudentQ("");
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -291,7 +413,7 @@ export function SchoolPortalShell({
                   return (
                     <Link
                       key={link.href}
-                      href={link.href}
+                      href={buildNavHrefWithStudentQ(link.href, sidebarStudentQ)}
                       prefetch={false}
                       onClick={closeSidebar}
                       className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
@@ -384,26 +506,9 @@ export function SchoolPortalShell({
           </div>
 
           <div className="flex shrink-0 items-center gap-[10px]">
-            <label className="relative hidden w-[300px] min-[761px]:block">
-              <span className="sr-only">Search students</span>
-              <svg
-                className="pointer-events-none absolute left-[12px] top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-[#a0a0a0]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-              <input
-                type="search"
-                placeholder="Search students..."
-                className="w-full rounded-[8px] border-[1.5px] border-[#e0deda] bg-[#faf9f4] py-[9px] pr-3 pl-9 font-[inherit] text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] focus:bg-white"
-                style={{ fontFamily: fontSans }}
-              />
-            </label>
+            <Suspense fallback={null}>
+              <SchoolNavSearch />
+            </Suspense>
             <button
               type="button"
               title="Notifications"

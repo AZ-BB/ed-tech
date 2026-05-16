@@ -289,8 +289,6 @@ export function SchoolReportsClient({ data }: Props) {
                         <th>Destination</th>
                         <th>Programs</th>
                         <th>Apps submitted</th>
-                        <th>Offers</th>
-                        <th>Top offer</th>
                         <th>Profile completion</th>
                       </tr>
                     </thead>
@@ -342,13 +340,6 @@ export function SchoolReportsClient({ data }: Props) {
                             </td>
                             <td className="cell-mute">{o.programsSummary}</td>
                             <td>{submittedPart}</td>
-                            <td className="cell-mute">—</td>
-                            <td
-                              className="cell-mute"
-                              style={{ fontSize: "12px" }}
-                            >
-                              —
-                            </td>
                             <td>
                               <div className="pb">
                                 <div className="pb-track">
