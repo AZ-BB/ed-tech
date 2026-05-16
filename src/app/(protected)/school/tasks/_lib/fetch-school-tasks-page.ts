@@ -1,5 +1,10 @@
 import { addDays, format, startOfDay } from "date-fns";
 
+import {
+  buildOrWithStudentIds,
+  fetchSchoolStudentIdsByQuery,
+  ilikePattern,
+} from "@/app/(protected)/school/_lib/student-search";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type SchoolTaskTableRow = {
@@ -24,6 +29,8 @@ export type SchoolStudentPickerOption = {
 
 export type SchoolTasksPageFilters = {
   q: string;
+  /** Navbar student name/email filter */
+  studentQ: string;
   /** "", "overdue", "week" */
   when: string;
   /** "", "high", "medium", "low" */
@@ -35,10 +42,6 @@ export type SchoolTasksPageFilters = {
   /** When set, only tasks for this student (must belong to admin's school). */
   studentId?: string;
 };
-
-function escapeIlike(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
 
 function normalizePriority(raw: string): "" | "high" | "medium" | "low" {
   const x = raw.toLowerCase();
@@ -158,6 +161,7 @@ export async function fetchSchoolTasksPage(
   const offset = (page - 1) * limit;
 
   const qTrim = filters.q.trim();
+  const studentQTrim = filters.studentQ.trim();
   const when = normalizeWhen(filters.when);
   const priority = normalizePriority(filters.priority);
   const taskStatus = normalizeTaskStatus(filters.status);
@@ -193,11 +197,30 @@ export async function fetchSchoolTasksPage(
     q = q.eq("student_id", filters.studentId.trim());
   }
 
+  if (studentQTrim) {
+    const navbarStudentIds = await fetchSchoolStudentIdsByQuery(
+      supabase,
+      schoolId,
+      studentQTrim,
+    );
+    if (navbarStudentIds.length === 0) {
+      return { rows: [], totalRows: 0 };
+    }
+    q = q.in("student_id", navbarStudentIds);
+  }
+
   if (qTrim) {
-    const e = escapeIlike(qTrim);
-    const p = `%${e}%`;
+    const p = ilikePattern(qTrim);
+    const studentIds = await fetchSchoolStudentIdsByQuery(
+      supabase,
+      schoolId,
+      qTrim,
+    );
     q = q.or(
-      `title.ilike.${p},notes.ilike.${p},student_profiles.first_name.ilike.${p},student_profiles.last_name.ilike.${p},student_profiles.email.ilike.${p}`,
+      buildOrWithStudentIds(
+        [`title.ilike.${p}`, `notes.ilike.${p}`],
+        studentIds,
+      ),
     );
   }
 

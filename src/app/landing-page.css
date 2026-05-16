@@ -901,68 +901,68 @@ body {
 
 /* ===== FOOTER ===== */
 .footer {
-  padding: 48px 40px 32px;
   background: var(--green-dark);
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 64px 40px 32px;
+  font-size: 13px;
 }
 
 .footer-inner {
   max-width: 1100px;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  gap: 40px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 48px;
 }
 
 .footer-brand {
-  max-width: 260px;
-  flex: 1;
-}
-
-
-.footer-brand-name {
-  font-size: 16px;
-  font-weight: 700;
+  font-family: var(--font-dm-serif), "DM Serif Display", serif;
   color: #fff;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 24px;
+  margin-bottom: 14px;
+  font-weight: 400;
 }
 
-.footer-brand-desc {
-  font-size: 12px;
+.footer-tagline {
+  max-width: 280px;
   line-height: 1.6;
-  margin-bottom: 16px;
-}
-
-.footer-col-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 12px;
-}
-
-.footer-link {
-  display: block;
   font-size: 13px;
-  padding: 3px 0;
+}
+
+.footer-col h5 {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 18px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.footer-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-col a {
+  color: rgba(255, 255, 255, 0.7);
   transition: color 0.15s;
 }
 
-.footer-link:hover {
-  color: #fff;
+.footer-col a:hover {
+  color: var(--green-bright);
 }
 
 .footer-bottom {
   max-width: 1100px;
-  margin: 24px auto 0;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 11px;
-  text-align: center;
+  margin: 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
 }
 
 @media (max-width: 900px) {
@@ -1013,7 +1013,14 @@ body {
   }
 
   .footer-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .footer-bottom {
     flex-direction: column;
+    gap: 8px;
+    text-align: center;
   }
 
   .nav {
@@ -1037,6 +1044,11 @@ body {
 @media (max-width: 600px) {
   .hero h1 {
     font-size: 30px;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 
   .feat-grid {

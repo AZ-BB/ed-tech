@@ -32,6 +32,7 @@ export function SchoolDocumentsClient({
   page,
   limit,
   q,
+  studentQ,
   status,
 }: {
   rows: SchoolDocumentTableRow[];
@@ -39,6 +40,7 @@ export function SchoolDocumentsClient({
   page: number;
   limit: number;
   q: string;
+  studentQ: string;
   status: string;
 }) {
   const [openingId, setOpeningId] = useState<string | null>(null);
@@ -48,7 +50,8 @@ export function SchoolDocumentsClient({
   const [remindSending, setRemindSending] = useState(false);
   const [remindError, setRemindError] = useState<string | null>(null);
   const statusValue = normalizeStatusSelect(status);
-  const filterActive = q.trim().length > 0 || statusValue !== "";
+  const filterActive =
+    q.trim().length > 0 || studentQ.trim().length > 0 || statusValue !== "";
 
   useEffect(() => {
     if (!remindRow) return;
@@ -133,6 +136,9 @@ export function SchoolDocumentsClient({
         >
           <input type="hidden" name="page" value="1" />
           <input type="hidden" name="limit" value={String(limit)} />
+          {studentQ.trim() ? (
+            <input type="hidden" name="studentQ" value={studentQ} />
+          ) : null}
           <div className="relative min-w-[200px] flex-1 basis-[220px]">
             <svg
               className="pointer-events-none absolute left-3 top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[var(--text-hint)]"
@@ -150,6 +156,7 @@ export function SchoolDocumentsClient({
             </label>
             <input
               id="school-doc-search"
+              key={`${q}-${studentQ}`}
               type="search"
               name="q"
               defaultValue={q}

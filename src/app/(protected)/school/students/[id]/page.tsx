@@ -34,6 +34,7 @@ export default async function SchoolStudentDetailPage({
 
   const { rows, totalRows } = await fetchSchoolTasksPage({
     q: "",
+    studentQ: "",
     when: "",
     priority: "",
     status: "",

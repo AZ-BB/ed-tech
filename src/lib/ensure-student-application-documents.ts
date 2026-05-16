@@ -129,33 +129,6 @@ export async function ensureStudentApplicationDocuments(
         );
       }
     }
-    const hasOther = rows.some((r) => r.slot_key === OTHER_DOCUMENT_SLOT_KEY);
-    if (!hasOther) {
-      const otherDef = DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS.find(
-        (s) => s.slot_key === OTHER_DOCUMENT_SLOT_KEY,
-      );
-      if (otherDef) {
-        const { data: ins, error: insErr } = await supabase
-          .from("student_my_application_documents")
-          .insert({
-            student_id: studentId,
-            slot_key: otherDef.slot_key,
-            display_name: otherDef.display_name,
-            description: otherDef.description,
-            status: "missing",
-          })
-          .select("*");
-        rows = await appendRowIfInsertConflict(
-          supabase,
-          studentId,
-          otherDef.slot_key,
-          rows,
-          ins ?? undefined,
-          insErr,
-          "other slot backfill",
-        );
-      }
-    }
     return sortApplicationDocumentsBySlotOrder(rows);
   }
   const rows = DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS.map((s) => ({

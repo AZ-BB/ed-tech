@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./for-advisors.css";
+import { LandingFooter } from "@/components/landing/landing-footer";
 
 export const metadata: Metadata = {
   title: "For advisors — Univeera",
@@ -12,5 +13,10 @@ export default function ForAdvisorsLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="for-advisors-route">{children}</div>;
+  return (
+    <>
+      <div className="for-advisors-route">{children}</div>
+      <LandingFooter />
+    </>
+  );
 }

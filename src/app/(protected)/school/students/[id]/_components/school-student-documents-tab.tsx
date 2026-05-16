@@ -3,7 +3,10 @@
 import { updateSchoolPredictedDocumentSlot } from "@/actions/school-students";
 import { getSchoolMyApplicationDocumentViewUrl } from "@/actions/school-documents";
 import type { Database } from "@/database.types";
-import { SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY } from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
+import {
+  isOtherDocumentSlot,
+  SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
+} from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -250,9 +253,17 @@ export function SchoolStudentDocumentsTab({
             const visual = checklistRowVisual(label);
             const iconCls = iconWrapForVisual(visual);
             const hasFile = !!doc.storage_path;
+            const showSlotDescription =
+              !!doc.description?.trim() &&
+              !(
+                isOtherDocumentSlot(doc.slot_key) &&
+                doc.display_name.trim() !== "Other"
+              );
             const meta = hasFile
               ? `${doc.file_name?.trim() || "File"}${doc.uploaded_at || doc.updated_at ? ` · Updated ${formatUpdated(doc.uploaded_at ?? doc.updated_at)}` : ""}`
-              : doc.description?.trim() || "Not uploaded";
+              : showSlotDescription
+                ? doc.description!.trim()
+                : "Not uploaded";
 
             return (
               <div

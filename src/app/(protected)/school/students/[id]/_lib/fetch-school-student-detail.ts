@@ -4,13 +4,14 @@ import type { EssayWithComments } from "@/app/(protected)/student/my-application
 import type { Database } from "@/database.types";
 import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
 import {
+  parseSchoolStudentFollowUpStatus,
   pickLatestActivityIso,
-  riskFromSignals,
 } from "@/lib/school-student-risk";
 import {
   getStudentApplicationProfileCompletion,
   studentApplicationProfileRowToCompletionInput,
 } from "@/lib/student-application-profile-completion";
+import { netSessionCreditsByKindFromRows } from "@/app/(protected)/school/settings/_lib/net-session-credits-used";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -42,7 +43,6 @@ export type SchoolStudentDetailPayload = {
     schoolName: string;
     nationalityName: string | null;
     profilePercent: number;
-    counselorLabel: string;
     curriculumDisplay: string | null;
     targetIntakeDisplay: string | null;
     stageLabel: string;
@@ -143,7 +143,6 @@ export async function fetchSchoolStudentDetail(
       grade,
       created_at,
       updated_at,
-      counselor_school_admin_id,
       advisor_credit_limit,
       ambassador_credit_limit,
       total_logins,
@@ -179,13 +178,10 @@ export async function fetchSchoolStudentDetail(
       ? countriesEmbed.name.trim() || null
       : null;
 
-  const counselorId = profile.counselor_school_admin_id;
-
   const [
     { data: latestActRow, error: latestActErr },
     { data: latestAiRow, error: latestAiErr },
     { data: appProf },
-    counselorRes,
     shortlistRowsRes,
     countriesRes,
     tasksRes,
@@ -201,6 +197,7 @@ export async function fetchSchoolStudentDetail(
     interactionsRes,
     essaysRes,
     documents,
+    followUpStatusRes,
   ] = await Promise.all([
     supabase
       .from("student_activities")
@@ -221,22 +218,6 @@ export async function fetchSchoolStudentDetail(
       .select("*")
       .eq("student_id", studentId)
       .maybeSingle(),
-    counselorId
-      ? supabase
-          .from("school_admin_profiles")
-          .select("first_name,last_name")
-          .eq("id", counselorId)
-          .maybeSingle()
-      : Promise.resolve({
-          data: null,
-          error: null,
-        } as {
-          data: {
-            first_name: string;
-            last_name: string;
-          } | null;
-          error: null;
-        }),
     supabase
       .from("student_shortlist_universities")
       .select("*")
@@ -348,6 +329,9 @@ export async function fetchSchoolStudentDetail(
       .eq("student_id", studentId)
       .order("updated_at", { ascending: false }),
     ensureStudentApplicationDocuments(secret, studentId),
+    supabase.rpc("school_student_follow_up_status", {
+      p_student_id: studentId,
+    }),
   ]);
 
   if (latestActErr) {
@@ -409,24 +393,14 @@ export async function fetchSchoolStudentDetail(
 
   const activityIso =
     platformAt ?? profile.updated_at ?? profile.created_at ?? null;
-  let inactiveWeek = false;
   let lastActiveLabel = "—";
   if (activityIso) {
     try {
       const t = new Date(activityIso);
       lastActiveLabel = formatDistanceToNow(t, { addSuffix: true });
-      inactiveWeek = (Date.now() - t.getTime()) / (1000 * 60 * 60 * 24) >= 7;
     } catch {
       lastActiveLabel = "—";
     }
-  }
-
-  let counselorLabel = "—";
-  if (counselorRes.data) {
-    const c = counselorRes.data;
-    const label =
-      `${c.first_name?.trim() ?? ""} ${c.last_name?.trim() ?? ""}`.trim();
-    if (label) counselorLabel = label;
   }
 
   const app = appProf ?? null;
@@ -445,32 +419,10 @@ export async function fetchSchoolStudentDetail(
       creditRowsRes.error.message,
     );
   } else if (creditRowsRes.data?.length) {
-    let advUsed = 0;
-    let advRefunded = 0;
-    let ambUsed = 0;
-    let ambRefunded = 0;
-    let poolUsed = 0;
-    let poolRefunded = 0;
-    for (const r of creditRowsRes.data) {
-      const amt =
-        typeof r.amount === "number" && Number.isFinite(r.amount)
-          ? r.amount
-          : 0;
-      const isRefund = r.status === "refunded";
-      if (r.type === "advisor") {
-        if (isRefund) advRefunded += amt;
-        else advUsed += amt;
-      } else if (r.type === "ambassador") {
-        if (isRefund) ambRefunded += amt;
-        else ambUsed += amt;
-      } else if (r.type === "base_credit" || r.type === "extra_credits") {
-        if (isRefund) poolRefunded += amt;
-        else poolUsed += amt;
-      }
-    }
-    advisorCreditsUsedNet = Math.max(0, advUsed - advRefunded);
-    ambassadorCreditsUsedNet = Math.max(0, ambUsed - ambRefunded);
-    poolCreditsNet = Math.max(0, poolUsed - poolRefunded);
+    const nets = netSessionCreditsByKindFromRows(creditRowsRes.data);
+    advisorCreditsUsedNet = nets.advisorUsedNet;
+    ambassadorCreditsUsedNet = nets.ambassadorUsedNet;
+    poolCreditsNet = nets.poolUsedNet;
   }
 
   const creditsUsedTotal =
@@ -510,10 +462,17 @@ export async function fetchSchoolStudentDetail(
     schoolsEmbed?.default_ambasador_credit_limit ??
     null;
 
-  const { riskClass, riskLabel } = riskFromSignals(
-    profilePercent,
-    inactiveWeek,
+  if (followUpStatusRes.error) {
+    console.error(
+      "[fetchSchoolStudentDetail] school_student_follow_up_status:",
+      followUpStatusRes.error.message,
+    );
+  }
+  const followUpStatus = parseSchoolStudentFollowUpStatus(
+    followUpStatusRes.data,
   );
+  const riskClass = followUpStatus?.risk_class ?? "green";
+  const riskLabel = followUpStatus?.risk_label ?? "On track";
 
   const shortlist = shortlistRowsRes.data ?? [];
 
@@ -578,7 +537,6 @@ export async function fetchSchoolStudentDetail(
       schoolName,
       nationalityName,
       profilePercent,
-      counselorLabel,
       curriculumDisplay,
       targetIntakeDisplay,
       stageLabel: stageFromProfilePercent(profilePercent),
@@ -602,7 +560,7 @@ export async function fetchSchoolStudentDetail(
       universitiesCount: shortlist.length,
       documentsInCount: documents.filter((d) => d.storage_path != null).length,
       openTasksCount: tasksRes.count ?? 0,
-      supportSessionsCount: (advisorSessRes.count ?? 0) + (ambRes.count ?? 0),
+      supportSessionsCount: advisorSessRes.count ?? 0,
     },
     platformActivity,
     shortlist,

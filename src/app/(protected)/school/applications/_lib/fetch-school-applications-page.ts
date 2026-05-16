@@ -25,6 +25,8 @@ export type SchoolApplicationTableRow = {
 
 export type SchoolApplicationsPageFilters = {
   q: string;
+  /** Navbar student name/email filter */
+  studentQ: string;
   /** Kept for URL compatibility; not applied (no per-university deadlines on this flow). */
   deadline: string;
   /** Filter key (`considering`, …) or legacy DB enum; see `schoolApplicationFilterToDbStatus`. */
@@ -149,6 +151,7 @@ export async function fetchSchoolApplicationsPage(
   const offset = (page - 1) * limit;
 
   const qTrim = filters.q.trim().toLowerCase();
+  const studentQTrim = filters.studentQ.trim().toLowerCase();
   const status = schoolApplicationFilterToDbStatus(filters.status);
   const countryTrim = filters.country.trim();
 
@@ -197,6 +200,15 @@ export async function fetchSchoolApplicationsPage(
 
   const apps = (data ?? []) as unknown as AppRowRaw[];
   let rows = buildRowsFromApplications(apps);
+
+  if (studentQTrim) {
+    rows = rows.filter((r) => {
+      const hay = [r.firstName, r.lastName, r.email]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(studentQTrim);
+    });
+  }
 
   if (qTrim) {
     rows = rows.filter((r) => {

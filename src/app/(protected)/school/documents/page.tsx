@@ -15,12 +15,14 @@ export default async function SchoolDocumentsPage({
 }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
+  const studentQ = typeof sp.studentQ === "string" ? sp.studentQ : "";
   const status = typeof sp.status === "string" ? sp.status : "";
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 12)));
 
   const { rows, totalRows } = await fetchSchoolDocumentsPage({
     q,
+    studentQ,
     status,
     page,
     limit,
@@ -33,6 +35,7 @@ export default async function SchoolDocumentsPage({
       page={page}
       limit={limit}
       q={q}
+      studentQ={studentQ}
       status={status}
     />
   );

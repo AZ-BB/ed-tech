@@ -56,9 +56,8 @@ const STUDENT_CSV_HEADERS = [
   "Destinations",
   "Programs",
   "Profile %",
-  "Unis",
+  "UNIS SHORTLISTED",
   "Last active",
-  "Counselor",
 ] as const;
 
 function studentRowsToCsvLines(rows: SchoolStudentTableRow[]): string[] {
@@ -75,7 +74,6 @@ function studentRowsToCsvLines(rows: SchoolStudentTableRow[]): string[] {
         r.profilePercent,
         r.unisCount,
         r.lastActiveLabel,
-        r.counselorLabel,
       ]
         .map(csvCell)
         .join(","),
@@ -165,20 +163,20 @@ export function SchoolStudentsClient({
   page,
   limit,
   q,
+  studentQ,
   grade,
   dest,
   destinationItems,
-  counselorOptions,
 }: {
   rows: SchoolStudentTableRow[];
   totalRows: number;
   page: number;
   limit: number;
   q: string;
+  studentQ: string;
   grade: string;
   dest: string;
   destinationItems: DestinationSelectItem[];
-  counselorOptions: { id: string; label: string }[];
 }) {
   const router = useRouter();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -482,6 +480,9 @@ export function SchoolStudentsClient({
           method="get"
         >
           <input type="hidden" name="page" value="1" />
+          {studentQ.trim() ? (
+            <input type="hidden" name="studentQ" value={studentQ} />
+          ) : null}
           <div className="relative min-w-[200px] max-w-[340px] flex-1">
             <svg
               className="pointer-events-none absolute left-3 top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[var(--text-hint)]"
@@ -496,6 +497,7 @@ export function SchoolStudentsClient({
             </svg>
             <input type="hidden" name="limit" value={String(limit)} />
             <input
+              key={`${q}-${studentQ}`}
               type="search"
               name="q"
               placeholder="Search by name or email"
@@ -575,13 +577,10 @@ export function SchoolStudentsClient({
                   Profile
                 </th>
                 <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                  Unis
-                </th>
-                <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                  Last active
+                  UNIS SHORTLISTED
                 </th>
                 <th className="whitespace-nowrap bg-[#faf9f4] px-5 py-2.5 pr-5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                  Counselor
+                  Last active
                 </th>
               </tr>
             </thead>
@@ -590,7 +589,7 @@ export function SchoolStudentsClient({
                 <tr>
                   <td
                     className="px-5 py-10 text-center text-[13px] text-[var(--text-light)]"
-                    colSpan={9}
+                    colSpan={8}
                   >
                     No students match your filters yet.
                   </td>
@@ -671,11 +670,8 @@ export function SchoolStudentsClient({
                     <td className="px-4 py-3 align-middle text-[12.5px] font-semibold text-[var(--text)]">
                       {r.unisCount}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 align-middle text-[12px] text-[var(--text-mid)]">
+                    <td className="whitespace-nowrap px-5 py-3 pr-5 align-middle text-[12px] text-[var(--text-mid)]">
                       {r.lastActiveLabel}
-                    </td>
-                    <td className="px-5 py-3 align-middle text-[12.5px] text-[var(--text)]">
-                      {r.counselorLabel}
                     </td>
                   </tr>
                 ))
@@ -1017,9 +1013,6 @@ export function SchoolStudentsClient({
                           Grade
                         </th>
                         <th className="whitespace-nowrap bg-[#faf9f4] px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                          Counselor
-                        </th>
-                        <th className="whitespace-nowrap bg-[#faf9f4] px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                           Invited
                         </th>
                         <th className="whitespace-nowrap bg-[#faf9f4] px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)] last:pr-3">
@@ -1038,9 +1031,6 @@ export function SchoolStudentsClient({
                           </td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-[var(--text-mid)]">
                             {r.grade ?? "—"}
-                          </td>
-                          <td className="max-w-[160px] truncate px-3 py-2.5 text-[var(--text-mid)]">
-                            {r.counselorLabel}
                           </td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[var(--text-mid)]">
                             {r.invitedLabel}
@@ -1132,11 +1122,28 @@ export function SchoolStudentsClient({
               action={inviteAction}
               className="flex flex-col gap-4 px-5 py-4"
             >
-              <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">
-                Enter the student&apos;s school email. Optionally set grade and
-                a counselor. They finish signup with your school&apos;s access
-                code once this invite is saved.
-              </p>
+              <div className="rounded-xl border border-[var(--border-light)] bg-[#faf9f4] px-4 py-3.5">
+                <p className="mb-2.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-mid)]">
+                  How it works
+                </p>
+                <ol className="flex flex-col gap-2.5">
+                  {[
+                    "Enter the student's school email address. Grade is optional.",
+                    "They receive an invitation email with signup instructions and your school's access code.",
+                    "Once they've signed up, they move from Pending invites to your students list, where you can view their profile and track application progress.",
+                  ].map((label, i) => (
+                    <li
+                      key={label}
+                      className="flex items-start gap-2.5 text-[12.5px] leading-snug text-[var(--text-mid)]"
+                    >
+                      <span className="mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[10px] font-bold text-[var(--green)]">
+                        {i + 1}
+                      </span>
+                      <span>{label}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
               <div>
                 <label
                   htmlFor="invite-email"
@@ -1175,30 +1182,6 @@ export function SchoolStudentsClient({
                   {GRADE_FILTER_OPTIONS.map((g) => (
                     <option key={g} value={g}>
                       {g}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="invite-counselor"
-                  className="mb-2 block text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-mid)]"
-                >
-                  Counselor (optional)
-                </label>
-                <select
-                  id="invite-counselor"
-                  name="counselorSchoolAdminId"
-                  aria-label="Counselor"
-                  disabled={invitePending}
-                  style={{ backgroundImage: SELECT_CHEVRON }}
-                  className={`${filterSelectClass} w-full max-w-none`}
-                  defaultValue=""
-                >
-                  <option value="">—</option>
-                  {counselorOptions.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
                     </option>
                   ))}
                 </select>

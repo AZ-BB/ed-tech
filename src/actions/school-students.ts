@@ -178,36 +178,11 @@ export async function inviteSchoolStudentEmail(
     };
   }
 
-  const counselorRaw = String(
-    formData.get("counselorSchoolAdminId") ?? "",
-  ).trim();
-  let counselorSchoolAdminId: string | null = null;
-  if (counselorRaw !== "") {
-    if (!UUID_RE.test(counselorRaw)) {
-      return { data: null, error: "Invalid counselor selection." };
-    }
-    const { data: counselorRow, error: counselorErr } = await supabase
-      .from("school_admin_profiles")
-      .select("id")
-      .eq("id", counselorRaw)
-      .eq("school_id", schoolId)
-      .maybeSingle();
-
-    if (counselorErr || !counselorRow) {
-      return {
-        data: null,
-        error: "That counselor is not part of your school.",
-      };
-    }
-    counselorSchoolAdminId = counselorRaw;
-  }
-
   const { error: insertError } = await supabase.from("school_students").insert({
     school_id: schoolId,
     email,
     signed_up: false,
     grade,
-    counselor_school_admin_id: counselorSchoolAdminId,
   });
 
   if (insertError) {

@@ -476,6 +476,56 @@ export type Database = {
           },
         ]
       }
+      ambassador_specific_requests: {
+        Row: {
+          additional_notes: string | null
+          created_at: string | null
+          id: number
+          preferred_major: string | null
+          status: string
+          student_email: string
+          student_id: string
+          student_name: string
+          student_phone: string
+          target_university: string
+          updated_at: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          created_at?: string | null
+          id?: number
+          preferred_major?: string | null
+          status?: string
+          student_email: string
+          student_id: string
+          student_name: string
+          student_phone: string
+          target_university: string
+          updated_at?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          created_at?: string | null
+          id?: number
+          preferred_major?: string | null
+          status?: string
+          student_email?: string
+          student_id?: string
+          student_name?: string
+          student_phone?: string
+          target_university?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambassador_specific_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ambassador_tags: {
         Row: {
           created_at: string | null
@@ -1244,7 +1294,6 @@ export type Database = {
       }
       school_students: {
         Row: {
-          counselor_school_admin_id: string | null
           created_at: string | null
           email: string
           grade: string | null
@@ -1254,7 +1303,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          counselor_school_admin_id?: string | null
           created_at?: string | null
           email: string
           grade?: string | null
@@ -1264,7 +1312,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          counselor_school_admin_id?: string | null
           created_at?: string | null
           email?: string
           grade?: string | null
@@ -1274,13 +1321,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "school_students_counselor_school_admin_id_fkey"
-            columns: ["counselor_school_admin_id"]
-            isOneToOne: false
-            referencedRelation: "school_admin_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "school_students_school_id_fkey"
             columns: ["school_id"]
@@ -1953,11 +1993,10 @@ export type Database = {
         Row: {
           advisor_credit_limit: number | null
           ambassador_credit_limit: number | null
-          counselor_school_admin_id: string | null
           created_at: string | null
           email: string
           first_name: string
-          grade: string | null
+          grade: string
           id: string
           last_name: string
           nationality_country_code: string
@@ -1973,11 +2012,10 @@ export type Database = {
         Insert: {
           advisor_credit_limit?: number | null
           ambassador_credit_limit?: number | null
-          counselor_school_admin_id?: string | null
           created_at?: string | null
           email: string
           first_name: string
-          grade?: string | null
+          grade: string
           id: string
           last_name: string
           nationality_country_code: string
@@ -1993,11 +2031,10 @@ export type Database = {
         Update: {
           advisor_credit_limit?: number | null
           ambassador_credit_limit?: number | null
-          counselor_school_admin_id?: string | null
           created_at?: string | null
           email?: string
           first_name?: string
-          grade?: string | null
+          grade?: string
           id?: string
           last_name?: string
           nationality_country_code?: string
@@ -2011,13 +2048,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "student_profiles_counselor_school_admin_id_fkey"
-            columns: ["counselor_school_admin_id"]
-            isOneToOne: false
-            referencedRelation: "school_admin_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "student_profiles_nationality_country_code_fkey"
             columns: ["nationality_country_code"]
@@ -2332,7 +2362,7 @@ export type Database = {
           p_bucket?: string
           p_cov?: string
           p_dest?: string
-          p_home_alpha2?: string | null
+          p_home_alpha2?: string
           p_limit?: number
           p_nat?: string
           p_offset?: number
@@ -2351,6 +2381,14 @@ export type Database = {
       }
       school_dashboard_shortlist_top_stats: {
         Args: { p_top_n?: number }
+        Returns: Json
+      }
+      school_student_follow_up_status: {
+        Args: { p_student_id: string }
+        Returns: Json
+      }
+      school_students_needing_follow_up: {
+        Args: { p_limit?: number; p_school_id?: string }
         Returns: Json
       }
     }

@@ -1,5 +1,6 @@
+import type { StudentContactDefaults } from "./_components/request-specific-ambassador-modal";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AmbassadorsClient } from "./_components/ambassadors-client";
@@ -18,8 +19,12 @@ export default async function AmbassadorsPage() {
   }
 
   const secret = await createSupabaseSecretClient();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const [{ data: rows }, { data: countryRows }] = await Promise.all([
+  const [{ data: rows }, { data: countryRows }, { data: studentProfile }] = await Promise.all([
     secret
       .from("ambassadors")
       .select(
@@ -46,10 +51,34 @@ export default async function AmbassadorsPage() {
       .eq("is_active", true)
       .order("last_name"),
     secret.from("countries").select("id, name").order("name"),
+    secret
+      .from("student_profiles")
+      .select("first_name, last_name, email, phone")
+      .eq("id", auth.studentId)
+      .maybeSingle(),
   ]);
 
   const ambassadors = mapAmbassadorRows((rows ?? []) as AmbassadorQueryRow[]);
   const catalogCountries = (countryRows ?? []) as { id: string; name: string }[];
 
-  return <AmbassadorsClient initialAmbassadors={ambassadors} catalogCountries={catalogCountries} />;
+  const fullName = [studentProfile?.first_name, studentProfile?.last_name]
+    .filter((p) => typeof p === "string" && p.trim().length > 0)
+    .join(" ")
+    .trim();
+  const studentDefaults: StudentContactDefaults | undefined =
+    fullName || studentProfile?.email || studentProfile?.phone || user?.email
+      ? {
+          fullName,
+          email: (studentProfile?.email?.trim() || user?.email?.trim()) ?? "",
+          phone: studentProfile?.phone?.trim() ?? "",
+        }
+      : undefined;
+
+  return (
+    <AmbassadorsClient
+      initialAmbassadors={ambassadors}
+      catalogCountries={catalogCountries}
+      studentDefaults={studentDefaults}
+    />
+  );
 }

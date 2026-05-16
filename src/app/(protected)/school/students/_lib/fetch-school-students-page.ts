@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 
+import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import {
   getStudentApplicationProfileCompletion,
   studentApplicationProfileRowToCompletionInput,
@@ -13,9 +14,8 @@ type StudentProfileListRow = {
   first_name: string | null;
   last_name: string | null;
   email: string | null;
-  grade: string | null;
+  grade: string;
   updated_at: string | null;
-  counselor_school_admin_id: string | null;
 };
 
 export type SchoolStudentTableRow = {
@@ -23,27 +23,24 @@ export type SchoolStudentTableRow = {
   firstName: string;
   lastName: string;
   email: string;
-  grade: string | null;
+  grade: string;
   destinationsSummary: string;
   programsSummary: string;
   profilePercent: number;
   unisCount: number;
   lastActiveIso: string | null;
   lastActiveLabel: string;
-  counselorLabel: string;
 };
 
 export type SchoolStudentsPageFilters = {
   q: string;
+  /** Navbar student name/email filter */
+  studentQ: string;
   grade: string;
   destination: string;
   page: number;
   limit: number;
 };
-
-function escapeIlike(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
 
 function isUndecidedProgram(program: string): boolean {
   return program.trim().toLowerCase() === "undecided";
@@ -132,27 +129,6 @@ async function profilesToSchoolStudentTableRows(
 
   const ids = profiles.map((p) => p.id);
 
-  const counselorIds = [
-    ...new Set(
-      profiles.map((p) => p.counselor_school_admin_id).filter(Boolean),
-    ),
-  ] as string[];
-
-  const counselorNames = new Map<string, string>();
-  if (counselorIds.length > 0) {
-    const { data: counselors } = await supabase
-      .from("school_admin_profiles")
-      .select("id, first_name, last_name")
-      .in("id", counselorIds);
-
-    for (const c of counselors ?? []) {
-      counselorNames.set(
-        c.id,
-        `${c.first_name?.trim() ?? ""} ${c.last_name?.trim() ?? ""}`.trim(),
-      );
-    }
-  }
-
   const [slRes, actRes, appProfRes] = await Promise.all([
     supabase
       .from("student_shortlist_universities")
@@ -207,25 +183,18 @@ async function profilesToSchoolStudentTableRows(
       }
     }
 
-    const cid = p.counselor_school_admin_id;
-    const counselorLabel =
-      cid && counselorNames.get(cid)
-        ? (counselorNames.get(cid) as string)
-        : "—";
-
     return {
       id: p.id,
       firstName: p.first_name?.trim() ?? "",
       lastName: p.last_name?.trim() ?? "",
       email: p.email?.trim() ?? "",
-      grade: p.grade?.trim() ?? null,
+      grade: p.grade.trim(),
       destinationsSummary: slMeta?.destinationsSummary ?? "—",
       programsSummary: slMeta?.programsSummary ?? "—",
       profilePercent: pct,
       unisCount: slMeta?.unisCount ?? 0,
       lastActiveIso: activityIso,
       lastActiveLabel,
-      counselorLabel,
     };
   });
 }
@@ -276,7 +245,7 @@ export async function fetchAllSchoolStudentTableRows(
     let listQuery = supabase
       .from("student_profiles")
       .select(
-        "id, first_name, last_name, email, grade, updated_at, counselor_school_admin_id",
+        "id, first_name, last_name, email, grade, updated_at",
       )
       .eq("school_id", schoolId);
 
@@ -379,7 +348,7 @@ export async function fetchSchoolStudentsPage(
   let listQuery = supabase
     .from("student_profiles")
     .select(
-      "id, first_name, last_name, email, grade, updated_at, counselor_school_admin_id",
+      "id, first_name, last_name, email, grade, updated_at",
       {
         count: "exact",
       },
@@ -387,8 +356,15 @@ export async function fetchSchoolStudentsPage(
     .eq("school_id", schoolId);
 
   const qTrim = filters.q.trim();
+  const studentQTrim = filters.studentQ.trim();
   if (qTrim) {
     const e = escapeIlike(qTrim);
+    listQuery = listQuery.or(
+      `first_name.ilike.%${e}%,last_name.ilike.%${e}%,email.ilike.%${e}%`,
+    );
+  }
+  if (studentQTrim) {
+    const e = escapeIlike(studentQTrim);
     listQuery = listQuery.or(
       `first_name.ilike.%${e}%,last_name.ilike.%${e}%,email.ilike.%${e}%`,
     );

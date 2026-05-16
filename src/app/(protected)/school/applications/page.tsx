@@ -18,6 +18,7 @@ export default async function SchoolApplicationsPage({
 }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
+  const studentQ = typeof sp.studentQ === "string" ? sp.studentQ : "";
   const status = typeof sp.status === "string" ? sp.status : "";
   const country = typeof sp.country === "string" ? sp.country : "";
   const page = Math.max(1, parseIntParam(sp.page, 1));
@@ -33,6 +34,7 @@ export default async function SchoolApplicationsPage({
 
   const { rows, totalRows } = await fetchSchoolApplicationsPage({
     q,
+    studentQ,
     deadline: "",
     status,
     country,
@@ -47,6 +49,7 @@ export default async function SchoolApplicationsPage({
       page={page}
       limit={limit}
       q={q}
+      studentQ={studentQ}
       status={status}
       country={country}
       destinationItems={destinationItems}

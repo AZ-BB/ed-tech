@@ -5,6 +5,11 @@ import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { RequestSpecificAmbassadorCta } from "./request-specific-ambassador-cta";
+import {
+  RequestSpecificAmbassadorModal,
+  type StudentContactDefaults,
+} from "./request-specific-ambassador-modal";
 
 const selectChevronStyle = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7a7a' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
@@ -57,9 +62,10 @@ function filterAmbassadors(
 type Props = {
   initialAmbassadors: AmbassadorCatalogEntry[];
   catalogCountries: { id: string; name: string }[];
+  studentDefaults?: StudentContactDefaults;
 };
 
-export function AmbassadorsClient({ initialAmbassadors, catalogCountries }: Props) {
+export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studentDefaults }: Props) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dest, setDest] = useState("");
@@ -67,6 +73,7 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries }: Prop
   const [major, setMajor] = useState("");
   const [status, setStatus] = useState("");
   const [detail, setDetail] = useState<AmbassadorCatalogEntry | null>(null);
+  const [requestOpen, setRequestOpen] = useState(false);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 200);
@@ -326,6 +333,8 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries }: Prop
         </div>
       </div>
 
+      <RequestSpecificAmbassadorCta onOpen={() => setRequestOpen(true)} />
+
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         {filtered.map((a) => {
           const pal = paletteForId(a.id);
@@ -523,6 +532,12 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries }: Prop
           </div>
         </div>
       ) : null}
+
+      <RequestSpecificAmbassadorModal
+        open={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        studentDefaults={studentDefaults}
+      />
     </div>
   );
 }

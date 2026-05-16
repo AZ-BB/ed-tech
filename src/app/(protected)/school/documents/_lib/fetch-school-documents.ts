@@ -1,5 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
 
+import {
+  buildOrWithStudentIds,
+  fetchSchoolStudentIdsByQuery,
+  ilikePattern,
+} from "@/app/(protected)/school/_lib/student-search";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type SchoolDocumentTableRow = {
@@ -17,15 +22,13 @@ export type SchoolDocumentTableRow = {
 
 export type SchoolDocumentsPageFilters = {
   q: string;
+  /** Navbar student name/email filter */
+  studentQ: string;
   /** "" | "missing" | "uploaded" */
   status: string;
   page: number;
   limit: number;
 };
-
-function escapeIlike(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
 
 function isUploadedRow(status: string, storagePath: string | null): boolean {
   if (storagePath) return true;
@@ -91,6 +94,7 @@ export async function fetchSchoolDocumentsPage(
   const offset = (page - 1) * limit;
 
   const qTrim = filters.q.trim();
+  const studentQTrim = filters.studentQ.trim();
   const docStatus = normalizeDocStatus(filters.status);
 
   let q = supabase
@@ -115,11 +119,30 @@ export async function fetchSchoolDocumentsPage(
     )
     .eq("student_profiles.school_id", schoolId);
 
+  if (studentQTrim) {
+    const navbarStudentIds = await fetchSchoolStudentIdsByQuery(
+      supabase,
+      schoolId,
+      studentQTrim,
+    );
+    if (navbarStudentIds.length === 0) {
+      return { rows: [], totalRows: 0 };
+    }
+    q = q.in("student_id", navbarStudentIds);
+  }
+
   if (qTrim) {
-    const e = escapeIlike(qTrim);
-    const p = `%${e}%`;
+    const p = ilikePattern(qTrim);
+    const studentIds = await fetchSchoolStudentIdsByQuery(
+      supabase,
+      schoolId,
+      qTrim,
+    );
     q = q.or(
-      `display_name.ilike.${p},description.ilike.${p},student_profiles.first_name.ilike.${p},student_profiles.last_name.ilike.${p},student_profiles.email.ilike.${p}`,
+      buildOrWithStudentIds(
+        [`display_name.ilike.${p}`, `description.ilike.${p}`],
+        studentIds,
+      ),
     );
   }
 

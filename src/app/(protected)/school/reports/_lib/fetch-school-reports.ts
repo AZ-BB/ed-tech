@@ -1,9 +1,5 @@
 import type { Database } from "@/database.types";
-import {
-  pickLatestActivityIso,
-  riskFromSignals,
-  schoolDashboardAttentionIssue,
-} from "@/lib/school-student-risk";
+import { parseSchoolStudentsNeedingFollowUp } from "@/lib/school-student-risk";
 import {
   getStudentApplicationProfileCompletion,
   studentApplicationProfileRowToCompletionInput,
@@ -23,7 +19,7 @@ export type SchoolReportsAttentionRow = {
   id: string;
   firstName: string;
   lastName: string;
-  grade: string | null;
+  grade: string;
   initials: string;
   riskClass: "red" | "amber";
   riskLabel: string;
@@ -94,18 +90,6 @@ function utcMonthBounds(reference = new Date()): {
     monthLabel,
     monthKey,
   };
-}
-
-function mergeMaxTime(
-  map: Map<string, number>,
-  studentId: string | null,
-  iso: string | null,
-) {
-  if (!studentId || !iso) return;
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return;
-  const prev = map.get(studentId);
-  if (prev === undefined || t > prev) map.set(studentId, t);
 }
 
 async function collectStudentIdsActiveFromActivities(
@@ -415,59 +399,6 @@ function rollupShortlist(
   return summaries;
 }
 
-async function scanActivitiesFullSchool(
-  supabase: SupabaseServer,
-): Promise<{ maxByStudent: Map<string, number> }> {
-  const maxByStudent = new Map<string, number>();
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
-      .from("student_activities")
-      .select("student_id, created_at")
-      .order("created_at", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) {
-      console.error(
-        "[fetchSchoolReports] student_activities scan:",
-        error.message,
-      );
-      break;
-    }
-    if (!data?.length) break;
-    for (const row of data) {
-      mergeMaxTime(maxByStudent, row.student_id, row.created_at);
-    }
-    if (data.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-  return { maxByStudent };
-}
-
-async function scanAiUsageFullSchool(
-  supabase: SupabaseServer,
-): Promise<{ maxByStudent: Map<string, number> }> {
-  const maxByStudent = new Map<string, number>();
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
-      .from("ai_usage")
-      .select("student_id, created_at")
-      .order("created_at", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) {
-      console.error("[fetchSchoolReports] ai_usage scan:", error.message);
-      break;
-    }
-    if (!data?.length) break;
-    for (const row of data) {
-      mergeMaxTime(maxByStudent, row.student_id, row.created_at);
-    }
-    if (data.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-  return { maxByStudent };
-}
-
 export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null> {
   const supabase = await createSupabaseServerClient();
   const {
@@ -568,8 +499,7 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
     essayReviewsMonth,
     universitiesShortlistedMonth,
     appProfByStudent,
-    actScan,
-    aiScan,
+    followUpRes,
     shortlistRowsRes,
     appsByStudentRes,
   ] = await Promise.all([
@@ -598,8 +528,10 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
       monthEndExclusiveIso,
     ),
     fetchApplicationProfilesForSchool(supabase, schoolId),
-    scanActivitiesFullSchool(supabase),
-    scanAiUsageFullSchool(supabase),
+    supabase.rpc("school_students_needing_follow_up", {
+      p_limit: 0,
+      p_school_id: schoolId,
+    }),
     schoolStudentIds.length
       ? supabase
           .from("student_shortlist_universities")
@@ -644,63 +576,26 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
     );
   }
 
-  const attentionRaw: SchoolReportsAttentionRow[] = [];
-  let needAttentionCount = 0;
-
-  for (const p of profiles) {
-    const appRow = appProfByStudent.get(p.id);
-    const profilePct = getStudentApplicationProfileCompletion(
-      studentApplicationProfileRowToCompletionInput(
-        appRow ? toCompletionRow(appRow) : null,
-      ),
-    ).pct;
-
-    const actMs = actScan.maxByStudent.get(p.id);
-    const aiMs = aiScan.maxByStudent.get(p.id);
-    const platformAt = pickLatestActivityIso(
-      actMs !== undefined ? new Date(actMs).toISOString() : null,
-      aiMs !== undefined ? new Date(aiMs).toISOString() : null,
+  if (followUpRes.error) {
+    console.error(
+      "[fetchSchoolReports] school_students_needing_follow_up:",
+      followUpRes.error.message,
     );
-
-    const activityIso = platformAt ?? p.updated_at ?? p.created_at ?? null;
-
-    let inactiveWeek = false;
-    if (activityIso) {
-      try {
-        const t = new Date(activityIso).getTime();
-        if (!Number.isNaN(t)) {
-          inactiveWeek = (Date.now() - t) / (1000 * 60 * 60 * 24) >= 7;
-        }
-      } catch {
-        inactiveWeek = false;
-      }
-    }
-
-    const { riskClass, riskLabel } = riskFromSignals(profilePct, inactiveWeek);
-    if (riskClass !== "green") needAttentionCount += 1;
-    if (riskClass === "green") continue;
-
-    attentionRaw.push({
-      id: p.id,
-      firstName: p.first_name?.trim() ?? "",
-      lastName: p.last_name?.trim() ?? "",
-      grade: p.grade?.trim() ?? null,
-      initials: initialsFromStudent(
-        p.first_name?.trim() ?? "",
-        p.last_name?.trim() ?? "",
-      ),
-      riskClass,
-      riskLabel,
-      issue: schoolDashboardAttentionIssue(profilePct, inactiveWeek),
-    });
   }
-
-  attentionRaw.sort((a, b) => {
-    if (a.riskClass !== b.riskClass) return a.riskClass === "red" ? -1 : 1;
-    return `${a.lastName} ${a.firstName}`.localeCompare(
-      `${b.lastName} ${b.firstName}`,
-    );
-  });
+  const followUp = parseSchoolStudentsNeedingFollowUp(followUpRes.data);
+  const needAttentionCount = followUp.need_attention_count;
+  const attentionStudents: SchoolReportsAttentionRow[] = followUp.students.map(
+    (s) => ({
+      id: s.id,
+      firstName: s.first_name.trim(),
+      lastName: s.last_name.trim(),
+      grade: s.grade,
+      initials: initialsFromStudent(s.first_name, s.last_name),
+      riskClass: s.risk_class,
+      riskLabel: s.risk_label,
+      issue: s.issue,
+    }),
+  );
 
   const outcomes: SchoolReportsOutcomeRow[] = profiles.map((p) => {
     const sl = shortlistRollup.get(p.id);
@@ -750,7 +645,7 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
     essayReviewsMonth,
     webinarsMonth: 0,
     universitiesShortlistedMonth,
-    attentionStudents: attentionRaw,
+    attentionStudents,
     outcomes,
   };
 }

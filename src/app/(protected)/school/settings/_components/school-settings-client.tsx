@@ -9,6 +9,7 @@ import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 
+import type { StudentAllocationRow } from "../_lib/build-student-allocations";
 import {
   SchoolSettingsCreditsPanel,
   type RechargeHistoryRow,
@@ -36,6 +37,7 @@ export type SchoolSettingsClientProps = {
   credits: SchoolCreditsSummary;
   rechargeHistory: RechargeHistoryRow[];
   studentUsageHistory: StudentUsageRow[];
+  studentAllocations: StudentAllocationRow[];
 };
 
 function fieldClass() {
@@ -81,6 +83,7 @@ export function SchoolSettingsClient({
   credits,
   rechargeHistory,
   studentUsageHistory,
+  studentAllocations,
 }: SchoolSettingsClientProps) {
   const router = useRouter();
   const [toast, setToast] = useState<string | null>(null);
@@ -453,6 +456,7 @@ export function SchoolSettingsClient({
         credits={credits}
         rechargeHistory={rechargeHistory}
         studentUsageHistory={studentUsageHistory}
+        studentAllocations={studentAllocations}
         onShowToast={showToast}
       />
 

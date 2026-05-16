@@ -1,7 +1,10 @@
 "use client";
 
 import { updateSchoolDefaultCreditLimitsAction } from "@/actions/school-credits";
+import type { StudentAllocationRow } from "@/app/(protected)/school/settings/_lib/build-student-allocations";
+import { isStudentCreditLimitExhausted } from "@/lib/student-credit-limit";
 import type { GeneralResponse } from "@/utils/response";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 
@@ -83,6 +86,11 @@ function rechargeKindLabel(kind: string): string {
   return kind;
 }
 
+function formatUsageLimit(used: number, limit: number | null): string {
+  const limitStr = limit != null ? String(limit) : "—";
+  return `${used}/${limitStr}`;
+}
+
 function creditTypeLabel(t: string): string {
   switch (t) {
     case "advisor":
@@ -102,6 +110,7 @@ type SchoolSettingsCreditsPanelProps = {
   credits: SchoolCreditsSummary;
   rechargeHistory: RechargeHistoryRow[];
   studentUsageHistory: StudentUsageRow[];
+  studentAllocations: StudentAllocationRow[];
   onShowToast: (msg: string) => void;
 };
 
@@ -109,11 +118,14 @@ export function SchoolSettingsCreditsPanel({
   credits,
   rechargeHistory,
   studentUsageHistory,
+  studentAllocations,
   onShowToast,
 }: SchoolSettingsCreditsPanelProps) {
   const router = useRouter();
   const [limitsOpen, setLimitsOpen] = useState(false);
-  const [historyTab, setHistoryTab] = useState<"recharge" | "usage">("recharge");
+  const [historyTab, setHistoryTab] = useState<
+    "recharge" | "usage" | "allocations"
+  >("recharge");
 
   const [limitsState, limitsAction, limitsPending] = useActionState(
     updateSchoolDefaultCreditLimitsAction,
@@ -174,11 +186,11 @@ export function SchoolSettingsCreditsPanel({
           <div className="relative overflow-hidden rounded-[10px] border border-[var(--border-light)] bg-white px-[18px] py-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none tracking-tight text-[var(--text)]">
-                  <span className="text-[var(--text-hint)]">Am</span>{" "}
+                <div className="font-[family-name:var(--font-dm-serif)] text-xl leading-snug tracking-tight text-[var(--text)]">
+                  <span className="text-[var(--text-hint)]">Ambassador</span>{" "}
                   {amb != null ? amb : "—"}
                   <span className="mx-2 text-[var(--border)]">|</span>
-                  <span className="text-[var(--text-hint)]">Ad</span>{" "}
+                  <span className="text-[var(--text-hint)]">Advisor</span>{" "}
                   {adv != null ? adv : "—"}
                 </div>
                 <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
@@ -258,6 +270,17 @@ export function SchoolSettingsCreditsPanel({
             >
               Student usage
             </button>
+            <button
+              type="button"
+              className={
+                historyTab === "allocations"
+                  ? "-mb-px border-b-2 border-[var(--green)] px-3 py-2 text-[13px] font-semibold text-[var(--green-dark)]"
+                  : "px-3 py-2 text-[13px] font-medium text-[var(--text-mid)] hover:text-[var(--text)]"
+              }
+              onClick={() => setHistoryTab("allocations")}
+            >
+              Student allocations
+            </button>
           </div>
 
           {historyTab === "recharge" ? (
@@ -298,7 +321,7 @@ export function SchoolSettingsCreditsPanel({
                 </tbody>
               </table>
             </div>
-          ) : (
+          ) : historyTab === "usage" ? (
             <div className="overflow-x-auto rounded-lg border border-[var(--border-light)]">
               <table className="w-full min-w-[640px] border-collapse text-[13px]">
                 <thead>
@@ -338,6 +361,74 @@ export function SchoolSettingsCreditsPanel({
                         </td>
                       </tr>
                     ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-[var(--border-light)]">
+              <table className="w-full min-w-[520px] border-collapse text-[13px]">
+                <thead>
+                  <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                    <th className="px-4 py-3">Student</th>
+                    <th className="px-4 py-3">Advisor</th>
+                    <th className="px-4 py-3">Ambassador</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentAllocations.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-[var(--text-light)]">
+                        No students yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    studentAllocations.map((row) => {
+                      const advisorExhausted = isStudentCreditLimitExhausted(
+                        row.advisorUsed,
+                        row.advisorLimit,
+                      );
+                      const ambassadorExhausted = isStudentCreditLimitExhausted(
+                        row.ambassadorUsed,
+                        row.ambassadorLimit,
+                      );
+                      return (
+                        <tr
+                          key={row.studentId}
+                          className="border-t border-[var(--border-light)] hover:bg-[#faf9f4]"
+                        >
+                          <td className="px-4 py-3 text-[var(--text)]">
+                            <Link
+                              href={`/school/students/${row.studentId}`}
+                              className="font-medium text-[var(--green-dark)] hover:underline"
+                            >
+                              {row.studentName}
+                            </Link>
+                          </td>
+                          <td
+                            className={`px-4 py-3 font-medium ${
+                              advisorExhausted
+                                ? "text-[#B8860B]"
+                                : "text-[var(--text)]"
+                            }`}
+                          >
+                            {formatUsageLimit(row.advisorUsed, row.advisorLimit)}
+                          </td>
+                          <td
+                            className={`px-4 py-3 font-medium ${
+                              ambassadorExhausted
+                                ? "text-[#B8860B]"
+                                : "text-[var(--text)]"
+                            }`}
+                          >
+                            {formatUsageLimit(
+                              row.ambassadorUsed,
+                              row.ambassadorLimit,
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
