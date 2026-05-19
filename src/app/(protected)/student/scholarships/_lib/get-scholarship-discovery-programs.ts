@@ -167,7 +167,7 @@ async function fetchDiscoveryBucketRpc(
     p_dest: query.destination,
     p_cov: query.coverage,
     p_bucket: bucket,
-    p_home_alpha2: homeAlpha2 ?? null,
+    p_home_alpha2: homeAlpha2 ?? undefined,
     p_limit: SCHOLARSHIP_PAGE_SIZE,
     p_offset: (Math.max(1, page) - 1) * SCHOLARSHIP_PAGE_SIZE,
   });

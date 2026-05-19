@@ -2,7 +2,7 @@
 
 import { LogoutConfirmDialog } from "@/components/logout-confirm-dialog";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
