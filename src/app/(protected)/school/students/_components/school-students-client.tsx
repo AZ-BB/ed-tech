@@ -576,7 +576,7 @@ export function SchoolStudentsClient({
                 <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   Profile
                 </th>
-                <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   UNIS SHORTLISTED
                 </th>
                 <th className="whitespace-nowrap bg-[#faf9f4] px-5 py-2.5 pr-5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
@@ -667,7 +667,7 @@ export function SchoolStudentsClient({
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 align-middle text-[12.5px] font-semibold text-[var(--text)]">
+                    <td className="px-4 py-3 text-center align-middle text-[12.5px] font-semibold text-[var(--text)]">
                       {r.unisCount}
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 pr-5 align-middle text-[12px] text-[var(--text-mid)]">

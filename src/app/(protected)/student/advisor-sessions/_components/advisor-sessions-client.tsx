@@ -448,7 +448,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                   </div>
                 </div>
                 {a.description ? (
-                  <p className="mb-3 line-clamp-2 text-[12.5px] leading-relaxed text-[var(--text-mid)]">{a.description}</p>
+                  <p className="mb-3 line-clamp-1 text-[12.5px] leading-relaxed text-[var(--text-mid)]">{a.description}</p>
                 ) : null}
                 {a.bestFor ? (
                   <div className="mb-2.5 rounded-lg border border-[#e0eddf] bg-[var(--green-pale)] px-3 py-2.5 text-[11.5px] leading-snug text-[var(--text-mid)]">

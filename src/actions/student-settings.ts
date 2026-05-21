@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
+import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import type { GeneralResponse } from "@/utils/response";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
+
+const GRADE_ALLOWED = new Set<string>(STUDENT_SCHOOL_GRADE_OPTIONS);
 
 function splitFullName(full: string): { first_name: string; last_name: string } {
   const t = full.trim();
@@ -49,6 +52,11 @@ export async function updateStudentPersonalAction(
     return { data: null, error: "Select your nationality." };
   }
 
+  const grade = String(formData.get("grade") ?? "").trim();
+  if (!grade || !GRADE_ALLOWED.has(grade)) {
+    return { data: null, error: "Select a valid grade." };
+  }
+
   const supabase = await createSupabaseServerClient();
 
   const { data: countryOk, error: countryErr } = await supabase
@@ -67,6 +75,7 @@ export async function updateStudentPersonalAction(
       first_name,
       last_name,
       phone,
+      grade,
       nationality_country_code: nationalityCountryCode,
       updated_at: new Date().toISOString(),
     })

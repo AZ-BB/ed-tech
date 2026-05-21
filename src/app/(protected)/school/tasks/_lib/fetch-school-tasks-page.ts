@@ -5,6 +5,7 @@ import {
   fetchSchoolStudentIdsByQuery,
   ilikePattern,
 } from "@/app/(protected)/school/_lib/student-search";
+import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type SchoolTaskTableRow = {
@@ -25,7 +26,29 @@ export type SchoolTaskTableRow = {
 export type SchoolStudentPickerOption = {
   id: string;
   label: string;
+  grade: string | null;
 };
+
+function gradeSortKey(grade: string | null | undefined): number {
+  const m = (grade ?? "").match(/(\d+)/);
+  return m ? -Number.parseInt(m[1]!, 10) : 1;
+}
+
+function sortSchoolStudentPickerOptions<
+  T extends {
+    grade: string | null;
+    lastName: string;
+    firstName: string;
+  },
+>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => {
+    const gradeDiff = gradeSortKey(a.grade) - gradeSortKey(b.grade);
+    if (gradeDiff !== 0) return gradeDiff;
+    const lastDiff = a.lastName.localeCompare(b.lastName, "en");
+    if (lastDiff !== 0) return lastDiff;
+    return a.firstName.localeCompare(b.firstName, "en");
+  });
+}
 
 export type SchoolTasksPageFilters = {
   q: string;
@@ -97,38 +120,39 @@ export async function fetchSchoolStudentPickerOptions(): Promise<
   const { data: rows, error } = await supabase
     .from("student_profiles")
     .select("id, first_name, last_name, email, grade")
-    .eq("school_id", schoolId)
-    .order("last_name", { ascending: true })
-    .order("first_name", { ascending: true });
+    .eq("school_id", schoolId);
 
   if (error || !rows) {
     if (error) console.error(error);
     return [];
   }
 
-  return rows.map((r) => {
-    const name =
-      `${r.first_name?.trim() ?? ""} ${r.last_name?.trim() ?? ""}`.trim();
-    const email = r.email?.trim() ?? "";
-    const gradeRaw = r.grade?.trim() ?? "";
-    const gradeLabel =
-      gradeRaw && !/^grade\s/i.test(gradeRaw)
-        ? `Grade ${gradeRaw}`
-        : gradeRaw;
+  const sorted = sortSchoolStudentPickerOptions(
+    rows.map((r) => ({
+      id: r.id,
+      firstName: r.first_name?.trim() ?? "",
+      lastName: r.last_name?.trim() ?? "",
+      email: r.email?.trim() ?? "",
+      grade: r.grade?.trim() || null,
+    })),
+  );
 
+  return sorted.map((r) => {
+    const name = `${r.firstName} ${r.lastName}`.trim();
     let label: string;
-    if (name && gradeLabel) {
-      label = `${name} · ${gradeLabel}`;
-    } else if (name && email) {
-      label = `${name} (${email})`;
-    } else if (email) {
-      label = email;
+    if (name && r.email) {
+      label = `${name} (${r.email})`;
+    } else if (r.email) {
+      label = r.email;
     } else {
       label = name || r.id;
     }
-    return { id: r.id, label };
+    return { id: r.id, label, grade: r.grade };
   });
 }
+
+/** Grade 12 first, then 11–9, for bulk “Assign to” options. */
+export const SCHOOL_TASK_BULK_GRADE_OPTIONS = [...GRADE_FILTER_OPTIONS].reverse();
 
 export async function fetchSchoolTasksPage(
   filters: SchoolTasksPageFilters,

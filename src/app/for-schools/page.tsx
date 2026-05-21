@@ -235,10 +235,10 @@ export default function ForSchoolsPage() {
         <div className="section-inner">
           <div className="section-header">
             <div className="section-label">What schools unlock</div>
-            <h2 className="section-title">
+            <h2 className="section-title section-title-full">
               An end-to-end guidance platform, <em>under one roof</em>.
             </h2>
-            <p className="section-desc">
+            <p className="section-desc section-desc-full">
               A complete system covering every part of the university journey — from self-discovery, to
               application, to landing in the destination country. Built for MENA schools, MENA students, MENA
               families.
@@ -558,10 +558,10 @@ export default function ForSchoolsPage() {
         <div className="section-inner">
           <div className="section-header">
             <div className="section-label">Built for the whole school</div>
-            <h2 className="section-title">
+            <h2 className="section-title section-title-full">
               A platform that works for <em>counsellors</em> and <em>leadership</em>.
             </h2>
-            <p className="section-desc">
+            <p className="section-desc section-desc-full">
               Different people in your school need different things from a guidance platform. Univeera serves both.
             </p>
           </div>
@@ -687,9 +687,9 @@ export default function ForSchoolsPage() {
                 <Link href="/contact" className="btn btn-cta-primary">
                   Book a demo
                 </Link>
-                <Link href="/contact" className="btn btn-cta-secondary">
+                <a href="mailto:admin@univeera.me" className="btn btn-cta-secondary">
                   Email our schools team
-                </Link>
+                </a>
               </div>
             </div>
           </div>

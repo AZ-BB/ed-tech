@@ -110,6 +110,12 @@ export function ScholarshipDiscovery({
     navigate({ q: q.trim() ? q.trim() : undefined }, true);
   };
 
+  const onFavouritesToggle = () => {
+    const next = !optimisticFilters.favouritesOnly;
+    setOptimisticFilters((prev) => ({ ...prev, favouritesOnly: next }));
+    navigate({ favourites: next ? "1" : undefined }, true);
+  };
+
   const goToGovPage = useCallback(
     (p: number) => navigate({ gPage: String(p) }, false),
     [navigate],
@@ -275,15 +281,19 @@ export function ScholarshipDiscovery({
         nationality={optimisticFilters.nat}
         destination={optimisticFilters.dest}
         coverage={optimisticFilters.cov}
+        favouritesOnly={optimisticFilters.favouritesOnly}
         onNationalityChange={onNationalityChange}
         onDestinationChange={onDestinationChange}
         onCoverageChange={onCoverageChange}
+        onFavouritesToggle={onFavouritesToggle}
         onSearchSubmit={onSearchSubmit}
       />
 
       {noResults ? (
         <p className="py-10 text-center text-[13px] text-[var(--text-light)]">
-          No scholarships match your current filters or search.
+          {filters.favouritesOnly
+            ? "No favourite scholarships match your current filters or search."
+            : "No scholarships match your current filters or search."}
         </p>
       ) : null}
 
@@ -306,7 +316,7 @@ export function ScholarshipDiscovery({
               aria-selected={activeTab === "government"}
               className={`min-w-0 flex-1 cursor-pointer rounded-[8px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
                 activeTab === "government"
-                  ? "bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-200"
+                  ? "border border-[var(--green-dark)] bg-[var(--green-pale)] text-[var(--green-dark)] shadow-sm"
                   : "text-[var(--text-mid)] hover:text-[var(--text)]"
               }`}
               onClick={() => setTab("government")}
@@ -397,7 +407,7 @@ export function ScholarshipDiscovery({
                       : "University, foundation, corporate, and other programs"
                 }
                 iconWrapClass={
-                  activeTab === "government" ? "bg-[#E8EEF5]" : "bg-[#F0EDE8]"
+                  activeTab === "government" ? "bg-[var(--green-bg)]" : "bg-[#F0EDE8]"
                 }
                 scholarships={tabSlice.scholarships}
                 onSelect={openDetail}
@@ -455,7 +465,7 @@ export function ScholarshipDiscovery({
                       height="18"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#3d5a80"
+                      stroke="var(--green)"
                       strokeWidth="1.8"
                       aria-hidden
                     >

@@ -66,6 +66,7 @@ export async function proxy(request: NextRequest) {
     "/for-schools",
     "/for-advisors",
     "/blog",
+    "/recommendation",
   ]
   const isPublicAuthRoute = publicAuthRoutes.some((route) =>
     pathname.startsWith(route)

@@ -1840,12 +1840,16 @@ export type Database = {
           created_at: string
           for_application: string
           id: string
+          letter_file_name: string | null
+          letter_storage_path: string | null
           needed_by: string
           personal_note: string | null
           requested_at: string
           status: string
           student_id: string
+          submit_token: string
           submitted_at: string | null
+          submitter_notes: string | null
           teacher_email: string
           teacher_name: string
           teacher_subject: string | null
@@ -1855,12 +1859,16 @@ export type Database = {
           created_at?: string
           for_application: string
           id?: string
+          letter_file_name?: string | null
+          letter_storage_path?: string | null
           needed_by: string
           personal_note?: string | null
           requested_at?: string
           status?: string
           student_id: string
+          submit_token?: string
           submitted_at?: string | null
+          submitter_notes?: string | null
           teacher_email: string
           teacher_name: string
           teacher_subject?: string | null
@@ -1870,12 +1878,16 @@ export type Database = {
           created_at?: string
           for_application?: string
           id?: string
+          letter_file_name?: string | null
+          letter_storage_path?: string | null
           needed_by?: string
           personal_note?: string | null
           requested_at?: string
           status?: string
           student_id?: string
+          submit_token?: string
           submitted_at?: string | null
+          submitter_notes?: string | null
           teacher_email?: string
           teacher_name?: string
           teacher_subject?: string | null
@@ -2187,6 +2199,7 @@ export type Database = {
           phone: string | null
           ranking: number | null
           sat_policy: string | null
+          search_region_rank: number | null
           state: string | null
           toefl_min_score: number | null
           tuition_per_year: number | null
@@ -2222,6 +2235,7 @@ export type Database = {
           phone?: string | null
           ranking?: number | null
           sat_policy?: string | null
+          search_region_rank?: number | null
           state?: string | null
           toefl_min_score?: number | null
           tuition_per_year?: number | null
@@ -2257,6 +2271,7 @@ export type Database = {
           phone?: string | null
           ranking?: number | null
           sat_policy?: string | null
+          search_region_rank?: number | null
           state?: string | null
           toefl_min_score?: number | null
           tuition_per_year?: number | null
@@ -2367,6 +2382,7 @@ export type Database = {
           p_nat?: string
           p_offset?: number
           p_q?: string
+          p_saved_ids?: string[]
         }
         Returns: Json
       }
@@ -2383,13 +2399,40 @@ export type Database = {
         Args: { p_top_n?: number }
         Returns: Json
       }
+      school_student_follow_up_issue: {
+        Args: {
+          p_no_activity_30_days: boolean
+          p_no_shortlist: boolean
+          p_profile_percent: number
+        }
+        Returns: string
+      }
       school_student_follow_up_status: {
         Args: { p_student_id: string }
         Returns: Json
       }
+      school_student_grade_priority: {
+        Args: { p_grade: string }
+        Returns: number
+      }
       school_students_needing_follow_up: {
         Args: { p_limit?: number; p_school_id?: string }
         Returns: Json
+      }
+      student_application_profile_completion_pct: {
+        Args: {
+          p_act_score: string
+          p_curriculum: string
+          p_english_test_scores: string
+          p_grade: string
+          p_ielts_score: string
+          p_interested_programs: string[]
+          p_preferred_destinations: string[]
+          p_sat_act_scores: string
+          p_sat_score: string
+          p_toefl_score: string
+        }
+        Returns: number
       }
     }
     Enums: {
