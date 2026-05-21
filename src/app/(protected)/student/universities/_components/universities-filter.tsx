@@ -1,5 +1,6 @@
 "use client";
 
+import { sortCountriesForUniversitySearch } from "@/lib/university-search-gcc";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
@@ -152,7 +153,7 @@ export function UniversitiesFilter({
 
     const sortMajors = useMemo(() => [...majors].sort((a, b) => a.name.localeCompare(b.name)), [majors]);
     const sortCountries = useMemo(
-        () => [...countries].sort((a, b) => a.name.localeCompare(b.name)),
+        () => sortCountriesForUniversitySearch(countries),
         [countries],
     );
     const sortPrograms = useMemo(

@@ -532,7 +532,11 @@ export function SchoolPortalShell({
                 aria-hidden
               />
             </button>
-            <div className="flex max-w-[200px] items-center gap-[6px] rounded-[20px] bg-[#E8F5EE] px-[14px] py-[7px] text-[12.5px] font-semibold text-[#1B4332] min-[761px]:max-w-none">
+            <Link
+              href={SCHOOL_HOME}
+              className="flex max-w-[200px] items-center gap-[6px] rounded-[20px] bg-[#E8F5EE] px-[14px] py-[7px] text-[12.5px] font-semibold text-[#1B4332] transition-colors duration-[150ms] hover:bg-[#d4ede0] min-[761px]:max-w-none"
+              title={`Go to ${schoolName} dashboard`}
+            >
               <svg
                 className="h-[13px] w-[13px] shrink-0 text-[#1B4332]"
                 viewBox="0 0 24 24"
@@ -545,7 +549,7 @@ export function SchoolPortalShell({
                 <path d="M9 22V12h6v10" />
               </svg>
               <span className="truncate">{schoolName}</span>
-            </div>
+            </Link>
           </div>
         </header>
 

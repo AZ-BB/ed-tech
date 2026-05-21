@@ -104,10 +104,16 @@ function demonym(c: Country): string {
 }
 
 const selectClass =
-  "min-w-[160px] cursor-pointer appearance-none rounded-[var(--radius-sm)] border-[1.5px] border-[var(--border)] bg-white py-2.5 pl-4 pr-9 text-[13px] text-[var(--text)] focus:border-[var(--green-light)] focus:outline-none";
+  "min-w-[160px] cursor-pointer appearance-none rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white py-2.5 pl-4 pr-9 text-[13px] text-[var(--text)] focus:border-[var(--green-light)] focus:outline-none";
 
 const inputClass =
-  "min-w-[200px] flex-1 rounded-[var(--radius-sm)] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none";
+  "min-w-[200px] flex-1 rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none";
+
+const favouritesToggleBase =
+  "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-pill)] border-[1.5px] px-4 py-2.5 text-[13px] font-medium transition-all";
+
+const favouritesToggleOffClass = `${favouritesToggleBase} border-[#b8860b]/40 bg-[#fef9e7]/50 text-[#b8860b]/60 hover:bg-[#fef9e7]/70 hover:text-[#b8860b]`;
+const favouritesToggleOnClass = `${favouritesToggleBase} border-[#b8860b] bg-[#fef9e7] text-[#b8860b]`;
 
 /** Labels for filter values that are not plain ISO alpha-2 codes. */
 const SYNTHETIC_NATIONALITY_OPTIONS: readonly { value: string; label: string }[] =
@@ -128,9 +134,11 @@ type Props = {
   nationality: string;
   destination: string;
   coverage: string;
+  favouritesOnly: boolean;
   onNationalityChange: (v: string) => void;
   onDestinationChange: (v: string) => void;
   onCoverageChange: (v: string) => void;
+  onFavouritesToggle: () => void;
   onSearchSubmit: (q: string) => void;
 };
 
@@ -139,9 +147,11 @@ export function ScholarshipSelectorBar({
   nationality,
   destination,
   coverage,
+  favouritesOnly,
   onNationalityChange,
   onDestinationChange,
   onCoverageChange,
+  onFavouritesToggle,
   onSearchSubmit,
 }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
@@ -253,7 +263,20 @@ export function ScholarshipSelectorBar({
         </label>
         <button
           type="button"
-          className="rounded-[var(--radius-sm)] bg-[var(--green)] px-4 py-2.5 text-[13px] font-medium text-white hover:opacity-95"
+          aria-pressed={favouritesOnly}
+          aria-label={
+            favouritesOnly
+              ? "Show all scholarships"
+              : "Show favourite scholarships only"
+          }
+          className={favouritesOnly ? favouritesToggleOnClass : favouritesToggleOffClass}
+          onClick={onFavouritesToggle}
+        >
+          Favourites
+        </button>
+        <button
+          type="button"
+          className="rounded-[var(--radius-pill)] bg-[var(--green)] px-5 py-2.5 text-[13px] font-medium text-white hover:opacity-95"
           onClick={() => onSearchSubmit(searchRef.current?.value ?? "")}
         >
           Search

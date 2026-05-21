@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
   newsItems,
@@ -102,6 +102,111 @@ function isOverdue(dueDate: string | null, completed: boolean) {
   return d < today;
 }
 
+function AnnouncementsDialog({
+  open,
+  onClose,
+  items,
+}: {
+  open: boolean;
+  onClose: () => void;
+  items: DashboardAnnouncementItem[];
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="announcements-dialog-title"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default border-0 bg-black/45"
+        onClick={onClose}
+        aria-label="Close announcements"
+      />
+      <div className="relative w-full max-w-[480px] rounded-xl border border-[var(--border-light)] bg-white p-6 text-[var(--text)] shadow-xl">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2
+            id="announcements-dialog-title"
+            className="flex items-center gap-2 text-lg font-semibold"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden
+            >
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            </svg>
+            Announcements
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-0 bg-transparent text-[var(--text-light)] transition-colors hover:bg-[var(--sand)] hover:text-[var(--text)]"
+            aria-label="Close"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div
+          className={`flex max-h-[360px] flex-col gap-2 ${SCROLL_THIN}`}
+        >
+          {items.length === 0 ? (
+            <p className="px-0.5 text-sm text-[var(--text-hint)]">
+              No announcements yet.
+            </p>
+          ) : (
+            items.map((a) => {
+              const timeLabel = formatDashboardTimestamp(a.createdAt);
+              return (
+                <div
+                  key={a.id}
+                  className="flex items-start gap-2.5 rounded-lg bg-[var(--sand)] px-3 py-2.5 text-sm leading-snug text-[var(--text-mid)]"
+                >
+                  <span className={announcementDotClass} aria-hidden />
+                  <div className="min-w-0">
+                    <div className="break-words">{a.title}</div>
+                    {timeLabel ? (
+                      <div className="mt-0.5 text-[11px] text-[var(--text-hint)]">
+                        {timeLabel}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StudentDashboard({
   welcomeFirstName,
   platformCompleted,
@@ -114,6 +219,7 @@ export function StudentDashboard({
 }: StudentDashboardProps) {
   const [tasks, setTasks] = useState(dashboardTasks);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [announcementsOpen, setAnnouncementsOpen] = useState(false);
 
   const toggleTask = async (task: DashboardTaskItem) => {
     setTogglingId(task.id);
@@ -237,36 +343,141 @@ export function StudentDashboard({
               strokeWidth="1.8"
               aria-hidden
             >
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <circle cx="12" cy="12" r="10" />
+              <path d="M8 12.5l2.5 2.5L16 9" />
             </svg>
-            Announcements
+            Tasks
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-            {announcementItems.length === 0 ? (
-              <p className="px-0.5 text-xs text-[var(--text-hint)]">
-                No announcements yet.
+          <div className={`flex min-h-0 flex-1 flex-col gap-3 ${TASKS_LIST_CLASS}`}>
+            {tasks.length === 0 ? (
+              <p className="rounded-xl bg-[#f4f4f5] px-4 py-3 text-xs text-[var(--text-mid)]">
+                No tasks yet. Your counsellor can assign items here.
               </p>
             ) : (
-              announcementItems.map((a) => {
-                const timeLabel = formatDashboardTimestamp(a.createdAt);
+              tasks.map((task) => {
+                const overdue = isOverdue(task.dueDate, task.completed);
+                const toggling = togglingId === task.id;
                 return (
-                  <div
-                    key={a.id}
-                    className="flex items-start gap-2.5 rounded-lg bg-[var(--sand)] px-2.5 py-2 text-xs leading-snug text-[var(--text-mid)]"
+                  <button
+                    key={task.id}
+                    type="button"
+                    disabled={toggling}
+                    onClick={() => void toggleTask(task)}
+                    className={`flex w-full cursor-pointer items-start gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
+                      task.completed
+                        ? "bg-[#eef1ee]"
+                        : "bg-[#f4f4f5] hover:bg-[#ebebed]"
+                    } ${toggling ? "opacity-60" : ""}`}
                   >
-                    <span className={announcementDotClass} aria-hidden />
-                    <div className="min-w-0">
-                      <div className="break-words">{a.title}</div>
-                      {timeLabel ? (
-                        <div className="mt-0.5 text-[10px] text-[var(--text-hint)]">
-                          {timeLabel}
-                        </div>
+                    <span className="mt-0.5 shrink-0" aria-hidden>
+                      {task.completed ? (
+                        <span className="flex h-[20px] w-[20px] items-center justify-center rounded-[5px] bg-[#1B4332]">
+                          <svg
+                            width="11"
+                            height="11"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="relative flex h-[20px] w-[20px] items-center justify-center rounded-[5px] border-[1.5px] border-[#d4d4d8] bg-white transition-colors hover:border-[#1B4332]">
+                          <svg
+                            className="absolute opacity-[0.18]"
+                            width="11"
+                            height="11"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </span>
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-[13px] font-medium leading-snug ${
+                          task.completed
+                            ? "text-[#a1a1aa] line-through decoration-[#a1a1aa]"
+                            : "text-[#18181b]"
+                        }`}
+                      >
+                        {task.title}
+                      </p>
+                      {task.notes?.trim() ? (
+                        <p
+                          className={`mt-1 line-clamp-2 text-[11px] leading-snug ${
+                            task.completed
+                              ? "text-[#c4c4c4] line-through"
+                              : "text-[var(--text-mid)]"
+                          }`}
+                        >
+                          {task.notes.trim()}
+                        </p>
                       ) : null}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-[var(--text-light)]">
+                        {task.priority === "high" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(231,76,60,0.12)] px-[7px] py-px text-[10px] font-bold text-[#8c2d22]">
+                            <span
+                              className="h-1 w-1 shrink-0 rounded-full bg-[var(--red)]"
+                              aria-hidden
+                            />
+                            High
+                          </span>
+                        ) : task.priority === "medium" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(212,162,42,0.14)] px-[7px] py-px text-[10px] font-bold text-[#7a5d10]">
+                            <span
+                              className="h-1 w-1 shrink-0 rounded-full bg-[#D4A22A]"
+                              aria-hidden
+                            />
+                            Medium
+                          </span>
+                        ) : task.priority === "low" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(100,116,139,0.12)] px-[7px] py-px text-[10px] font-bold text-[#475569]">
+                            <span
+                              className="h-1 w-1 shrink-0 rounded-full bg-[#64748B]"
+                              aria-hidden
+                            />
+                            Low
+                          </span>
+                        ) : null}
+                        {task.dueDate ? (
+                          <span
+                            className={
+                              overdue
+                                ? "font-medium text-[var(--red)]"
+                                : undefined
+                            }
+                          >
+                            Due {formatTaskDate(task.dueDate)}
+                            {overdue ? " — overdue" : ""}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}
+          </div>
+          <div className="mt-4 border-t border-[var(--border-light)] pt-4">
+            <Link
+              href="/student/my-applications"
+              className="text-[12px] font-semibold text-[var(--green)] no-underline hover:text-[var(--green-dark)]"
+            >
+              Manage in My applications →
+            </Link>
           </div>
         </div>
       </div>
@@ -345,7 +556,7 @@ export function StudentDashboard({
         </Link>
       </div>
 
-      <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-3">
+      <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-2">
         <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
             <svg
@@ -387,155 +598,6 @@ export function StudentDashboard({
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M8 12.5l2.5 2.5L16 9" />
-            </svg>
-            Tasks
-          </div>
-          <div className={`flex flex-col gap-3 ${TASKS_LIST_CLASS}`}>
-            {tasks.length === 0 ? (
-              <p className="rounded-xl bg-[#f4f4f5] px-5 py-4 text-[13px] text-[var(--text-mid)]">
-                No tasks yet. Your counsellor can assign items here.
-              </p>
-            ) : (
-              tasks.map((task) => {
-                const overdue = isOverdue(task.dueDate, task.completed);
-                const toggling = togglingId === task.id;
-                return (
-                  <button
-                    key={task.id}
-                    type="button"
-                    disabled={toggling}
-                    onClick={() => void toggleTask(task)}
-                    className={`flex w-full cursor-pointer items-start gap-4 rounded-xl px-5 py-4 text-left transition-colors ${
-                      task.completed
-                        ? "bg-[#eef1ee]"
-                        : "bg-[#f4f4f5] hover:bg-[#ebebed]"
-                    } ${toggling ? "opacity-60" : ""}`}
-                  >
-                    <span className="mt-0.5 shrink-0" aria-hidden>
-                      {task.completed ? (
-                        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-[#1B4332]">
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="white"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden
-                          >
-                            <path d="M20 6L9 17l-5-5" />
-                          </svg>
-                        </span>
-                      ) : (
-                        <span className="relative flex h-[22px] w-[22px] items-center justify-center rounded-[5px] border-[1.5px] border-[#d4d4d8] bg-white transition-colors hover:border-[#1B4332]">
-                          <svg
-                            className="absolute opacity-[0.18]"
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden
-                          >
-                            <path d="M20 6L9 17l-5-5" />
-                          </svg>
-                        </span>
-                      )}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`text-[14px] font-medium leading-snug ${
-                          task.completed
-                            ? "text-[#a1a1aa] line-through decoration-[#a1a1aa]"
-                            : "text-[#18181b]"
-                        }`}
-                      >
-                        {task.title}
-                      </p>
-                      {task.notes?.trim() ? (
-                        <p
-                          className={`mt-1 line-clamp-2 text-[12px] leading-snug ${
-                            task.completed
-                              ? "text-[#c4c4c4] line-through"
-                              : "text-[var(--text-mid)]"
-                          }`}
-                        >
-                          {task.notes.trim()}
-                        </p>
-                      ) : null}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-light)]">
-                        {task.priority === "high" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(231,76,60,0.12)] px-[7px] py-px text-[10px] font-bold text-[#8c2d22]">
-                            <span
-                              className="h-1 w-1 shrink-0 rounded-full bg-[var(--red)]"
-                              aria-hidden
-                            />
-                            High
-                          </span>
-                        ) : task.priority === "medium" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(212,162,42,0.14)] px-[7px] py-px text-[10px] font-bold text-[#7a5d10]">
-                            <span
-                              className="h-1 w-1 shrink-0 rounded-full bg-[#D4A22A]"
-                              aria-hidden
-                            />
-                            Medium
-                          </span>
-                        ) : task.priority === "low" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(100,116,139,0.12)] px-[7px] py-px text-[10px] font-bold text-[#475569]">
-                            <span
-                              className="h-1 w-1 shrink-0 rounded-full bg-[#64748B]"
-                              aria-hidden
-                            />
-                            Low
-                          </span>
-                        ) : null}
-                        {task.dueDate ? (
-                          <span
-                            className={
-                              overdue
-                                ? "font-medium text-[var(--red)]"
-                                : undefined
-                            }
-                          >
-                            Due {formatTaskDate(task.dueDate)}
-                            {overdue ? " — overdue" : ""}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-          <div className="mt-4 border-t border-[var(--border-light)] pt-4">
-            <Link
-              href="/student/my-applications"
-              className="text-[12px] font-semibold text-[var(--green)] no-underline hover:text-[var(--green-dark)]"
-            >
-              Manage in My applications →
-            </Link>
           </div>
         </div>
 
@@ -601,6 +663,36 @@ export function StudentDashboard({
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setAnnouncementsOpen(true)}
+        className="mb-5 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-[var(--border-light)] bg-white px-5 py-4 text-sm font-semibold text-[var(--text)] transition-all hover:border-[var(--border)] hover:bg-[var(--sand)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden
+        >
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        </svg>
+        Announcements
+        {announcementItems.length > 0 ? (
+          <span className="rounded-full bg-[#E6F1FB] px-2 py-0.5 text-[11px] font-bold text-[#185FA5]">
+            {announcementItems.length}
+          </span>
+        ) : null}
+      </button>
+
+      <AnnouncementsDialog
+        open={announcementsOpen}
+        onClose={() => setAnnouncementsOpen(false)}
+        items={announcementItems}
+      />
     </div>
   );
 }

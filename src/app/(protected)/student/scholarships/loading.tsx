@@ -11,11 +11,11 @@ export default function ScholarshipsLoading() {
       <div className="mb-5 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-[18px]">
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="h-5 w-12 animate-pulse rounded bg-[var(--sand)]" />
-          <div className="h-10 w-[160px] animate-pulse rounded-[var(--radius-sm)] bg-[var(--sand)]" />
+          <div className="h-10 w-[160px] animate-pulse rounded-[var(--radius-pill)] bg-[var(--sand)]" />
           <div className="h-5 w-24 animate-pulse rounded bg-[var(--sand)]" />
-          <div className="h-10 w-[160px] animate-pulse rounded-[var(--radius-sm)] bg-[var(--sand)]" />
+          <div className="h-10 w-[160px] animate-pulse rounded-[var(--radius-pill)] bg-[var(--sand)]" />
           <div className="h-5 w-20 animate-pulse rounded bg-[var(--sand)]" />
-          <div className="h-10 w-[160px] animate-pulse rounded-[var(--radius-sm)] bg-[var(--sand)]" />
+          <div className="h-10 w-[160px] animate-pulse rounded-[var(--radius-pill)] bg-[var(--sand)]" />
         </div>
       </div>
 

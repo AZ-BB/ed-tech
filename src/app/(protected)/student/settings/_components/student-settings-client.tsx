@@ -5,6 +5,7 @@ import {
   updateStudentNotificationPreferencesAction,
   updateStudentPersonalAction,
 } from "@/actions/student-settings";
+import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import type { GeneralResponse } from "@/utils/response";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useRouter } from "next/navigation";
@@ -24,6 +25,7 @@ export type StudentSettingsInitial = {
   lastName: string;
   email: string;
   phone: string;
+  grade: string;
   nationalityCountryCode: string;
   nationalityName: string;
   notificationAppUpdates: boolean;
@@ -103,6 +105,7 @@ export function StudentSettingsClient({
   const [editingPersonal, setEditingPersonal] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [grade, setGrade] = useState("");
   const [nationalityCode, setNationalityCode] = useState("");
 
   const [appUpdates, setAppUpdates] = useState(initial.notificationAppUpdates);
@@ -142,8 +145,9 @@ export function StudentSettingsClient({
     if (editingPersonal) return;
     setFullName(displayFullName);
     setPhone(initial.phone);
+    setGrade(initial.grade);
     setNationalityCode(initial.nationalityCountryCode);
-  }, [displayFullName, editingPersonal, initial.phone, initial.nationalityCountryCode]);
+  }, [displayFullName, editingPersonal, initial.phone, initial.grade, initial.nationalityCountryCode]);
 
   useEffect(() => {
     setAppUpdates(initial.notificationAppUpdates);
@@ -163,16 +167,18 @@ export function StudentSettingsClient({
   const startEditPersonal = useCallback(() => {
     setFullName(displayFullName);
     setPhone(initial.phone);
+    setGrade(initial.grade);
     setNationalityCode(initial.nationalityCountryCode);
     setEditingPersonal(true);
-  }, [displayFullName, initial.phone, initial.nationalityCountryCode]);
+  }, [displayFullName, initial.phone, initial.grade, initial.nationalityCountryCode]);
 
   const cancelEditPersonal = useCallback(() => {
     setFullName(displayFullName);
     setPhone(initial.phone);
+    setGrade(initial.grade);
     setNationalityCode(initial.nationalityCountryCode);
     setEditingPersonal(false);
-  }, [displayFullName, initial.phone, initial.nationalityCountryCode]);
+  }, [displayFullName, initial.phone, initial.grade, initial.nationalityCountryCode]);
 
   const persistPrefs = useCallback(
     (nextApp: boolean, nextNews: boolean) => {
@@ -387,6 +393,10 @@ export function StudentSettingsClient({
                 <div className={roLabelClass()}>Phone number</div>
                 <div className={roValueClass()}>{initial.phone.trim() || "—"}</div>
               </div>
+              <div className="border-b border-[var(--border-light)] px-[18px] py-4 sm:border-b-0">
+                <div className={roLabelClass()}>Grade</div>
+                <div className={roValueClass()}>{initial.grade || "—"}</div>
+              </div>
               <div className="px-[18px] py-4">
                 <div className={roLabelClass()}>Nationality</div>
                 <div className={roValueClass()}>{initial.nationalityName}</div>
@@ -436,6 +446,25 @@ export function StudentSettingsClient({
                   autoComplete="tel"
                   maxLength={64}
                 />
+              </div>
+              <div>
+                <label className={labelClass()} htmlFor="ss-grade">
+                  Grade
+                </label>
+                <select
+                  id="ss-grade"
+                  name="grade"
+                  className={fieldClass()}
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                  required
+                >
+                  {STUDENT_SCHOOL_GRADE_OPTIONS.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className={labelClass()} htmlFor="ss-nationality">

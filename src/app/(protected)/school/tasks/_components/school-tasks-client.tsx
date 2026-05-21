@@ -1,15 +1,15 @@
 "use client";
 
-import type {
-  SchoolStudentPickerOption,
-  SchoolTaskTableRow,
+import {
+  SCHOOL_TASK_BULK_GRADE_OPTIONS,
+  type SchoolStudentPickerOption,
+  type SchoolTaskTableRow,
 } from "@/app/(protected)/school/tasks/_lib/fetch-school-tasks-page";
 import {
   createSchoolStudentTask,
   toggleSchoolStudentTask,
 } from "@/actions/school-tasks";
 import { Pagination } from "@/components/pagination";
-import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import type { GeneralResponse } from "@/utils/response";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
@@ -101,6 +101,57 @@ const taskModalSelectControlClass = `${taskModalControlClass} appearance-none bg
 
 const ASSIGN_ALL_STUDENTS = "__all__";
 
+function bulkAssignValue(grade: string) {
+  return `${ASSIGN_ALL_STUDENTS}:${grade}`;
+}
+
+function parseBulkAssignTarget(target: string): {
+  isBulk: boolean;
+  grade: string;
+} {
+  if (target === ASSIGN_ALL_STUDENTS) {
+    return { isBulk: true, grade: "" };
+  }
+  if (target.startsWith(`${ASSIGN_ALL_STUDENTS}:`)) {
+    return {
+      isBulk: true,
+      grade: target.slice(`${ASSIGN_ALL_STUDENTS}:`.length),
+    };
+  }
+  return { isBulk: false, grade: "" };
+}
+
+function groupStudentsByGrade(studentOptions: SchoolStudentPickerOption[]) {
+  const byGrade = new Map<string, SchoolStudentPickerOption[]>();
+  const ungraded: SchoolStudentPickerOption[] = [];
+
+  for (const student of studentOptions) {
+    if (student.grade) {
+      const list = byGrade.get(student.grade) ?? [];
+      list.push(student);
+      byGrade.set(student.grade, list);
+    } else {
+      ungraded.push(student);
+    }
+  }
+
+  const groups: { grade: string; students: SchoolStudentPickerOption[] }[] =
+    [];
+
+  for (const grade of SCHOOL_TASK_BULK_GRADE_OPTIONS) {
+    const students = byGrade.get(grade);
+    if (students?.length) {
+      groups.push({ grade, students });
+    }
+  }
+
+  if (ungraded.length > 0) {
+    groups.push({ grade: "Other students", students: ungraded });
+  }
+
+  return groups;
+}
+
 export type SchoolTasksClientProps = {
   rows: SchoolTaskTableRow[];
   totalRows: number;
@@ -145,7 +196,6 @@ export function SchoolTasksClient({
   const [internalNewOpen, setInternalNewOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [assignTarget, setAssignTarget] = useState("");
-  const [bulkGrade, setBulkGrade] = useState("");
   const [assignError, setAssignError] = useState<string | null>(null);
   const createPrevPending = useRef(false);
 
@@ -191,9 +241,11 @@ export function SchoolTasksClient({
   useEffect(() => {
     if (newOpen) return;
     setAssignTarget("");
-    setBulkGrade("");
     setAssignError(null);
   }, [newOpen]);
+
+  const bulkAssign = parseBulkAssignTarget(assignTarget);
+  const studentGroups = groupStudentsByGrade(studentOptions);
 
   function handleCreateSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (!isStudentProfile && !assignTarget) {
@@ -630,9 +682,15 @@ export function SchoolTasksClient({
                   </>
                 ) : (
                   <>
-                    <input type="hidden" name="student_id" value={assignTarget} />
-                    {assignTarget === ASSIGN_ALL_STUDENTS ? (
-                      <input type="hidden" name="grade" value={bulkGrade} />
+                    <input
+                      type="hidden"
+                      name="student_id"
+                      value={
+                        bulkAssign.isBulk ? ASSIGN_ALL_STUDENTS : assignTarget
+                      }
+                    />
+                    {bulkAssign.isBulk && bulkAssign.grade ? (
+                      <input type="hidden" name="grade" value={bulkAssign.grade} />
                     ) : null}
                     <div>
                       <label htmlFor="nt-student" className={taskModalLabelClass}>
@@ -644,9 +702,6 @@ export function SchoolTasksClient({
                         onChange={(e) => {
                           setAssignTarget(e.target.value);
                           setAssignError(null);
-                          if (e.target.value !== ASSIGN_ALL_STUDENTS) {
-                            setBulkGrade("");
-                          }
                         }}
                         style={{ backgroundImage: SELECT_CHEVRON }}
                         className={taskModalSelectClass}
@@ -655,38 +710,22 @@ export function SchoolTasksClient({
                         <option value={ASSIGN_ALL_STUDENTS}>
                           All students
                         </option>
-                        {studentOptions.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.label}
+                        {SCHOOL_TASK_BULK_GRADE_OPTIONS.map((grade) => (
+                          <option key={grade} value={bulkAssignValue(grade)}>
+                            All {grade}
                           </option>
+                        ))}
+                        {studentGroups.map(({ grade, students }) => (
+                          <optgroup key={grade} label={grade}>
+                            {students.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.label}
+                              </option>
+                            ))}
+                          </optgroup>
                         ))}
                       </select>
                     </div>
-                    {assignTarget === ASSIGN_ALL_STUDENTS ? (
-                      <div>
-                        <label
-                          htmlFor="nt-grade"
-                          className={taskModalLabelClass}
-                        >
-                          Grade
-                        </label>
-                        <select
-                          id="nt-grade"
-                          value={bulkGrade}
-                          onChange={(e) => setBulkGrade(e.target.value)}
-                          style={{ backgroundImage: SELECT_CHEVRON }}
-                          className={taskModalSelectClass}
-                          aria-label="Filter by grade"
-                        >
-                          <option value="">All grades</option>
-                          {GRADE_FILTER_OPTIONS.map((g) => (
-                            <option key={g} value={g}>
-                              {g}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : null}
                   </>
                 )}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -758,7 +797,7 @@ export function SchoolTasksClient({
                 >
                   {createPending
                     ? "Saving…"
-                    : !isStudentProfile && assignTarget === ASSIGN_ALL_STUDENTS
+                    : !isStudentProfile && bulkAssign.isBulk
                       ? "Create tasks"
                       : "Create task"}
                 </button>

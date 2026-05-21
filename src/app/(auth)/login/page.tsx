@@ -301,7 +301,7 @@ function LoginPageContent() {
             data-page="login"
         >
             <div className="relative z-10 flex w-full max-w-[min(100%,28rem)] flex-col items-center px-4 py-10 sm:px-5 sm:py-12">
-                <div className="mb-8 flex items-center gap-2.5">
+                <Link href="/" className="mb-8 flex items-center gap-2.5">
                     <div
                         className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#2D634D]"
                         aria-hidden
@@ -311,7 +311,7 @@ function LoginPageContent() {
                     <span className="text-[1.15rem] font-bold tracking-tight text-[var(--text)]">
                         Univeera
                     </span>
-                </div>
+                </Link>
 
                 <LoginFormCard
                     onRequestForgot={() => {

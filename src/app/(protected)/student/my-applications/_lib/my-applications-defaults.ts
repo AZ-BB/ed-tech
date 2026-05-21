@@ -1,3 +1,5 @@
+import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
+
 /** Predefined document checklist rows (slot_key unique per student; extra “other” rows use `other:<uuid>`). */
 export const DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS = [
   {
@@ -119,7 +121,7 @@ export const CURRICULUM_OPTIONS = [
   "Other",
 ] as const;
 
-export const GRADE_OPTIONS = ["Grade 11", "Grade 12", "Year 13"] as const;
+export const GRADE_OPTIONS = STUDENT_SCHOOL_GRADE_OPTIONS;
 
 export const TARGET_INTAKE_OPTIONS = [
   "Sep 2027",

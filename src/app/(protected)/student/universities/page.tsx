@@ -39,6 +39,7 @@ type UniversitiesFilterContext = {
     countryCode?: string;
     uniType?: string | undefined;
     searchTrimmed?: string;
+    difficulty?: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,6 +64,16 @@ function applyUniversitiesFilters(q: any, ctx: UniversitiesFilterContext) {
     }
     if (ctx.searchTrimmed) {
         x = x.ilike("name", `%${ctx.searchTrimmed}%`);
+    }
+    if (ctx.difficulty) {
+        x = x.not("acceptance_rate", "is", null);
+        if (ctx.difficulty === "hard") {
+            x = x.lt("acceptance_rate", 15);
+        } else if (ctx.difficulty === "medium") {
+            x = x.gte("acceptance_rate", 15).lte("acceptance_rate", 60);
+        } else if (ctx.difficulty === "easy") {
+            x = x.gt("acceptance_rate", 60);
+        }
     }
     return x;
 }
@@ -238,6 +249,7 @@ export default async function StudentUniversitiesPage({
         countryCode,
         uniType,
         searchTrimmed,
+        difficulty,
     };
 
     const universityMajorsEmbed =
@@ -277,7 +289,9 @@ export default async function StudentUniversitiesPage({
             shortlistOnly: filterShortlisted,
             favouritesOnly: filterFavourites,
         });
-        return q.order("created_at", { ascending: false });
+        return q
+            .order("search_region_rank", { ascending: true })
+            .order("created_at", { ascending: false });
     }
 
     const requestedOffset = (pageParam - 1) * limitParam;

@@ -9,7 +9,15 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
-import { removeUniversityFromShortlist } from "@/actions/universities";
+import {
+  createRecommendationRequest,
+  getRecommendationLetterViewUrl,
+  resendRecommendationRequestEmail,
+} from "@/actions/recommendation-requests";
+import {
+  removeUniversityFromFavourites,
+  removeUniversityFromShortlist,
+} from "@/actions/universities";
 import { moveCatalogFavouriteToApplicationShortlist } from "@/actions/student-my-application-universities";
 import type {
   ActivityCatalogUniversity,
@@ -17,7 +25,14 @@ import type {
   MyApplicationsInitialPayload,
 } from "../_lib/my-applications-types";
 import { MoveToShortlistModal } from "./move-to-shortlist-modal";
-import { getStudentApplicationProfileCompletion } from "@/lib/student-application-profile-completion";
+import {
+  buildLiveApplicationProfileCompletionInput,
+  type StudentApplicationProfileCompletionRow,
+} from "@/lib/student-application-profile-completion";
+import {
+  getMyApplicationsWorkspaceCompletion,
+  workspaceCompletionSubtitle,
+} from "../_lib/my-applications-workspace-completion";
 import {
   labelPreferredDestinationEntry,
   normalizePreferredDestinationsForEditor,
@@ -255,30 +270,6 @@ function btnSmClass(primary?: boolean) {
     : "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]";
 }
 
-function profileCompletionPct(args: {
-  grade: string;
-  curriculum: string;
-  destinations: string[];
-  programs: string[];
-  english: string;
-  sat: string;
-  act: string;
-}): { pct: number; missing: number } {
-  let ok = 0;
-  const total = 6;
-  if (args.grade.trim()) ok++;
-  if (args.curriculum.trim()) ok++;
-  if (args.destinations.length) ok++;
-  if (args.programs.length) ok++;
-  const hasStd = args.sat.trim() || args.act.trim();
-  if (args.english.trim() || hasStd) ok++;
-  if (args.english.trim() && hasStd) ok++;
-  else if (args.english.trim() || hasStd) ok += 0.5;
-  const pct = Math.round((ok / total) * 100);
-  const missing = total - Math.ceil(ok);
-  return { pct: Math.min(100, pct), missing: Math.max(0, missing) };
-}
-
 export function MyApplicationsClient({
   initial,
 }: {
@@ -295,7 +286,16 @@ export function MyApplicationsClient({
   );
 
   const ap0 = initial.applicationProfile;
-  const [grade, setGrade] = useState(ap0?.grade ?? "");
+  const [grade, setGrade] = useState(
+    ap0?.grade ?? initial.profile.grade ?? "",
+  );
+  const gradeSelectOptions = useMemo(() => {
+    const opts: string[] = [...GRADE_OPTIONS];
+    if (grade && !opts.includes(grade)) {
+      opts.push(grade);
+    }
+    return opts;
+  }, [grade]);
   const [curriculum, setCurriculum] = useState(ap0?.curriculum ?? "");
   const [targetIntake, setTargetIntake] = useState(ap0?.target_intake ?? "");
   const [destinations, setDestinations] = useState<string[]>(() =>
@@ -340,6 +340,10 @@ export function MyApplicationsClient({
     initial.applicationProfile?.predicted_grades_set_by_school,
   );
   const [otherTests, setOtherTests] = useState(ap0?.other_tests ?? "");
+  const [savedApplicationProfile, setSavedApplicationProfile] =
+    useState<StudentApplicationProfileCompletionRow | null>(
+      initial.applicationProfile,
+    );
 
   const [shortlist, setShortlist] = useState<ShortlistRow[]>(initial.shortlist);
   const [favourites, setFavourites] = useState<ActivityCatalogUniversity[]>(
@@ -355,6 +359,9 @@ export function MyApplicationsClient({
   const [recModal, setRecModal] = useState(false);
   const [moveToShortlistTarget, setMoveToShortlistTarget] =
     useState<ActivityCatalogUniversity | null>(null);
+  const [removeFavouriteTarget, setRemoveFavouriteTarget] =
+    useState<ActivityCatalogUniversity | null>(null);
+  const [removingFavourite, setRemovingFavourite] = useState(false);
 
   const [uniForm, setUniForm] = useState({
     university_name: "",
@@ -388,15 +395,45 @@ export function MyApplicationsClient({
     window.setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const { pct, missing } = getStudentApplicationProfileCompletion({
+  const { pct, missingAreas } = useMemo(() => {
+    const profileInput = buildLiveApplicationProfileCompletionInput({
+      grade,
+      curriculum,
+      destinations,
+      programs,
+      ieltsScore,
+      toeflScore,
+      satScore,
+      actScore,
+      savedApplicationProfile,
+    });
+    return getMyApplicationsWorkspaceCompletion({
+      profileInput,
+      shortlistCount: shortlist.length,
+      documents,
+      essaysCount: essays.length,
+      recommendationsCount: recs.length,
+    });
+  }, [
     grade,
     curriculum,
     destinations,
     programs,
-    english: formatLegacyEnglishSummary(ieltsScore, toeflScore) ?? "",
-    sat: satScore,
-    act: actScore,
-  });
+    ieltsScore,
+    toeflScore,
+    satScore,
+    actScore,
+    savedApplicationProfile,
+    shortlist.length,
+    documents,
+    essays.length,
+    recs.length,
+  ]);
+
+  const completionSubtitle = useMemo(
+    () => workspaceCompletionSubtitle(missingAreas),
+    [missingAreas],
+  );
 
   const ieltsScoreInvalid = useMemo(() => {
     const t = ieltsScore.trim();
@@ -544,6 +581,30 @@ export function MyApplicationsClient({
     otherTests,
   ]);
 
+  const syncSavedApplicationProfile = useCallback(() => {
+    setSavedApplicationProfile({
+      grade: grade || null,
+      curriculum: curriculum || null,
+      preferred_destinations: destinations,
+      interested_programs: programs,
+      ielts_score: ieltsScore.trim() || null,
+      toefl_score: toeflScore.trim() || null,
+      english_test_scores: formatLegacyEnglishSummary(ieltsScore, toeflScore),
+      sat_score: satScore.trim() || null,
+      act_score: actScore.trim() || null,
+      sat_act_scores: formatLegacySatActSummary(satScore, actScore),
+    });
+  }, [
+    grade,
+    curriculum,
+    destinations,
+    programs,
+    ieltsScore,
+    toeflScore,
+    satScore,
+    actScore,
+  ]);
+
   const saveAbout = async () => {
     const { error: e1 } = await supabase
       .from("student_profiles")
@@ -566,6 +627,7 @@ export function MyApplicationsClient({
       showToast(e2.message);
       return;
     }
+    syncSavedApplicationProfile();
     showToast("Saved · counselor will see updates");
   };
 
@@ -579,6 +641,7 @@ export function MyApplicationsClient({
       showToast(error.message);
       return;
     }
+    syncSavedApplicationProfile();
     showToast("Saved");
   };
 
@@ -657,6 +720,7 @@ export function MyApplicationsClient({
       showToast(error.message);
       return;
     }
+    syncSavedApplicationProfile();
     showToast("Saved");
   };
 
@@ -767,6 +831,26 @@ export function MyApplicationsClient({
     });
     setMoveToShortlistTarget(null);
     showToast(`${u.name} moved to your shortlist`);
+  };
+
+  const removeFavourite = async (u: ActivityCatalogUniversity) => {
+    setRemovingFavourite(true);
+    try {
+      const res = await removeUniversityFromFavourites(u.uniId);
+      if (res.error) {
+        showToast(
+          typeof res.error === "string"
+            ? res.error
+            : "Could not remove from favorites.",
+        );
+        return;
+      }
+      setFavourites((prev) => prev.filter((x) => x.uniId !== u.uniId));
+      setRemoveFavouriteTarget(null);
+      showToast(`${u.name} removed from favorites`);
+    } finally {
+      setRemovingFavourite(false);
+    }
   };
 
   const uploadDocument = async (doc: DocRow, file: File) => {
@@ -1044,37 +1128,19 @@ export function MyApplicationsClient({
   };
 
   const sendRecRequest = async () => {
-    if (
-      !recForm.teacher_name.trim() ||
-      !recForm.teacher_email.trim() ||
-      !recForm.for_application.trim()
-    ) {
-      showToast("Teacher name, email, and application are required");
+    const res = await createRecommendationRequest({
+      teacher_name: recForm.teacher_name,
+      teacher_subject: recForm.teacher_subject || null,
+      teacher_email: recForm.teacher_email,
+      for_application: recForm.for_application,
+      personal_note: recForm.personal_note || null,
+      needed_by: recForm.needed_by,
+    });
+    if ("error" in res) {
+      showToast(res.error);
       return;
     }
-    if (!recForm.needed_by) {
-      showToast("Pick a deadline first");
-      return;
-    }
-    const { data, error } = await supabase
-      .from("student_my_application_recommendations")
-      .insert({
-        student_id: initial.studentId,
-        teacher_name: recForm.teacher_name.trim(),
-        teacher_subject: recForm.teacher_subject.trim() || null,
-        teacher_email: recForm.teacher_email.trim().toLowerCase(),
-        for_application: recForm.for_application.trim(),
-        personal_note: recForm.personal_note.trim() || null,
-        needed_by: recForm.needed_by,
-        status: "pending",
-      })
-      .select("*")
-      .single();
-    if (error || !data) {
-      showToast(error?.message ?? "Could not send");
-      return;
-    }
-    setRecs((prev) => [data, ...prev]);
+    setRecs((prev) => [res.row, ...prev]);
     setRecModal(false);
     setRecForm({
       teacher_name: "",
@@ -1084,7 +1150,25 @@ export function MyApplicationsClient({
       personal_note: "",
       needed_by: "",
     });
-    showToast(`Request recorded for ${data.teacher_name}`);
+    showToast(`Request sent to ${res.row.teacher_name}`);
+  };
+
+  const resendRecRequest = async (recommendationId: string, teacherName: string) => {
+    const res = await resendRecommendationRequestEmail(recommendationId);
+    if ("error" in res) {
+      showToast(res.error);
+      return;
+    }
+    showToast(`Reminder sent to ${teacherName}`);
+  };
+
+  const viewRecLetter = async (recommendationId: string) => {
+    const res = await getRecommendationLetterViewUrl(recommendationId);
+    if ("error" in res) {
+      showToast(res.error);
+      return;
+    }
+    window.open(res.url, "_blank", "noopener,noreferrer");
   };
 
   const toggleTask = async (t: TaskRow) => {
@@ -1158,12 +1242,10 @@ export function MyApplicationsClient({
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
         <div className="relative z-[1] min-w-0 flex-1">
           <div className="font-[family-name:var(--font-dm-serif)] text-lg leading-snug">
-            Your profile is {pct}% complete
+            Your application is {pct}% complete
           </div>
           <div className="mt-1 text-[12.5px] text-white/70">
-            {missing > 0
-              ? `${missing} section${missing === 1 ? "" : "s"} could use more detail.`
-              : "Great work — your counselor has a solid picture."}
+            {completionSubtitle}
           </div>
         </div>
         <div className="relative z-[1] flex flex-col items-start gap-1.5 sm:items-end">
@@ -1284,7 +1366,7 @@ export function MyApplicationsClient({
                     onChange={(e) => setGrade(e.target.value)}
                   >
                     <option value="">Select…</option>
-                    {GRADE_OPTIONS.map((g) => (
+                    {gradeSelectOptions.map((g) => (
                       <option key={g} value={g}>
                         {g}
                       </option>
@@ -1370,6 +1452,7 @@ export function MyApplicationsClient({
               <div className="mt-3.5">
                 <TagField
                   label="Interested programs / majors"
+                  labelTooltip="Type a program or major, then press Enter to add it."
                   values={programs}
                   onChange={setPrograms}
                   placeholder="Add a program…"
@@ -1615,9 +1698,28 @@ export function MyApplicationsClient({
                 favourites.map((u) => (
                   <div
                     key={u.uniId}
-                    className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                    className=" relative flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <button
+                      type="button"
+                      className="absolute cursor-pointer right-0 top-0 z-10 flex h-5 w-5 items-center justify-center rounded-md text-[var(--text-hint)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--text-mid)]"
+                      aria-label={`Remove ${u.name} from favorites`}
+                      title="Remove from favorites"
+                      onClick={() => setRemoveFavouriteTarget(u)}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        aria-hidden
+                      >
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <div className="flex min-w-0 flex-1 items-start gap-3 pr-6">
                       <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fffbeb] text-[#b8860b]">
                         <svg
                           width="14"
@@ -1745,15 +1847,6 @@ export function MyApplicationsClient({
                           {[u.country, u.major_program]
                             .filter(Boolean)
                             .join(" · ")}
-                          {u.application_method ? (
-                            <>
-                              {" "}
-                              ·{" "}
-                              <span className="rounded-full bg-[var(--green-pale)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--green-dark)]">
-                                {methodPillLabel(u.application_method)}
-                              </span>
-                            </>
-                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -2225,11 +2318,7 @@ export function MyApplicationsClient({
                       <button
                         type="button"
                         className={btnSmClass(false)}
-                        onClick={() =>
-                          showToast(
-                            "Letter viewer can be wired when submissions are stored.",
-                          )
-                        }
+                        onClick={() => void viewRecLetter(r.id)}
                       >
                         View
                       </button>
@@ -2250,9 +2339,7 @@ export function MyApplicationsClient({
                         type="button"
                         className={btnSmClass(false)}
                         onClick={() =>
-                          showToast(
-                            "Request reminder (stub) — email delivery can be wired later.",
-                          )
+                          void resendRecRequest(r.id, r.teacher_name)
                         }
                       >
                         Resend
@@ -2581,6 +2668,43 @@ export function MyApplicationsClient({
         />
       ) : null}
 
+      {removeFavouriteTarget ? (
+        <ModalVeil
+          title="Remove from favorites"
+          onClose={() => {
+            if (!removingFavourite) setRemoveFavouriteTarget(null);
+          }}
+        >
+          <div className="flex flex-col gap-5">
+            <p className="text-[13.5px] leading-relaxed text-[var(--text)]">
+              Remove{" "}
+              <strong className="font-semibold">
+                {removeFavouriteTarget.name}
+              </strong>{" "}
+              from your favorites?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-[8px] border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] disabled:opacity-50"
+                onClick={() => setRemoveFavouriteTarget(null)}
+                disabled={removingFavourite}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)] disabled:opacity-50"
+                onClick={() => void removeFavourite(removeFavouriteTarget)}
+                disabled={removingFavourite}
+              >
+                {removingFavourite ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          </div>
+        </ModalVeil>
+      ) : null}
+
       {essayModal ? (
         <ModalVeil
           onClose={() => setEssayModal(false)}
@@ -2869,10 +2993,6 @@ export function MyApplicationsClient({
           onClose={() => setRecModal(false)}
           title="Request a recommendation letter"
         >
-          <p className="mb-3 rounded-lg border border-[var(--green-bg)] bg-[var(--green-pale)] px-3 py-2.5 text-xs leading-relaxed text-[var(--green-dark)]">
-            Your teacher receives the request details here; full email delivery
-            can be wired later.
-          </p>
           <div className="grid gap-3.5 sm:grid-cols-3">
             <div>
               <label className={labelClass}>Teacher name</label>
@@ -2951,7 +3071,7 @@ export function MyApplicationsClient({
               className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
               onClick={() => void sendRecRequest()}
             >
-              Save request
+              Send request
             </button>
           </div>
         </ModalVeil>
@@ -3020,7 +3140,7 @@ function PreferredDestinationsMultiSelect({
     <div className="flex flex-col gap-1.5">
       <label className={labelClass}>Preferred destinations</label>
       <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
-        Full country list (ISO). Tick every destination you are considering; remove
+        Full country list. Tick every destination you are considering; remove
         with the chip ×.
       </p>
       {values.length > 0 ? (
@@ -3096,12 +3216,14 @@ function PreferredDestinationsMultiSelect({
 
 function TagField({
   label,
+  labelTooltip,
   hint,
   values,
   onChange,
   placeholder,
 }: {
   label: string;
+  labelTooltip?: string;
   hint?: string;
   values: string[];
   onChange: (v: string[]) => void;
@@ -3116,9 +3238,28 @@ function TagField({
   };
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]">
-        {label}
-      </label>
+      <div className="flex items-center gap-1.5">
+        <label className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]">
+          {label}
+        </label>
+        {labelTooltip ? (
+          <span
+            className="group relative inline-flex shrink-0 cursor-help"
+            tabIndex={0}
+            aria-label={labelTooltip}
+          >
+            <span className="flex size-4 items-center justify-center rounded-full border-[1.5px] border-[var(--border)] text-[9px] font-bold text-[var(--text-hint)] transition group-hover:border-[var(--green-light)] group-hover:bg-[var(--green-bg)] group-hover:text-[var(--green)] group-focus-visible:border-[var(--green-light)] group-focus-visible:bg-[var(--green-bg)] group-focus-visible:text-[var(--green)]">
+              i
+            </span>
+            <span
+              role="tooltip"
+              className="pointer-events-none invisible absolute bottom-[calc(100%+8px)] left-1/2 z-20 w-[240px] -translate-x-1/2 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-2.5 text-[11.5px] font-normal normal-case leading-snug tracking-normal text-[var(--text-mid)] shadow-[0_4px_16px_rgba(0,0,0,0.1)] after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-6 after:border-transparent after:border-t-white group-hover:visible group-focus-visible:visible"
+            >
+              {labelTooltip}
+            </span>
+          </span>
+        ) : null}
+      </div>
       <div
         className="flex min-h-[42px] cursor-text flex-wrap items-center gap-1.5 rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 focus-within:border-[var(--green-light)]"
         onClick={(e) => {

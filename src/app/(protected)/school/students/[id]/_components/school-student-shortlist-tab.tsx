@@ -20,12 +20,6 @@ import { UNIVERSITY_STATUS_LABEL } from "@/app/(protected)/student/my-applicatio
 type ShortlistRow =
   Database["public"]["Tables"]["student_shortlist_universities"]["Row"];
 
-function methodPillLabel(applicationMethod: string | null): string {
-  if (!applicationMethod) return "—";
-  const i = applicationMethod.indexOf(" — ");
-  return i === -1 ? applicationMethod : applicationMethod.slice(0, i);
-}
-
 function formatDate(iso: string | null | undefined) {
   if (!iso) return "";
   try {
@@ -239,11 +233,7 @@ export function SchoolStudentShortlistTab({
               const deadline = u.application_deadline
                 ? formatDate(u.application_deadline)
                 : "—";
-              const progLine = [
-                u.country,
-                u.major_program,
-                methodPillLabel(u.application_method),
-              ]
+              const progLine = [u.country, u.major_program]
                 .filter(Boolean)
                 .join(" · ");
               return (

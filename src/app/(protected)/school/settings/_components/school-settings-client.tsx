@@ -19,6 +19,95 @@ import {
 
 const MIN_PASSWORD = 8;
 
+function EyeIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+function PasswordInput({
+  id,
+  label,
+  inputRef,
+  show,
+  onToggleShow,
+  autoComplete,
+  placeholder,
+  onInput,
+  invalid,
+}: {
+  id: string;
+  label: string;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  show: boolean;
+  onToggleShow: () => void;
+  autoComplete: string;
+  placeholder: string;
+  onInput?: () => void;
+  invalid?: boolean;
+}) {
+  return (
+    <div>
+      <label className={labelClass()} htmlFor={id}>
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          ref={inputRef}
+          type={show ? "text" : "password"}
+          className={[
+            fieldClass(),
+            "pr-10",
+            invalid ? "border-[#E74C3C] focus:border-[#E74C3C]" : "",
+          ].join(" ")}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          onInput={onInput}
+        />
+        <button
+          type="button"
+          className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer rounded-md border-0 bg-transparent p-1 text-[var(--text-light)] hover:text-[var(--text-mid)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-1"
+          onClick={onToggleShow}
+          aria-pressed={show}
+          aria-label={show ? "Hide password" : "Show password"}
+        >
+          {show ? <EyeOffIcon /> : <EyeIcon />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export type SchoolSettingsClientProps = {
   authEmail: string;
   profileEmail: string;
@@ -92,9 +181,17 @@ export function SchoolSettingsClient({
   const [pwOpen, setPwOpen] = useState(false);
   const [pwSubmitting, setPwSubmitting] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
+  const [showPwCurrent, setShowPwCurrent] = useState(false);
+  const [showPwNew, setShowPwNew] = useState(false);
+  const [showPwConfirm, setShowPwConfirm] = useState(false);
+  const [pwNewValue, setPwNewValue] = useState("");
+  const [pwConfirmValue, setPwConfirmValue] = useState("");
   const pwCurrentRef = useRef<HTMLInputElement>(null);
   const pwNewRef = useRef<HTMLInputElement>(null);
   const pwConfirmRef = useRef<HTMLInputElement>(null);
+
+  const pwMismatch =
+    pwConfirmValue.length > 0 && pwNewValue.length > 0 && pwNewValue !== pwConfirmValue;
 
   const [profileState, profileAction, profilePending] = useActionState(
     updateSchoolAdminProfileAction,
@@ -139,7 +236,14 @@ export function SchoolSettingsClient({
   }, [schoolPending, schoolState, router]);
 
   useEffect(() => {
-    if (!pwOpen) return;
+    if (!pwOpen) {
+      setShowPwCurrent(false);
+      setShowPwNew(false);
+      setShowPwConfirm(false);
+      setPwNewValue("");
+      setPwConfirmValue("");
+      return;
+    }
     setPwError(null);
     const esc = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !pwSubmitting) setPwOpen(false);
@@ -147,6 +251,14 @@ export function SchoolSettingsClient({
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
   }, [pwOpen, pwSubmitting]);
+
+  function syncPwNewValue() {
+    setPwNewValue(pwNewRef.current?.value ?? "");
+  }
+
+  function syncPwConfirmValue() {
+    setPwConfirmValue(pwConfirmRef.current?.value ?? "");
+  }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -194,6 +306,8 @@ export function SchoolSettingsClient({
       if (pwCurrentRef.current) pwCurrentRef.current.value = "";
       if (pwNewRef.current) pwNewRef.current.value = "";
       if (pwConfirmRef.current) pwConfirmRef.current.value = "";
+      setPwNewValue("");
+      setPwConfirmValue("");
       setPwOpen(false);
       showToast("Password updated.");
     } finally {
@@ -503,44 +617,42 @@ export function SchoolSettingsClient({
             </div>
             <form onSubmit={handlePasswordSubmit}>
               <div className="flex flex-col gap-3.5 px-[22px] py-[18px]">
+                <PasswordInput
+                  id="pw-current"
+                  label="Current password"
+                  inputRef={pwCurrentRef}
+                  show={showPwCurrent}
+                  onToggleShow={() => setShowPwCurrent((s) => !s)}
+                  autoComplete="current-password"
+                  placeholder="Enter current password"
+                />
+                <PasswordInput
+                  id="pw-new"
+                  label="New password"
+                  inputRef={pwNewRef}
+                  show={showPwNew}
+                  onToggleShow={() => setShowPwNew((s) => !s)}
+                  autoComplete="new-password"
+                  placeholder={`At least ${MIN_PASSWORD} characters`}
+                  onInput={syncPwNewValue}
+                />
                 <div>
-                  <label className={labelClass()} htmlFor="pw-current">
-                    Current password
-                  </label>
-                  <input
-                    id="pw-current"
-                    ref={pwCurrentRef}
-                    type="password"
-                    className={fieldClass()}
-                    autoComplete="current-password"
-                    placeholder="Enter current password"
-                  />
-                </div>
-                <div>
-                  <label className={labelClass()} htmlFor="pw-new">
-                    New password
-                  </label>
-                  <input
-                    id="pw-new"
-                    ref={pwNewRef}
-                    type="password"
-                    className={fieldClass()}
-                    autoComplete="new-password"
-                    placeholder={`At least ${MIN_PASSWORD} characters`}
-                  />
-                </div>
-                <div>
-                  <label className={labelClass()} htmlFor="pw-confirm">
-                    Confirm new password
-                  </label>
-                  <input
+                  <PasswordInput
                     id="pw-confirm"
-                    ref={pwConfirmRef}
-                    type="password"
-                    className={fieldClass()}
+                    label="Confirm new password"
+                    inputRef={pwConfirmRef}
+                    show={showPwConfirm}
+                    onToggleShow={() => setShowPwConfirm((s) => !s)}
                     autoComplete="new-password"
                     placeholder="Re-enter new password"
+                    onInput={syncPwConfirmValue}
+                    invalid={pwMismatch}
                   />
+                  {pwMismatch ? (
+                    <p className="mt-1.5 text-[12px] font-medium text-[#E74C3C]">
+                      New passwords do not match.
+                    </p>
+                  ) : null}
                 </div>
                 {pwError ? (
                   <p className="text-[12px] font-medium text-[#E74C3C]">{pwError}</p>
@@ -555,7 +667,11 @@ export function SchoolSettingsClient({
                 >
                   Cancel
                 </button>
-                <button type="submit" className={btnPrimaryClass()} disabled={pwSubmitting}>
+                <button
+                  type="submit"
+                  className={btnPrimaryClass()}
+                  disabled={pwSubmitting || pwMismatch}
+                >
                   {pwSubmitting ? "Updating…" : "Update password"}
                 </button>
               </div>

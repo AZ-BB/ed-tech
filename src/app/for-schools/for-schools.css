@@ -340,6 +340,10 @@
   max-width: 780px;
 }
 
+.for-schools-route .section-title-full {
+  max-width: none;
+}
+
 .for-schools-route .section-title em {
   font-style: italic;
   color: var(--green);
@@ -351,6 +355,10 @@
   line-height: 1.6;
   max-width: 720px;
   margin-bottom: 56px;
+}
+
+.for-schools-route .section-desc-full {
+  max-width: none;
 }
 
 .for-schools-route .cta-section {

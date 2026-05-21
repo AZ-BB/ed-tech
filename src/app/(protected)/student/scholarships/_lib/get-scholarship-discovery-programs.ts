@@ -21,6 +21,7 @@ export type ScholarshipDiscoveryResolvedQuery = {
   nationality: string;
   destination: string;
   coverage: string;
+  favouritesOnly: boolean;
   tab: ScholarshipDiscoveryTab;
   governmentPage: number;
   otherPage: number;
@@ -63,6 +64,12 @@ function pickFilterAny(
   const raw = pick(sp, key, "").trim();
   if (!raw || raw.toLowerCase() === "any") return "any";
   return raw;
+}
+
+function truthyQueryFlag(v: string | undefined): boolean {
+  if (!v) return false;
+  const s = v.trim().toLowerCase();
+  return s === "1" || s === "true" || s === "yes";
 }
 
 function parsePositiveIntFromKeys(
@@ -122,6 +129,7 @@ export function parseScholarshipDiscoverySearchParams(
     nationality,
     destination,
     coverage,
+    favouritesOnly: truthyQueryFlag(pick(sp, "favourites", "") || undefined),
     tab,
     governmentPage: Math.max(1, governmentPage),
     otherPage: Math.max(1, otherPage),
@@ -159,6 +167,7 @@ async function fetchDiscoveryBucketRpc(
   bucket: ScholarshipDiscoveryTab,
   page: number,
   homeAlpha2: string | null,
+  savedIds: string[] | null,
 ): Promise<RpcDiscoveryPage | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("rpc_scholarships_discovery_page", {
@@ -170,6 +179,7 @@ async function fetchDiscoveryBucketRpc(
     p_home_alpha2: homeAlpha2 ?? undefined,
     p_limit: SCHOLARSHIP_PAGE_SIZE,
     p_offset: (Math.max(1, page) - 1) * SCHOLARSHIP_PAGE_SIZE,
+    p_saved_ids: savedIds ?? undefined,
   });
   if (error) {
     console.error("[fetchDiscoveryBucketRpc]", bucket, error.message);
@@ -183,9 +193,10 @@ async function loadBucketSlice(
   bucket: ScholarshipDiscoveryTab,
   page: number,
   homeAlpha2: string | null,
+  savedIds: string[] | null,
 ): Promise<ScholarshipDiscoveryTabSlice & { catalog_total: number }> {
   let p = Math.max(1, page);
-  let rpc = await fetchDiscoveryBucketRpc(query, bucket, p, homeAlpha2);
+  let rpc = await fetchDiscoveryBucketRpc(query, bucket, p, homeAlpha2, savedIds);
 
   if (!rpc) {
     return {
@@ -212,7 +223,7 @@ async function loadBucketSlice(
   let totalPages = Math.max(1, Math.ceil(totalMatching / SCHOLARSHIP_PAGE_SIZE));
   if (p > totalPages && totalMatching > 0) {
     p = totalPages;
-    rpc = await fetchDiscoveryBucketRpc(query, bucket, p, homeAlpha2);
+    rpc = await fetchDiscoveryBucketRpc(query, bucket, p, homeAlpha2, savedIds);
     if (!rpc) {
       return {
         scholarships: [],
@@ -332,22 +343,44 @@ async function fetchScholarshipActivityDiscoveryKeys(
   return [...keys];
 }
 
+async function fetchSavedScholarshipUuids(
+  supabase: SupabaseServer,
+  studentId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("student_activities")
+    .select("scholarship_id")
+    .eq("student_id", studentId)
+    .eq("entity_type", "scholarship")
+    .eq("type", "save")
+    .not("scholarship_id", "is", null);
+
+  if (error || !data?.length) return [];
+
+  return data
+    .map((row) => row.scholarship_id)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+}
+
 async function loadScholarshipActivityIds(): Promise<{
   savedDiscoveryIds: string[];
   shortlistedDiscoveryIds: string[];
+  savedScholarshipUuids: string[];
 }> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user?.id) {
-    return { savedDiscoveryIds: [], shortlistedDiscoveryIds: [] };
+    return { savedDiscoveryIds: [], shortlistedDiscoveryIds: [], savedScholarshipUuids: [] };
   }
-  const [savedDiscoveryIds, shortlistedDiscoveryIds] = await Promise.all([
-    fetchScholarshipActivityDiscoveryKeys(supabase, user.id, "save"),
-    fetchScholarshipActivityDiscoveryKeys(supabase, user.id, "shortlist"),
-  ]);
-  return { savedDiscoveryIds, shortlistedDiscoveryIds };
+  const [savedDiscoveryIds, shortlistedDiscoveryIds, savedScholarshipUuids] =
+    await Promise.all([
+      fetchScholarshipActivityDiscoveryKeys(supabase, user.id, "save"),
+      fetchScholarshipActivityDiscoveryKeys(supabase, user.id, "shortlist"),
+      fetchSavedScholarshipUuids(supabase, user.id),
+    ]);
+  return { savedDiscoveryIds, shortlistedDiscoveryIds, savedScholarshipUuids };
 }
 
 /** Resolves `scholarships.id` (UUID) from a discovery UI id (slug, payload id, or row UUID). */
@@ -390,6 +423,7 @@ export type ScholarshipDiscoveryPageData = {
     nat: string;
     dest: string;
     cov: string;
+    favouritesOnly: boolean;
     tab: ScholarshipDiscoveryTab;
   };
   detailId: string | null;
@@ -406,6 +440,7 @@ export async function getScholarshipDiscoveryPageData(
     nat: query.nationality,
     dest: query.destination,
     cov: query.coverage,
+    favouritesOnly: query.favouritesOnly,
     tab: query.tab,
   };
 
@@ -420,10 +455,14 @@ export async function getScholarshipDiscoveryPageData(
     coverage: query.coverage,
   };
 
-  const [activityIds, govLoaded, otherLoaded] = await Promise.all([
-    loadScholarshipActivityIds(),
-    loadBucketSlice(queryBase, "government", query.governmentPage, homeAlpha2),
-    loadBucketSlice(queryBase, "other", query.otherPage, homeAlpha2),
+  const activityIds = await loadScholarshipActivityIds();
+  const savedIdsFilter: string[] | null = query.favouritesOnly
+    ? activityIds.savedScholarshipUuids
+    : null;
+
+  const [govLoaded, otherLoaded] = await Promise.all([
+    loadBucketSlice(queryBase, "government", query.governmentPage, homeAlpha2, savedIdsFilter),
+    loadBucketSlice(queryBase, "other", query.otherPage, homeAlpha2, savedIdsFilter),
   ]);
 
   const totalCatalog = Math.max(govLoaded.catalog_total, otherLoaded.catalog_total);

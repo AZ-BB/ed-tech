@@ -19,7 +19,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "my-applications",
-    label: "My applications",
+    label: "My Applications",
     href: "/student/my-applications",
   },
   {
