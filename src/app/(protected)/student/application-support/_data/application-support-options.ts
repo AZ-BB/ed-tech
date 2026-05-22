@@ -351,14 +351,17 @@ export const PACK_PRICES: Record<5 | 10 | 15, number> = {
   15: 5000,
 };
 
-/** Chips — application_support vf.html */
+/** Chips — application_support_18.html */
 export const VF_DESTINATION_CHIPS = [
   "United States",
   "United Kingdom",
   "Canada",
   "Europe",
   "Australia",
-  "UAE / GCC",
+  "GCC",
+  "Lebanon",
+  "Jordan",
+  "Egypt",
   "Not sure yet",
 ] as const;
 
@@ -417,13 +420,11 @@ export const VF_FIELD_OF_STUDY_SUGGESTIONS = [
 ] as const;
 
 export const VF_JOURNEY_STEPS = [
-  "Tell us about your goals",
+  "Tell us about yourself",
+  "Share your direction — where and what you want to study",
   "Choose your application strategy",
-  "Share your universities — or ask us to help",
-  "Upload anything you already have",
+  "Review your personalized plan",
   "Book your onboarding session",
-  "Get your personalized support plan",
-  "Continue with the package that fits you",
 ] as const;
 
 export const VF_INCLUDED_COMPACT = [
@@ -436,4 +437,7 @@ export const VF_INCLUDED_COMPACT = [
   "Visa & next steps guidance",
   "Ongoing advisor touchpoints",
   "Student community connections",
+  "Recommendation letter follow-up",
+  "Interview preparation & mock sessions",
+  "Post-acceptance & enrollment support",
 ] as const;

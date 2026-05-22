@@ -10,7 +10,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -21,97 +20,156 @@ import "../application-support.css";
 import {
   COUNTRY_OPTIONS,
   NATIONALITY_OPTIONS,
-  POPULAR_UNIVERSITIES,
   VF_APPLY_TIMING_CHIPS,
   VF_DESTINATION_CHIPS,
-  VF_FIELD_OF_STUDY_SUGGESTIONS,
   VF_GRADE_YEAR_OPTIONS,
   VF_INCLUDED_COMPACT,
   VF_JOURNEY_STEPS,
-  type PopularUni,
 } from "../_data/application-support-options";
 
 type PlanRow = Database["public"]["Tables"]["applications_plans"]["Row"];
-
-/** Display only — server uses same constant in application-support action */
-const ONBOARDING_DEPOSIT_AED = 200;
 
 type Step =
   | "landing"
   | "basic"
   | "direction"
   | "strategy"
-  | "universities"
-  | "documents"
   | "summary"
-  | "booking"
-  | "schedule";
+  | "pay"
+  | "done";
 
-type DocSlot = "transcript" | "ps" | "cv" | "english";
-type UniIntent = "shortlist" | "ideas" | "help";
 type PlanClarity = "clear" | "some" | "help";
 
-type FileMeta = { file: File; label: string };
-
 const STEP_PROGRESS: Record<
-  Exclude<Step, "landing" | "schedule">,
+  Exclude<Step, "landing" | "done">,
   { pct: number; label: string; stepOf: string }
 > = {
-  basic: { pct: 12, label: "Basic information", stepOf: "Step 1 of 7" },
-  direction: { pct: 25, label: "Your direction", stepOf: "Step 2 of 7" },
-  strategy: { pct: 38, label: "Application strategy", stepOf: "Step 3 of 7" },
-  universities: { pct: 50, label: "Your universities", stepOf: "Step 4 of 7" },
-  documents: { pct: 62, label: "Documents", stepOf: "Step 5 of 7" },
-  summary: { pct: 78, label: "Your plan", stepOf: "Step 6 of 7" },
-  booking: { pct: 100, label: "Book your session", stepOf: "Step 7 of 7" },
+  basic: { pct: 20, label: "Basic information", stepOf: "Step 1 of 5" },
+  direction: { pct: 40, label: "Your direction", stepOf: "Step 2 of 5" },
+  strategy: { pct: 60, label: "Application strategy", stepOf: "Step 3 of 5" },
+  summary: { pct: 80, label: "Your plan", stepOf: "Step 4 of 5" },
+  pay: { pct: 100, label: "Book your session", stepOf: "Step 5 of 5" },
 };
 
-const VALUE_CARDS: { title: string; desc: string; tint: string }[] = [
+const VALUE_CARDS = [
   {
     title: "University Strategy",
     desc: "Personalized shortlist tailored to your profile, goals, and budget.",
     tint: "bg-[#e8f1ec]",
+    stroke: "#2D6A4F",
+    icon: (
+      <>
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.35-4.35" />
+      </>
+    ),
   },
   {
     title: "Essay Guidance",
     desc: "Brainstorming, drafting, and refining every essay across multiple rounds.",
     tint: "bg-[#ecebf5]",
+    stroke: "#7c6ea8",
+    icon: (
+      <>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+      </>
+    ),
   },
   {
     title: "Application Review",
     desc: "Thorough review of every form and document before you submit.",
     tint: "bg-[#e8eff5]",
+    stroke: "#5a7ea8",
+    icon: (
+      <>
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+        <path d="M14 2v6h6" />
+        <path d="M9 15l2 2 4-4" />
+      </>
+    ),
   },
   {
     title: "CV & Profile",
     desc: "Compelling CV and activity list that strengthens your candidacy.",
     tint: "bg-[#f0ebe3]",
+    stroke: "#a8855a",
+    icon: (
+      <>
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </>
+    ),
   },
   {
     title: "Document Prep",
     desc: "Help gathering, organizing, and verifying all required documents on time.",
     tint: "bg-[#f7f1d9]",
+    stroke: "#b8a04a",
+    icon: (
+      <>
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+      </>
+    ),
   },
   {
     title: "Progress Tracking",
     desc: "Real-time visibility into where each application stands.",
     tint: "bg-[#e6f1ec]",
+    stroke: "#2D6A4F",
+    icon: (
+      <>
+        <path d="M3 3v18h18" />
+        <path d="M7 14l4-4 4 4 5-5" />
+      </>
+    ),
   },
   {
     title: "Visa Guidance",
     desc: "What visa you need, when to start, and which documents to prepare.",
     tint: "bg-[#f4e8e3]",
+    stroke: "#c26a4a",
+    icon: (
+      <>
+        <path d="M2 17l1.5-3L12 3l8.5 11L22 17" />
+        <path d="M2 17h20l-2 4H4z" />
+      </>
+    ),
   },
   {
     title: "Peer Network",
     desc: "Connect with students from your region at the same university.",
     tint: "bg-[#e5ecf3]",
+    stroke: "#5a7ea8",
+    icon: (
+      <>
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 00-3-3.87" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+      </>
+    ),
   },
   {
     title: "Ongoing Check-ins",
     desc: "Regular meetings and follow-ups until you're settled at university.",
     tint: "bg-[#efe9f4]",
+    stroke: "#8b6ea8",
+    icon: (
+      <>
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+        <path d="M22 6l-10 7L2 6" />
+      </>
+    ),
   },
+] as const;
+
+const HERO_TRACKER_ROWS = [
+  { label: "University Strategy", pct: 100, stage: "Complete", kind: "done" as const },
+  { label: "Essay Guidance", pct: 70, stage: "In progress", kind: "prog" as const },
+  { label: "Document Prep", pct: 25, stage: "Upcoming", kind: "up" as const },
+  { label: "Visa & Arrival", pct: 0, stage: "Upcoming", kind: "up" as const },
 ];
 
 function ChevronRight({ className }: { className?: string }) {
@@ -134,7 +192,7 @@ function ChevronRight({ className }: { className?: string }) {
 function ProgressTracker({
   step,
 }: {
-  step: Exclude<Step, "landing" | "schedule">;
+  step: Exclude<Step, "landing" | "done">;
 }) {
   const p = STEP_PROGRESS[step];
   return (
@@ -181,22 +239,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
   const [gradeYear, setGradeYear] = useState("");
 
   const [destinations, setDestinations] = useState<string[]>([]);
-  const [fieldOfStudy, setFieldOfStudy] = useState("");
+  const [majors, setMajors] = useState<string[]>([]);
+  const [majorInput, setMajorInput] = useState("");
   const [applyTiming, setApplyTiming] = useState<string | null>(null);
   const [planClarity, setPlanClarity] = useState<PlanClarity | null>(null);
 
   const [selectedPack, setSelectedPack] = useState<5 | 10 | 15 | null>(null);
-
-  const [uniIntent, setUniIntent] = useState<UniIntent | null>(null);
-  const [uniSlots, setUniSlots] = useState<string[]>([]);
-  const [uniNotes, setUniNotes] = useState("");
-
-  const [docFiles, setDocFiles] = useState<Partial<Record<DocSlot, FileMeta>>>(
-    {},
-  );
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const pendingDocRef = useRef<DocSlot | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -204,68 +252,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  useEffect(() => {
-    if (!selectedPack) {
-      setUniSlots([]);
-      return;
-    }
-    setUniSlots((prev) => {
-      const next = [...prev];
-      if (next.length < selectedPack) {
-        while (next.length < selectedPack) next.push("");
-      } else if (next.length > selectedPack) {
-        next.length = selectedPack;
-      }
-      return next;
-    });
-  }, [selectedPack]);
-
   const showToast = useCallback((msg: string) => setToast(msg), []);
-
-  const filledUnis = useMemo(
-    () =>
-      uniSlots
-        .map((name, index) => ({ name: name.trim(), index }))
-        .filter((x) => x.name),
-    [uniSlots],
-  );
-
-  const isDuplicateUni = useCallback(
-    (name: string, excludeIndex: number) => {
-      const l = name.trim().toLowerCase();
-      if (!l) return false;
-      return filledUnis.some(
-        (u) => u.name.toLowerCase() === l && u.index !== excludeIndex,
-      );
-    },
-    [filledUnis],
-  );
-
-  const uniNameAlreadyListed = useCallback(
-    (name: string) => {
-      const l = name.trim().toLowerCase();
-      if (!l) return false;
-      return filledUnis.some((u) => u.name.toLowerCase() === l);
-    },
-    [filledUnis],
-  );
-
-  const setUniAt = (i: number, value: string) => {
-    if (value.trim() && isDuplicateUni(value, i)) {
-      showToast("This university is already in your list");
-      setUniSlots((prev) => {
-        const next = [...prev];
-        next[i] = "";
-        return next;
-      });
-      return;
-    }
-    setUniSlots((prev) => {
-      const next = [...prev];
-      next[i] = value;
-      return next;
-    });
-  };
 
   const toggleDestination = (label: string) => {
     setDestinations((prev) =>
@@ -273,16 +260,34 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     );
   };
 
-  const pickTiming = (label: string) => {
-    setApplyTiming(label);
+  const addMajor = (raw: string) => {
+    const val = raw.trim().replace(/,$/, "").trim();
+    if (!val) return;
+    if (majors.some((m) => m.toLowerCase() === val.toLowerCase())) {
+      showToast("This major is already in your list");
+      return;
+    }
+    setMajors((prev) => [...prev, val]);
+    setMajorInput("");
+  };
+
+  const removeMajor = (index: number) => {
+    setMajors((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const onMajorKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addMajor(majorInput);
+    } else if (e.key === "Backspace" && !majorInput && majors.length) {
+      setMajors((prev) => prev.slice(0, -1));
+    }
   };
 
   function buildPayload(): ApplicationSupportPayload {
     if (!selectedPack) {
       throw new Error("Package required");
     }
-    const universities =
-      uniIntent === "help" ? [] : filledUnis.map((u) => u.name);
     return {
       planUniversitiesCount: selectedPack,
       studentName: fullName.trim(),
@@ -293,26 +298,13 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
       schoolName: schoolName.trim(),
       currentGradeYear: gradeYear,
       destinations: [...destinations],
-      fieldOfStudy: fieldOfStudy.trim(),
+      fieldOfStudy: majors.join(", "),
       applyTiming,
       planClarity,
-      universities,
-      uniNotes: uniNotes.trim(),
-      uniIntent,
+      universities: [],
+      uniNotes: "",
+      uniIntent: null,
     };
-  }
-
-  function appendDocs(fd: FormData) {
-    const map: Record<DocSlot, string> = {
-      transcript: "doc_transcript",
-      ps: "doc_ps",
-      cv: "doc_cv",
-      english: "doc_english",
-    };
-    for (const slot of Object.keys(map) as DocSlot[]) {
-      const meta = docFiles[slot];
-      if (meta?.file) fd.append(map[slot], meta.file);
-    }
   }
 
   async function persistApplication(): Promise<boolean> {
@@ -323,7 +315,6 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     try {
       const fd = new FormData();
       fd.set("payload", JSON.stringify(buildPayload()));
-      appendDocs(fd);
       const res = await submitApplicationSupport(fd);
       if (!res.ok) {
         setSubmitError(res.error);
@@ -340,60 +331,20 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     }
   }
 
-  async function goFromSummaryToBooking() {
+  async function goFromSummaryToPay() {
     const ok = await persistApplication();
-    if (ok) setStep("booking");
+    if (ok) setStep("pay");
   }
 
-  const openDocPicker = (slot: DocSlot) => {
-    pendingDocRef.current = slot;
-    fileInputRef.current?.click();
-  };
-
-  const onDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const slot = pendingDocRef.current;
-    const f = e.target.files?.[0];
-    pendingDocRef.current = null;
-    e.target.value = "";
-    if (!slot || !f) return;
-    setDocFiles((prev) => ({
-      ...prev,
-      [slot]: { file: f, label: f.name },
-    }));
-  };
-
-  const removeDoc = (slot: DocSlot) => {
-    setDocFiles((prev) => {
-      const next = { ...prev };
-      delete next[slot];
-      return next;
-    });
-  };
-
-  function addPopularUni(u: PopularUni) {
-    if (uniNameAlreadyListed(u.name)) {
-      showToast("This university is already in your list");
-      return;
-    }
-    const max = selectedPack ?? 10;
-    const emptyIdx = uniSlots.findIndex((s) => !s.trim());
-    if (emptyIdx === -1) {
-      showToast(`All ${max} slots are filled. Remove one to add another.`);
-      return;
-    }
-    setUniAt(emptyIdx, u.name);
-  }
-
-  const basicValid =
-    Boolean(
-      fullName.trim() &&
-        email.trim() &&
-        phone.trim() &&
-        nationality &&
-        country &&
-        schoolName.trim() &&
-        gradeYear,
-    );
+  const basicValid = Boolean(
+    fullName.trim() &&
+      email.trim() &&
+      phone.trim() &&
+      nationality &&
+      country &&
+      schoolName.trim() &&
+      gradeYear,
+  );
 
   const strategyValid = selectedPack != null;
 
@@ -432,45 +383,15 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
   }, [destinations]);
 
   const snapField = useMemo(() => {
-    const v = fieldOfStudy.trim();
-    if (v && v.toLowerCase() !== "not sure yet") {
-      return { text: v, empty: false };
+    const cleaned = majors.filter((m) => m.toLowerCase() !== "not sure yet");
+    if (cleaned.length > 0) {
+      return { text: cleaned.join(", "), empty: false };
     }
     return {
       text: "We'll help you explore the right direction",
       empty: true,
     };
-  }, [fieldOfStudy]);
-
-  const snapUnis = useMemo(() => {
-    if (uniIntent === "help") {
-      return { text: "We'll build this with your advisor", empty: true };
-    }
-    if (!filledUnis.length) {
-      return {
-        text: "We'll help you build this with your advisor",
-        empty: true,
-      };
-    }
-    if (filledUnis.length === 1) {
-      return { text: filledUnis[0].name, empty: false };
-    }
-    return {
-      text: `${filledUnis[0].name} + ${filledUnis.length - 1} more`,
-      empty: false,
-    };
-  }, [uniIntent, filledUnis]);
-
-  const snapDocs = useMemo(() => {
-    const n = Object.keys(docFiles).length;
-    if (n === 0) {
-      return {
-        text: "No problem — we'll guide you on what to prepare",
-        empty: true,
-      };
-    }
-    return { text: `${n} of 4 uploaded`, empty: false };
-  }, [docFiles]);
+  }, [majors]);
 
   const snapTiming = useMemo(() => {
     const empty = !applyTiming || applyTiming === "Not sure yet";
@@ -484,11 +405,10 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     const ctx: string[] = [];
     if (destinations.length)
       ctx.push(`Destinations: ${destinations.join(", ")}`);
-    if (fieldOfStudy.trim()) ctx.push(`Field: ${fieldOfStudy.trim()}`);
+    if (majors.length) ctx.push(`Field: ${majors.join(", ")}`);
     if (selectedPack) ctx.push(`Strategy: ${selectedPack} universities`);
     if (applyTiming) ctx.push(`Timing: ${applyTiming}`);
     if (planClarity) ctx.push(`Clarity: ${planClarity}`);
-    if (uniIntent) ctx.push(`Uni intent: ${uniIntent}`);
     if (applicationId != null) ctx.push(`Application ref: #${applicationId}`);
     return buildCalendlySchedulingPageUrl({
       name: fullName.trim(),
@@ -497,17 +417,14 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     });
   }, [
     destinations,
-    fieldOfStudy,
+    majors,
     selectedPack,
     applyTiming,
     planClarity,
-    uniIntent,
     applicationId,
     fullName,
     email,
   ]);
-
-  const showUniInputs = uniIntent !== "help";
 
   const sectionLabel = (children: ReactNode) => (
     <div className="mb-3.5 mt-7 border-t border-[var(--border-light)] pt-5 text-[11px] font-bold uppercase tracking-wide text-[var(--green)] first:mt-0 first:border-t-0 first:pt-0">
@@ -540,97 +457,8 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     </div>
   );
 
-  const docRow = (
-    slot: DocSlot,
-    title: ReactNode,
-    helper: string,
-    optional?: boolean,
-  ) => {
-    const meta = docFiles[slot];
-    const uploaded = Boolean(meta);
-    return (
-      <div
-        className={`mb-2.5 flex items-center gap-4 rounded-xl border border-[var(--border-light)] px-5 py-4 transition-colors ${
-          uploaded ? "as-doc-card as-uploaded bg-[var(--green-pale)]" : "bg-white hover:border-[var(--green-light)]"
-        }`}
-      >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--sand)]">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#2D6A4F"
-            strokeWidth="1.8"
-            aria-hidden
-          >
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-            <path d="M14 2v6h6" />
-          </svg>
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[var(--text)]">
-            {title}
-            {optional ? (
-              <span className="rounded-[var(--radius-pill)] bg-[var(--sand)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--text-hint)]">
-                Optional
-              </span>
-            ) : null}
-          </div>
-          <div
-            className={`mt-1 text-xs ${uploaded ? "font-medium text-[var(--green)]" : "text-[var(--text-hint)]"}`}
-          >
-            {uploaded ? (
-              <>
-                Uploaded — {meta!.label}
-              </>
-            ) : (
-              helper
-            )}
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          {uploaded ? (
-            <>
-              <button
-                type="button"
-                onClick={() => openDocPicker(slot)}
-                className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-5 py-2 text-xs font-semibold text-[var(--text-mid)] hover:border-[var(--green)] hover:text-[var(--green)]"
-              >
-                Replace
-              </button>
-              <button
-                type="button"
-                onClick={() => removeDoc(slot)}
-                className="cursor-pointer text-xs text-[var(--text-hint)] underline-offset-2 hover:text-red-600 hover:underline"
-              >
-                Remove
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => openDocPicker(slot)}
-              className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-5 py-2 text-xs font-semibold text-[var(--text-mid)] hover:border-[var(--green)] hover:text-[var(--green)]"
-            >
-              Upload
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div id="application-support-scope" className="pb-16 font-[family-name:var(--font-dm-sans)]">
-      <input
-        ref={fileInputRef}
-        type="file"
-        className="hidden"
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.txt"
-        onChange={onDocFileChange}
-      />
-
       {toast ? (
         <div
           role="status"
@@ -642,52 +470,97 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
       {step === "landing" ? (
         <>
-          <section className="as-hero relative overflow-hidden bg-[var(--green-pale)] px-10 py-[70px] text-center max-[768px]:px-5 max-[768px]:py-12">
-            <div className="relative z-[1] mb-6 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[rgba(45,106,79,0.12)] bg-white px-[18px] py-1.5 text-xs font-semibold text-[var(--green)]">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                <path d="M22 4L12 14.01l-3-3" />
-              </svg>
-              Premium Service
+          <section className="as-hero relative overflow-hidden bg-[var(--green-pale)] px-10 py-20 max-[768px]:px-5 max-[768px]:py-[60px]">
+            <div className="as-hero-inner">
+              <div className="max-[768px]:text-center">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[rgba(45,106,79,0.12)] bg-white px-[18px] py-1.5 text-xs font-semibold text-[var(--green)]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                    <path d="M22 4L12 14.01l-3-3" />
+                  </svg>
+                  Premium Service
+                </div>
+                <h1 className="mb-[18px] font-[family-name:var(--font-dm-serif)] text-[48px] leading-[1.1] text-[var(--text)] max-[768px]:text-[34px]">
+                  End-to-end support for your{" "}
+                  <em className="italic text-[var(--green)]">university applications</em>
+                </h1>
+                <p className="max-w-[480px] text-[17px] leading-[1.7] text-[var(--text-light)] max-[768px]:mx-auto">
+                  From choosing the right universities to preparing strong applications, we guide you through every step so nothing is missed. You stay in control. We support you throughout the journey.
+                </p>
+                <div className="mt-7 flex flex-wrap items-center gap-[18px] max-[768px]:justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setStep("basic")}
+                    className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
+                  >
+                    Start your application journey
+                    <ChevronRight />
+                  </button>
+                  <span className="text-xs text-[var(--text-hint)]">Takes around 5 minutes</span>
+                </div>
+              </div>
+
+              <div className="as-hero-visual max-[768px]:hidden">
+                <div className="as-hero-card">
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <div className="text-sm font-bold text-[var(--text)]">Your application journey</div>
+                    <div className="rounded-[var(--radius-pill)] bg-[var(--green-bg)] px-2.5 py-1 text-[10.5px] font-bold tracking-wide text-[var(--green)]">
+                      On track
+                    </div>
+                  </div>
+                  <div className="mb-[18px] text-xs text-[var(--text-light)]">
+                    A clear view of where you stand, every step of the way.
+                  </div>
+                  {HERO_TRACKER_ROWS.map((row) => (
+                    <div key={row.label} className="as-hr-row">
+                      <div className={`as-hr-check as-${row.kind}`}>
+                        {row.kind === "done" ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.4" aria-hidden>
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        ) : row.kind === "prog" ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c08a2d" strokeWidth="2.2" aria-hidden>
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 2" />
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="2" aria-hidden>
+                            <circle cx="12" cy="12" r="9" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1.5 text-[13px] font-semibold text-[var(--text)]">{row.label}</div>
+                        <div className="as-hr-bar">
+                          <span style={{ width: `${row.pct}%` }} />
+                        </div>
+                      </div>
+                      <div
+                        className={`shrink-0 whitespace-nowrap text-[10.5px] font-bold tracking-wide ${
+                          row.kind === "done"
+                            ? "text-[var(--green)]"
+                            : row.kind === "prog"
+                              ? "text-[#c08a2d]"
+                              : "text-[var(--text-hint)]"
+                        }`}
+                      >
+                        {row.stage}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <h1 className="relative z-[1] mx-auto font-bold mb-4 max-w-[600px] font-[family-name:var(--font-dm-serif)] text-[48px] leading-[1.1] text-[var(--text)] max-[768px]:text-[34px]">
-              End-to-end support for your{" "}
-              <em className="italic text-[var(--green)]">university applications</em>
-            </h1>
-            <p className="relative z-[1] mx-auto max-w-[540px] text-[17px] leading-relaxed text-[var(--text-light)]">
-              From choosing the right universities to preparing strong applications, we guide you through every step so nothing is missed. You stay in control. We support you throughout the journey.
-            </p>
-            <div className="relative z-[1] mt-7">
-              <button
-                type="button"
-                onClick={() => setStep("basic")}
-                className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
-              >
-                Start your application journey
-                <ChevronRight />
-              </button>
-            </div>
-            <p className="relative z-[1] mt-3 text-xs text-[var(--text-hint)]">Takes around 5 minutes</p>
           </section>
 
-          <div className="as-intro-section">
-            <div className="as-intro-eyebrow">What This Service Is</div>
-            <h2 className="as-intro-title font-[family-name:var(--font-dm-serif)]">
-              A complete support program — not a one-time consultation
-            </h2>
-            <p className="as-intro-copy">
-              We work with you throughout your application journey, from university strategy and essay development to document preparation, final checks, visa guidance, and post-acceptance support.
-            </p>
-          </div>
-
-          <div className="mx-auto max-w-[1100px] px-10 pb-10 pt-4 max-[768px]:px-5">
-            <div className="mb-3 text-left text-xs font-bold uppercase tracking-[1.5px] text-[var(--green)]">
+          <div className="as-value-section">
+            <div className="text-xs font-bold uppercase tracking-[1.5px] text-[var(--green)]">
               What&apos;s Included
             </div>
-            <h3 className="mb-2.5 text-left font-[family-name:var(--font-dm-serif)] text-4xl leading-tight text-[var(--text)] max-[768px]:text-center max-[768px]:text-[26px]">
+            <h2 className="mb-2.5 mt-3 font-[family-name:var(--font-dm-serif)] text-4xl leading-[1.15] text-[var(--text)] max-[768px]:text-center max-[768px]:text-[26px]">
               Everything you need. Nothing left to chance.
-            </h3>
-            <p className="mb-10 text-left text-[15px] text-[var(--text-light)] max-[768px]:text-center">
+            </h2>
+            <p className="mb-10 text-[15px] text-[var(--text-light)] max-[768px]:text-center">
               Every element of the application process is covered.
             </p>
             <div className="mb-10 grid grid-cols-3 gap-4 max-[768px]:grid-cols-1">
@@ -696,13 +569,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                   key={c.title}
                   className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white p-7 text-left transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
                 >
-                  <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${c.tint}`}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
-                      <circle cx="11" cy="11" r="7" />
-                      <path d="M21 21l-4.35-4.35" />
+                  <div className={`mb-[18px] flex h-11 w-11 items-center justify-center rounded-xl ${c.tint}`}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.stroke} strokeWidth="1.8" aria-hidden>
+                      {c.icon}
                     </svg>
                   </div>
-                  <h4 className="mb-2 text-base font-bold text-[var(--text)]">{c.title}</h4>
+                  <h3 className="mb-2 text-base font-bold text-[var(--text)]">{c.title}</h3>
                   <p className="text-[13.5px] leading-snug text-[var(--text-light)]">{c.desc}</p>
                 </div>
               ))}
@@ -718,14 +590,14 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
           </div>
 
           <div className="as-clarity-banner">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
+            <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-white shadow-[0_2px_8px_rgba(45,106,79,0.1)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                 <path d="M9 12l2 2 4-4" />
                 <circle cx="12" cy="12" r="10" />
               </svg>
             </div>
             <p className="as-clarity-text">
-              <strong>You submit your applications yourself.</strong> We guide and support you through every step — the final submit stays in your hands.
+              <strong className="font-bold">You submit your applications yourself.</strong> We guide and support you through every step — the final submit stays in your hands.
             </p>
           </div>
 
@@ -742,12 +614,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             </div>
           </div>
 
-          <div className="mx-auto max-w-[822px] rounded-2xl bg-white p-8 shadow-sm">
-            <div className="py-10 pb-16 text-center">
-              <p className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[28px] text-[var(--text)]">
+          <div className="as-cta-section">
+            <div className="as-cta-box">
+              <h3 className="mb-3 font-[family-name:var(--font-dm-serif)] text-[30px] leading-[1.2] text-[var(--text)] max-[768px]:text-2xl">
                 Ready to start your application journey?
-              </p>
-              <p className="mx-auto mb-6 max-w-[480px] text-sm leading-relaxed text-[var(--text-light)]">
+              </h3>
+              <p className="mx-auto mb-7 max-w-[480px] text-[14.5px] leading-[1.65] text-[var(--text-light)]">
                 Tell us where you stand today and we&apos;ll help you build a clear path forward.
               </p>
               <button
@@ -892,19 +764,39 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             </div>
 
             {sectionLabel("What do you want to study?")}
-            <input
-              value={fieldOfStudy}
-              onChange={(e) => setFieldOfStudy(e.target.value)}
-              list="vf-field-options"
-              placeholder="Start typing — e.g. Engineering, Business, Medicine"
-              className="mb-2 w-full rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
-            />
-            <datalist id="vf-field-options">
-              {VF_FIELD_OF_STUDY_SUGGESTIONS.map((f) => (
-                <option key={f} value={f} />
+            <p className="as-field-sub">Type a major and press Enter. Add as many as you like.</p>
+            <div
+              className="as-tag-input-wrap mb-2"
+              onClick={() => document.getElementById("as-major-input")?.focus()}
+              onKeyDown={() => {}}
+              role="presentation"
+            >
+              {majors.map((m, i) => (
+                <span key={m} className="as-tag-chip">
+                  {m}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${m}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeMajor(i);
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
               ))}
-            </datalist>
-            <p className="as-field-sub">
+              <input
+                id="as-major-input"
+                value={majorInput}
+                onChange={(e) => setMajorInput(e.target.value)}
+                onKeyDown={onMajorKeyDown}
+                placeholder="e.g. Computer Science"
+                className="as-tag-input"
+                autoComplete="off"
+              />
+            </div>
+            <p className="as-field-sub" style={{ marginTop: 8 }}>
               Not sure yet? That&apos;s completely fine — we&apos;ll help you narrow it down.
             </p>
 
@@ -914,7 +806,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 <button
                   key={t}
                   type="button"
-                  onClick={() => pickTiming(t)}
+                  onClick={() => setApplyTiming(t)}
                   className={`as-chip ${applyTiming === t ? "as-selected" : ""}`}
                 >
                   {t}
@@ -1016,16 +908,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               })}
             </div>
 
-            <div className="as-strategy-hint">
-              You&apos;ll only pay <strong>AED {ONBOARDING_DEPOSIT_AED}</strong> today for the onboarding session. If you continue with a package, this amount is deducted from your total package fee. Package pricing is confirmed after your onboarding session.
-            </div>
-
             <div className="as-included-compact">
               <div className="as-included-compact-title">Every package includes</div>
               <div className="as-included-compact-grid">
                 {VF_INCLUDED_COMPACT.map((line) => (
                   <div key={line} className="as-included-compact-item">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
                     {line}
@@ -1034,185 +922,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               </div>
             </div>
 
-            {formNav(() => setStep("direction"), () => setStep("universities"), !strategyValid)}
-          </div>
-        </div>
-      ) : null}
-
-      {step === "universities" ? (
-        <div className="mx-auto max-w-[760px] px-5 py-6">
-          <ProgressTracker step="universities" />
-          <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-8 py-9 max-[768px]:px-5">
-            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-2xl">Which universities are you considering?</h2>
-            <p className="mb-5 text-sm text-[var(--text-light)]">
-              Add universities if you have ideas, or let us help you build the list.
-            </p>
-
-            <div className="as-intent-row">
-              {(
-                [
-                  {
-                    k: "shortlist" as const,
-                    title: "I already have a shortlist",
-                    desc: "I know the universities I want to apply to",
-                  },
-                  {
-                    k: "ideas" as const,
-                    title: "I have some ideas",
-                    desc: "A few in mind, would like help refining",
-                  },
-                  {
-                    k: "help" as const,
-                    title: "I need help deciding",
-                    desc: "Start fresh and build a list together",
-                  },
-                ] as const
-              ).map(({ k, title, desc }) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setUniIntent(k)}
-                  className={`as-intent-card ${uniIntent === k ? "as-selected" : ""}`}
-                >
-                  <div className="as-intent-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
-                      <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                    </svg>
-                  </div>
-                  <div className="as-intent-title">{title}</div>
-                  <div className="as-intent-desc">{desc}</div>
-                </button>
-              ))}
-            </div>
-
-            {showUniInputs ? (
-              <>
-                <p className="mb-4 text-[13.5px] text-[var(--text-light)]">
-                  Add universities you&apos;re considering. You can add up to{" "}
-                  <span className="font-semibold text-[var(--text)]">{selectedPack ?? 10}</span>.
-                </p>
-                <div className="mb-5 flex flex-col gap-2">
-                  {uniSlots.map((val, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11px] font-bold text-[var(--green)]">
-                        {i + 1}
-                      </div>
-                      <div className={`relative flex min-w-0 flex-1 items-center ${val.trim() ? "has-value" : ""}`}>
-                        <input
-                          value={val}
-                          onChange={(e) => setUniAt(i, e.target.value)}
-                          placeholder="Enter university name"
-                          className={`as-uni-input w-full rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-2.5 text-[13px] outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)] ${val.trim() ? "as-filled bg-[var(--green-pale)] font-medium text-[var(--green-dark)]" : ""}`}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="popular-section border-t border-[var(--border-light)] pt-[18px]">
-                  <div className="popular-label mb-2.5 text-xs font-semibold text-[var(--text-mid)]">
-                    Popular picks for students like you
-                  </div>
-                  <div className="popular-list flex max-h-[220px] flex-col gap-1.5 overflow-y-auto pr-1.5">
-                    {POPULAR_UNIVERSITIES.map((u) => (
-                      <div
-                        key={u.name}
-                        className="popular-item flex items-center gap-3 rounded-[var(--radius)] border border-[var(--border-light)] bg-white px-3 py-2.5 transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
-                      >
-                        <div className="popular-flag flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--sand)] text-[10px] font-bold text-[var(--text-mid)]">
-                          {u.code}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="popular-name text-[13px] font-semibold text-[var(--text)]">{u.name}</div>
-                          <div className="popular-loc text-[11px] text-[var(--text-hint)]">{u.loc}</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => addPopularUni(u)}
-                          className="popular-add shrink-0 cursor-pointer rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-3.5 py-1.5 text-[11px] font-semibold text-[var(--text-mid)] hover:border-[var(--green)] hover:bg-[var(--green-pale)] hover:text-[var(--green)]"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="as-clarity-banner mt-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
-                    <path d="M9 12l2 2 4-4" />
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                </div>
-                <p className="as-clarity-text">
-                  No problem — we&apos;ll help you build a balanced university list during your onboarding.
-                </p>
-              </div>
-            )}
-
-            <label className="mb-2 mt-6 block border-t border-[var(--border-light)] pt-5">
-              <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">Anything we should know?</span>
-              <textarea
-                value={uniNotes}
-                onChange={(e) => setUniNotes(e.target.value)}
-                placeholder="Any preferences, priorities, or special context to share..."
-                rows={4}
-                className="w-full resize-y rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
-              />
-            </label>
-
-            {formNav(() => setStep("strategy"), () => setStep("documents"))}
-          </div>
-        </div>
-      ) : null}
-
-      {step === "documents" ? (
-        <div className="mx-auto max-w-[760px] px-5 py-6">
-          <ProgressTracker step="documents" />
-          <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-8 py-9 max-[768px]:px-5">
-            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-2xl">Upload anything you already have</h2>
-            <p className="mb-6 text-sm text-[var(--text-light)]">
-              Don&apos;t worry if something is missing — we&apos;ll help you prepare it.
-            </p>
-
-            {docRow(
-              "transcript",
-              <>
-                Transcript / grades{" "}
-                <span className="text-[11px] font-normal text-[var(--text-hint)]">Upload your latest grades if you have them</span>
-              </>,
-              "Not uploaded yet",
-              false,
-            )}
-            {docRow(
-              "ps",
-              <>Personal statement / essay draft</>,
-              "If you've started a draft, upload it. If not, we'll help you brainstorm.",
-              true,
-            )}
-            {docRow("cv", <>CV / resume</>, "We can help you improve or create one.", true)}
-            {docRow(
-              "english",
-              <>English test results</>,
-              "Upload IELTS, TOEFL, or SAT results if available.",
-              true,
-            )}
-
-            <div className="final-info-box mt-5 flex items-center gap-3 rounded-xl bg-[var(--green-pale)] px-[18px] py-3.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
-                  <path d="M9 12l2 2 4-4" />
-                  <circle cx="12" cy="12" r="10" />
-                </svg>
-              </div>
-              <p className="text-[13px] font-medium leading-snug text-[var(--green-dark)]">
-                Missing documents will not stop you from booking your onboarding session.
-              </p>
-            </div>
-
-            {formNav(() => setStep("universities"), () => setStep("summary"))}
+            {formNav(() => setStep("direction"), () => setStep("summary"), !strategyValid)}
           </div>
         </div>
       ) : null}
@@ -1233,12 +943,10 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             <div className="as-snapshot-eyebrow">Your plan so far</div>
 
             <div className="as-summary-grid">
-              <div
-                className={`as-summary-block as-full-row hero-block ${selectedPack ? "as-filled" : "as-empty"}`}
-              >
+              <div className={`as-summary-block as-full-row hero-block ${selectedPack ? "as-filled" : "as-empty"}`}>
                 <div className="mb-2.5 flex items-center gap-2.5">
-                  <div className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-[var(--sand)]">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
+                  <div className="as-summary-block-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8" aria-hidden>
                       <circle cx="12" cy="12" r="10" />
                       <circle cx="12" cy="12" r="6" />
                       <circle cx="12" cy="12" r="2" />
@@ -1249,8 +957,8 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 <div className="as-summary-block-value">
                   {selectedPack ? `${selectedPack} universities` : "Not selected yet"}
                 </div>
-                <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[var(--text-light)]">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <p className="as-summary-block-sub">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 16v-4M12 8h.01" />
                   </svg>
@@ -1260,6 +968,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
               <div className={`as-summary-block ${snapDest.empty ? "as-empty" : "as-filled"}`}>
                 <div className="mb-2.5 flex items-center gap-2.5">
+                  <div className="as-summary-block-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8" aria-hidden>
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </div>
                   <span className="as-summary-block-label">Where you want to study</span>
                 </div>
                 <div className="as-summary-block-value">{snapDest.text}</div>
@@ -1267,88 +981,29 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
               <div className={`as-summary-block ${snapField.empty ? "as-empty" : "as-filled"}`}>
                 <div className="mb-2.5 flex items-center gap-2.5">
+                  <div className="as-summary-block-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8" aria-hidden>
+                      <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+                    </svg>
+                  </div>
                   <span className="as-summary-block-label">What you want to study</span>
                 </div>
                 <div className="as-summary-block-value">{snapField.text}</div>
               </div>
 
-              <div className={`as-summary-block ${snapUnis.empty ? "as-empty" : "as-filled"}`}>
-                <div className="mb-2.5 flex items-center gap-2.5">
-                  <span className="as-summary-block-label">Your shortlist</span>
-                </div>
-                <div className="as-summary-block-value">{snapUnis.text}</div>
-              </div>
-
-              <div className={`as-summary-block ${snapDocs.empty ? "as-empty" : "as-filled"}`}>
-                <div className="mb-2.5 flex items-center gap-2.5">
-                  <span className="as-summary-block-label">Your current materials</span>
-                </div>
-                <div className="as-summary-block-value">{snapDocs.text}</div>
-              </div>
-
               <div className={`as-summary-block as-full-row ${snapTiming.empty ? "as-empty" : "as-filled"}`}>
                 <div className="mb-2.5 flex items-center gap-2.5">
+                  <div className="as-summary-block-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8" aria-hidden>
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 6v6l4 2" />
+                    </svg>
+                  </div>
                   <span className="as-summary-block-label">Your timeline</span>
                 </div>
                 <div className="as-summary-block-value">{snapTiming.text}</div>
               </div>
-            </div>
-
-            <div className="as-happens-section">
-              <div className="mb-2 flex items-start gap-3">
-                <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-[var(--green-bg)]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v6l4 2" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="as-happens-title font-[family-name:var(--font-dm-serif)]">
-                    What happens in your onboarding session
-                  </h3>
-                </div>
-              </div>
-              <p className="as-happens-sub">A focused, one-on-one working session with your advisor.</p>
-              <div className="as-happens-list">
-                {[
-                  "We refine your university list based on your profile",
-                  "We build a clear strategy — reach, target, and safe schools",
-                  "We review your current documents and identify gaps",
-                  "We guide you on essays, CV, and positioning",
-                  "We map deadlines and next steps for each university",
-                  "We answer every question and remove uncertainty",
-                ].map((line) => (
-                  <div key={line} className="as-happens-item">
-                    <div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)]">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="3">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    </div>
-                    <span>{line}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-2 rounded-r-[10px] border-l-[3px] border-[var(--green)] bg-[var(--green-pale)] py-3.5 pl-[18px] pr-[18px] text-[13px] font-medium leading-snug text-[var(--green-dark)]">
-                <strong>This is not a one-time call.</strong> It&apos;s the starting point of ongoing support throughout your application journey.
-              </div>
-            </div>
-
-            <div className="as-comfort-section">
-              {[
-                "Plan not complete? That's exactly what we help with.",
-                "You don't need everything ready before starting.",
-                "We'll guide you step by step — every step.",
-              ].map((t) => (
-                <div key={t} className="flex items-start gap-2.5">
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
-                      <path d="M9 12l2 2 4-4" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                  </div>
-                  <p className="text-[12.5px] font-medium leading-snug text-[var(--text-mid)]">{t}</p>
-                </div>
-              ))}
             </div>
 
             <div className="as-advisor-await">
@@ -1370,23 +1025,17 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                   );
                 })}
               </div>
-              <div className="relative z-[1] min-w-0 flex-1">
+              <div className="relative z-[1] min-w-0 flex-1 max-[768px]:text-center">
                 <div className="mb-1 text-[10.5px] font-bold uppercase tracking-wide text-[var(--green)]">
                   Your advisor is ready
                 </div>
                 <p className="text-[14.5px] font-semibold leading-snug text-[var(--green-dark)]">
-                  A real person who has helped students just like you get into top universities.
+                  A real person who has helped students just like you get into top universities. In your onboarding session, we&apos;ll refine your list, build your strategy, and map every deadline.
                 </p>
               </div>
             </div>
 
-            <div className="chapter-divider my-8 flex items-center justify-center gap-2.5 px-5">
-              <span className="h-px flex-1 max-w-[100px] bg-[var(--border-light)]" />
-              <span className="h-1 w-1 rounded-full bg-[var(--green-light)]" />
-              <span className="h-px flex-1 max-w-[100px] bg-[var(--border-light)]" />
-            </div>
-
-            <div className="as-cta-block pb-2 text-center">
+            <div className="pb-2 pt-3 text-center">
               <span className="mb-3.5 inline-block text-[11px] font-bold uppercase tracking-[1.6px] text-[var(--green)]">
                 Ready when you are
               </span>
@@ -1401,21 +1050,21 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               <button
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => void goFromSummaryToBooking()}
+                onClick={() => void goFromSummaryToPay()}
                 className="as-btn-cta-hero mx-auto disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Saving…" : "Choose your session time"}
                 <ChevronRight />
               </button>
-              <p className="cta-subtext mx-auto mt-3.5 max-w-[440px] text-[12.5px] leading-snug text-[var(--text-light)]">
-                You&apos;ll pick your time and confirm an AED {ONBOARDING_DEPOSIT_AED} deposit in one step — fully deducted from your package if you continue.
+              <p className="mx-auto mt-3.5 max-w-[440px] text-[12.5px] leading-snug text-[var(--text-light)]">
+                Pick a time that works for you and meet your dedicated advisor — we&apos;ll map out your full plan together.
               </p>
             </div>
 
             <div className="mt-6 flex justify-start border-t border-[var(--border-light)] pt-5">
               <button
                 type="button"
-                onClick={() => setStep("documents")}
+                onClick={() => setStep("strategy")}
                 className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)]"
               >
                 Back
@@ -1425,15 +1074,15 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
         </div>
       ) : null}
 
-      {step === "booking" ? (
+      {step === "pay" ? (
         <div className="mx-auto max-w-[1000px] px-5 py-6">
-          <ProgressTracker step="booking" />
+          <ProgressTracker step="pay" />
           <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white p-10 max-[768px]:p-6">
             <div className="as-pay-layout">
               <div className="min-w-0">
                 <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-2xl">Ready to book your onboarding session</h2>
                 <p className="mb-6 text-sm text-[var(--text-light)]">
-                  Choose a time that works for you. Your AED {ONBOARDING_DEPOSIT_AED} deposit secures the session and is fully deducted from your package if you continue.
+                  Choose a time that works for you and meet your dedicated advisor to map out your full application plan.
                 </p>
                 <div className="mb-3 text-[15px] font-bold text-[var(--text)]">What your onboarding includes</div>
                 <ul className="flex flex-col gap-3">
@@ -1445,7 +1094,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                   ].map((line) => (
                     <li key={line} className="flex items-start gap-3 text-[13.5px] leading-snug text-[var(--text-mid)]">
                       <span className="mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)]">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="3">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="3" aria-hidden>
                           <path d="M20 6L9 17l-5-5" />
                         </svg>
                       </span>
@@ -1455,12 +1104,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 </ul>
                 <div className="final-info-box mt-6 flex items-center gap-3 rounded-xl bg-[var(--green-pale)] px-[18px] py-3.5">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                       <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
                     </svg>
                   </div>
                   <p className="text-[13px] font-medium leading-snug text-[var(--green-dark)]">
-                    You&apos;re not paying the full package today. You&apos;ll confirm your final package after your onboarding session.
+                    There&apos;s no commitment today. You&apos;ll discuss your plan and next steps with your advisor during the session.
                   </p>
                 </div>
               </div>
@@ -1468,7 +1117,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               <div className="min-w-0">
                 <div className="as-pay-summary">
                   <div className="mb-[18px] text-[15px] font-bold text-[var(--text)]">Session details</div>
-                  <div className="flex items-center justify-between border-b border-transparent py-2 text-[13px]">
+                  <div className="flex items-center justify-between py-2 text-[13px]">
                     <span className="text-[var(--text-light)]">Onboarding session</span>
                     <span className="font-semibold text-[var(--text)]">45 minutes</span>
                   </div>
@@ -1479,33 +1128,23 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-2 text-[13px]">
-                    <span className="text-[var(--text-light)]">Deposit</span>
-                    <span className="font-semibold text-[var(--text)]">AED {ONBOARDING_DEPOSIT_AED}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 text-[13px]">
-                    <span className="text-[var(--text-light)]">Package fee</span>
-                    <span className="rounded-[var(--radius-pill)] bg-[var(--sand)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-light)]">
-                      Discussed at onboarding
-                    </span>
+                    <span className="text-[var(--text-light)]">Format</span>
+                    <span className="font-semibold text-[var(--text)]">One-on-one with your advisor</span>
                   </div>
                   <div className="my-3 h-px bg-[var(--border-light)]" />
-                  <div className="mb-[18px] flex items-center justify-between">
-                    <span className="text-[15px] font-bold text-[var(--text)]">Due at booking</span>
-                    <span className="text-base font-bold text-[var(--green)]">AED {ONBOARDING_DEPOSIT_AED}</span>
-                  </div>
                   <button
                     type="button"
-                    onClick={() => setStep("schedule")}
+                    onClick={() => setStep("done")}
                     className="mb-3.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)]"
                   >
-                    Choose your time slot
+                    Book your session
                     <ChevronRight />
                   </button>
                   <div className="flex items-start gap-2 rounded-[10px] bg-[var(--green-pale)] px-3.5 py-3 text-[11.5px] leading-snug text-[var(--green-dark)]">
-                    <svg width="14" height="14" className="mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
+                    <svg width="14" height="14" className="mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     </svg>
-                    <span>You&apos;ll pick your time and confirm your deposit on the next step — handled securely.</span>
+                    <span>Pick your time on the next step — you&apos;ll get a calendar invite and confirmation by email.</span>
                   </div>
                 </div>
               </div>
@@ -1524,12 +1163,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
         </div>
       ) : null}
 
-      {step === "schedule" ? (
+      {step === "done" ? (
         <>
           <div className="mx-auto max-w-[1000px] px-5 py-6">
             <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-9 py-10 text-center max-[768px]:px-6">
               <div className="mx-auto mb-5 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--green-bg)]">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                   <rect x="3" y="4" width="18" height="18" rx="2" />
                   <path d="M16 2v4M8 2v4M3 10h18" />
                 </svg>
@@ -1538,7 +1177,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 Pick your onboarding time
               </h2>
               <p className="mx-auto max-w-[420px] text-sm leading-relaxed text-[var(--text-light)]">
-                Choose a slot that works for you below. Your AED {ONBOARDING_DEPOSIT_AED} deposit is confirmed as part of booking — fully deducted from your package if you continue.
+                Choose a slot that works for you below. You&apos;ll get a calendar invite and confirmation email within minutes.
               </p>
             </div>
           </div>
@@ -1586,7 +1225,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setStep("booking")}
+                  onClick={() => setStep("pay")}
                   className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-3 text-sm font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)]"
                 >
                   Back
