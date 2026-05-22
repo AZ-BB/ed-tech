@@ -9,6 +9,7 @@ import {
   buildNavHrefWithStudentQ,
   SchoolNavSearch,
 } from "./school-nav-search";
+import { SchoolNotificationsButton } from "./school-notifications-button";
 
 const fontSans =
   '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
@@ -509,29 +510,7 @@ export function SchoolPortalShell({
             <Suspense fallback={null}>
               <SchoolNavSearch />
             </Suspense>
-            <button
-              type="button"
-              title="Notifications"
-              className="relative flex cursor-pointer items-center justify-center rounded-[8px] border-[1.5px] border-[#e0deda] bg-[#faf9f4] p-[9px] text-[#4a4a4a] transition-all duration-[150ms] hover:border-[#40916C] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]"
-              aria-label="Notifications"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                aria-hidden
-              >
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 01-3.46 0" />
-              </svg>
-              <span
-                className="absolute right-[7px] top-[7px] h-[6px] w-[6px] rounded-full bg-[#E74C3C]"
-                aria-hidden
-              />
-            </button>
+            <SchoolNotificationsButton />
             <Link
               href={SCHOOL_HOME}
               className="flex max-w-[200px] items-center gap-[6px] rounded-[20px] bg-[#E8F5EE] px-[14px] py-[7px] text-[12.5px] font-semibold text-[#1B4332] transition-colors duration-[150ms] hover:bg-[#d4ede0] min-[761px]:max-w-none"

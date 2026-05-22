@@ -1213,6 +1213,93 @@ export type Database = {
           },
         ]
       }
+      school_admin_notification_reads: {
+        Row: {
+          admin_id: string
+          notification_id: string
+          read_at: string
+        }
+        Insert: {
+          admin_id: string
+          notification_id: string
+          read_at?: string
+        }
+        Update: {
+          admin_id?: string
+          notification_id?: string
+          read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_admin_notification_reads_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_admin_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_admin_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          event_type: string
+          id: string
+          link_path: string | null
+          school_id: string
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          link_path?: string | null
+          school_id: string
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          link_path?: string | null
+          school_id?: string
+          source_id?: string
+          source_table?: string
+          student_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_admin_notifications_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_admin_notifications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_admin_profiles: {
         Row: {
           created_at: string | null
@@ -2371,6 +2458,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_school_admin_notification: {
+        Args: {
+          p_body?: string
+          p_event_type: string
+          p_source_id?: string
+          p_source_table?: string
+          p_student_id: string
+        }
+        Returns: undefined
+      }
       current_school_admin_school_id: { Args: never; Returns: string }
       rpc_scholarships_discovery_page: {
         Args: {
