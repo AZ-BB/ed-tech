@@ -2,11 +2,15 @@
 
 import { updateSchoolDefaultCreditLimitsAction } from "@/actions/school-credits";
 import type { StudentAllocationRow } from "@/app/(protected)/school/settings/_lib/build-student-allocations";
+import {
+  creditLimitExceedsPoolMessage,
+  schoolAvailableCreditPool,
+} from "@/lib/school-credit-pool";
 import { isStudentCreditLimitExhausted } from "@/lib/student-credit-limit";
 import type { GeneralResponse } from "@/utils/response";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
 export type SchoolCreditsSummary = {
   usedThisYear: number;
@@ -123,6 +127,7 @@ export function SchoolSettingsCreditsPanel({
 }: SchoolSettingsCreditsPanelProps) {
   const router = useRouter();
   const [limitsOpen, setLimitsOpen] = useState(false);
+  const [limitsClientError, setLimitsClientError] = useState<string | null>(null);
   const [historyTab, setHistoryTab] = useState<
     "recharge" | "usage" | "allocations"
   >("recharge");
@@ -137,6 +142,7 @@ export function SchoolSettingsCreditsPanel({
     const done = limitsPrevPending.current && !limitsPending;
     if (done && limitsState && limitsState.error === null) {
       onShowToast("Default credit limits saved.");
+      setLimitsClientError(null);
       setLimitsOpen(false);
       router.refresh();
     }
@@ -145,6 +151,31 @@ export function SchoolSettingsCreditsPanel({
 
   const amb = credits.defaultAmbassadorLimit;
   const adv = credits.defaultAdvisorLimit;
+  const availableCreditPool = useMemo(
+    () => schoolAvailableCreditPool(credits.creditPool, credits.extraCredits),
+    [credits.creditPool, credits.extraCredits],
+  );
+
+  function handleLimitsSubmit(e: React.FormEvent<HTMLFormElement>) {
+    setLimitsClientError(null);
+    const fd = new FormData(e.currentTarget);
+
+    for (const [field, label] of [
+      ["default_ambassador_credit_limit", "Ambassador credit limit"],
+      ["default_advisor_credit_limit", "Advisor credit limit"],
+    ] as const) {
+      const raw = String(fd.get(field) ?? "").trim();
+      if (raw === "") continue;
+      const n = Number(raw);
+      if (!Number.isInteger(n) || n < 0) continue;
+      const poolMsg = creditLimitExceedsPoolMessage(n, availableCreditPool, label);
+      if (poolMsg) {
+        e.preventDefault();
+        setLimitsClientError(poolMsg);
+        return;
+      }
+    }
+  }
 
   return (
     <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white">
@@ -200,7 +231,10 @@ export function SchoolSettingsCreditsPanel({
               <button
                 type="button"
                 className={`${btnSecondaryClass()} shrink-0 !px-2.5 !py-1 text-[11.5px]`}
-                onClick={() => setLimitsOpen(true)}
+                onClick={() => {
+                  setLimitsClientError(null);
+                  setLimitsOpen(true);
+                }}
               >
                 Edit
               </button>
@@ -477,7 +511,7 @@ export function SchoolSettingsCreditsPanel({
                 </svg>
               </button>
             </div>
-            <form action={limitsAction}>
+            <form action={limitsAction} onSubmit={handleLimitsSubmit}>
               <div className="flex flex-col gap-3.5 px-[22px] py-[18px]">
                 <div>
                   <label className={labelClass()} htmlFor="lim-amb">
@@ -489,6 +523,7 @@ export function SchoolSettingsCreditsPanel({
                     className={fieldClass()}
                     type="number"
                     min={0}
+                    max={availableCreditPool ?? undefined}
                     step={1}
                     defaultValue={amb ?? ""}
                     placeholder="Empty = none"
@@ -504,6 +539,7 @@ export function SchoolSettingsCreditsPanel({
                     className={fieldClass()}
                     type="number"
                     min={0}
+                    max={availableCreditPool ?? undefined}
                     step={1}
                     defaultValue={adv ?? ""}
                     placeholder="Empty = none"
@@ -511,10 +547,15 @@ export function SchoolSettingsCreditsPanel({
                 </div>
                 <p className="text-[11.5px] leading-relaxed text-[var(--text-hint)]">
                   Leave blank to clear the school default (students fall back to product rules). Use
-                  whole numbers ≥ 0.
+                  whole numbers ≥ 0
+                  {availableCreditPool != null
+                    ? `, up to ${availableCreditPool.toLocaleString()} (available credit pool).`
+                    : "."}
                 </p>
-                {limitsState?.error ? (
-                  <p className="text-[12px] font-medium text-[#E74C3C]">{limitsState.error}</p>
+                {limitsClientError || limitsState?.error ? (
+                  <p className="text-[12px] font-medium text-[#E74C3C]">
+                    {limitsClientError ?? limitsState?.error}
+                  </p>
                 ) : null}
               </div>
               <div className="flex justify-end gap-2 border-t border-[var(--border-light)] bg-[#faf9f4] px-[22px] py-3.5">

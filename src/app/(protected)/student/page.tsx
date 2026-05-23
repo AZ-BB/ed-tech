@@ -5,7 +5,6 @@ import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
 import type {
   DashboardActivityLogItem,
   DashboardAnnouncementItem,
-  DashboardTaskItem,
 } from "./_data/student-dashboard-data";
 import { StudentDashboard } from "./_components/student-dashboard";
 
@@ -22,7 +21,7 @@ export default async function StudentPage() {
     { data: recentActivities },
     { data: announcements },
     { data: studentProgress },
-    { data: tasksRaw, error: tasksError },
+    { count: openTaskCount },
   ] = await Promise.all([
     supabase
       .from("acitivity_logs")
@@ -33,7 +32,7 @@ export default async function StudentPage() {
       .from("announcements")
       .select("id, title, created_at")
       .order("created_at", { ascending: false })
-      .limit(10),
+      .limit(4),
     supabase
       .from("student_profiles")
       .select("first_name, last_name, platform_completion, total_logins")
@@ -41,19 +40,10 @@ export default async function StudentPage() {
       .single(),
     secret
       .from("student_my_application_tasks")
-      .select(
-        "id, title, notes, priority, due_date, completed, assigned_by_name, created_at",
-      )
+      .select("id", { count: "exact", head: true })
       .eq("student_id", auth.studentId)
-      .order("completed", { ascending: true })
-      .order("due_date", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false })
-      .limit(20),
+      .eq("completed", false),
   ]);
-
-  if (tasksError) {
-    console.error("[StudentPage] student_my_application_tasks", tasksError);
-  }
 
   const platformStats = getPlatformCompletionStats(
     studentProgress?.platform_completion ?? null,
@@ -75,17 +65,6 @@ export default async function StudentPage() {
     createdAt: row.created_at ?? null,
   }));
 
-  const dashboardTasks: DashboardTaskItem[] = (tasksRaw ?? []).map((row) => ({
-    id: row.id,
-    title: row.title?.trim() || "Task",
-    notes: row.notes?.trim() ?? null,
-    dueDate: row.due_date ?? null,
-    priority: (row.priority ?? "medium").toLowerCase(),
-    completed: Boolean(row.completed),
-    assignedByName: row.assigned_by_name?.trim() ?? null,
-    createdAt: row.created_at ?? "",
-  }));
-
   return (
     <StudentDashboard
       welcomeFirstName={welcomeFirstName}
@@ -95,7 +74,7 @@ export default async function StudentPage() {
       totalLogins={studentProgress?.total_logins ?? 0}
       announcementItems={announcementItems}
       activityLogItems={activityLogItems}
-      dashboardTasks={dashboardTasks}
+      openTaskCount={openTaskCount ?? 0}
     />
   );
 }

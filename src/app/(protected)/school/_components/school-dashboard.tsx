@@ -40,9 +40,8 @@ export function SchoolDashboard({ data }: Props) {
       </div>
 
       <SchoolDashboardKpiGrid
-        seatsAvailable={data.seatsAvailable}
+        studentsLimit={data.studentsLimit}
         signedUpCount={data.signedUpCount}
-        pendingInvitesCount={data.pendingInvitesCount}
         activeStudentsMonth={data.activeStudentsMonth}
         advisorSessionsCount={data.advisorSessionsCount}
         studentsUsingAppSupportCount={data.studentsUsingAppSupportCount}

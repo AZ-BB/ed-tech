@@ -5,6 +5,7 @@ import { sortApplicationDocumentsBySlotOrder } from "@/lib/ensure-student-applic
 import { COUNTRIES } from "@/lib/countries";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
@@ -276,7 +277,9 @@ export function MyApplicationsClient({
   initial: MyApplicationsInitialPayload;
 }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [tab, setTab] = useState<TabId>("profile");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "tasks" ? "tasks" : "profile";
+  const [tab, setTab] = useState<TabId>(initialTab);
   const [toast, setToast] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState(initial.profile.first_name);

@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import {
+  creditLimitExceedsPoolMessage,
+  schoolAvailableCreditPool,
+} from "@/lib/school-credit-pool";
 import type { GeneralResponse } from "@/utils/response";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
@@ -34,6 +38,39 @@ export async function updateSchoolDefaultCreditLimitsAction(
   if (!adv.ok) return { data: null, error: adv.error };
 
   const supabase = await createSupabaseServerClient();
+  const { data: school, error: schoolError } = await supabase
+    .from("schools")
+    .select("credit_pool, extra_credits")
+    .eq("id", ctx.schoolId)
+    .maybeSingle();
+
+  if (schoolError) {
+    console.error("[school-credits] school pool", schoolError);
+    return { data: null, error: "Could not verify the school credit pool." };
+  }
+
+  const availablePool = schoolAvailableCreditPool(
+    school?.credit_pool,
+    school?.extra_credits,
+  );
+
+  if (amb.value != null) {
+    const poolMsg = creditLimitExceedsPoolMessage(
+      amb.value,
+      availablePool,
+      "Ambassador credit limit",
+    );
+    if (poolMsg) return { data: null, error: poolMsg };
+  }
+
+  if (adv.value != null) {
+    const poolMsg = creditLimitExceedsPoolMessage(
+      adv.value,
+      availablePool,
+      "Advisor credit limit",
+    );
+    if (poolMsg) return { data: null, error: poolMsg };
+  }
   const { error } = await supabase
     .from("schools")
     .update({

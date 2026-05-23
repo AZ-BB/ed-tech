@@ -14,7 +14,9 @@
     "db:seed:scholarships:csv": "node scripts/seed-scholarships-from-csv.mjs",
     "db:seed:scholarships:xlsx": "node scripts/seed-scholarship-discovery-from-xlsx.mjs",
     "db:seed:scholarships:xlsx:all": "node scripts/seed-scholarship-discovery-from-xlsx.mjs --all",
-    "scholarships:export-csv": "node scripts/scholarships-json-to-standard-csv.mjs"
+    "scholarships:export-csv": "node scripts/scholarships-json-to-standard-csv.mjs",
+    "db:migrate:university-logos": "node scripts/migrate-university-logos.mjs",
+    "db:migrate:university-logos:dry-run": "node scripts/migrate-university-logos.mjs --dry-run"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

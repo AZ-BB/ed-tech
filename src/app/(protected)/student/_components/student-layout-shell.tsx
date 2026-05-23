@@ -307,7 +307,7 @@ export function StudentLayoutShell({
 
   return (
     <div className="min-h-screen bg-[var(--sand)]">
-      <div className="mx-auto w-full px-32 pt-6 pb-16">
+      <div className="mx-auto w-full px-6 md:px-10 lg:px-16 pt-6 pb-16">
         {hideTopNav ? null : (
           <header className="mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5">
             <div className="flex items-center gap-3">

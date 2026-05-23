@@ -116,6 +116,34 @@ export function ScholarshipDiscovery({
     navigate({ favourites: next ? "1" : undefined }, true);
   };
 
+  const hasActiveFilters =
+    optimisticFilters.nat !== "any" ||
+    optimisticFilters.dest !== "any" ||
+    optimisticFilters.cov !== "any" ||
+    optimisticFilters.q.trim().length > 0 ||
+    optimisticFilters.favouritesOnly;
+
+  const onClearFilters = () => {
+    setOptimisticFilters((prev) => ({
+      ...prev,
+      q: "",
+      nat: "any",
+      dest: "any",
+      cov: "any",
+      favouritesOnly: false,
+    }));
+    navigate(
+      {
+        nat: undefined,
+        dest: undefined,
+        cov: undefined,
+        q: undefined,
+        favourites: undefined,
+      },
+      true,
+    );
+  };
+
   const goToGovPage = useCallback(
     (p: number) => navigate({ gPage: String(p) }, false),
     [navigate],
@@ -282,11 +310,13 @@ export function ScholarshipDiscovery({
         destination={optimisticFilters.dest}
         coverage={optimisticFilters.cov}
         favouritesOnly={optimisticFilters.favouritesOnly}
+        hasActiveFilters={hasActiveFilters}
         onNationalityChange={onNationalityChange}
         onDestinationChange={onDestinationChange}
         onCoverageChange={onCoverageChange}
         onFavouritesToggle={onFavouritesToggle}
         onSearchSubmit={onSearchSubmit}
+        onClearFilters={onClearFilters}
       />
 
       {noResults ? (
