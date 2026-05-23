@@ -135,11 +135,13 @@ type Props = {
   destination: string;
   coverage: string;
   favouritesOnly: boolean;
+  hasActiveFilters: boolean;
   onNationalityChange: (v: string) => void;
   onDestinationChange: (v: string) => void;
   onCoverageChange: (v: string) => void;
   onFavouritesToggle: () => void;
   onSearchSubmit: (q: string) => void;
+  onClearFilters: () => void;
 };
 
 export function ScholarshipSelectorBar({
@@ -148,11 +150,13 @@ export function ScholarshipSelectorBar({
   destination,
   coverage,
   favouritesOnly,
+  hasActiveFilters,
   onNationalityChange,
   onDestinationChange,
   onCoverageChange,
   onFavouritesToggle,
   onSearchSubmit,
+  onClearFilters,
 }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -168,7 +172,8 @@ export function ScholarshipSelectorBar({
 
   return (
     <div className="mb-5 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-[18px] text-[14px] text-[var(--text-mid)] max-[700px]:items-stretch">
-      <div className="flex flex-wrap items-center gap-2.5 max-[700px]:flex-col max-[700px]:items-stretch">
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-2.5 max-[700px]:flex-col max-[700px]:items-stretch">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2.5 max-[700px]:w-full max-[700px]:flex-col max-[700px]:items-stretch">
         <span>I am a</span>
         <div className="relative inline-block">
           <select
@@ -241,6 +246,27 @@ export function ScholarshipSelectorBar({
           </select>
           <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
+        </div>
+        {hasActiveFilters ? (
+          <button
+            type="button"
+            className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-[50px] px-3 py-1.5 text-[11px] font-medium text-[var(--text-hint)] transition hover:bg-[var(--green-pale)] hover:text-[var(--green)] max-[700px]:ml-0 max-[700px]:self-end"
+            onClick={onClearFilters}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+            Clear filters
+          </button>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-end gap-2 border-t border-[var(--border-light)] pt-3 max-[700px]:flex-col">
         <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-[12px] font-medium text-[var(--text-light)]">

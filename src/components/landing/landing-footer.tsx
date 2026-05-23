@@ -20,9 +20,6 @@ export function LandingFooter() {
             <li>
               <Link href="/for-advisors">For Advisors</Link>
             </li>
-            <li>
-              <Link href="/signup">Ambassadors</Link>
-            </li>
           </ul>
         </div>
         <div className="footer-col">
@@ -53,7 +50,6 @@ export function LandingFooter() {
       </div>
       <div className="footer-bottom">
         <div>© 2026 Univeera. All rights reserved.</div>
-        <div>Based in Bahrain · Serving MENA</div>
       </div>
     </footer>
   );

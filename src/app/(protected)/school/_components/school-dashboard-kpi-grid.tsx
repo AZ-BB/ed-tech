@@ -127,9 +127,8 @@ type KpiCard = {
 };
 
 export type SchoolDashboardKpiGridProps = {
-  seatsAvailable: number | null;
+  studentsLimit: number | null;
   signedUpCount: number;
-  pendingInvitesCount: number;
   activeStudentsMonth: number;
   advisorSessionsCount: number;
   studentsUsingAppSupportCount: number;
@@ -138,9 +137,8 @@ export type SchoolDashboardKpiGridProps = {
 };
 
 export function SchoolDashboardKpiGrid({
-  seatsAvailable,
+  studentsLimit,
   signedUpCount,
-  pendingInvitesCount,
   activeStudentsMonth,
   advisorSessionsCount,
   studentsUsingAppSupportCount,
@@ -149,15 +147,13 @@ export function SchoolDashboardKpiGrid({
 }: SchoolDashboardKpiGridProps) {
   const [shortlistModalOpen, setShortlistModalOpen] = useState(false);
 
-  const enrollmentTotal = signedUpCount + pendingInvitesCount;
-
   const kpis: KpiCard[] = [
     {
       key: "seats",
       label: "Seats available",
-      value: seatsAvailable ?? "—",
+      value: studentsLimit ?? "—",
       sub: null,
-      helper: "remaining on your school plan",
+      helper: "student limit on your school plan",
       icon: kpiIconSvgs.seats,
       tint: "bg-[rgba(82,183,135,0.13)] text-[#1B4332]",
     },
@@ -165,8 +161,8 @@ export function SchoolDashboardKpiGrid({
       key: "signed-up",
       label: "Students signed up",
       value: signedUpCount,
-      sub: ` / ${enrollmentTotal}`,
-      helper: "enrolled vs invited",
+      sub: null,
+      helper: "total students with accounts",
       icon: kpiIconSvgs.students,
       tint: "bg-[rgba(52,152,219,0.13)] text-[#1d4d70]",
     },

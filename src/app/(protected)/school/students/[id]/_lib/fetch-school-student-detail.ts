@@ -12,6 +12,7 @@ import {
   studentApplicationProfileRowToCompletionInput,
 } from "@/lib/student-application-profile-completion";
 import { netSessionCreditsByKindFromRows } from "@/app/(protected)/school/settings/_lib/net-session-credits-used";
+import { schoolAvailableCreditPool } from "@/lib/school-credit-pool";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -19,6 +20,8 @@ import {
 
 type SchoolCreditsEmbed = {
   name?: string;
+  credit_pool: number | null;
+  extra_credits: number | null;
   default_advisor_credit_limit: number | null;
   default_ambasador_credit_limit: number | null;
 };
@@ -66,6 +69,8 @@ export type SchoolStudentDetailPayload = {
     ambassadorCreditLimitOverride: number | null;
     schoolDefaultAdvisorCreditLimit: number | null;
     schoolDefaultAmbassadorCreditLimit: number | null;
+    /** Main + extra pool balances for limit validation. */
+    availableCreditPool: number | null;
   };
   applicationProfile:
     | Database["public"]["Tables"]["student_application_profile"]["Row"]
@@ -148,6 +153,8 @@ export async function fetchSchoolStudentDetail(
       total_logins,
       schools (
         name,
+        credit_pool,
+        extra_credits,
         default_advisor_credit_limit,
         default_ambasador_credit_limit
       ),
@@ -461,6 +468,10 @@ export async function fetchSchoolStudentDetail(
     profile.ambassador_credit_limit ??
     schoolsEmbed?.default_ambasador_credit_limit ??
     null;
+  const availableCreditPool = schoolAvailableCreditPool(
+    schoolsEmbed?.credit_pool,
+    schoolsEmbed?.extra_credits,
+  );
 
   if (followUpStatusRes.error) {
     console.error(
@@ -554,6 +565,7 @@ export async function fetchSchoolStudentDetail(
         schoolsEmbed?.default_advisor_credit_limit ?? null,
       schoolDefaultAmbassadorCreditLimit:
         schoolsEmbed?.default_ambasador_credit_limit ?? null,
+      availableCreditPool,
     },
     applicationProfile: app,
     quickStats: {

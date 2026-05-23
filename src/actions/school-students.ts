@@ -18,6 +18,10 @@ import {
   isStudentInteractionKind,
   isStudentInteractionOutcome,
 } from "@/lib/student-interaction-constants";
+import {
+  creditLimitExceedsPoolMessage,
+  schoolAvailableCreditPool,
+} from "@/lib/school-credit-pool";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
@@ -342,6 +346,40 @@ export async function updateSchoolStudentCreditLimits(
       error:
         "Could not verify your school admin access. Ensure the latest database access rules are applied.",
     };
+  }
+
+  const { data: school, error: schoolError } = await supabase
+    .from("schools")
+    .select("credit_pool, extra_credits")
+    .eq("id", sap.school_id)
+    .maybeSingle();
+
+  if (schoolError) {
+    console.error("[updateSchoolStudentCreditLimits] school pool", schoolError);
+    return { data: null, error: "Could not verify the school credit pool." };
+  }
+
+  const availablePool = schoolAvailableCreditPool(
+    school?.credit_pool,
+    school?.extra_credits,
+  );
+
+  if (hasAdvisor && patch.advisor_credit_limit != null) {
+    const poolMsg = creditLimitExceedsPoolMessage(
+      patch.advisor_credit_limit,
+      availablePool,
+      "Advisor credit limit",
+    );
+    if (poolMsg) return { data: null, error: poolMsg };
+  }
+
+  if (hasAmbassador && patch.ambassador_credit_limit != null) {
+    const poolMsg = creditLimitExceedsPoolMessage(
+      patch.ambassador_credit_limit,
+      availablePool,
+      "Ambassador credit limit",
+    );
+    if (poolMsg) return { data: null, error: poolMsg };
   }
 
   const { data: updated, error: updateError } = await supabase

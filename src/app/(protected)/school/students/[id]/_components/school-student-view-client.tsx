@@ -27,6 +27,7 @@ import {
   isStudentCreditLimitExhausted,
   studentCreditLimitExhaustedMessage,
 } from "@/lib/student-credit-limit";
+import { creditLimitExceedsPoolMessage } from "@/lib/school-credit-pool";
 
 type TabId =
   | "snapshot"
@@ -207,6 +208,7 @@ function CreditLimitCard({
   displayLimit,
   override,
   schoolDefault,
+  availableCreditPool,
   label,
 }: {
   kind: "advisor" | "ambassador";
@@ -214,6 +216,7 @@ function CreditLimitCard({
   displayLimit: number | null;
   override: number | null;
   schoolDefault: number | null;
+  availableCreditPool: number | null;
   label: string;
 }) {
   const router = useRouter();
@@ -243,6 +246,18 @@ function CreditLimitCard({
     if (!parsed.ok) {
       setLocalError(parsed.error);
       return;
+    }
+
+    if (parsed.value != null) {
+      const poolMsg = creditLimitExceedsPoolMessage(
+        parsed.value,
+        availableCreditPool,
+        label,
+      );
+      if (poolMsg) {
+        setLocalError(poolMsg);
+        return;
+      }
     }
 
     const patch =
@@ -307,6 +322,9 @@ function CreditLimitCard({
           />
           <div className="text-[10px] text-[var(--text-hint)]">
             Leave blank to use the school-wide default on this profile.
+            {availableCreditPool != null
+              ? ` Max ${availableCreditPool.toLocaleString()} (available credit pool).`
+              : null}
           </div>
           {localError ? (
             <div className="text-[11.5px] text-[#c0392b]">{localError}</div>
@@ -572,6 +590,7 @@ function SnapshotContent({
               displayLimit={student.advisorCreditLimit}
               override={student.advisorCreditLimitOverride}
               schoolDefault={student.schoolDefaultAdvisorCreditLimit}
+              availableCreditPool={student.availableCreditPool}
               label="Advisor credit limit"
             />
             <CreditLimitCard
@@ -580,6 +599,7 @@ function SnapshotContent({
               displayLimit={student.ambassadorCreditLimit}
               override={student.ambassadorCreditLimitOverride}
               schoolDefault={student.schoolDefaultAmbassadorCreditLimit}
+              availableCreditPool={student.availableCreditPool}
               label="Ambassador credit limit"
             />
           </div>
