@@ -571,7 +571,6 @@ export function SchoolSettingsClient({
         rechargeHistory={rechargeHistory}
         studentUsageHistory={studentUsageHistory}
         studentAllocations={studentAllocations}
-        onShowToast={showToast}
       />
 
       {/* Change password modal */}

@@ -24,10 +24,9 @@ import { parseLegacyEnglishScores } from "@/app/(protected)/student/my-applicati
 import { parseLegacySatActScores } from "@/app/(protected)/student/my-applications/_lib/sat-act-score-input";
 import { formatPreferredDestinationsForDisplay } from "@/app/(protected)/student/my-applications/_lib/preferred-destinations-iso";
 import {
-  isStudentCreditLimitExhausted,
+  isStudentCreditBalanceExhausted,
   studentCreditLimitExhaustedMessage,
 } from "@/lib/student-credit-limit";
-import { creditLimitExceedsPoolMessage } from "@/lib/school-credit-pool";
 
 type TabId =
   | "snapshot"
@@ -184,38 +183,33 @@ function StudentCreditLimitAlert({
   );
 }
 
-function parseCreditLimitDraft(
+function parseCreditsToAdd(
   raw: string,
-): { ok: true; value: number | null } | { ok: false; error: string } {
+): { ok: true; value: number } | { ok: false; error: string } {
   const trimmed = raw.trim();
-  if (trimmed === "") return { ok: true, value: null };
+  if (trimmed === "") {
+    return { ok: false, error: "Enter a whole number greater than 0." };
+  }
   if (!/^\d+$/.test(trimmed)) {
-    return {
-      ok: false,
-      error: "Use a whole number ≥ 0, or leave blank for school default.",
-    };
+    return { ok: false, error: "Use a whole number greater than 0." };
   }
   const n = Number(trimmed);
-  if (!Number.isSafeInteger(n)) {
-    return { ok: false, error: "That number is too large." };
+  if (!Number.isSafeInteger(n) || n <= 0) {
+    return { ok: false, error: "Enter a whole number greater than 0." };
   }
   return { ok: true, value: n };
 }
 
-function CreditLimitCard({
+function AddCreditsCard({
   kind,
   studentId,
-  displayLimit,
-  override,
-  schoolDefault,
+  remaining,
   availableCreditPool,
   label,
 }: {
   kind: "advisor" | "ambassador";
   studentId: string;
-  displayLimit: number | null;
-  override: number | null;
-  schoolDefault: number | null;
+  remaining: number | null;
   availableCreditPool: number | null;
   label: string;
 }) {
@@ -225,13 +219,8 @@ function CreditLimitCard({
   const [localError, setLocalError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const placeholder =
-    schoolDefault != null
-      ? `School default (${schoolDefault})`
-      : "School default";
-
   function openEdit() {
-    setDraft(override !== null ? String(override) : "");
+    setDraft("");
     setLocalError(null);
     setEditing(true);
   }
@@ -242,28 +231,23 @@ function CreditLimitCard({
   }
 
   async function save() {
-    const parsed = parseCreditLimitDraft(draft);
+    const parsed = parseCreditsToAdd(draft);
     if (!parsed.ok) {
       setLocalError(parsed.error);
       return;
     }
 
-    if (parsed.value != null) {
-      const poolMsg = creditLimitExceedsPoolMessage(
-        parsed.value,
-        availableCreditPool,
-        label,
+    if (availableCreditPool != null && parsed.value > availableCreditPool) {
+      setLocalError(
+        `Cannot assign more than the available credit pool (${availableCreditPool.toLocaleString()}).`,
       );
-      if (poolMsg) {
-        setLocalError(poolMsg);
-        return;
-      }
+      return;
     }
 
     const patch =
       kind === "advisor"
-        ? { advisor_credit_limit: parsed.value }
-        : { ambassador_credit_limit: parsed.value };
+        ? { advisor_credits_to_add: parsed.value }
+        : { ambassador_credits_to_add: parsed.value };
 
     setLocalError(null);
     setPending(true);
@@ -271,7 +255,7 @@ function CreditLimitCard({
       const res = await updateSchoolStudentCreditLimits(studentId, patch);
       const err = res.error;
       if (err != null && err !== "") {
-        setLocalError(typeof err === "string" ? err : "Could not save.");
+        setLocalError(typeof err === "string" ? err : "Could not assign credits.");
         return;
       }
       setEditing(false);
@@ -288,26 +272,26 @@ function CreditLimitCard({
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
-                {displayLimit ?? "—"}
+                {remaining ?? "—"}
               </div>
               <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
-                {label}
+                {label} remaining
               </div>
             </div>
             <button
               type="button"
               className="shrink-0 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--text-mid)]"
-              aria-label={`Edit ${label}`}
+              aria-label={`Assign ${label}`}
               onClick={openEdit}
             >
-              Edit
+              Add credits
             </button>
           </div>
         </>
       ) : (
         <div className="flex flex-col gap-2">
           <div className="text-[11.5px] font-medium text-[var(--text)]">
-            {label}
+            Assign {label.toLowerCase()}
           </div>
           <input
             type="text"
@@ -315,15 +299,15 @@ function CreditLimitCard({
             autoComplete="off"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={placeholder}
+            placeholder="Credits to add"
             disabled={pending}
             className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 font-[family-name:var(--font-dm-sans)] text-[13px] text-[var(--text-mid)]"
             aria-invalid={Boolean(localError)}
           />
           <div className="text-[10px] text-[var(--text-hint)]">
-            Leave blank to use the school-wide default on this profile.
+            Deducted from the school credit pool.
             {availableCreditPool != null
-              ? ` Max ${availableCreditPool.toLocaleString()} (available credit pool).`
+              ? ` ${availableCreditPool.toLocaleString()} available in pool.`
               : null}
           </div>
           {localError ? (
@@ -336,7 +320,7 @@ function CreditLimitCard({
               onClick={() => void save()}
               className="inline-flex rounded-lg border border-[var(--green)] bg-[var(--green)] px-2.5 py-1 text-[11.5px] font-semibold text-white disabled:opacity-60"
             >
-              {pending ? "Saving…" : "Save"}
+              {pending ? "Assigning…" : "Assign"}
             </button>
             <button
               type="button"
@@ -458,13 +442,11 @@ function SnapshotContent({
   const act = actScoreSnap;
   const curr = snapDisplay(applicationProfile?.curriculum, "—");
 
-  const advisorCreditExhausted = isStudentCreditLimitExhausted(
-    student.advisorCreditsUsedNet,
-    student.advisorCreditLimit,
+  const advisorCreditExhausted = isStudentCreditBalanceExhausted(
+    student.advisorCreditRemaining,
   );
-  const ambassadorCreditExhausted = isStudentCreditLimitExhausted(
-    student.ambassadorCreditsUsedNet,
-    student.ambassadorCreditLimit,
+  const ambassadorCreditExhausted = isStudentCreditBalanceExhausted(
+    student.ambassadorCreditRemaining,
   );
 
   return (
@@ -584,25 +566,26 @@ function SnapshotContent({
             </div>
           </div>
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            <CreditLimitCard
+            <AddCreditsCard
               kind="advisor"
               studentId={student.id}
-              displayLimit={student.advisorCreditLimit}
-              override={student.advisorCreditLimitOverride}
-              schoolDefault={student.schoolDefaultAdvisorCreditLimit}
+              remaining={student.advisorCreditRemaining}
               availableCreditPool={student.availableCreditPool}
-              label="Advisor credit limit"
+              label="Advisor credits"
             />
-            <CreditLimitCard
+            <AddCreditsCard
               kind="ambassador"
               studentId={student.id}
-              displayLimit={student.ambassadorCreditLimit}
-              override={student.ambassadorCreditLimitOverride}
-              schoolDefault={student.schoolDefaultAmbassadorCreditLimit}
+              remaining={student.ambassadorCreditRemaining}
               availableCreditPool={student.availableCreditPool}
-              label="Ambassador credit limit"
+              label="Ambassador credits"
             />
           </div>
+          <p className="text-[11px] leading-relaxed text-[var(--text-hint)]">
+            Signup defaults for this student (advisor {student.signupAdvisorCreditLimit ?? "—"},
+            ambassador {student.signupAmbassadorCreditLimit ?? "—"}) were set at registration
+            and cannot be changed.
+          </p>
         </div>
       </SchoolStudentPanel>
     </>
@@ -819,21 +802,13 @@ export function SchoolStudentViewClient({
   );
 
   const advisorCreditExhausted = useMemo(
-    () =>
-      isStudentCreditLimitExhausted(
-        student.advisorCreditsUsedNet,
-        student.advisorCreditLimit,
-      ),
-    [student.advisorCreditsUsedNet, student.advisorCreditLimit],
+    () => isStudentCreditBalanceExhausted(student.advisorCreditRemaining),
+    [student.advisorCreditRemaining],
   );
 
   const ambassadorCreditExhausted = useMemo(
-    () =>
-      isStudentCreditLimitExhausted(
-        student.ambassadorCreditsUsedNet,
-        student.ambassadorCreditLimit,
-      ),
-    [student.ambassadorCreditsUsedNet, student.ambassadorCreditLimit],
+    () => isStudentCreditBalanceExhausted(student.ambassadorCreditRemaining),
+    [student.ambassadorCreditRemaining],
   );
 
   const fullName = [student.firstName, student.lastName]

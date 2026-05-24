@@ -4,9 +4,9 @@ export type StudentAllocationRow = {
   studentId: string;
   studentName: string;
   advisorUsed: number;
-  advisorLimit: number | null;
+  advisorRemaining: number | null;
   ambassadorUsed: number;
-  ambassadorLimit: number | null;
+  ambassadorRemaining: number | null;
 };
 
 type StudentProfileRow = {
@@ -27,10 +27,6 @@ type CreditHistoryRow = {
 export function buildStudentAllocations(
   profiles: StudentProfileRow[],
   creditRows: CreditHistoryRow[],
-  schoolDefaults: {
-    defaultAdvisorLimit: number | null;
-    defaultAmbassadorLimit: number | null;
-  },
 ): StudentAllocationRow[] {
   const usageByStudent = new Map<
     string,
@@ -66,13 +62,9 @@ export function buildStudentAllocations(
       studentId: p.id,
       studentName,
       advisorUsed: usage.advisorUsed,
-      advisorLimit:
-        p.advisor_credit_limit ?? schoolDefaults.defaultAdvisorLimit ?? null,
+      advisorRemaining: p.advisor_credit_limit,
       ambassadorUsed: usage.ambassadorUsed,
-      ambassadorLimit:
-        p.ambassador_credit_limit ??
-        schoolDefaults.defaultAmbassadorLimit ??
-        null,
+      ambassadorRemaining: p.ambassador_credit_limit,
     };
   });
 }
