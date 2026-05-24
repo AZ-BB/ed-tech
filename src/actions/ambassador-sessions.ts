@@ -61,25 +61,6 @@ async function appendAmbassadorActivityLog(
   }
 }
 
-/** Used when `schools.default_ambasador_credit_limit` is null (DB column spelling). */
-const FALLBACK_AMBASSADOR_BOOKINGS_PER_UTC_MONTH = 3;
-
-function startOfUtcMonthIso(): string {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0)).toISOString();
-}
-
-function ambassadorMonthlyCapFromSchool(
-  schools:
-    | { default_ambasador_credit_limit: number | null }
-    | { default_ambasador_credit_limit: number | null }[]
-    | null,
-): number {
-  const row = Array.isArray(schools) ? schools[0] : schools;
-  const raw = row?.default_ambasador_credit_limit;
-  return raw ?? FALLBACK_AMBASSADOR_BOOKINGS_PER_UTC_MONTH;
-}
-
 export async function logAmbassadorsCatalogView(): Promise<{ ok: true } | { ok: false; error: string }> {
   const actor = await requireStudentActor();
   if ("error" in actor) {
@@ -176,31 +157,20 @@ export async function createAmbassadorSessionRequest(
 
   const { data: studentRow, error: studentErr } = await secret
     .from("student_profiles")
-    .select("school_id, schools ( default_ambasador_credit_limit )")
+    .select("school_id, ambassador_credit_limit")
     .eq("id", actor.studentId)
     .maybeSingle();
 
   if (studentErr) {
-    console.error("[ambassador_session_requests] student + school:", studentErr);
+    console.error("[ambassador_session_requests] student profile:", studentErr);
     return { ok: false, error: "Could not verify your booking limit. Please try again." };
   }
 
-  const monthlyCap = ambassadorMonthlyCapFromSchool(studentRow?.schools ?? null);
-  const monthStartIso = startOfUtcMonthIso();
-  const { count: monthCount, error: countErr } = await secret
-    .from("ambassador_session_requests")
-    .select("id", { count: "exact", head: true })
-    .eq("student_id", actor.studentId)
-    .gte("created_at", monthStartIso);
-
-  if (countErr) {
-    console.error("[ambassador_session_requests] monthly count:", countErr);
-    return { ok: false, error: "Could not verify your booking limit. Please try again." };
-  }
-  if ((monthCount ?? 0) >= monthlyCap) {
+  const ambassadorCreditsRemaining = studentRow?.ambassador_credit_limit;
+  if (ambassadorCreditsRemaining == null || ambassadorCreditsRemaining <= 0) {
     return {
       ok: false,
-      error: `You can request up to ${monthlyCap} ambassador session${monthlyCap === 1 ? "" : "s"} per calendar month (your school’s limit). Try again next month.`,
+      error: "You have no ambassador session credits remaining. Ask your school counselor to assign more.",
     };
   }
 
@@ -237,6 +207,17 @@ export async function createAmbassadorSessionRequest(
   if (!studentRow?.school_id) {
     console.error("[student_credits_history] missing school_id on student_profiles");
   } else {
+    const { error: creditDecErr } = await secret
+      .from("student_profiles")
+      .update({ ambassador_credit_limit: ambassadorCreditsRemaining - 1 })
+      .eq("id", actor.studentId)
+      .gt("ambassador_credit_limit", 0);
+
+    if (creditDecErr) {
+      console.error("[student_profiles] ambassador credit decrement:", creditDecErr);
+      return { ok: false, error: "Could not deduct ambassador session credit. Please try again." };
+    }
+
     const { error: creditHistErr } = await secret.from("student_credits_history").insert({
       student_id: actor.studentId,
       school_id: studentRow.school_id,

@@ -133,7 +133,9 @@ export async function studentSignUp(
 
     const { data: school, error: schoolError } = await supabase
         .from("schools")
-        .select("id, students_limit")
+        .select(
+            "id, students_limit, default_advisor_credit_limit, default_ambasador_credit_limit",
+        )
         .eq("code", schoolAccessCode)
         .maybeSingle();
 
@@ -234,6 +236,10 @@ export async function studentSignUp(
             school_id: school.id,
             nationality_country_code: nationalityCountryCode,
             grade,
+            advisor_credit_limit: school.default_advisor_credit_limit ?? null,
+            ambassador_credit_limit: school.default_ambasador_credit_limit ?? null,
+            signup_advisor_credit_limit: school.default_advisor_credit_limit ?? null,
+            signup_ambassador_credit_limit: school.default_ambasador_credit_limit ?? null,
         });
 
     if (studentProfileError) {

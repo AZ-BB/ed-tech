@@ -18,10 +18,6 @@ import {
   isStudentInteractionKind,
   isStudentInteractionOutcome,
 } from "@/lib/student-interaction-constants";
-import {
-  creditLimitExceedsPoolMessage,
-  schoolAvailableCreditPool,
-} from "@/lib/school-credit-pool";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
@@ -276,8 +272,8 @@ export async function deleteSchoolStudentInvite(
 export async function updateSchoolStudentCreditLimits(
   studentId: string,
   patch: {
-    advisor_credit_limit?: number | null;
-    ambassador_credit_limit?: number | null;
+    advisor_credits_to_add?: number;
+    ambassador_credits_to_add?: number;
   },
 ): Promise<GeneralResponse<null>> {
   const id = studentId.trim();
@@ -287,42 +283,43 @@ export async function updateSchoolStudentCreditLimits(
 
   const hasAdvisor = Object.prototype.hasOwnProperty.call(
     patch,
-    "advisor_credit_limit",
+    "advisor_credits_to_add",
   );
   const hasAmbassador = Object.prototype.hasOwnProperty.call(
     patch,
-    "ambassador_credit_limit",
+    "ambassador_credits_to_add",
   );
   if (!hasAdvisor && !hasAmbassador) {
-    return { data: null, error: "Nothing to update." };
+    return { data: null, error: "Nothing to assign." };
   }
 
-  const validate = (label: string, v: unknown): string | null => {
-    if (v === null || v === undefined) return null;
-    if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
-      return `${label} must be a whole number ≥ 0, or left blank for the school default.`;
+  const validateAdd = (label: string, v: unknown): string | null => {
+    if (v === undefined) return null;
+    if (typeof v !== "number" || !Number.isInteger(v) || v <= 0) {
+      return `${label} must be a whole number greater than 0.`;
     }
     return null;
   };
 
-  type StudentProfileUpdate =
-    Database["public"]["Tables"]["student_profiles"]["Update"];
-
-  const updateRow: StudentProfileUpdate = {};
+  const advisorToAdd = hasAdvisor ? (patch.advisor_credits_to_add ?? 0) : 0;
+  const ambassadorToAdd = hasAmbassador ? (patch.ambassador_credits_to_add ?? 0) : 0;
 
   if (hasAdvisor) {
-    const msg = validate("Advisor credit limit", patch.advisor_credit_limit);
+    const msg = validateAdd("Advisor credits to add", patch.advisor_credits_to_add);
     if (msg) return { data: null, error: msg };
-    updateRow.advisor_credit_limit = patch.advisor_credit_limit ?? null;
   }
 
   if (hasAmbassador) {
-    const msg = validate(
-      "Ambassador credit limit",
-      patch.ambassador_credit_limit,
+    const msg = validateAdd(
+      "Ambassador credits to add",
+      patch.ambassador_credits_to_add,
     );
     if (msg) return { data: null, error: msg };
-    updateRow.ambassador_credit_limit = patch.ambassador_credit_limit ?? null;
+  }
+
+  const totalToAdd = advisorToAdd + ambassadorToAdd;
+  if (totalToAdd <= 0) {
+    return { data: null, error: "Enter at least one credit amount to assign." };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -348,9 +345,29 @@ export async function updateSchoolStudentCreditLimits(
     };
   }
 
+  const { data: studentProfile, error: studentError } = await supabase
+    .from("student_profiles")
+    .select("id, advisor_credit_limit, ambassador_credit_limit")
+    .eq("id", id)
+    .eq("school_id", sap.school_id)
+    .maybeSingle();
+
+  if (studentError) {
+    console.error("[updateSchoolStudentCreditLimits] student profile", studentError);
+    return { data: null, error: "Could not verify this student." };
+  }
+
+  if (!studentProfile) {
+    return {
+      data: null,
+      error:
+        "That student was not found or you do not have permission to edit their profile.",
+    };
+  }
+
   const { data: school, error: schoolError } = await supabase
     .from("schools")
-    .select("credit_pool, extra_credits")
+    .select("credit_pool")
     .eq("id", sap.school_id)
     .maybeSingle();
 
@@ -359,27 +376,51 @@ export async function updateSchoolStudentCreditLimits(
     return { data: null, error: "Could not verify the school credit pool." };
   }
 
-  const availablePool = schoolAvailableCreditPool(
-    school?.credit_pool,
-    school?.extra_credits,
-  );
-
-  if (hasAdvisor && patch.advisor_credit_limit != null) {
-    const poolMsg = creditLimitExceedsPoolMessage(
-      patch.advisor_credit_limit,
-      availablePool,
-      "Advisor credit limit",
-    );
-    if (poolMsg) return { data: null, error: poolMsg };
+  const currentPool = school?.credit_pool ?? 0;
+  if (currentPool < totalToAdd) {
+    return {
+      data: null,
+      error: `Not enough credits in the school pool (${currentPool.toLocaleString()} available, ${totalToAdd.toLocaleString()} requested).`,
+    };
   }
 
-  if (hasAmbassador && patch.ambassador_credit_limit != null) {
-    const poolMsg = creditLimitExceedsPoolMessage(
-      patch.ambassador_credit_limit,
-      availablePool,
-      "Ambassador credit limit",
-    );
-    if (poolMsg) return { data: null, error: poolMsg };
+  const now = new Date().toISOString();
+  const { data: updatedSchool, error: poolError } = await supabase
+    .from("schools")
+    .update({
+      credit_pool: currentPool - totalToAdd,
+      updated_at: now,
+    })
+    .eq("id", sap.school_id)
+    .gte("credit_pool", totalToAdd)
+    .select("id")
+    .maybeSingle();
+
+  if (poolError) {
+    console.error("[updateSchoolStudentCreditLimits] deduct pool", poolError);
+    return { data: null, error: "Could not deduct credits from the school pool." };
+  }
+
+  if (!updatedSchool) {
+    return {
+      data: null,
+      error: "Not enough credits in the school pool. Refresh and try again.",
+    };
+  }
+
+  type StudentProfileUpdate =
+    Database["public"]["Tables"]["student_profiles"]["Update"];
+
+  const updateRow: StudentProfileUpdate = { updated_at: now };
+
+  if (advisorToAdd > 0) {
+    updateRow.advisor_credit_limit =
+      (studentProfile.advisor_credit_limit ?? 0) + advisorToAdd;
+  }
+
+  if (ambassadorToAdd > 0) {
+    updateRow.ambassador_credit_limit =
+      (studentProfile.ambassador_credit_limit ?? 0) + ambassadorToAdd;
   }
 
   const { data: updated, error: updateError } = await supabase
@@ -402,6 +443,10 @@ export async function updateSchoolStudentCreditLimits(
     };
   }
 
+  revalidatePath("/school", "layout");
+  revalidatePath("/school/settings");
+  revalidatePath("/school/students", "layout");
+  revalidatePath(`/school/students/${id}`);
   return { data: null, error: null };
 }
 

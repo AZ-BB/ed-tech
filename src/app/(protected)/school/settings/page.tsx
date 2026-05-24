@@ -20,7 +20,7 @@ export default async function SchoolSettingsPage() {
     .from("school_admin_profiles")
     .select(
       `first_name, last_name, email, phone, school_id, schools(
-        id, name, country_code, city, students_limit, credit_pool, extra_credits,
+        id, name, country_code, city, students_limit, credit_pool,
         yearly_credit_plan, renewal_date, subscription_status,
         default_ambasador_credit_limit, default_advisor_credit_limit
       )`,
@@ -150,10 +150,6 @@ export default async function SchoolSettingsPage() {
   const studentAllocations = buildStudentAllocations(
     studentProfiles ?? [],
     allocationCreditRows ?? [],
-    {
-      defaultAdvisorLimit: school?.default_advisor_credit_limit ?? null,
-      defaultAmbassadorLimit: school?.default_ambasador_credit_limit ?? null,
-    },
   );
 
   const initialFullName = [profile.first_name, profile.last_name]
@@ -185,7 +181,6 @@ export default async function SchoolSettingsPage() {
         renewalDate: school?.renewal_date ?? null,
         subscriptionStatus: String(school?.subscription_status ?? "ACTIVE"),
         creditPool: school?.credit_pool ?? null,
-        extraCredits: school?.extra_credits ?? null,
       }}
       rechargeHistory={rechargeHistorySafe}
       studentUsageHistory={studentUsageHistory}

@@ -7,26 +7,10 @@ import {
   STUDENT_PLATFORM_COMPLETION_FLAGS,
 } from "@/lib/student-platform-completion";
 
-/** Used when `schools.default_advisor_credit_limit` is null. */
-const FALLBACK_ADVISOR_BOOKINGS_PER_UTC_MONTH = 3;
-
-function startOfUtcMonthIso(): string {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0)).toISOString();
-}
-
 function uuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
   );
-}
-
-function advisorMonthlyCapFromSchool(
-  schools: { default_advisor_credit_limit: number | null } | { default_advisor_credit_limit: number | null }[] | null,
-): number {
-  const row = Array.isArray(schools) ? schools[0] : schools;
-  const raw = row?.default_advisor_credit_limit;
-  return raw ?? FALLBACK_ADVISOR_BOOKINGS_PER_UTC_MONTH;
 }
 
 async function requireStudentActor(): Promise<{ studentId: string } | { error: string }> {
@@ -158,32 +142,20 @@ export async function createAdvisorSessionBooking(
 
   const { data: studentRow, error: studentErr } = await secret
     .from("student_profiles")
-    .select("school_id, schools ( default_advisor_credit_limit )")
+    .select("school_id, advisor_credit_limit")
     .eq("id", actor.studentId)
     .maybeSingle();
 
   if (studentErr) {
-    console.error("[advisor_sessions] student + school:", studentErr);
+    console.error("[advisor_sessions] student profile:", studentErr);
     return { ok: false, error: "Could not verify your booking limit. Please try again." };
   }
 
-  const monthlyCap = advisorMonthlyCapFromSchool(studentRow?.schools ?? null);
-
-  const monthStartIso = startOfUtcMonthIso();
-  const { count: monthCount, error: countErr } = await secret
-    .from("advisor_sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("student_id", actor.studentId)
-    .gte("created_at", monthStartIso);
-
-  if (countErr) {
-    console.error("[advisor_sessions] monthly count:", countErr);
-    return { ok: false, error: "Could not verify your booking limit. Please try again." };
-  }
-  if ((monthCount ?? 0) >= monthlyCap) {
+  const advisorCreditsRemaining = studentRow?.advisor_credit_limit;
+  if (advisorCreditsRemaining == null || advisorCreditsRemaining <= 0) {
     return {
       ok: false,
-      error: `You can request up to ${monthlyCap} advisor session${monthlyCap === 1 ? "" : "s"} per calendar month (your school’s limit). Try again next month.`,
+      error: "You have no advisor session credits remaining. Ask your school counselor to assign more.",
     };
   }
 
@@ -230,6 +202,17 @@ export async function createAdvisorSessionBooking(
   if (!studentRow?.school_id) {
     console.error("[student_credits_history] missing school_id on student_profiles:", studentErr);
   } else {
+    const { error: creditDecErr } = await secret
+      .from("student_profiles")
+      .update({ advisor_credit_limit: advisorCreditsRemaining - 1 })
+      .eq("id", actor.studentId)
+      .gt("advisor_credit_limit", 0);
+
+    if (creditDecErr) {
+      console.error("[student_profiles] advisor credit decrement:", creditDecErr);
+      return { ok: false, error: "Could not deduct advisor session credit. Please try again." };
+    }
+
     const { error: creditHistErr } = await secret.from("student_credits_history").insert({
       student_id: actor.studentId,
       school_id: studentRow.school_id,

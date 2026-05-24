@@ -12,7 +12,6 @@ import {
   studentApplicationProfileRowToCompletionInput,
 } from "@/lib/student-application-profile-completion";
 import { netSessionCreditsByKindFromRows } from "@/app/(protected)/school/settings/_lib/net-session-credits-used";
-import { schoolAvailableCreditPool } from "@/lib/school-credit-pool";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -21,9 +20,6 @@ import {
 type SchoolCreditsEmbed = {
   name?: string;
   credit_pool: number | null;
-  extra_credits: number | null;
-  default_advisor_credit_limit: number | null;
-  default_ambasador_credit_limit: number | null;
 };
 
 function formatActivityAgo(iso: string): string {
@@ -59,17 +55,14 @@ export type SchoolStudentDetailPayload = {
     ambassadorCreditsUsedNet: number;
     /** Net total credits used (advisor + ambassador, used − refunded). */
     creditsUsedTotal: number;
-    /** Per-student `advisor_credit_limit`, else school `default_advisor_credit_limit`. */
-    advisorCreditLimit: number | null;
-    /** Per-student `ambassador_credit_limit`, else school `default_ambasador_credit_limit`. */
-    ambassadorCreditLimit: number | null;
-    /** Stored `student_profiles.advisor_credit_limit` only (null → use school default). */
-    advisorCreditLimitOverride: number | null;
-    /** Stored `student_profiles.ambassador_credit_limit` only. */
-    ambassadorCreditLimitOverride: number | null;
-    schoolDefaultAdvisorCreditLimit: number | null;
-    schoolDefaultAmbassadorCreditLimit: number | null;
-    /** Main + extra pool balances for limit validation. */
+    /** Remaining advisor session credits on `student_profiles`. */
+    advisorCreditRemaining: number | null;
+    /** Remaining ambassador session credits on `student_profiles`. */
+    ambassadorCreditRemaining: number | null;
+    /** School defaults copied to this student at signup. */
+    signupAdvisorCreditLimit: number | null;
+    signupAmbassadorCreditLimit: number | null;
+    /** School credit pool available for assignment. */
     availableCreditPool: number | null;
   };
   applicationProfile:
@@ -150,13 +143,12 @@ export async function fetchSchoolStudentDetail(
       updated_at,
       advisor_credit_limit,
       ambassador_credit_limit,
+      signup_advisor_credit_limit,
+      signup_ambassador_credit_limit,
       total_logins,
       schools (
         name,
-        credit_pool,
-        extra_credits,
-        default_advisor_credit_limit,
-        default_ambasador_credit_limit
+        credit_pool
       ),
       countries!student_profiles_nationality_country_code_fkey(name)
     `,
@@ -460,18 +452,9 @@ export async function fetchSchoolStudentDetail(
     lastActivityDateLabel,
   };
 
-  const advisorCreditLimit =
-    profile.advisor_credit_limit ??
-    schoolsEmbed?.default_advisor_credit_limit ??
-    null;
-  const ambassadorCreditLimit =
-    profile.ambassador_credit_limit ??
-    schoolsEmbed?.default_ambasador_credit_limit ??
-    null;
-  const availableCreditPool = schoolAvailableCreditPool(
-    schoolsEmbed?.credit_pool,
-    schoolsEmbed?.extra_credits,
-  );
+  const advisorCreditRemaining = profile.advisor_credit_limit;
+  const ambassadorCreditRemaining = profile.ambassador_credit_limit;
+  const availableCreditPool = schoolsEmbed?.credit_pool ?? null;
 
   if (followUpStatusRes.error) {
     console.error(
@@ -557,14 +540,10 @@ export async function fetchSchoolStudentDetail(
       advisorCreditsUsedNet,
       ambassadorCreditsUsedNet,
       creditsUsedTotal,
-      advisorCreditLimit,
-      ambassadorCreditLimit,
-      advisorCreditLimitOverride: profile.advisor_credit_limit ?? null,
-      ambassadorCreditLimitOverride: profile.ambassador_credit_limit ?? null,
-      schoolDefaultAdvisorCreditLimit:
-        schoolsEmbed?.default_advisor_credit_limit ?? null,
-      schoolDefaultAmbassadorCreditLimit:
-        schoolsEmbed?.default_ambasador_credit_limit ?? null,
+      advisorCreditRemaining,
+      ambassadorCreditRemaining,
+      signupAdvisorCreditLimit: profile.signup_advisor_credit_limit ?? null,
+      signupAmbassadorCreditLimit: profile.signup_ambassador_credit_limit ?? null,
       availableCreditPool,
     },
     applicationProfile: app,

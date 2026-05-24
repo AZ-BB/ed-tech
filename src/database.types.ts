@@ -1427,7 +1427,6 @@ export type Database = {
           credit_pool: number | null
           default_advisor_credit_limit: number | null
           default_ambasador_credit_limit: number | null
-          extra_credits: number | null
           id: string
           is_active: boolean
           name: string
@@ -1446,7 +1445,6 @@ export type Database = {
           credit_pool?: number | null
           default_advisor_credit_limit?: number | null
           default_ambasador_credit_limit?: number | null
-          extra_credits?: number | null
           id?: string
           is_active?: boolean
           name: string
@@ -1465,7 +1463,6 @@ export type Database = {
           credit_pool?: number | null
           default_advisor_credit_limit?: number | null
           default_ambasador_credit_limit?: number | null
-          extra_credits?: number | null
           id?: string
           is_active?: boolean
           name?: string
@@ -2104,6 +2101,8 @@ export type Database = {
           phone: string | null
           platform_completion: Json | null
           school_id: string
+          signup_advisor_credit_limit: number | null
+          signup_ambassador_credit_limit: number | null
           status: Database["public"]["Enums"]["student_status"] | null
           total_logins: number | null
           updated_at: string | null
@@ -2123,6 +2122,8 @@ export type Database = {
           phone?: string | null
           platform_completion?: Json | null
           school_id: string
+          signup_advisor_credit_limit?: number | null
+          signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
           total_logins?: number | null
           updated_at?: string | null
@@ -2142,6 +2143,8 @@ export type Database = {
           phone?: string | null
           platform_completion?: Json | null
           school_id?: string
+          signup_advisor_credit_limit?: number | null
+          signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
           total_logins?: number | null
           updated_at?: string | null
