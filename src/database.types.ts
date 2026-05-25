@@ -85,6 +85,7 @@ export type Database = {
           email: string
           first_name: string
           id: string
+          is_active: boolean
           last_name: string
           phone: string | null
           role: Database["public"]["Enums"]["admin_role"] | null
@@ -96,6 +97,7 @@ export type Database = {
           email: string
           first_name: string
           id: string
+          is_active?: boolean
           last_name: string
           phone?: string | null
           role?: Database["public"]["Enums"]["admin_role"] | null
@@ -107,6 +109,7 @@ export type Database = {
           email?: string
           first_name?: string
           id?: string
+          is_active?: boolean
           last_name?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["admin_role"] | null
@@ -1307,6 +1310,7 @@ export type Database = {
           first_name: string
           gender: Database["public"]["Enums"]["gender"] | null
           id: string
+          is_active: boolean
           last_name: string
           phone: string | null
           school_id: string
@@ -1318,6 +1322,7 @@ export type Database = {
           first_name: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id: string
+          is_active?: boolean
           last_name: string
           phone?: string | null
           school_id: string
@@ -1329,6 +1334,7 @@ export type Database = {
           first_name?: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
+          is_active?: boolean
           last_name?: string
           phone?: string | null
           school_id?: string
@@ -1694,11 +1700,15 @@ export type Database = {
           student_id: string
           type: Database["public"]["Enums"]["student_credits_type"]
           updated_at: string | null
+          assigned_by_admin_id: string | null
+          assigned_by_school_admin_id: string | null
         }
         Insert: {
           advisor_session_id?: number | null
           ambassador_session_request_id?: number | null
           amount: number
+          assigned_by_admin_id?: string | null
+          assigned_by_school_admin_id?: string | null
           created_at?: string | null
           id?: number
           school_id: string
@@ -1711,6 +1721,8 @@ export type Database = {
           advisor_session_id?: number | null
           ambassador_session_request_id?: number | null
           amount?: number
+          assigned_by_admin_id?: string | null
+          assigned_by_school_admin_id?: string | null
           created_at?: string | null
           id?: number
           school_id?: string
@@ -1720,6 +1732,20 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "student_credits_history_assigned_by_admin_id_fkey"
+            columns: ["assigned_by_admin_id"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_credits_history_assigned_by_school_admin_id_fkey"
+            columns: ["assigned_by_school_admin_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "student_credits_history_advisor_session_id_fkey"
             columns: ["advisor_session_id"]
@@ -2094,6 +2120,7 @@ export type Database = {
           first_name: string
           grade: string
           id: string
+          is_active: boolean
           last_name: string
           nationality_country_code: string
           notification_app_updates: boolean
@@ -2115,6 +2142,7 @@ export type Database = {
           first_name: string
           grade: string
           id: string
+          is_active?: boolean
           last_name: string
           nationality_country_code: string
           notification_app_updates?: boolean
@@ -2136,6 +2164,7 @@ export type Database = {
           first_name?: string
           grade?: string
           id?: string
+          is_active?: boolean
           last_name?: string
           nationality_country_code?: string
           notification_app_updates?: boolean
@@ -2591,7 +2620,7 @@ export type Database = {
         | "advisor"
         | "ambassador"
       student_activity_type: "save" | "shortlist" | "block" | "viewed"
-      student_credits_status: "used" | "refunded"
+      student_credits_status: "used" | "refunded" | "added"
       student_credits_type:
         | "advisor"
         | "ambassador"
@@ -2789,7 +2818,7 @@ export const Constants = {
         "ambassador",
       ],
       student_activity_type: ["save", "shortlist", "block", "viewed"],
-      student_credits_status: ["used", "refunded"],
+      student_credits_status: ["used", "refunded", "added"],
       student_credits_type: [
         "advisor",
         "ambassador",

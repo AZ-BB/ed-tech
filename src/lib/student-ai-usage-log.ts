@@ -3,9 +3,12 @@ import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/
 
 type AiUsageType = Database["public"]["Enums"]["ai_usage_type"];
 
+export const DEACTIVATED_LOGIN_MESSAGE =
+  "Your account has been deactivated. Please contact support.";
+
 export type StudentSessionAuth =
   | { ok: true; studentId: string }
-  | { ok: false; status: 401 | 403; message: string };
+  | { ok: false; status: 401 | 403; message: string; deactivated?: boolean };
 
 export async function requireStudentSession(): Promise<StudentSessionAuth> {
   const supabase = await createSupabaseServerClient();
@@ -22,11 +25,20 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
   const secret = await createSupabaseSecretClient();
   const { data: profile } = await secret
     .from("student_profiles")
-    .select("id")
+    .select("id, is_active")
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) {
     return { ok: false, status: 403, message: "Student profile not found." };
+  }
+  if (profile.is_active === false) {
+    await supabase.auth.signOut();
+    return {
+      ok: false,
+      status: 403,
+      message: DEACTIVATED_LOGIN_MESSAGE,
+      deactivated: true,
+    };
   }
   return { ok: true, studentId: user.id };
 }

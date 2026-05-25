@@ -6,6 +6,8 @@ import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { DEACTIVATED_LOGIN_MESSAGE } from "@/lib/student-ai-usage-log";
+
 const GRADE_ALLOWED = new Set<string>(STUDENT_SCHOOL_GRADE_OPTIONS);
 
 export async function login(
@@ -37,19 +39,77 @@ export async function login(
         };
     }
 
-    const { data: studentProfile } = await supabase
-        .from("student_profiles")
-        .select("total_logins")
-        .eq("email", email)
-        .maybeSingle();
-
-    if (studentProfile) {
-        await supabase
+    const user = authData.user;
+    const meta = user?.user_metadata as { type?: string } | undefined;
+    if (user?.id && meta?.type === "student") {
+        const secret = await createSupabaseSecretClient();
+        const { data: studentProfile } = await secret
             .from("student_profiles")
-            .update({
-                total_logins: (studentProfile.total_logins ?? 0) + 1,
-            })
-            .eq("email", email);
+            .select("is_active, total_logins, email")
+            .eq("id", user.id)
+            .maybeSingle();
+
+        if (studentProfile && studentProfile.is_active === false) {
+            await supabase.auth.signOut();
+            return {
+                data: null,
+                error: DEACTIVATED_LOGIN_MESSAGE,
+            };
+        }
+
+        if (studentProfile) {
+            await secret
+                .from("student_profiles")
+                .update({
+                    total_logins: (studentProfile.total_logins ?? 0) + 1,
+                })
+                .eq("id", user.id);
+        }
+    } else if (user?.id && meta?.type === "school") {
+        const secret = await createSupabaseSecretClient();
+        const { data: teacherProfile } = await secret
+            .from("school_admin_profiles")
+            .select("is_active")
+            .eq("id", user.id)
+            .maybeSingle();
+
+        if (teacherProfile && teacherProfile.is_active === false) {
+            await supabase.auth.signOut();
+            return {
+                data: null,
+                error: DEACTIVATED_LOGIN_MESSAGE,
+            };
+        }
+    } else if (user?.id && meta?.type === "admin") {
+        const secret = await createSupabaseSecretClient();
+        const { data: adminProfile } = await secret
+            .from("admins")
+            .select("is_active")
+            .eq("id", user.id)
+            .maybeSingle();
+
+        if (adminProfile && adminProfile.is_active === false) {
+            await supabase.auth.signOut();
+            return {
+                data: null,
+                error: DEACTIVATED_LOGIN_MESSAGE,
+            };
+        }
+    } else {
+        const { data: studentProfile } = await supabase
+            .from("student_profiles")
+            .select("total_logins")
+            .eq("email", email)
+            .maybeSingle();
+
+        if (studentProfile) {
+            await supabase
+                .from("student_profiles")
+                .update({
+                    total_logins: (studentProfile.total_logins ?? 0) + 1,
+                })
+                .eq("email", email);
+        }
     }
 
     redirect(next);

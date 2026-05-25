@@ -1,6 +1,11 @@
 "use client";
 
 import type { StudentAllocationRow } from "@/app/(protected)/school/settings/_lib/build-student-allocations";
+import {
+  formatCreditAssignerName,
+  formatCreditHistoryAmount,
+  formatCreditHistoryStatus,
+} from "@/lib/student-credit-assignment-log";
 import { isStudentCreditBalanceExhausted } from "@/lib/student-credit-limit";
 import Link from "next/link";
 import { useState } from "react";
@@ -29,6 +34,7 @@ export type StudentUsageRow = {
   status: string | null;
   created_at: string | null;
   studentName: string;
+  addedByName: string;
 };
 
 function formatDate(iso: string | null): string {
@@ -252,12 +258,13 @@ export function SchoolSettingsCreditsPanel({
                     <th className="px-4 py-3">Amount</th>
                     <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Added by</th>
                   </tr>
                 </thead>
                 <tbody>
                   {studentUsageHistory.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-light)]">
+                      <td colSpan={6} className="px-4 py-8 text-center text-[var(--text-light)]">
                         No usage rows yet.
                       </td>
                     </tr>
@@ -272,13 +279,16 @@ export function SchoolSettingsCreditsPanel({
                         </td>
                         <td className="px-4 py-3 text-[var(--text)]">{row.studentName}</td>
                         <td className="px-4 py-3 font-medium text-[var(--text)]">
-                          {row.amount.toLocaleString()}
+                          {formatCreditHistoryAmount(row.amount, row.status)}
                         </td>
                         <td className="px-4 py-3 text-[var(--text-mid)]">
                           {creditTypeLabel(row.type)}
                         </td>
                         <td className="px-4 py-3 text-[var(--text-mid)]">
-                          {row.status ?? "—"}
+                          {formatCreditHistoryStatus(row.status)}
+                        </td>
+                        <td className="px-4 py-3 text-[var(--text-mid)]">
+                          {row.status === "added" ? row.addedByName : "—"}
                         </td>
                       </tr>
                     ))

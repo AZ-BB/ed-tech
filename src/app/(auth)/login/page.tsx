@@ -184,6 +184,7 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
     const [showPassword, setShowPassword] = useState(false);
     const searchParams = useSearchParams();
     const next = searchParams.get("next") || "/";
+    const deactivated = searchParams.get("deactivated") === "1";
     const [state, formAction, isPending] = useActionState(login, null);
 
     return (
@@ -196,6 +197,14 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
 
             <form className="mt-6 space-y-4" action={formAction}>
                 <input name="next" type="hidden" value={next} />
+                {deactivated ? (
+                    <p
+                        className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                        role="alert"
+                    >
+                        Your account has been deactivated. Please contact support.
+                    </p>
+                ) : null}
                 {state?.error ? (
                     <p
                         className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"

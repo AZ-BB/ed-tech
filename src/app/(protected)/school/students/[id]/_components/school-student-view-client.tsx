@@ -7,6 +7,7 @@ import {
   addSchoolStudentNote,
 } from "@/actions/school-students";
 import type { Database } from "@/database.types";
+import type { GeneralResponse } from "@/utils/response";
 import { SCHOOL_STUDENT_NOTE_TAGS } from "@/lib/school-student-note-tags";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -14,20 +15,29 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { SchoolStudentDetailPayload } from "../_lib/fetch-school-student-detail";
+import type { AdminStudentSchoolInfo } from "@/app/(protected)/admin/users/students/[id]/_lib/fetch-admin-student-detail";
 
+import {
+  STUDENT_DETAIL_URL_TABS,
+  type StudentActivityLogsPanelProps,
+  type StudentDetailUrlTab,
+} from "@/lib/student-activity-logs";
+import {
+  isStudentCreditBalanceExhausted,
+  studentCreditLimitExhaustedMessage,
+} from "@/lib/student-credit-limit";
+
+import { SchoolStudentActivityLogsTab } from "./school-student-activity-logs-tab";
 import { SchoolStudentDocumentsTab } from "./school-student-documents-tab";
 import { SchoolStudentEssaysTab } from "./school-student-essays-tab";
+import { SchoolStudentHistoryTab } from "./school-student-history-tab";
+import type { SchoolStudentHistoryPanelProps } from "./school-student-history-tab";
 import { SchoolStudentInteractionsTab } from "./school-student-interactions-tab";
 import { SchoolStudentPanel } from "./school-student-panel";
 import { SchoolStudentShortlistTab } from "./school-student-shortlist-tab";
 import { parseLegacyEnglishScores } from "@/app/(protected)/student/my-applications/_lib/ielts-toefl-score-input";
 import { parseLegacySatActScores } from "@/app/(protected)/student/my-applications/_lib/sat-act-score-input";
 import { formatPreferredDestinationsForDisplay } from "@/app/(protected)/student/my-applications/_lib/preferred-destinations-iso";
-import {
-  isStudentCreditBalanceExhausted,
-  studentCreditLimitExhaustedMessage,
-} from "@/lib/student-credit-limit";
-
 type TabId =
   | "snapshot"
   | "activity"
@@ -37,7 +47,8 @@ type TabId =
   | "notes"
   | "interactions"
   | "tasks"
-  | "history";
+  | "history"
+  | "activity_logs";
 
 const TAB_DEFS: { id: TabId; label: string }[] = [
   { id: "snapshot", label: "Snapshot" },
@@ -49,10 +60,21 @@ const TAB_DEFS: { id: TabId; label: string }[] = [
   { id: "interactions", label: "Interactions" },
   { id: "tasks", label: "Tasks" },
   { id: "history", label: "History" },
+  { id: "activity_logs", label: "Activity logs" },
 ];
 
 type ApplicationProfileRow =
   Database["public"]["Tables"]["student_application_profile"]["Row"];
+
+export type StudentCreditAssignPatch = {
+  advisor_credits_to_add?: number;
+  ambassador_credits_to_add?: number;
+};
+
+export type StudentCreditAssignAction = (
+  studentId: string,
+  patch: StudentCreditAssignPatch,
+) => Promise<GeneralResponse<null>>;
 
 export type SchoolStudentViewClientProps = {
   student: SchoolStudentDetailPayload["student"];
@@ -67,6 +89,14 @@ export type SchoolStudentViewClientProps = {
   essays: SchoolStudentDetailPayload["essays"];
   /** From `?tab=tasks` so filter Apply keeps the Tasks tab active after navigation. */
   initialTab?: TabId;
+  backHref?: string;
+  readOnly?: boolean;
+  canAssignCredits?: boolean;
+  assignCredits?: StudentCreditAssignAction;
+  schoolInfo?: AdminStudentSchoolInfo;
+  historyPanel?: SchoolStudentHistoryPanelProps;
+  activityLogsPanel?: StudentActivityLogsPanelProps;
+  sidebarActions?: ReactNode;
   tasksPanel: {
     rows: SchoolTaskTableRow[];
     totalRows: number;
@@ -206,12 +236,16 @@ function AddCreditsCard({
   remaining,
   availableCreditPool,
   label,
+  editable = true,
+  assignCredits = updateSchoolStudentCreditLimits,
 }: {
   kind: "advisor" | "ambassador";
   studentId: string;
   remaining: number | null;
   availableCreditPool: number | null;
   label: string;
+  editable?: boolean;
+  assignCredits?: StudentCreditAssignAction;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -252,7 +286,7 @@ function AddCreditsCard({
     setLocalError(null);
     setPending(true);
     try {
-      const res = await updateSchoolStudentCreditLimits(studentId, patch);
+      const res = await assignCredits(studentId, patch);
       const err = res.error;
       if (err != null && err !== "") {
         setLocalError(typeof err === "string" ? err : "Could not assign credits.");
@@ -268,16 +302,16 @@ function AddCreditsCard({
   return (
     <div className="flex flex-col justify-between rounded-[10px] border border-[var(--border-light)] bg-white p-3.5">
       {!editing ? (
-        <>
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
-                {remaining ?? "—"}
-              </div>
-              <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
-                {label} remaining
-              </div>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="font-[family-name:var(--font-dm-serif)] text-2xl leading-none text-[var(--text)]">
+              {remaining ?? "—"}
             </div>
+            <div className="mt-1 text-[11.5px] text-[var(--text-light)]">
+              {label} remaining
+            </div>
+          </div>
+          {editable ? (
             <button
               type="button"
               className="shrink-0 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--text-mid)]"
@@ -286,8 +320,8 @@ function AddCreditsCard({
             >
               Add credits
             </button>
-          </div>
-        </>
+          ) : null}
+        </div>
       ) : (
         <div className="flex flex-col gap-2">
           <div className="text-[11.5px] font-medium text-[var(--text)]">
@@ -402,11 +436,19 @@ function SnapshotContent({
   applicationProfile,
   quickStats,
   student,
+  readOnly = false,
+  canAssignCredits,
+  assignCredits,
 }: {
   applicationProfile: ApplicationProfileRow | null;
   quickStats: SchoolStudentDetailPayload["quickStats"];
   student: SchoolStudentDetailPayload["student"];
+  readOnly?: boolean;
+  canAssignCredits?: boolean;
+  assignCredits?: StudentCreditAssignAction;
 }) {
+  const allowCreditAssign = canAssignCredits ?? !readOnly;
+  const creditAction = assignCredits ?? updateSchoolStudentCreditLimits;
   const preferred = applicationProfile
     ? formatPreferredDestinationsForDisplay(
         applicationProfile.preferred_destinations,
@@ -572,6 +614,8 @@ function SnapshotContent({
               remaining={student.advisorCreditRemaining}
               availableCreditPool={student.availableCreditPool}
               label="Advisor credits"
+              editable={allowCreditAssign}
+              assignCredits={creditAction}
             />
             <AddCreditsCard
               kind="ambassador"
@@ -579,6 +623,8 @@ function SnapshotContent({
               remaining={student.ambassadorCreditRemaining}
               availableCreditPool={student.availableCreditPool}
               label="Ambassador credits"
+              editable={allowCreditAssign}
+              assignCredits={creditAction}
             />
           </div>
           <p className="text-[11px] leading-relaxed text-[var(--text-hint)]">
@@ -595,9 +641,11 @@ function SnapshotContent({
 function NotesTabContent({
   studentId,
   notes,
+  readOnly = false,
 }: {
   studentId: string;
   notes: SchoolStudentDetailPayload["studentNotes"];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -646,7 +694,8 @@ function NotesTabContent({
       sub="Internal-only — students cannot see these."
     >
       <div className="mb-3.5 flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[rgb(250,249,244)] p-3.5">
-        <form ref={formRef} action={submit} className="flex flex-col gap-2.5">
+        {!readOnly ? (
+          <form ref={formRef} action={submit} className="flex flex-col gap-2.5">
           <input type="hidden" name="student_id" value={studentId} />
           <input type="hidden" name="note_type" value={selectedNoteTag} />
           <textarea
@@ -696,12 +745,17 @@ function NotesTabContent({
               {error}
             </div>
           ) : null}
-        </form>
+          </form>
+        ) : (
+          <p className="text-[12.5px] text-[var(--text-light)]">
+            Notes are read-only in the admin view.
+          </p>
+        )}
       </div>
 
       {notes.length === 0 ? (
         <div className="py-8 text-center text-[13px] text-[var(--text-light)]">
-          No notes yet — add the first one above
+          {readOnly ? "No counselor notes yet." : "No notes yet — add the first one above"}
         </div>
       ) : (
         <div className="flex flex-col">
@@ -735,28 +789,60 @@ function NotesTabContent({
   );
 }
 
-type EmptyTabId = Exclude<
-  TabId,
-  | "snapshot"
-  | "activity"
-  | "shortlist"
-  | "notes"
-  | "docs"
-  | "tasks"
-  | "interactions"
-  | "essays"
->;
+function SchoolInfoPanel({ schoolInfo }: { schoolInfo: AdminStudentSchoolInfo }) {
+  const rows = [
+    { label: "Country", value: schoolInfo.countryName ?? "—" },
+    { label: "Contact email", value: schoolInfo.contactEmail },
+    { label: "School code", value: schoolInfo.schoolCode },
+    {
+      label: "Status",
+      value: schoolInfo.isActive ? "Active" : "Inactive",
+    },
+    {
+      label: "Students limit",
+      value: schoolInfo.studentsLimit != null ? String(schoolInfo.studentsLimit) : "—",
+    },
+    {
+      label: "Enrolled students",
+      value: schoolInfo.enrolledStudentsCount.toLocaleString(),
+    },
+    {
+      label: "Pending invites",
+      value: schoolInfo.pendingInvitesCount.toLocaleString(),
+    },
+    {
+      label: "Credit pool",
+      value: schoolInfo.creditPool != null ? schoolInfo.creditPool.toLocaleString() : "—",
+    },
+    {
+      label: "Default advisor credits",
+      value:
+        schoolInfo.defaultAdvisorCreditLimit != null
+          ? String(schoolInfo.defaultAdvisorCreditLimit)
+          : "—",
+    },
+    {
+      label: "Default ambassador credits",
+      value:
+        schoolInfo.defaultAmbassadorCreditLimit != null
+          ? String(schoolInfo.defaultAmbassadorCreditLimit)
+          : "—",
+    },
+  ];
 
-const EMPTY_TAB: Record<
-  EmptyTabId,
-  { title: string; subtitle?: string; message: string }
-> = {
-  history: {
-    title: "Meetings & support history",
-    subtitle: "Sessions booked, attended, and reviews — coming soon.",
-    message: "Content coming soon.",
-  },
-};
+  return (
+    <SchoolStudentPanel
+      head="School"
+      sub={`${schoolInfo.name} — platform admin view`}
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {rows.map((row) => (
+          <SnapItem key={row.label} label={row.label} value={row.value} />
+        ))}
+      </div>
+    </SchoolStudentPanel>
+  );
+}
 
 export function SchoolStudentViewClient({
   student,
@@ -770,6 +856,14 @@ export function SchoolStudentViewClient({
   documents,
   essays,
   initialTab = "snapshot",
+  backHref = "/school/students",
+  readOnly = false,
+  canAssignCredits,
+  assignCredits,
+  schoolInfo,
+  historyPanel,
+  activityLogsPanel,
+  sidebarActions,
   tasksPanel,
 }: SchoolStudentViewClientProps) {
   const router = useRouter();
@@ -784,12 +878,19 @@ export function SchoolStudentViewClient({
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams.toString());
-    if (tab === "tasks") {
-      if (next.get("tab") === "tasks") return;
-      next.set("tab", "tasks");
+    const currentTab = next.get("tab");
+
+    if (STUDENT_DETAIL_URL_TABS.includes(tab as StudentDetailUrlTab)) {
+      if (currentTab === tab) return;
+      next.set("tab", tab);
       router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-    } else {
-      if (next.get("tab") !== "tasks") return;
+      return;
+    }
+
+    if (
+      currentTab &&
+      STUDENT_DETAIL_URL_TABS.includes(currentTab as StudentDetailUrlTab)
+    ) {
       next.delete("tab");
       const q = next.toString();
       router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
@@ -817,6 +918,7 @@ export function SchoolStudentViewClient({
     .trim();
 
   const sidebarRows: { lab: string; val: string; valSmall?: boolean }[] = [
+    { lab: "School", val: schoolInfo?.name ?? student.schoolName ?? "—" },
     { lab: "Grade", val: student.gradeDisplay ?? "—" },
     { lab: "Nationality", val: student.nationalityName ?? "—" },
     { lab: "Curriculum", val: student.curriculumDisplay ?? "—" },
@@ -833,11 +935,17 @@ export function SchoolStudentViewClient({
   let tabBody: ReactNode;
   if (tab === "snapshot") {
     tabBody = (
-      <SnapshotContent
-        applicationProfile={applicationProfile}
-        quickStats={quickStats}
-        student={student}
-      />
+      <>
+        {schoolInfo ? <SchoolInfoPanel schoolInfo={schoolInfo} /> : null}
+        <SnapshotContent
+          applicationProfile={applicationProfile}
+          quickStats={quickStats}
+          student={student}
+          readOnly={readOnly}
+          canAssignCredits={canAssignCredits}
+          assignCredits={assignCredits}
+        />
+      </>
     );
   } else if (tab === "activity") {
     tabBody = (
@@ -856,7 +964,13 @@ export function SchoolStudentViewClient({
       <SchoolStudentEssaysTab studentId={student.id} initialEssays={essays} />
     );
   } else if (tab === "notes") {
-    tabBody = <NotesTabContent studentId={student.id} notes={studentNotes} />;
+    tabBody = (
+      <NotesTabContent
+        studentId={student.id}
+        notes={studentNotes}
+        readOnly={readOnly}
+      />
+    );
   } else if (tab === "interactions") {
     tabBody = (
       <SchoolStudentInteractionsTab
@@ -893,14 +1007,33 @@ export function SchoolStudentViewClient({
         priority={tasksPanel.priority}
         status={tasksPanel.status}
         studentOptions={[]}
-        newTaskModal={{ open: newTaskOpen, onOpenChange: setNewTaskOpen }}
+        newTaskModal={
+          readOnly
+            ? { open: false, onOpenChange: () => {} }
+            : { open: newTaskOpen, onOpenChange: setNewTaskOpen }
+        }
       />
     );
-  } else {
-    const cfg = EMPTY_TAB[tab];
-    tabBody = (
-      <SchoolStudentPanel head={cfg.title} sub={cfg.subtitle}>
-        <EmptyBlock message={cfg.message} />
+  } else if (tab === "history") {
+    tabBody = historyPanel ? (
+      <SchoolStudentHistoryTab {...historyPanel} />
+    ) : (
+      <SchoolStudentPanel
+        head="Usage history"
+        sub="Sessions, AI tools, and credit assignments"
+      >
+        <EmptyBlock message="History is unavailable." />
+      </SchoolStudentPanel>
+    );
+  } else if (tab === "activity_logs") {
+    tabBody = activityLogsPanel ? (
+      <SchoolStudentActivityLogsTab {...activityLogsPanel} />
+    ) : (
+      <SchoolStudentPanel
+        head="Activity logs"
+        sub="Platform events and actions recorded for this student"
+      >
+        <EmptyBlock message="Activity logs are unavailable." />
       </SchoolStudentPanel>
     );
   }
@@ -908,7 +1041,7 @@ export function SchoolStudentViewClient({
   return (
     <div className="w-full">
       <Link
-        href="/school/students"
+        href={backHref}
         className="sd-back mb-3.5 inline-flex cursor-pointer items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-[var(--text-mid)] hover:text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]"
       >
         <svg
@@ -980,16 +1113,21 @@ export function SchoolStudentViewClient({
                 Email student
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                setTab("tasks");
-                setNewTaskOpen(true);
-              }}
-              className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
-            >
-              + Add task
-            </button>
+            {sidebarActions ? (
+              <div className="flex flex-col gap-1.5">{sidebarActions}</div>
+            ) : null}
+            {!readOnly ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setTab("tasks");
+                  setNewTaskOpen(true);
+                }}
+                className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+              >
+                + Add task
+              </button>
+            ) : null}
           </div>
         </aside>
 

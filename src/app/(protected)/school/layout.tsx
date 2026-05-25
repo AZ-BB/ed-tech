@@ -48,9 +48,14 @@ export default async function SchoolLayout({
   if (user?.id) {
     const { data: profile } = await supabase
       .from("school_admin_profiles")
-      .select("first_name, last_name, school_id, schools(name)")
+      .select("first_name, last_name, school_id, is_active, schools(name)")
       .eq("id", user.id)
       .maybeSingle();
+
+    if (profile?.is_active === false) {
+      await supabase.auth.signOut();
+      redirect("/login?deactivated=1");
+    }
 
     if (profile) {
       firstName = profile.first_name?.trim() ?? "";
