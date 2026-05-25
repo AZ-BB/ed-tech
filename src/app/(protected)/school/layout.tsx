@@ -1,4 +1,6 @@
+import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
+import { redirect } from "next/navigation";
 
 import { SchoolPortalShell } from "./_components/school-portal-shell";
 
@@ -48,13 +50,26 @@ export default async function SchoolLayout({
   if (user?.id) {
     const { data: profile } = await supabase
       .from("school_admin_profiles")
-      .select("first_name, last_name, school_id, is_active, schools(name)")
+      .select("first_name, last_name, school_id, is_active, schools(name, is_active)")
       .eq("id", user.id)
       .maybeSingle();
 
     if (profile?.is_active === false) {
       await supabase.auth.signOut();
       redirect("/login?deactivated=1");
+    }
+
+    if (profile?.school_id) {
+      const embeddedSchool = profile.schools as { is_active?: boolean } | null;
+      const schoolActive =
+        embeddedSchool?.is_active !== undefined
+          ? embeddedSchool.is_active !== false
+          : await isSchoolActive(profile.school_id);
+
+      if (schoolActive === false) {
+        await supabase.auth.signOut();
+        redirect("/login?schoolDeactivated=1");
+      }
     }
 
     if (profile) {

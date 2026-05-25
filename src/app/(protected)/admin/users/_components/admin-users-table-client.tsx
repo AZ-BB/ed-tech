@@ -49,6 +49,8 @@ export type AdminUsersTableClientProps = {
   schoolId: string;
   status: AdminUsersStatusFilter;
   schoolOptions: AdminSchoolOption[];
+  embedMode?: boolean;
+  embedTabParam?: string;
 };
 
 export function AdminUsersTableClient({
@@ -63,22 +65,30 @@ export function AdminUsersTableClient({
   schoolId,
   status,
   schoolOptions,
+  embedMode = false,
+  embedTabParam,
 }: AdminUsersTableClientProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const filtersActive =
     q.trim().length > 0 ||
     role !== "" ||
-    schoolId.trim().length > 0 ||
+    (!embedMode && schoolId.trim().length > 0) ||
     status !== "";
-  const columns = getAdminUsersTableColumns(tabId, (row) => (
-    <RowActionsMenu
-      tabId={tabId}
-      userId={row.id}
-      userName={displayName(row)}
-      isActive={row.isActive}
-    />
-  ));
+  const columns = getAdminUsersTableColumns(
+    tabId,
+    (row) => (
+      <RowActionsMenu
+        tabId={tabId}
+        userId={row.id}
+        userName={displayName(row)}
+        isActive={row.isActive}
+      />
+    ),
+    embedMode
+      ? { hideSchoolColumn: true, hideRoleColumn: true }
+      : undefined,
+  );
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-[#ece9e4] bg-white">
@@ -97,6 +107,12 @@ export function AdminUsersTableClient({
         >
           <input type="hidden" name="page" value="1" />
           <input type="hidden" name="limit" value={String(limit)} />
+          {embedMode && embedTabParam ? (
+            <input type="hidden" name="tab" value={embedTabParam} />
+          ) : null}
+          {embedMode && schoolId ? (
+            <input type="hidden" name="school" value={schoolId} />
+          ) : null}
 
           <div className="relative w-full max-w-[220px]">
             <svg
@@ -140,7 +156,7 @@ export function AdminUsersTableClient({
             </select>
           ) : null}
 
-          {showSchoolFilter(tabId) ? (
+          {showSchoolFilter(tabId) && !embedMode ? (
             <select
               name="school"
               aria-label="Filter by school"

@@ -1,5 +1,6 @@
 "use server";
 
+import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export async function requireSchoolAdminContext(): Promise<
@@ -17,7 +18,7 @@ export async function requireSchoolAdminContext(): Promise<
 
   const { data: sap, error } = await supabase
     .from("school_admin_profiles")
-    .select("school_id")
+    .select("school_id, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -28,6 +29,15 @@ export async function requireSchoolAdminContext(): Promise<
 
   if (!sap?.school_id) {
     return { error: "Your account is not linked to a school." };
+  }
+
+  if (sap.is_active === false) {
+    return { error: "Your account has been deactivated. Please contact support." };
+  }
+
+  const schoolActive = await isSchoolActive(sap.school_id);
+  if (schoolActive === false) {
+    return { error: SCHOOL_DEACTIVATED_LOGIN_MESSAGE };
   }
 
   return { userId: user.id, schoolId: sap.school_id };

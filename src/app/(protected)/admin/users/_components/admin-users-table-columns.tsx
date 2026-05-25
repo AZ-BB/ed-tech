@@ -95,9 +95,28 @@ const defaultColumns: AdminUsersTableColumn[] = [
   },
 ];
 
+export type AdminUsersTableColumnOptions = {
+  hideSchoolColumn?: boolean;
+  hideRoleColumn?: boolean;
+};
+
+function applyColumnOptions(
+  columns: AdminUsersTableColumn[],
+  options?: AdminUsersTableColumnOptions,
+): AdminUsersTableColumn[] {
+  if (!options?.hideSchoolColumn && !options?.hideRoleColumn) return columns;
+
+  return columns.filter((column) => {
+    if (options.hideRoleColumn && column.id === "role") return false;
+    if (options.hideSchoolColumn && column.id === "school") return false;
+    return true;
+  });
+}
+
 export function getAdminUsersTableColumns(
   tabId: UsersTabId,
   renderActions: (row: AdminUserTableRow) => ReactNode,
+  options?: AdminUsersTableColumnOptions,
 ): AdminUsersTableColumn[] {
   if (tabId === "advisors") {
     return [
@@ -221,29 +240,35 @@ export function getAdminUsersTableColumns(
   }
 
   if (tabId === "students") {
-    return [
-      defaultColumns[0]!,
-      ...defaultColumns.slice(1),
-      {
-        id: "actions",
-        heading: "Actions",
-        align: "center",
-        render: renderActions,
-      },
-    ];
+    return applyColumnOptions(
+      [
+        defaultColumns[0]!,
+        ...defaultColumns.slice(1),
+        {
+          id: "actions",
+          heading: "Actions",
+          align: "center",
+          render: renderActions,
+        },
+      ],
+      options,
+    );
   }
 
   if (tabId === "teachers") {
-    return [
-      defaultColumns[0]!,
-      ...defaultColumns.slice(1),
-      {
-        id: "actions",
-        heading: "Actions",
-        align: "center",
-        render: renderActions,
-      },
-    ];
+    return applyColumnOptions(
+      [
+        defaultColumns[0]!,
+        ...defaultColumns.slice(1),
+        {
+          id: "actions",
+          heading: "Actions",
+          align: "center",
+          render: renderActions,
+        },
+      ],
+      options,
+    );
   }
 
   if (tabId === "admins") {

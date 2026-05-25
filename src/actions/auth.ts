@@ -1,6 +1,7 @@
 "use server";
 
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
+import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { GeneralResponse } from "@/utils/response";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { headers } from "next/headers";
@@ -45,7 +46,7 @@ export async function login(
         const secret = await createSupabaseSecretClient();
         const { data: studentProfile } = await secret
             .from("student_profiles")
-            .select("is_active, total_logins, email")
+            .select("is_active, total_logins, email, school_id")
             .eq("id", user.id)
             .maybeSingle();
 
@@ -55,6 +56,17 @@ export async function login(
                 data: null,
                 error: DEACTIVATED_LOGIN_MESSAGE,
             };
+        }
+
+        if (studentProfile?.school_id) {
+            const schoolActive = await isSchoolActive(studentProfile.school_id);
+            if (schoolActive === false) {
+                await supabase.auth.signOut();
+                return {
+                    data: null,
+                    error: SCHOOL_DEACTIVATED_LOGIN_MESSAGE,
+                };
+            }
         }
 
         if (studentProfile) {
@@ -69,7 +81,7 @@ export async function login(
         const secret = await createSupabaseSecretClient();
         const { data: teacherProfile } = await secret
             .from("school_admin_profiles")
-            .select("is_active")
+            .select("is_active, school_id")
             .eq("id", user.id)
             .maybeSingle();
 
@@ -79,6 +91,17 @@ export async function login(
                 data: null,
                 error: DEACTIVATED_LOGIN_MESSAGE,
             };
+        }
+
+        if (teacherProfile?.school_id) {
+            const schoolActive = await isSchoolActive(teacherProfile.school_id);
+            if (schoolActive === false) {
+                await supabase.auth.signOut();
+                return {
+                    data: null,
+                    error: SCHOOL_DEACTIVATED_LOGIN_MESSAGE,
+                };
+            }
         }
     } else if (user?.id && meta?.type === "admin") {
         const secret = await createSupabaseSecretClient();
@@ -194,7 +217,7 @@ export async function studentSignUp(
     const { data: school, error: schoolError } = await supabase
         .from("schools")
         .select(
-            "id, students_limit, default_advisor_credit_limit, default_ambasador_credit_limit",
+            "id, students_limit, default_advisor_credit_limit, default_ambasador_credit_limit, is_active",
         )
         .eq("code", schoolAccessCode)
         .maybeSingle();
@@ -204,6 +227,13 @@ export async function studentSignUp(
         return {
             data: false,
             error: "Invalid school access code."
+        };
+    }
+
+    if (school.is_active === false) {
+        return {
+            data: false,
+            error: SCHOOL_DEACTIVATED_LOGIN_MESSAGE,
         };
     }
 

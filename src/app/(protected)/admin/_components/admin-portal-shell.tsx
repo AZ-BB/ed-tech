@@ -11,6 +11,7 @@ import {
   adminNavSections,
 } from "../_data/admin-nav-data";
 import { UsersHeaderActions } from "../users/_components/users-header-actions";
+import { SchoolsHeaderActions } from "../schools/_components/admin-schools-header-actions";
 import { isAdminUserDetailPath, isAdminUsersPath } from "../users/_data/users-tabs-data";
 
 const fontSans =
@@ -28,9 +29,22 @@ function normalizePath(pathname: string) {
   return pathname.replace(/\/$/, "") || "/";
 }
 
+const ADMIN_SCHOOLS = `${ADMIN_HOME}/schools`;
+
+function isAdminSchoolsPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  return n === ADMIN_SCHOOLS || n.startsWith(`${ADMIN_SCHOOLS}/`);
+}
+
+function isAdminSchoolDetailPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  return /^\/admin\/schools\/[^/]+$/.test(n);
+}
+
 function pageTitle(pathname: string): string {
   const n = normalizePath(pathname);
   if (isAdminUsersPath(n)) return "User Management";
+  if (isAdminSchoolsPath(n)) return "School Management";
   if (ADMIN_PAGE_TITLE_BY_PATH[n]) return ADMIN_PAGE_TITLE_BY_PATH[n];
   for (const [path, title] of Object.entries(ADMIN_PAGE_TITLE_BY_PATH)) {
     if (path !== ADMIN_HOME && n.startsWith(`${path}/`)) return title;
@@ -64,10 +78,19 @@ export function AdminPortalShell({
     () => isAdminUsersPath(pathname ?? ADMIN_HOME),
     [pathname],
   );
+  const schoolsSection = useMemo(() => {
+    const n = pathname ?? ADMIN_HOME;
+    return isAdminSchoolsPath(n) && !isAdminSchoolDetailPath(n);
+  }, [pathname]);
   const userDetailPage = useMemo(
     () => isAdminUserDetailPath(pathname ?? ADMIN_HOME),
     [pathname],
   );
+  const schoolDetailPage = useMemo(
+    () => isAdminSchoolDetailPath(pathname ?? ADMIN_HOME),
+    [pathname],
+  );
+  const detailPage = userDetailPage || schoolDetailPage;
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
@@ -204,7 +227,7 @@ export function AdminPortalShell({
 
       <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
         <header
-          className={`sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-4 max-[760px]:px-4 lg:gap-[10px] lg:px-7 ${userDetailPage ? "lg:hidden" : ""}`}
+          className={`sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-4 max-[760px]:px-4 lg:gap-[10px] lg:px-7 ${detailPage ? "lg:hidden" : ""}`}
         >
           <div className="flex min-w-0 flex-1 items-start gap-3 lg:gap-3">
             <button
@@ -226,7 +249,7 @@ export function AdminPortalShell({
                 <path d="M4 12h16M4 6h16M4 18h16" />
               </svg>
             </button>
-            {!userDetailPage ? (
+            {!detailPage ? (
               <div className="flex min-w-0 flex-col gap-0.5 pt-0.5 lg:pt-0">
                 {usersSection ? (
                   <>
@@ -238,6 +261,18 @@ export function AdminPortalShell({
                     </h1>
                     <p className="text-[12px] text-[#a0a0a0]">
                       Manage all platform users
+                    </p>
+                  </>
+                ) : schoolsSection ? (
+                  <>
+                    <h1
+                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                      style={{ fontFamily: fontSerif }}
+                    >
+                      {title}
+                    </h1>
+                    <p className="text-[12px] text-[#a0a0a0]">
+                      Manage schools, codes, and billing
                     </p>
                   </>
                 ) : (
@@ -256,11 +291,16 @@ export function AdminPortalShell({
               </div>
             ) : null}
           </div>
-          {!userDetailPage ? <UsersHeaderActions /> : null}
+          {!detailPage ? (
+            <>
+              {schoolsSection ? <SchoolsHeaderActions /> : null}
+              {!schoolsSection ? <UsersHeaderActions /> : null}
+            </>
+          ) : null}
         </header>
 
         <main
-          className={`flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${userDetailPage ? "lg:px-6 lg:pt-4" : ""}`}
+          className={`flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${detailPage ? "lg:px-6 lg:pt-4" : ""}`}
         >
           {children}
         </main>

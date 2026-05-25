@@ -112,7 +112,8 @@ export function SchoolSettingsCreditsPanel({
         </div>
         <p className="mt-2 max-w-[820px] text-[12px] leading-relaxed text-[var(--text-light)]">
           School credit pool for assigning extra credits to students, signup defaults (managed by
-          Univeera), and renewal info. Yearly top-ups run daily on UTC.
+          Univeera), and renewal info. Subscriptions expire after the renewal date; renewals are
+          processed by Univeera admins.
         </p>
       </div>
 

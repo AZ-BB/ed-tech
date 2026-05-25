@@ -1,4 +1,5 @@
 import type { Database, Json } from "@/database.types";
+import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 type AiUsageType = Database["public"]["Enums"]["ai_usage_type"];
@@ -8,7 +9,13 @@ export const DEACTIVATED_LOGIN_MESSAGE =
 
 export type StudentSessionAuth =
   | { ok: true; studentId: string }
-  | { ok: false; status: 401 | 403; message: string; deactivated?: boolean };
+  | {
+      ok: false;
+      status: 401 | 403;
+      message: string;
+      deactivated?: boolean;
+      schoolDeactivated?: boolean;
+    };
 
 export async function requireStudentSession(): Promise<StudentSessionAuth> {
   const supabase = await createSupabaseServerClient();
@@ -25,7 +32,7 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
   const secret = await createSupabaseSecretClient();
   const { data: profile } = await secret
     .from("student_profiles")
-    .select("id, is_active")
+    .select("id, is_active, school_id")
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) {
@@ -39,6 +46,18 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
       message: DEACTIVATED_LOGIN_MESSAGE,
       deactivated: true,
     };
+  }
+  if (profile.school_id) {
+    const schoolActive = await isSchoolActive(profile.school_id);
+    if (schoolActive === false) {
+      await supabase.auth.signOut();
+      return {
+        ok: false,
+        status: 403,
+        message: SCHOOL_DEACTIVATED_LOGIN_MESSAGE,
+        schoolDeactivated: true,
+      };
+    }
   }
   return { ok: true, studentId: user.id };
 }

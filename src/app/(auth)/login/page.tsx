@@ -185,6 +185,7 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
     const searchParams = useSearchParams();
     const next = searchParams.get("next") || "/";
     const deactivated = searchParams.get("deactivated") === "1";
+    const schoolDeactivated = searchParams.get("schoolDeactivated") === "1";
     const [state, formAction, isPending] = useActionState(login, null);
 
     return (
@@ -197,7 +198,14 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
 
             <form className="mt-6 space-y-4" action={formAction}>
                 <input name="next" type="hidden" value={next} />
-                {deactivated ? (
+                {schoolDeactivated ? (
+                    <p
+                        className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                        role="alert"
+                    >
+                        The school has been deactivated. Please contact support.
+                    </p>
+                ) : deactivated ? (
                     <p
                         className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"
                         role="alert"

@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 type UsersAddStudentDialogProps = {
   open: boolean;
   onClose: () => void;
+  fixedSchoolId?: string;
+  fixedSchoolName?: string;
 };
 
 type SchoolOption = {
@@ -21,7 +23,12 @@ const inputClassName =
 
 const labelClassName = "mb-1.5 block text-[12px] font-semibold text-[#4a4a4a]";
 
-export function UsersAddStudentDialog({ open, onClose }: UsersAddStudentDialogProps) {
+export function UsersAddStudentDialog({
+  open,
+  onClose,
+  fixedSchoolId,
+  fixedSchoolName,
+}: UsersAddStudentDialogProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingSchools, setIsLoadingSchools] = useState(false);
@@ -30,7 +37,7 @@ export function UsersAddStudentDialog({ open, onClose }: UsersAddStudentDialogPr
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || fixedSchoolId) return;
 
     let cancelled = false;
     setIsLoadingSchools(true);
@@ -50,7 +57,7 @@ export function UsersAddStudentDialog({ open, onClose }: UsersAddStudentDialogPr
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, fixedSchoolId]);
 
   if (!open) return null;
 
@@ -103,28 +110,37 @@ export function UsersAddStudentDialog({ open, onClose }: UsersAddStudentDialogPr
         </p>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="add-student-school" className={labelClassName}>
-              School
-            </label>
-            <select
-              id="add-student-school"
-              name="schoolId"
-              required
-              disabled={isLoadingSchools || isSubmitting}
-              defaultValue=""
-              className={`${inputClassName} cursor-pointer disabled:opacity-60`}
-            >
-              <option value="">
-                {isLoadingSchools ? "Loading schools…" : "Select a school"}
-              </option>
-              {schools.map((school) => (
-                <option key={school.id} value={school.id}>
-                  {school.name}
+          {fixedSchoolId ? (
+            <>
+              <input type="hidden" name="schoolId" value={fixedSchoolId} />
+              <div className="rounded-[8px] border border-[#ece9e4] bg-[#faf9f7] px-3 py-2 text-[13px] text-[#4a4a4a]">
+                School: <strong>{fixedSchoolName ?? "Selected school"}</strong>
+              </div>
+            </>
+          ) : (
+            <div>
+              <label htmlFor="add-student-school" className={labelClassName}>
+                School
+              </label>
+              <select
+                id="add-student-school"
+                name="schoolId"
+                required
+                disabled={isLoadingSchools || isSubmitting}
+                defaultValue=""
+                className={`${inputClassName} cursor-pointer disabled:opacity-60`}
+              >
+                <option value="">
+                  {isLoadingSchools ? "Loading schools…" : "Select a school"}
                 </option>
-              ))}
-            </select>
-          </div>
+                {schools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label htmlFor="add-student-email" className={labelClassName}>
@@ -175,7 +191,7 @@ export function UsersAddStudentDialog({ open, onClose }: UsersAddStudentDialogPr
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || isLoadingSchools}
+              disabled={isSubmitting || (!fixedSchoolId && isLoadingSchools)}
               className="rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
             >
               {isSubmitting ? "Adding…" : "Add Student"}

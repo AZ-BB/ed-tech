@@ -67,10 +67,13 @@ function parseStatusParam(
 
 export function parseAdminUsersSearchParams(
   sp: Record<string, string | string[] | undefined>,
+  scopedSchoolId?: string,
 ): AdminUsersPageFilters {
   const q = typeof sp.q === "string" ? sp.q : "";
   const role = parseRoleParam(sp.role);
-  const schoolId = typeof sp.school === "string" ? sp.school : "";
+  const schoolId =
+    scopedSchoolId?.trim() ||
+    (typeof sp.school === "string" ? sp.school : "");
   const status = parseStatusParam(sp.status);
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 20)));

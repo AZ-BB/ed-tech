@@ -2515,7 +2515,8 @@ export type Database = {
         }
         Returns: Json
       }
-      run_school_yearly_credit_renewals: { Args: never; Returns: number }
+      run_school_subscription_expiry: { Args: never; Returns: number }
+      renew_school_subscription: { Args: { p_school_id: string }; Returns: undefined }
       scholarship_discovery_dest_match: {
         Args: { p_dest: Json; p_user: string }
         Returns: boolean

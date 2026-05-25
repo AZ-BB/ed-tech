@@ -10,6 +10,9 @@ export default async function StudentLayout({
 }) {
   const auth = await requireStudentSession();
   if (!auth.ok) {
+    if (auth.schoolDeactivated) {
+      redirect("/login?schoolDeactivated=1");
+    }
     if (auth.deactivated) {
       redirect("/login?deactivated=1");
     }

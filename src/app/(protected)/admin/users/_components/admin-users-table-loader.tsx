@@ -7,15 +7,21 @@ import { AdminUsersTableClient } from "./admin-users-table-client";
 export async function AdminUsersTableLoader({
   tabId,
   searchParams,
+  scopedSchoolId,
+  embedMode = false,
+  embedTabParam,
 }: {
   tabId: UsersTabId;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+  scopedSchoolId?: string;
+  embedMode?: boolean;
+  embedTabParam?: string;
 }) {
   const sp = await searchParams;
-  const filters = parseAdminUsersSearchParams(sp);
+  const filters = parseAdminUsersSearchParams(sp, scopedSchoolId);
   const [{ rows, totalRows }, schoolOptions] = await Promise.all([
     fetchAdminUsersPage(tabId, filters),
-    tabId === "all" || tabId === "students" || tabId === "teachers"
+    !embedMode && (tabId === "all" || tabId === "students" || tabId === "teachers")
       ? fetchAdminSchoolOptions()
       : Promise.resolve([]),
   ]);
@@ -34,6 +40,8 @@ export async function AdminUsersTableLoader({
       schoolId={filters.schoolId}
       status={filters.status}
       schoolOptions={schoolOptions}
+      embedMode={embedMode}
+      embedTabParam={embedTabParam}
     />
   );
 }

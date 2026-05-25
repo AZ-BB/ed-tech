@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 type UsersStudentImportDialogProps = {
   open: boolean;
   onClose: () => void;
+  fixedSchoolId?: string;
+  fixedSchoolName?: string;
 };
 
 type ImportSummary = {
@@ -24,6 +26,8 @@ type SchoolOption = {
 export function UsersStudentImportDialog({
   open,
   onClose,
+  fixedSchoolId,
+  fixedSchoolName,
 }: UsersStudentImportDialogProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +39,7 @@ export function UsersStudentImportDialog({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || fixedSchoolId) return;
 
     let cancelled = false;
     setIsLoadingSchools(true);
@@ -55,7 +59,13 @@ export function UsersStudentImportDialog({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, fixedSchoolId]);
+
+  useEffect(() => {
+    if (fixedSchoolId) {
+      setSchoolId(fixedSchoolId);
+    }
+  }, [fixedSchoolId, open]);
 
   if (!open) return null;
 
@@ -128,30 +138,36 @@ export function UsersStudentImportDialog({
         </p>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="student-import-school"
-              className="mb-1.5 block text-[12px] font-semibold text-[#4a4a4a]"
-            >
-              School
-            </label>
-            <select
-              id="student-import-school"
-              value={schoolId}
-              onChange={(event) => setSchoolId(event.target.value)}
-              disabled={isLoadingSchools || isSubmitting}
-              className="w-full cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C] disabled:opacity-60"
-            >
-              <option value="">
-                {isLoadingSchools ? "Loading schools…" : "Select a school"}
-              </option>
-              {schools.map((school) => (
-                <option key={school.id} value={school.id}>
-                  {school.name}
+          {fixedSchoolId ? (
+            <div className="rounded-[8px] border border-[#ece9e4] bg-[#faf9f7] px-3 py-2 text-[13px] text-[#4a4a4a]">
+              School: <strong>{fixedSchoolName ?? "Selected school"}</strong>
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="student-import-school"
+                className="mb-1.5 block text-[12px] font-semibold text-[#4a4a4a]"
+              >
+                School
+              </label>
+              <select
+                id="student-import-school"
+                value={schoolId}
+                onChange={(event) => setSchoolId(event.target.value)}
+                disabled={isLoadingSchools || isSubmitting}
+                className="w-full cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C] disabled:opacity-60"
+              >
+                <option value="">
+                  {isLoadingSchools ? "Loading schools…" : "Select a school"}
                 </option>
-              ))}
-            </select>
-          </div>
+                {schools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <input
             ref={inputRef}
@@ -187,7 +203,7 @@ export function UsersStudentImportDialog({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || isLoadingSchools}
+              disabled={isSubmitting || (!fixedSchoolId && isLoadingSchools)}
               className="rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
             >
               {isSubmitting ? "Importing…" : "Import Excel"}
