@@ -18,6 +18,7 @@ import {
   isStudentInteractionKind,
   isStudentInteractionOutcome,
 } from "@/lib/student-interaction-constants";
+import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
@@ -441,6 +442,18 @@ export async function updateSchoolStudentCreditLimits(
       error:
         "That student was not found or you do not have permission to edit their profile.",
     };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const logResult = await recordStudentCreditAssignments(secret, {
+    studentId: id,
+    schoolId: sap.school_id,
+    advisorToAdd,
+    ambassadorToAdd,
+    actor: { kind: "school_admin", id: user.id },
+  });
+  if (!logResult.ok) {
+    return { data: null, error: logResult.error };
   }
 
   revalidatePath("/school", "layout");

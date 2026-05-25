@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { formatCreditAssignerName } from "@/lib/student-credit-assignment-log";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import { buildStudentAllocations } from "./_lib/build-student-allocations";
@@ -99,7 +100,11 @@ export default async function SchoolSettingsPage() {
         type,
         status,
         created_at,
-        student_profiles ( first_name, last_name )
+        assigned_by_admin_id,
+        assigned_by_school_admin_id,
+        student_profiles ( first_name, last_name ),
+        admins:assigned_by_admin_id ( first_name, last_name ),
+        school_admin_profiles:assigned_by_school_admin_id ( first_name, last_name )
       `,
       )
       .eq("school_id", schoolId)
@@ -137,6 +142,21 @@ export default async function SchoolSettingsPage() {
     const studentName =
       `${sp?.first_name?.trim() ?? ""} ${sp?.last_name?.trim() ?? ""}`.trim() ||
       "Student";
+
+    const adminEmbed = r.admins as
+      | { first_name: string; last_name: string }
+      | { first_name: string; last_name: string }[]
+      | null;
+    const admin = Array.isArray(adminEmbed) ? adminEmbed[0] : adminEmbed;
+
+    const schoolAdminEmbed = r.school_admin_profiles as
+      | { first_name: string; last_name: string }
+      | { first_name: string; last_name: string }[]
+      | null;
+    const schoolAdmin = Array.isArray(schoolAdminEmbed)
+      ? schoolAdminEmbed[0]
+      : schoolAdminEmbed;
+
     return {
       id: r.id,
       amount: r.amount,
@@ -144,6 +164,12 @@ export default async function SchoolSettingsPage() {
       status: r.status ?? null,
       created_at: r.created_at ?? null,
       studentName,
+      addedByName: formatCreditAssignerName({
+        adminFirst: admin?.first_name,
+        adminLast: admin?.last_name,
+        schoolAdminFirst: schoolAdmin?.first_name,
+        schoolAdminLast: schoolAdmin?.last_name,
+      }),
     };
   });
 

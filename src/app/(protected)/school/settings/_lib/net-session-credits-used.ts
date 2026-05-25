@@ -21,9 +21,12 @@ export function netSessionCreditsByKindFromRows(
   let poolUsed = 0;
   let poolRef = 0;
   for (const r of rows ?? []) {
+    const status = r.status ?? "used";
+    if (status !== "used" && status !== "refunded") continue;
+
     const amt =
       typeof r.amount === "number" && Number.isFinite(r.amount) ? r.amount : 0;
-    const isRef = r.status === "refunded";
+    const isRef = status === "refunded";
     if (r.type === "advisor") {
       if (isRef) advRef += amt;
       else advUsed += amt;

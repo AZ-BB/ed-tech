@@ -3,7 +3,7 @@
 import { logout } from "@/actions/auth";
 import { useEffect, useTransition } from "react";
 
-export type LogoutConfirmVariant = "student" | "school";
+export type LogoutConfirmVariant = "student" | "school" | "admin";
 
 type LogoutConfirmDialogProps = {
   open: boolean;
@@ -35,20 +35,19 @@ export function LogoutConfirmDialog({
     });
   };
 
-  const cardClass =
-    variant === "school"
-      ? "w-full max-w-[400px] rounded-xl border border-white/10 bg-[#1B4332] p-6 text-white shadow-xl"
-      : "w-full max-w-[400px] rounded-xl border border-[var(--border-light)] bg-white p-6 text-[var(--text)] shadow-xl";
+  const isDarkVariant = variant === "school" || variant === "admin";
 
-  const noBtnClass =
-    variant === "school"
-      ? "rounded-lg border border-white/20 bg-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
-      : "rounded-lg border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] disabled:opacity-50";
+  const cardClass = isDarkVariant
+    ? "w-full max-w-[400px] rounded-xl border border-white/10 bg-[#1B4332] p-6 text-white shadow-xl"
+    : "w-full max-w-[400px] rounded-xl border border-[var(--border-light)] bg-white p-6 text-[var(--text)] shadow-xl";
 
-  const yesBtnClass =
-    variant === "school"
-      ? "rounded-lg bg-[#52B788] px-4 py-2.5 text-sm font-semibold text-[#1B4332] transition-colors hover:bg-[#74c69d] disabled:opacity-50"
-      : "rounded-lg bg-[var(--green)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--green-dark)] disabled:opacity-50";
+  const noBtnClass = isDarkVariant
+    ? "rounded-lg border border-white/20 bg-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+    : "rounded-lg border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] disabled:opacity-50";
+
+  const yesBtnClass = isDarkVariant
+    ? "rounded-lg bg-[#52B788] px-4 py-2.5 text-sm font-semibold text-[#1B4332] transition-colors hover:bg-[#74c69d] disabled:opacity-50"
+    : "rounded-lg bg-[var(--green)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--green-dark)] disabled:opacity-50";
 
   return (
     <div
@@ -75,7 +74,7 @@ export function LogoutConfirmDialog({
         <p
           id="logout-confirm-desc"
           className={
-            variant === "school"
+            isDarkVariant
               ? "mt-2 text-sm text-white/80"
               : "mt-2 text-sm text-[var(--text-light)]"
           }

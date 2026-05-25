@@ -17,6 +17,8 @@ import {
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
 
+type StudentDetailDbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
 type SchoolCreditsEmbed = {
   name?: string;
   credit_pool: number | null;
@@ -64,6 +66,10 @@ export type SchoolStudentDetailPayload = {
     signupAmbassadorCreditLimit: number | null;
     /** School credit pool available for assignment. */
     availableCreditPool: number | null;
+    phone: string | null;
+    grade: string | null;
+    nationalityCountryCode: string | null;
+    isActive: boolean;
   };
   applicationProfile:
     | Database["public"]["Tables"]["student_application_profile"]["Row"]
@@ -127,8 +133,9 @@ function stageFromProfilePercent(pct: number): string {
 
 export async function fetchSchoolStudentDetail(
   studentId: string,
+  options?: { dataClient?: StudentDetailDbClient },
 ): Promise<SchoolStudentDetailPayload | null> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = options?.dataClient ?? (await createSupabaseServerClient());
 
   const { data: profile, error } = await supabase
     .from("student_profiles")
@@ -139,6 +146,9 @@ export async function fetchSchoolStudentDetail(
       last_name,
       email,
       grade,
+      phone,
+      nationality_country_code,
+      is_active,
       created_at,
       updated_at,
       advisor_credit_limit,
@@ -545,6 +555,10 @@ export async function fetchSchoolStudentDetail(
       signupAdvisorCreditLimit: profile.signup_advisor_credit_limit ?? null,
       signupAmbassadorCreditLimit: profile.signup_ambassador_credit_limit ?? null,
       availableCreditPool,
+      phone: profile.phone?.trim() ?? null,
+      grade: profile.grade?.trim() ?? null,
+      nationalityCountryCode: profile.nationality_country_code?.trim() ?? null,
+      isActive: profile.is_active ?? true,
     },
     applicationProfile: app,
     quickStats: {
