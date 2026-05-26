@@ -417,19 +417,19 @@ async function createImportCache(supabase: SupabaseSecretClient): Promise<Univer
   const [countries, majors, programs, universities, universityMajors, universityMajorPrograms] =
     await Promise.all([
       supabase.from("countries").select("id"),
-      fetchAllRows<{ id: number; name: string }>((from, to) =>
+      fetchAllRows<{ id: number; name: string }>(async (from, to) =>
         supabase.from("majors").select("id, name").range(from, to),
       ),
-      fetchAllRows<{ id: number; major_id: number; name: string }>((from, to) =>
+      fetchAllRows<{ id: number; major_id: number; name: string }>(async (from, to) =>
         supabase.from("programs").select("id, major_id, name").range(from, to),
       ),
-      fetchAllRows<{ id: string; name: string }>((from, to) =>
+      fetchAllRows<{ id: string; name: string }>(async (from, to) =>
         supabase.from("universities").select("id, name").range(from, to),
       ),
-      fetchAllRows<{ id: number; university_id: string; major_id: number }>((from, to) =>
+      fetchAllRows<{ id: number; university_id: string; major_id: number }>(async (from, to) =>
         supabase.from("university_majors").select("id, university_id, major_id").range(from, to),
       ),
-      fetchAllRows<{ university_major_id: number; program_id: number }>((from, to) =>
+      fetchAllRows<{ university_major_id: number; program_id: number }>(async (from, to) =>
         supabase
           .from("university_major_programs")
           .select("university_major_id, program_id")
