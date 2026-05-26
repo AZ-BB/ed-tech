@@ -220,7 +220,7 @@ export const ADMIN_PAGE_TITLE_BY_PATH: Record<string, string> = {
   [ADMIN_HOME]: "Dashboard",
   [`${ADMIN_HOME}/users`]: "User Management",
   [`${ADMIN_HOME}/schools`]: "Schools",
-  [`${ADMIN_HOME}/content`]: "Content",
+  [`${ADMIN_HOME}/content`]: "Content Management",
   [`${ADMIN_HOME}/sessions`]: "Sessions",
   [`${ADMIN_HOME}/applications`]: "Applications",
   [`${ADMIN_HOME}/documents`]: "Documents",

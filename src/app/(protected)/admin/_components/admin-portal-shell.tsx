@@ -10,6 +10,13 @@ import {
   ADMIN_PAGE_TITLE_BY_PATH,
   adminNavSections,
 } from "../_data/admin-nav-data";
+import { ContentHeaderActions } from "../content/_components/content-header-actions";
+import {
+  isAdminContentListPath,
+  isAdminContentPath,
+  isAdminScholarshipDetailPath,
+  isAdminUniversityDetailPath,
+} from "../content/_data/content-tabs-data";
 import { UsersHeaderActions } from "../users/_components/users-header-actions";
 import { SchoolsHeaderActions } from "../schools/_components/admin-schools-header-actions";
 import { isAdminUserDetailPath, isAdminUsersPath } from "../users/_data/users-tabs-data";
@@ -45,6 +52,7 @@ function pageTitle(pathname: string): string {
   const n = normalizePath(pathname);
   if (isAdminUsersPath(n)) return "User Management";
   if (isAdminSchoolsPath(n)) return "School Management";
+  if (isAdminContentPath(n)) return "Content Management";
   if (ADMIN_PAGE_TITLE_BY_PATH[n]) return ADMIN_PAGE_TITLE_BY_PATH[n];
   for (const [path, title] of Object.entries(ADMIN_PAGE_TITLE_BY_PATH)) {
     if (path !== ADMIN_HOME && n.startsWith(`${path}/`)) return title;
@@ -82,6 +90,10 @@ export function AdminPortalShell({
     const n = pathname ?? ADMIN_HOME;
     return isAdminSchoolsPath(n) && !isAdminSchoolDetailPath(n);
   }, [pathname]);
+  const contentSection = useMemo(() => {
+    const n = pathname ?? ADMIN_HOME;
+    return isAdminContentListPath(n);
+  }, [pathname]);
   const userDetailPage = useMemo(
     () => isAdminUserDetailPath(pathname ?? ADMIN_HOME),
     [pathname],
@@ -90,7 +102,16 @@ export function AdminPortalShell({
     () => isAdminSchoolDetailPath(pathname ?? ADMIN_HOME),
     [pathname],
   );
-  const detailPage = userDetailPage || schoolDetailPage;
+  const universityDetailPage = useMemo(
+    () => isAdminUniversityDetailPath(pathname ?? ADMIN_HOME),
+    [pathname],
+  );
+  const scholarshipDetailPage = useMemo(
+    () => isAdminScholarshipDetailPath(pathname ?? ADMIN_HOME),
+    [pathname],
+  );
+  const detailPage =
+    userDetailPage || schoolDetailPage || universityDetailPage || scholarshipDetailPage;
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
@@ -275,6 +296,18 @@ export function AdminPortalShell({
                       Manage schools, codes, and billing
                     </p>
                   </>
+                ) : contentSection ? (
+                  <>
+                    <h1
+                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                      style={{ fontFamily: fontSerif }}
+                    >
+                      {title}
+                    </h1>
+                    <p className="text-[12px] text-[#a0a0a0]">
+                      Universities, scholarships, announcements
+                    </p>
+                  </>
                 ) : (
                   <>
                     <div className="text-[11.5px] font-medium uppercase leading-none tracking-[0.06em] text-[#a0a0a0]">
@@ -294,7 +327,10 @@ export function AdminPortalShell({
           {!detailPage ? (
             <>
               {schoolsSection ? <SchoolsHeaderActions /> : null}
-              {!schoolsSection ? <UsersHeaderActions /> : null}
+              {contentSection ? <ContentHeaderActions /> : null}
+              {usersSection && !schoolsSection && !contentSection ? (
+                <UsersHeaderActions />
+              ) : null}
             </>
           ) : null}
         </header>
