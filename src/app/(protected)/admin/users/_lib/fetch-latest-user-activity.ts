@@ -10,6 +10,10 @@ type ActivityEnrichedRow = {
 
 type ActivityLogActorColumn = "student_id" | "school_admin_id" | "admin_id";
 
+type ActivityLogSelectRow = Partial<Record<ActivityLogActorColumn, string | null>> & {
+  created_at: string | null;
+};
+
 async function latestActivityForIds(
   supabase: AdminSupabase,
   column: ActivityLogActorColumn,
@@ -29,7 +33,7 @@ async function latestActivityForIds(
     return map;
   }
 
-  for (const row of data ?? []) {
+  for (const row of (data ?? []) as ActivityLogSelectRow[]) {
     const id = row[column];
     if (!id || map.has(id)) continue;
     const createdAt = row.created_at;

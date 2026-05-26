@@ -1,5 +1,9 @@
-import type { Json } from "@/database.types"
+import type { Database, Json } from "@/database.types"
 import { createSupabaseSecretClient } from "@/utils/supabase-server"
+
+const IMPORT_LOG = "[university-csv-import]"
+
+type UniversityDifficulty = Database["public"]["Enums"]["university_difficulty"]
 
 type SupabaseSecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>
 
@@ -113,6 +117,20 @@ function parseIsPublic(typeStr: string): boolean {
   return false
 }
 
+function parseBool(s: string, defaultValue: boolean): boolean {
+  const t = s.trim().toLowerCase()
+  if (!t) return defaultValue
+  if (t === "true" || t === "1" || t === "yes" || t === "y") return true
+  if (t === "false" || t === "0" || t === "no" || t === "n") return false
+  return defaultValue
+}
+
+function parseDifficulty(s: string): UniversityDifficulty | null {
+  const t = s.trim().toLowerCase()
+  if (t === "easy" || t === "medium" || t === "hard") return t
+  return null
+}
+
 function parseDeadline(s: string, defaultYear: number): string | null {
   const t = s.trim()
   if (!t) return null
@@ -160,88 +178,287 @@ function splitPrograms(items: string): string[] {
     .filter(Boolean)
 }
 
-async function ensureCountry(supabase: SupabaseSecretClient, code: string, name: string) {
-  const cc = code.trim().toUpperCase().slice(0, 2)
-  if (cc.length !== 2) throw new Error(`Invalid country_code: ${code}`)
+const PAGE_SIZE = 1000
 
-  const { data: existing } = await supabase.from("countries").select("id").eq("id", cc).maybeSingle()
+async function fetchAllRows<T>(
+  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: unknown }>,
+): Promise<T[]> {
+  const rows: T[] = []
+  let from = 0
 
-  if (existing) return
+  while (true) {
+    const { data, error } = await fetchPage(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+    const page = data ?? []
+    rows.push(...page)
+    if (page.length < PAGE_SIZE) break
+    from += PAGE_SIZE
+  }
 
-  const countryName = name.trim() || cc
-  const { error } = await supabase.from("countries").insert({ id: cc, name: countryName })
-  if (error) throw error
+  return rows
 }
 
-async function getOrCreateMajor(supabase: SupabaseSecretClient, name: string): Promise<number> {
-  const { data: found } = await supabase.from("majors").select("id").eq("name", name).maybeSingle()
-  if (found) return found.id
-
-  const { data: inserted, error } = await supabase.from("majors").insert({ name }).select("id").single()
-  if (error) throw error
-  return inserted!.id
+function isDuplicateKeyError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const code = "code" in error ? String(error.code) : ""
+  return code === "23505"
 }
 
-async function getOrCreateProgram(supabase: SupabaseSecretClient, majorId: number, programName: string): Promise<number> {
-  const { data: found } = await supabase
-    .from("programs")
-    .select("id")
-    .eq("major_id", majorId)
-    .eq("name", programName)
-    .maybeSingle()
+class UniversityImportCache {
+  private readonly supabase: SupabaseSecretClient
+  private readonly countryIds = new Set<string>()
+  private readonly majors = new Map<string, number>()
+  private readonly programs = new Map<string, number>()
+  private readonly universities = new Map<string, string>()
+  private readonly uniMajors = new Map<string, number>()
+  private readonly uniMajorPrograms = new Set<string>()
 
-  if (found) return found.id
+  constructor(
+    supabase: SupabaseSecretClient,
+    seed?: {
+      countries?: { id: string }[]
+      majors?: { id: number; name: string }[]
+      programs?: { id: number; major_id: number; name: string }[]
+      universities?: { id: string; name: string }[]
+      universityMajors?: { id: number; university_id: string; major_id: number }[]
+      universityMajorPrograms?: { university_major_id: number; program_id: number }[]
+    },
+  ) {
+    this.supabase = supabase
 
-  const { data: inserted, error } = await supabase
-    .from("programs")
-    .insert({ major_id: majorId, name: programName })
-    .select("id")
-    .single()
+    for (const country of seed?.countries ?? []) {
+      this.countryIds.add(country.id)
+    }
 
-  if (error) throw error
-  return inserted!.id
+    for (const major of seed?.majors ?? []) {
+      const key = major.name.trim()
+      if (key) this.majors.set(key, major.id)
+    }
+
+    for (const program of seed?.programs ?? []) {
+      const key = programKey(program.major_id, program.name)
+      if (key) this.programs.set(key, program.id)
+    }
+
+    for (const university of seed?.universities ?? []) {
+      const key = university.name.trim()
+      if (key) this.universities.set(key, university.id)
+    }
+
+    for (const link of seed?.universityMajors ?? []) {
+      this.uniMajors.set(uniMajorKey(link.university_id, link.major_id), link.id)
+    }
+
+    for (const link of seed?.universityMajorPrograms ?? []) {
+      this.uniMajorPrograms.add(
+        uniMajorProgramKey(link.university_major_id, link.program_id),
+      )
+    }
+  }
+
+  async ensureCountry(code: string, name: string): Promise<void> {
+    const cc = code.trim().toUpperCase().slice(0, 2)
+    if (cc.length !== 2) throw new Error(`Invalid country_code: ${code}`)
+    if (this.countryIds.has(cc)) return
+
+    const countryName = name.trim() || cc
+    const { error } = await this.supabase.from("countries").insert({ id: cc, name: countryName })
+    if (error) throw error
+    this.countryIds.add(cc)
+  }
+
+  getUniversityId(name: string): string | undefined {
+    return this.universities.get(name.trim())
+  }
+
+  setUniversityId(name: string, id: string): void {
+    this.universities.set(name.trim(), id)
+  }
+
+  async getOrCreateMajor(name: string): Promise<number> {
+    const key = name.trim()
+    const cached = this.majors.get(key)
+    if (cached != null) return cached
+
+    const { data: inserted, error } = await this.supabase
+      .from("majors")
+      .insert({ name: key })
+      .select("id")
+      .single()
+
+    if (error) {
+      if (isDuplicateKeyError(error)) {
+        const { data: found, error: findError } = await this.supabase
+          .from("majors")
+          .select("id")
+          .eq("name", key)
+          .maybeSingle()
+        if (findError) throw findError
+        if (found) {
+          this.majors.set(key, found.id)
+          return found.id
+        }
+      }
+      throw error
+    }
+
+    const id = inserted!.id
+    this.majors.set(key, id)
+    return id
+  }
+
+  async getOrCreateProgram(majorId: number, programName: string): Promise<number> {
+    const key = programKey(majorId, programName)
+    const cached = this.programs.get(key)
+    if (cached != null) return cached
+
+    const trimmed = programName.trim()
+    const { data: inserted, error } = await this.supabase
+      .from("programs")
+      .insert({ major_id: majorId, name: trimmed })
+      .select("id")
+      .single()
+
+    if (error) {
+      if (isDuplicateKeyError(error)) {
+        const { data: found, error: findError } = await this.supabase
+          .from("programs")
+          .select("id")
+          .eq("major_id", majorId)
+          .eq("name", trimmed)
+          .maybeSingle()
+        if (findError) throw findError
+        if (found) {
+          this.programs.set(key, found.id)
+          return found.id
+        }
+      }
+      throw error
+    }
+
+    const id = inserted!.id
+    this.programs.set(key, id)
+    return id
+  }
+
+  async getOrCreateUniversityMajor(universityId: string, majorId: number): Promise<number> {
+    const key = uniMajorKey(universityId, majorId)
+    const cached = this.uniMajors.get(key)
+    if (cached != null) return cached
+
+    const { data: inserted, error } = await this.supabase
+      .from("university_majors")
+      .insert({ university_id: universityId, major_id: majorId })
+      .select("id")
+      .single()
+
+    if (error) {
+      if (isDuplicateKeyError(error)) {
+        const { data: found, error: findError } = await this.supabase
+          .from("university_majors")
+          .select("id")
+          .eq("university_id", universityId)
+          .eq("major_id", majorId)
+          .maybeSingle()
+        if (findError) throw findError
+        if (found) {
+          this.uniMajors.set(key, found.id)
+          return found.id
+        }
+      }
+      throw error
+    }
+
+    const id = inserted!.id
+    this.uniMajors.set(key, id)
+    return id
+  }
+
+  async getOrCreateUniversityMajorProgram(
+    universityMajorId: number,
+    programId: number,
+  ): Promise<void> {
+    const key = uniMajorProgramKey(universityMajorId, programId)
+    if (this.uniMajorPrograms.has(key)) return
+
+    const { error } = await this.supabase.from("university_major_programs").insert({
+      university_major_id: universityMajorId,
+      program_id: programId,
+    })
+
+    if (error) {
+      if (isDuplicateKeyError(error)) {
+        this.uniMajorPrograms.add(key)
+        return
+      }
+      throw error
+    }
+
+    this.uniMajorPrograms.add(key)
+  }
 }
 
-async function getOrCreateUniversityMajor(supabase: SupabaseSecretClient, universityId: string, majorId: number): Promise<number> {
-  const { data: found } = await supabase
-    .from("university_majors")
-    .select("id")
-    .eq("university_id", universityId)
-    .eq("major_id", majorId)
-    .maybeSingle()
-
-  if (found) return found.id
-
-  const { data: inserted, error } = await supabase
-    .from("university_majors")
-    .insert({ university_id: universityId, major_id: majorId })
-    .select("id")
-    .single()
-
-  if (error) throw error
-  return inserted!.id
+function programKey(majorId: number, programName: string): string {
+  return `${majorId}\0${programName.trim()}`
 }
 
-async function getOrCreateUniversityMajorProgram(
-  supabase: SupabaseSecretClient,
-  universityMajorId: number,
-  programId: number,
-): Promise<void> {
-  const { data: found } = await supabase
-    .from("university_major_programs")
-    .select("id")
-    .eq("university_major_id", universityMajorId)
-    .eq("program_id", programId)
-    .maybeSingle()
+function uniMajorKey(universityId: string, majorId: number): string {
+  return `${universityId}\0${majorId}`
+}
 
-  if (found) return
+function uniMajorProgramKey(universityMajorId: number, programId: number): string {
+  return `${universityMajorId}\0${programId}`
+}
 
-  const { error } = await supabase.from("university_major_programs").insert({
-    university_major_id: universityMajorId,
-    program_id: programId,
+async function createImportCache(supabase: SupabaseSecretClient): Promise<UniversityImportCache> {
+  const cacheStartedAt = Date.now()
+  console.log(`${IMPORT_LOG} cache preload start`)
+
+  const [countries, majors, programs, universities, universityMajors, universityMajorPrograms] =
+    await Promise.all([
+      supabase.from("countries").select("id"),
+      fetchAllRows<{ id: number; name: string }>(async (from, to) =>
+        supabase.from("majors").select("id, name").range(from, to),
+      ),
+      fetchAllRows<{ id: number; major_id: number; name: string }>(async (from, to) =>
+        supabase.from("programs").select("id, major_id, name").range(from, to),
+      ),
+      fetchAllRows<{ id: string; name: string }>(async (from, to) =>
+        supabase.from("universities").select("id, name").range(from, to),
+      ),
+      fetchAllRows<{ id: number; university_id: string; major_id: number }>(async (from, to) =>
+        supabase.from("university_majors").select("id, university_id, major_id").range(from, to),
+      ),
+      fetchAllRows<{ university_major_id: number; program_id: number }>(async (from, to) =>
+        supabase
+          .from("university_major_programs")
+          .select("university_major_id, program_id")
+          .range(from, to),
+      ),
+    ])
+
+  if (countries.error) throw countries.error
+
+  const cache = new UniversityImportCache(supabase, {
+    countries: countries.data ?? [],
+    majors,
+    programs,
+    universities,
+    universityMajors,
+    universityMajorPrograms,
   })
 
-  if (error) throw error
+  console.log(`${IMPORT_LOG} cache preload done`, {
+    elapsedMs: Date.now() - cacheStartedAt,
+    countries: countries.data?.length ?? 0,
+    majors: majors.length,
+    programs: programs.length,
+    universities: universities.length,
+    universityMajors: universityMajors.length,
+    universityMajorPrograms: universityMajorPrograms.length,
+  })
+
+  return cache
 }
 
 export type ImportSummary = {
@@ -273,6 +490,7 @@ function rowToUniversityPayload(row: Record<string, string>, defaultYear: number
     admission_page_url: cell(row, "admissions_url") || null,
     address: cell(row, "address") || null,
     ielts_min_score: parseOptionalFloat(cell(row, "ielts_min")),
+    toefl_min_score: parseOptionalInt(cell(row, "toefl_min")),
     sat_policy: cell(row, "sat_policy") || null,
     documents: buildDocuments(row),
     deadline_date: parseDeadline(cell(row, "deadline_primary"), defaultYear),
@@ -282,6 +500,100 @@ function rowToUniversityPayload(row: Record<string, string>, defaultYear: number
     tuition_per_year: tuitionFromRow(row),
     estimated_living_cost_per_year: livingFromRow(row),
     is_scholarship_available: scholarshipNote.length > 0,
+    is_priority: parseBool(cell(row, "is_priority"), false),
+    difficulty: parseDifficulty(cell(row, "difficulty")),
+    is_active: parseBool(cell(row, "is_active"), true),
+  }
+}
+
+type ParsedImportRow = {
+  rowNumber: number
+  row: Record<string, string>
+  nameKey: string
+}
+
+function parseImportRow(
+  row: Record<string, string>,
+  rowNumber: number,
+  seenNames: Set<string>,
+  summary: ImportSummary,
+): ParsedImportRow | null {
+  const name = cell(row, "name")
+  if (!name) {
+    summary.processed++
+    return null
+  }
+
+  const nameKey = name.trim()
+  if (seenNames.has(nameKey)) {
+    summary.processed++
+    summary.errors.push({
+      rowNumber,
+      message: "Duplicate university name in file",
+    })
+    return null
+  }
+
+  seenNames.add(nameKey)
+  return { rowNumber, row, nameKey }
+}
+
+async function upsertUniversityRow(
+  supabase: SupabaseSecretClient,
+  cache: UniversityImportCache,
+  parsed: ParsedImportRow,
+  defaultYear: number,
+): Promise<string> {
+  const { row, nameKey } = parsed
+  const countryName = cell(row, "country")
+  const countryCode = cell(row, "country_code").toUpperCase().slice(0, 2)
+  if (countryCode.length !== 2) {
+    throw new Error("country_code must be a 2-letter code")
+  }
+
+  await cache.ensureCountry(countryCode, countryName)
+
+  const payload = rowToUniversityPayload(row, defaultYear)
+  const existingId = cache.getUniversityId(nameKey)
+
+  if (existingId) {
+    const { error: upErr } = await supabase
+      .from("universities")
+      .update(payload)
+      .eq("id", existingId)
+    if (upErr) throw upErr
+    return existingId
+  }
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("universities")
+    .insert(payload)
+    .select("id")
+    .single()
+  if (insErr) throw insErr
+
+  const universityId = inserted!.id
+  cache.setUniversityId(nameKey, universityId)
+  return universityId
+}
+
+async function linkProgramsForRow(
+  cache: UniversityImportCache,
+  row: Record<string, string>,
+  universityId: string,
+): Promise<void> {
+  for (let g = 1; g <= 4; g++) {
+    const majorName = cell(row, `prog${g}_name`)
+    const itemsRaw = cell(row, `prog${g}_items`)
+    if (!majorName) continue
+
+    const majorId = await cache.getOrCreateMajor(majorName)
+    const uniMajorId = await cache.getOrCreateUniversityMajor(universityId, majorId)
+
+    for (const programName of splitPrograms(itemsRaw)) {
+      const programId = await cache.getOrCreateProgram(majorId, programName)
+      await cache.getOrCreateUniversityMajorProgram(uniMajorId, programId)
+    }
   }
 }
 
@@ -290,78 +602,103 @@ export async function importUniversitiesFromCsvRecords(
   records: Record<string, string>[],
   options?: { defaultYear?: number },
 ): Promise<ImportSummary> {
+  const startedAt = Date.now()
   const defaultYear = options?.defaultYear ?? new Date().getFullYear()
   const summary: ImportSummary = { processed: 0, universitiesUpserted: 0, errors: [] }
+  const seenNames = new Set<string>()
 
+  console.log(`${IMPORT_LOG} start`, { recordCount: records.length, defaultYear })
+
+  const cache = await createImportCache(supabase)
+
+  const parsedRows: ParsedImportRow[] = []
   for (let i = 0; i < records.length; i++) {
-    const row = records[i]!
-    const rowNumber = i + 2
+    const parsed = parseImportRow(records[i]!, i + 2, seenNames, summary)
+    if (parsed) parsedRows.push(parsed)
+  }
+
+  console.log(`${IMPORT_LOG} phase 1: universities start`, {
+    rows: parsedRows.length,
+    elapsedMs: Date.now() - startedAt,
+  })
+
+  const universityIds = new Map<string, string>()
+
+  for (let i = 0; i < parsedRows.length; i++) {
+    const parsed = parsedRows[i]!
+    const rowStartedAt = Date.now()
 
     try {
-      const name = cell(row, "name")
-      if (!name) {
-        summary.processed++
-        continue
-      }
-
-      const countryName = cell(row, "country")
-      const countryCode = cell(row, "country_code").toUpperCase().slice(0, 2)
-      if (countryCode.length !== 2) {
-        throw new Error("country_code must be a 2-letter code")
-      }
-
-      await ensureCountry(supabase, countryCode, countryName)
-
-      const payload = rowToUniversityPayload(row, defaultYear)
-
-      const { data: existing } = await supabase
-        .from("universities")
-        .select("id")
-        .eq("name", name)
-        .eq("country_code", countryCode)
-        .maybeSingle()
-
-      let universityId: string
-
-      if (existing) {
-        const { error: upErr } = await supabase.from("universities").update(payload).eq("id", existing.id)
-        if (upErr) throw upErr
-        universityId = existing.id
-      } else {
-        const { data: inserted, error: insErr } = await supabase
-          .from("universities")
-          .insert(payload)
-          .select("id")
-          .single()
-        if (insErr) throw insErr
-        universityId = inserted!.id
-      }
-
+      const universityId = await upsertUniversityRow(supabase, cache, parsed, defaultYear)
+      universityIds.set(parsed.nameKey, universityId)
       summary.universitiesUpserted++
 
-      for (let g = 1; g <= 4; g++) {
-        const majorName = cell(row, `prog${g}_name`)
-        const itemsRaw = cell(row, `prog${g}_items`)
-        if (!majorName) continue
-
-        const majorId = await getOrCreateMajor(supabase, majorName)
-        const uniMajorId = await getOrCreateUniversityMajor(supabase, universityId, majorId)
-
-        for (const programName of splitPrograms(itemsRaw)) {
-          const programId = await getOrCreateProgram(supabase, majorId, programName)
-          await getOrCreateUniversityMajorProgram(supabase, uniMajorId, programId)
-        }
+      if (i < 3 || i % 25 === 0 || i === parsedRows.length - 1) {
+        console.log(`${IMPORT_LOG} phase 1 row done`, {
+          rowIndex: i + 1,
+          total: parsedRows.length,
+          name: parsed.nameKey,
+          rowMs: Date.now() - rowStartedAt,
+          elapsedMs: Date.now() - startedAt,
+        })
       }
-
-      summary.processed++
     } catch (e) {
-      summary.processed++
       summary.errors.push({
-        rowNumber,
+        rowNumber: parsed.rowNumber,
         message: e instanceof Error ? e.message : String(e),
       })
     }
   }
+
+  console.log(`${IMPORT_LOG} phase 1: universities done`, {
+    upserted: summary.universitiesUpserted,
+    errors: summary.errors.length,
+    elapsedMs: Date.now() - startedAt,
+  })
+
+  console.log(`${IMPORT_LOG} phase 2: programs start`, {
+    rows: parsedRows.length,
+    elapsedMs: Date.now() - startedAt,
+  })
+
+  for (let i = 0; i < parsedRows.length; i++) {
+    const parsed = parsedRows[i]!
+    const universityId = universityIds.get(parsed.nameKey)
+    const rowStartedAt = Date.now()
+
+    if (!universityId) {
+      summary.processed++
+      continue
+    }
+
+    try {
+      await linkProgramsForRow(cache, parsed.row, universityId)
+      summary.processed++
+
+      if (i < 3 || i % 25 === 0 || i === parsedRows.length - 1) {
+        console.log(`${IMPORT_LOG} phase 2 row done`, {
+          rowIndex: i + 1,
+          total: parsedRows.length,
+          name: parsed.nameKey,
+          rowMs: Date.now() - rowStartedAt,
+          elapsedMs: Date.now() - startedAt,
+        })
+      }
+    } catch (e) {
+      summary.processed++
+      summary.errors.push({
+        rowNumber: parsed.rowNumber,
+        message: e instanceof Error ? e.message : String(e),
+      })
+    }
+  }
+
+  console.log(`${IMPORT_LOG} complete`, {
+    elapsedMs: Date.now() - startedAt,
+    processed: summary.processed,
+    universitiesUpserted: summary.universitiesUpserted,
+    errorCount: summary.errors.length,
+  })
 
   return summary
 }

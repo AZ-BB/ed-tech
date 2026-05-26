@@ -1109,6 +1109,7 @@ export type Database = {
           id: string
           ielts_min_score: number | null
           intakes: string | null
+          is_active: boolean
           is_priority: boolean
           is_renewable: boolean
           level: string | null
@@ -1148,6 +1149,7 @@ export type Database = {
           id?: string
           ielts_min_score?: number | null
           intakes?: string | null
+          is_active?: boolean
           is_priority?: boolean
           is_renewable?: boolean
           level?: string | null
@@ -1187,6 +1189,7 @@ export type Database = {
           id?: string
           ielts_min_score?: number | null
           intakes?: string | null
+          is_active?: boolean
           is_priority?: boolean
           is_renewable?: boolean
           level?: string | null
@@ -2309,6 +2312,7 @@ export type Database = {
           ielts_min_score: number | null
           intakes: string | null
           intl_students: number | null
+          is_active: boolean
           is_priority: boolean
           is_public: boolean
           is_scholarship_available: boolean
@@ -2345,6 +2349,7 @@ export type Database = {
           ielts_min_score?: number | null
           intakes?: string | null
           intl_students?: number | null
+          is_active?: boolean
           is_priority?: boolean
           is_public?: boolean
           is_scholarship_available?: boolean
@@ -2381,6 +2386,7 @@ export type Database = {
           ielts_min_score?: number | null
           intakes?: string | null
           intl_students?: number | null
+          is_active?: boolean
           is_priority?: boolean
           is_public?: boolean
           is_scholarship_available?: boolean

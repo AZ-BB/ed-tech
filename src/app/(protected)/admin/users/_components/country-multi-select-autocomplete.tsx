@@ -13,7 +13,10 @@ type CountryMultiSelectAutocompleteProps = {
   options: CountrySelectOption[];
   value: string[];
   onChange: (codes: string[]) => void;
+  /** Form field name for each selected country (multiple hidden inputs). */
+  hiddenInputName?: string;
   placeholder?: string;
+  hint?: string;
   inputClassName?: string;
   labelClassName?: string;
 };
@@ -24,7 +27,9 @@ export function CountryMultiSelectAutocomplete({
   options,
   value,
   onChange,
+  hiddenInputName = "specializationCountryCodes",
   placeholder = "Search countries by name or code…",
+  hint = "Search and press Enter to add. Use Backspace to remove the last country.",
   inputClassName = "w-full rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C]",
   labelClassName = "mb-1.5 block text-[12px] font-semibold text-[#4a4a4a]",
 }: CountryMultiSelectAutocompleteProps) {
@@ -215,12 +220,10 @@ export function CountryMultiSelectAutocomplete({
         ) : null}
       </div>
 
-      <p className="mt-1 text-[11px] text-[#888]">
-        Search and select countries. Use Backspace to remove the last chip.
-      </p>
+      {hint ? <p className="mt-1 text-[11px] text-[#888]">{hint}</p> : null}
 
       {value.map((code) => (
-        <input key={code} type="hidden" name="specializationCountryCodes" value={code} />
+        <input key={code} type="hidden" name={hiddenInputName} value={code} />
       ))}
     </div>
   );

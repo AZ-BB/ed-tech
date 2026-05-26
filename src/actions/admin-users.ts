@@ -90,6 +90,7 @@ export async function exportAdminUsersCsv(
       q: filters.q,
       role: filters.role,
       schoolId: filters.schoolId,
+      status: filters.status,
       page: 1,
       limit: 20,
     });
