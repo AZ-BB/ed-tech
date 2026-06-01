@@ -113,6 +113,13 @@ export type DashboardAnnouncementItem = {
   createdAt: string | null;
 };
 
+export type DashboardNewsItem = {
+  id: number;
+  tag: "visa" | "deadline" | "update";
+  text: string;
+  createdAt: string | null;
+};
+
 export type DashboardActivityLogItem = {
   id: number;
   message: string;
@@ -256,26 +263,3 @@ export const savedTabLabels = [
 ] as const;
 
 export const shortlistTabLabels = ["Universities", "Scholarships"] as const;
-
-export const newsItems = [
-  {
-    tag: "visa" as const,
-    text: "Canada updates student visa rules for 2026 intake",
-    date: "Mar 29, 2026",
-  },
-  {
-    tag: "deadline" as const,
-    text: "Top UK universities increasing entry requirements",
-    date: "Mar 28, 2026",
-  },
-  {
-    tag: "update" as const,
-    text: "UAE MOHESR adds 15 new approved universities",
-    date: "Mar 27, 2026",
-  },
-  {
-    tag: "deadline" as const,
-    text: "Chevening scholarship closing in 6 weeks",
-    date: "Mar 26, 2026",
-  },
-];

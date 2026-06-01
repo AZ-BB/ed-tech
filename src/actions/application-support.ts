@@ -1,5 +1,9 @@
 "use server";
 
+import {
+  APPLICATION_ACTIVITY_ENTITY_TYPE,
+  applicationActivityEntityId,
+} from "@/lib/application-activity-log";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
   recordStudentPlatformCompletionOnce,
@@ -279,6 +283,20 @@ export async function submitApplicationSupport(
   });
   if (payErr) {
     console.error(payErr);
+  }
+
+  const { error: logErr } = await secret.from("acitivity_logs").insert({
+    entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
+    entity_id: applicationActivityEntityId(applicationId),
+    action: "application_submitted",
+    message: `${name} submitted application support request #${applicationId}.`,
+    created_by_type: "student",
+    admin_id: null,
+    school_admin_id: null,
+    student_id: studentId,
+  });
+  if (logErr) {
+    console.error("[application-support] activity log", logErr);
   }
 
   const supabase = await createSupabaseServerClient();

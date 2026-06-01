@@ -774,6 +774,7 @@ export type Database = {
           ielts: number | null
           in_progress_at: string | null
           inteended_fields: string
+          internal_notes: string | null
           open_to_realted_fields: boolean
           plan_id: number
           preferences_universities: Json | null
@@ -810,6 +811,7 @@ export type Database = {
           ielts?: number | null
           in_progress_at?: string | null
           inteended_fields: string
+          internal_notes?: string | null
           open_to_realted_fields?: boolean
           plan_id: number
           preferences_universities?: Json | null
@@ -846,6 +848,7 @@ export type Database = {
           ielts?: number | null
           in_progress_at?: string | null
           inteended_fields?: string
+          internal_notes?: string | null
           open_to_realted_fields?: boolean
           plan_id?: number
           preferences_universities?: Json | null
@@ -968,6 +971,30 @@ export type Database = {
           created_at?: string | null
           id?: number
           name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      news_items: {
+        Row: {
+          created_at: string | null
+          id: number
+          tag: Database["public"]["Enums"]["news_tag"]
+          text: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          tag: Database["public"]["Enums"]["news_tag"]
+          text: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          tag?: Database["public"]["Enums"]["news_tag"]
+          text?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -1696,6 +1723,8 @@ export type Database = {
           advisor_session_id: number | null
           ambassador_session_request_id: number | null
           amount: number
+          assigned_by_admin_id: string | null
+          assigned_by_school_admin_id: string | null
           created_at: string | null
           id: number
           school_id: string
@@ -1703,8 +1732,6 @@ export type Database = {
           student_id: string
           type: Database["public"]["Enums"]["student_credits_type"]
           updated_at: string | null
-          assigned_by_admin_id: string | null
-          assigned_by_school_admin_id: string | null
         }
         Insert: {
           advisor_session_id?: number | null
@@ -1736,20 +1763,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "student_credits_history_assigned_by_admin_id_fkey"
-            columns: ["assigned_by_admin_id"]
-            isOneToOne: false
-            referencedRelation: "admins"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_credits_history_assigned_by_school_admin_id_fkey"
-            columns: ["assigned_by_school_admin_id"]
-            isOneToOne: false
-            referencedRelation: "school_admin_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "student_credits_history_advisor_session_id_fkey"
             columns: ["advisor_session_id"]
             isOneToOne: false
@@ -1761,6 +1774,20 @@ export type Database = {
             columns: ["ambassador_session_request_id"]
             isOneToOne: false
             referencedRelation: "ambassador_session_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_credits_history_assigned_by_admin_id_fkey"
+            columns: ["assigned_by_admin_id"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_credits_history_assigned_by_school_admin_id_fkey"
+            columns: ["assigned_by_school_admin_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2496,6 +2523,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_dashboard_shortlist_top_stats: {
+        Args: { p_top_n?: number }
+        Returns: Json
+      }
       create_school_admin_notification: {
         Args: {
           p_body?: string
@@ -2507,6 +2538,10 @@ export type Database = {
         Returns: undefined
       }
       current_school_admin_school_id: { Args: never; Returns: string }
+      renew_school_subscription: {
+        Args: { p_school_id: string }
+        Returns: undefined
+      }
       rpc_scholarships_discovery_page: {
         Args: {
           p_bucket?: string
@@ -2522,7 +2557,6 @@ export type Database = {
         Returns: Json
       }
       run_school_subscription_expiry: { Args: never; Returns: number }
-      renew_school_subscription: { Args: { p_school_id: string }; Returns: undefined }
       scholarship_discovery_dest_match: {
         Args: { p_dest: Json; p_user: string }
         Returns: boolean
@@ -2611,6 +2645,7 @@ export type Database = {
         | "blocked"
         | "submitted"
       gender: "male" | "female"
+      news_tag: "visa" | "deadline" | "update"
       payment_status: "pending" | "paid" | "failed"
       scholarship_competition_type: "low" | "medium" | "high" | "very_high"
       scholarship_type:
@@ -2807,6 +2842,7 @@ export const Constants = {
         "submitted",
       ],
       gender: ["male", "female"],
+      news_tag: ["visa", "deadline", "update"],
       payment_status: ["pending", "paid", "failed"],
       scholarship_competition_type: ["low", "medium", "high", "very_high"],
       scholarship_type: [

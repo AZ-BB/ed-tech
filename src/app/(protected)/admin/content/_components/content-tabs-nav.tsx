@@ -36,10 +36,7 @@ export function ContentTabsNav({ counts }: ContentTabsNavProps) {
     >
       {contentTabs.map((tab) => {
         const active = tabActive(pathname, tab.href);
-        const count =
-          tab.id === "universities" || tab.id === "scholarships"
-            ? counts[tab.id]
-            : null;
+        const count = tab.showCount ? counts[tab.id] : null;
 
         return (
           <Link

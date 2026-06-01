@@ -1,11 +1,7 @@
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
-import Link from "next/link";
+import { AdminDashboard } from "./_components/admin-dashboard";
+import { fetchAdminDashboard } from "./_lib/fetch-admin-dashboard";
 
 export default async function AdminHomePage() {
-
-  return (
-    <div className="mx-auto max-w-2xl">
-
-    </div>
-  );
+  const data = await fetchAdminDashboard();
+  return <AdminDashboard data={data} />;
 }

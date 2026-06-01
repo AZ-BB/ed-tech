@@ -1,5 +1,8 @@
-import { ContentEmptyTab } from "../_components/content-empty-tab";
+import { fetchAdminAnnouncementsPage } from "../_lib/fetch-admin-announcements-page";
+import { AdminAnnouncementsTableClient } from "../_components/admin-announcements-table-client";
 
-export default function AdminContentAnnouncementsPage() {
-  return <ContentEmptyTab title="Announcements" />;
+export default async function AdminContentAnnouncementsPage() {
+  const rows = await fetchAdminAnnouncementsPage();
+
+  return <AdminAnnouncementsTableClient rows={rows} />;
 }

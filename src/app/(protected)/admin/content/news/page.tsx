@@ -1,5 +1,8 @@
-import { ContentEmptyTab } from "../_components/content-empty-tab";
+import { AdminNewsTableClient } from "../_components/admin-news-table-client";
+import { fetchAdminNewsPage } from "../_lib/fetch-admin-news-page";
 
-export default function AdminContentNewsPage() {
-  return <ContentEmptyTab title="News & Updates" />;
+export default async function AdminContentNewsPage() {
+  const rows = await fetchAdminNewsPage();
+
+  return <AdminNewsTableClient rows={rows} />;
 }

@@ -10,6 +10,8 @@ import {
   ADMIN_PAGE_TITLE_BY_PATH,
   adminNavSections,
 } from "../_data/admin-nav-data";
+import { AdminDashboardHeaderActions } from "./admin-dashboard-header-actions";
+import { AdminApplicationsHeaderActions } from "../applications/_components/admin-applications-header-actions";
 import { ContentHeaderActions } from "../content/_components/content-header-actions";
 import {
   isAdminContentListPath,
@@ -37,10 +39,21 @@ function normalizePath(pathname: string) {
 }
 
 const ADMIN_SCHOOLS = `${ADMIN_HOME}/schools`;
+const ADMIN_APPLICATIONS = `${ADMIN_HOME}/applications`;
 
 function isAdminSchoolsPath(pathname: string): boolean {
   const n = normalizePath(pathname);
   return n === ADMIN_SCHOOLS || n.startsWith(`${ADMIN_SCHOOLS}/`);
+}
+
+function isAdminApplicationsPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  return n === ADMIN_APPLICATIONS || n.startsWith(`${ADMIN_APPLICATIONS}/`);
+}
+
+function isAdminApplicationDetailPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  return /^\/admin\/applications\/\d+$/.test(n);
 }
 
 function isAdminSchoolDetailPath(pathname: string): boolean {
@@ -82,6 +95,18 @@ export function AdminPortalShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const title = useMemo(() => pageTitle(pathname ?? ADMIN_HOME), [pathname]);
+  const dashboardHome = useMemo(
+    () => normalizePath(pathname ?? ADMIN_HOME) === ADMIN_HOME,
+    [pathname],
+  );
+  const dashboardMonthLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      }),
+    [],
+  );
   const usersSection = useMemo(
     () => isAdminUsersPath(pathname ?? ADMIN_HOME),
     [pathname],
@@ -94,12 +119,20 @@ export function AdminPortalShell({
     const n = pathname ?? ADMIN_HOME;
     return isAdminContentListPath(n);
   }, [pathname]);
+  const applicationsSection = useMemo(() => {
+    const n = pathname ?? ADMIN_HOME;
+    return isAdminApplicationsPath(n) && !isAdminApplicationDetailPath(n);
+  }, [pathname]);
   const userDetailPage = useMemo(
     () => isAdminUserDetailPath(pathname ?? ADMIN_HOME),
     [pathname],
   );
   const schoolDetailPage = useMemo(
     () => isAdminSchoolDetailPath(pathname ?? ADMIN_HOME),
+    [pathname],
+  );
+  const applicationDetailPage = useMemo(
+    () => isAdminApplicationDetailPath(pathname ?? ADMIN_HOME),
     [pathname],
   );
   const universityDetailPage = useMemo(
@@ -111,7 +144,11 @@ export function AdminPortalShell({
     [pathname],
   );
   const detailPage =
-    userDetailPage || schoolDetailPage || universityDetailPage || scholarshipDetailPage;
+    userDetailPage ||
+    schoolDetailPage ||
+    applicationDetailPage ||
+    universityDetailPage ||
+    scholarshipDetailPage;
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
@@ -308,6 +345,30 @@ export function AdminPortalShell({
                       Universities, scholarships, announcements
                     </p>
                   </>
+                ) : applicationsSection ? (
+                  <>
+                    <h1
+                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                      style={{ fontFamily: fontSerif }}
+                    >
+                      Application Support
+                    </h1>
+                    <p className="text-[12px] text-[#a0a0a0]">
+                      Case management and document tracking
+                    </p>
+                  </>
+                ) : dashboardHome ? (
+                  <>
+                    <h1
+                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                      style={{ fontFamily: fontSerif }}
+                    >
+                      Dashboard
+                    </h1>
+                    <p className="text-[12px] text-[#a0a0a0]">
+                      Platform overview - {dashboardMonthLabel}
+                    </p>
+                  </>
                 ) : (
                   <>
                     <div className="text-[11.5px] font-medium uppercase leading-none tracking-[0.06em] text-[#a0a0a0]">
@@ -328,7 +389,13 @@ export function AdminPortalShell({
             <>
               {schoolsSection ? <SchoolsHeaderActions /> : null}
               {contentSection ? <ContentHeaderActions /> : null}
-              {usersSection && !schoolsSection && !contentSection ? (
+              {applicationsSection ? <AdminApplicationsHeaderActions /> : null}
+              {dashboardHome ? <AdminDashboardHeaderActions /> : null}
+              {usersSection &&
+              !dashboardHome &&
+              !schoolsSection &&
+              !contentSection &&
+              !applicationsSection ? (
                 <UsersHeaderActions />
               ) : null}
             </>

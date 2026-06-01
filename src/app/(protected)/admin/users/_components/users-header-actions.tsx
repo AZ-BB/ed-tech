@@ -21,11 +21,10 @@ import {
   isAdminUsersPath,
   type UsersTabId,
 } from "../_data/users-tabs-data";
-import { UsersAddAdminDialog } from "./users-add-admin-dialog";
-import { UsersAddAdvisorDialog } from "./users-add-advisor-dialog";
-import { UsersAddAmbassadorDialog } from "./users-add-ambassador-dialog";
-import { UsersAddTeacherDialog } from "./users-add-teacher-dialog";
-import { UsersAddStudentDialog } from "./users-add-student-dialog";
+import {
+  AdminUserCreateDialogs,
+  useAdminUserCreateDialogs,
+} from "./admin-user-create-dialogs";
 import { UsersCsvImportDialog } from "./users-csv-import-dialog";
 import { UsersStudentImportDialog } from "./users-student-import-dialog";
 
@@ -121,11 +120,7 @@ export function UsersHeaderActions() {
   const [isExportPending, startExportTransition] = useTransition();
   const [importOpen, setImportOpen] = useState(false);
   const [studentImportOpen, setStudentImportOpen] = useState(false);
-  const [addAdminOpen, setAddAdminOpen] = useState(false);
-  const [addAmbassadorOpen, setAddAmbassadorOpen] = useState(false);
-  const [addAdvisorOpen, setAddAdvisorOpen] = useState(false);
-  const [addStudentOpen, setAddStudentOpen] = useState(false);
-  const [addTeacherOpen, setAddTeacherOpen] = useState(false);
+  const { openRole, openDialog, closeDialog } = useAdminUserCreateDialogs();
 
   if (!isAdminUsersPath(pathname)) return null;
 
@@ -217,27 +212,27 @@ export function UsersHeaderActions() {
     }
 
     if (actionId === "add-admin") {
-      setAddAdminOpen(true);
+      openDialog("admin");
       return;
     }
 
     if (actionId === "add-ambassador") {
-      setAddAmbassadorOpen(true);
+      openDialog("ambassador");
       return;
     }
 
     if (actionId === "add-advisor") {
-      setAddAdvisorOpen(true);
+      openDialog("advisor");
       return;
     }
 
     if (actionId === "add-student") {
-      setAddStudentOpen(true);
+      openDialog("student");
       return;
     }
 
     if (actionId === "add-teacher") {
-      setAddTeacherOpen(true);
+      openDialog("school_admin");
     }
   }
 
@@ -277,28 +272,10 @@ export function UsersHeaderActions() {
             open={studentImportOpen}
             onClose={() => setStudentImportOpen(false)}
           />
-          <UsersAddStudentDialog open={addStudentOpen} onClose={() => setAddStudentOpen(false)} />
         </>
       ) : null}
 
-      {tabId === "teachers" ? (
-        <UsersAddTeacherDialog open={addTeacherOpen} onClose={() => setAddTeacherOpen(false)} />
-      ) : null}
-
-      {tabId === "admins" ? (
-        <UsersAddAdminDialog open={addAdminOpen} onClose={() => setAddAdminOpen(false)} />
-      ) : null}
-
-      {tabId === "ambassadors" ? (
-        <UsersAddAmbassadorDialog
-          open={addAmbassadorOpen}
-          onClose={() => setAddAmbassadorOpen(false)}
-        />
-      ) : null}
-
-      {tabId === "advisors" ? (
-        <UsersAddAdvisorDialog open={addAdvisorOpen} onClose={() => setAddAdvisorOpen(false)} />
-      ) : null}
+      <AdminUserCreateDialogs openRole={openRole} onClose={closeDialog} />
     </>
   );
 }
