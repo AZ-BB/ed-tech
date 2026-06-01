@@ -5,6 +5,7 @@ import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
 import type {
   DashboardActivityLogItem,
   DashboardAnnouncementItem,
+  DashboardNewsItem,
 } from "./_data/student-dashboard-data";
 import { StudentDashboard } from "./_components/student-dashboard";
 
@@ -20,6 +21,7 @@ export default async function StudentPage() {
   const [
     { data: recentActivities },
     { data: announcements },
+    { data: newsItems },
     { data: studentProgress },
     { count: openTaskCount },
   ] = await Promise.all([
@@ -31,6 +33,11 @@ export default async function StudentPage() {
     supabase
       .from("announcements")
       .select("id, title, created_at")
+      .order("created_at", { ascending: false })
+      .limit(4),
+    supabase
+      .from("news_items")
+      .select("id, tag, text, created_at")
       .order("created_at", { ascending: false })
       .limit(4),
     supabase
@@ -58,6 +65,15 @@ export default async function StudentPage() {
     }))
     .filter((row) => row.title.length > 0);
 
+  const dashboardNewsItems: DashboardNewsItem[] = (newsItems ?? [])
+    .map((row) => ({
+      id: row.id,
+      tag: row.tag,
+      text: row.text?.trim() ?? "",
+      createdAt: row.created_at ?? null,
+    }))
+    .filter((row) => row.text.length > 0);
+
   const activityLogItems: DashboardActivityLogItem[] = (recentActivities ?? []).map((row) => ({
     id: row.id,
     message: row.message?.trim() || "—",
@@ -73,6 +89,7 @@ export default async function StudentPage() {
       platformPercent={platformStats.percent}
       totalLogins={studentProgress?.total_logins ?? 0}
       announcementItems={announcementItems}
+      newsItems={dashboardNewsItems}
       activityLogItems={activityLogItems}
       openTaskCount={openTaskCount ?? 0}
     />

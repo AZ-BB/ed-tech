@@ -1,5 +1,7 @@
 export const ADMIN_CONTENT_HOME = "/admin/content";
 export const ADMIN_SCHOLARSHIPS_HOME = `${ADMIN_CONTENT_HOME}/scholarships`;
+export const ADMIN_ANNOUNCEMENTS_HOME = `${ADMIN_CONTENT_HOME}/announcements`;
+export const ADMIN_NEWS_HOME = `${ADMIN_CONTENT_HOME}/news`;
 
 export type ContentTabId =
   | "universities"
@@ -8,7 +10,7 @@ export type ContentTabId =
   | "news";
 
 export type ContentTabCounts = Record<
-  "universities" | "scholarships",
+  "universities" | "scholarships" | "announcements" | "news",
   number
 >;
 
@@ -30,14 +32,14 @@ export const contentTabs: readonly ContentTab[] = [
   {
     id: "announcements",
     label: "Announcements",
-    href: `${ADMIN_CONTENT_HOME}/announcements`,
-    showCount: false,
+    href: ADMIN_ANNOUNCEMENTS_HOME,
+    showCount: true,
   },
   {
     id: "news",
     label: "News & Updates",
-    href: `${ADMIN_CONTENT_HOME}/news`,
-    showCount: false,
+    href: ADMIN_NEWS_HOME,
+    showCount: true,
   },
 ];
 
@@ -76,7 +78,10 @@ export function isAdminScholarshipDetailPath(pathname: string): boolean {
 export function isAdminContentListPath(pathname: string): boolean {
   const n = normalizePath(pathname);
   return (
-    (n === ADMIN_CONTENT_HOME || n === ADMIN_SCHOLARSHIPS_HOME) &&
+    (n === ADMIN_CONTENT_HOME ||
+      n === ADMIN_SCHOLARSHIPS_HOME ||
+      n === ADMIN_ANNOUNCEMENTS_HOME ||
+      n === ADMIN_NEWS_HOME) &&
     !isAdminUniversityDetailPath(n) &&
     !isAdminScholarshipDetailPath(n)
   );

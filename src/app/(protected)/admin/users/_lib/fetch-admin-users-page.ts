@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 
-import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
+import { applyNameEmailSearch } from "@/app/(protected)/school/_lib/student-search";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -87,16 +87,6 @@ function schoolNameFromEmbed(
   if (!schools) return "—";
   if (Array.isArray(schools)) return schools[0]?.name?.trim() || "—";
   return schools.name?.trim() || "—";
-}
-
-function applyNameEmailSearch<T extends { or: (filter: string) => T }>(
-  query: T,
-  q: string,
-): T {
-  const trimmed = q.trim();
-  if (!trimmed) return query;
-  const e = escapeIlike(trimmed);
-  return query.or(`first_name.ilike.%${e}%,last_name.ilike.%${e}%,email.ilike.%${e}%`);
 }
 
 function applySchoolFilter<T extends { eq: (column: string, value: string) => T }>(

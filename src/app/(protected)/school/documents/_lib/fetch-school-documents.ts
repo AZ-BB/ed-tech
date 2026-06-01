@@ -3,7 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
   buildOrWithStudentIds,
   fetchSchoolStudentIdsByQuery,
-  ilikePattern,
+  orIlikeClause,
 } from "@/app/(protected)/school/_lib/student-search";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
@@ -132,18 +132,16 @@ export async function fetchSchoolDocumentsPage(
   }
 
   if (qTrim) {
-    const p = ilikePattern(qTrim);
     const studentIds = await fetchSchoolStudentIdsByQuery(
       supabase,
       schoolId,
       qTrim,
     );
-    q = q.or(
-      buildOrWithStudentIds(
-        [`display_name.ilike.${p}`, `description.ilike.${p}`],
-        studentIds,
-      ),
-    );
+    const docFieldPatterns = orIlikeClause(
+      ["display_name", "description"],
+      qTrim,
+    ).split(",");
+    q = q.or(buildOrWithStudentIds(docFieldPatterns, studentIds));
   }
 
   if (docStatus === "missing") {

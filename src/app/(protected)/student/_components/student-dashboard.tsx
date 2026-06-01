@@ -1,12 +1,12 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
-  newsItems,
   quickActions,
   type DashboardActivityLogItem,
   type DashboardAnnouncementItem,
+  type DashboardNewsItem,
 } from "../_data/student-dashboard-data";
 import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
@@ -61,6 +61,13 @@ function activityLogAccent(entityType: string): {
   }
 }
 
+function formatNewsDate(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return format(d, "MMM d, yyyy");
+}
+
 const newsTagClass = {
   visa: "bg-[#E6F1FB] text-[#185FA5]",
   deadline: "bg-[#FFF3E0] text-[#E65100]",
@@ -74,6 +81,7 @@ type StudentDashboardProps = {
   platformPercent: number;
   totalLogins: number;
   announcementItems: DashboardAnnouncementItem[];
+  newsItems: DashboardNewsItem[];
   activityLogItems: DashboardActivityLogItem[];
   openTaskCount: number;
 };
@@ -85,6 +93,7 @@ export function StudentDashboard({
   platformPercent,
   totalLogins,
   announcementItems,
+  newsItems,
   activityLogItems,
   openTaskCount,
 }: StudentDashboardProps) {
@@ -341,30 +350,39 @@ export function StudentDashboard({
             Top news & updates
           </div>
           <div className={`flex flex-col gap-2 ${NEWS_LIST_CLASS}`}>
-            {newsItems.map((n) => (
-              <div
-                key={`${n.text}-${n.date}`}
-                className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border-light)] bg-[var(--sand)] p-3 transition-colors hover:border-[var(--border)] hover:bg-white"
-              >
-                <span
-                  className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${newsTagClass[n.tag]}`}
-                >
-                  {n.tag === "visa"
-                    ? "Visa"
-                    : n.tag === "deadline"
-                      ? "Deadline"
-                      : "Update"}
-                </span>
-                <div>
-                  <div className="text-[12.5px] leading-snug text-[var(--text-mid)]">
-                    {n.text}
+            {newsItems.length === 0 ? (
+              <p className="text-xs text-[var(--text-hint)]">No news yet.</p>
+            ) : (
+              newsItems.map((n) => {
+                const dateLabel = formatNewsDate(n.createdAt);
+                return (
+                  <div
+                    key={n.id}
+                    className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border-light)] bg-[var(--sand)] p-3 transition-colors hover:border-[var(--border)] hover:bg-white"
+                  >
+                    <span
+                      className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${newsTagClass[n.tag]}`}
+                    >
+                      {n.tag === "visa"
+                        ? "Visa"
+                        : n.tag === "deadline"
+                          ? "Deadline"
+                          : "Update"}
+                    </span>
+                    <div>
+                      <div className="text-[12.5px] leading-snug text-[var(--text-mid)]">
+                        {n.text}
+                      </div>
+                      {dateLabel ? (
+                        <div className="mt-0.5 text-[10px] text-[var(--text-hint)]">
+                          {dateLabel}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-[10px] text-[var(--text-hint)]">
-                    {n.date}
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
         </div>
 

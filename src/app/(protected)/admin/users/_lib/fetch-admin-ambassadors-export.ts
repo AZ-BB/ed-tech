@@ -1,4 +1,4 @@
-import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
+import { applyNameEmailSearch } from "@/app/(protected)/school/_lib/student-search";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import type { AmbassadorCsvExportRow } from "./admin-ambassadors-csv";
@@ -49,13 +49,7 @@ export async function fetchAdminAmbassadorsExportRows(
       ambassador_tags_joint ( ambassador_tags ( text ) )
     `);
 
-  const trimmed = q.trim();
-  if (trimmed) {
-    const e = escapeIlike(trimmed);
-    query = query.or(
-      `first_name.ilike.%${e}%,last_name.ilike.%${e}%,email.ilike.%${e}%`,
-    );
-  }
+  query = applyNameEmailSearch(query, q);
 
   const { data, error } = await query
     .order("last_name", { ascending: true })
