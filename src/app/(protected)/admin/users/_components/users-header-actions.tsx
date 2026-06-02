@@ -38,6 +38,26 @@ const HEADER_ACTION_PERMISSION: Partial<Record<string, AdminPermission>> = {
   "add-admin": "edit_admins",
 };
 
+const TAB_EDIT_PERMISSION: Partial<Record<UsersTabId, AdminPermission>> = {
+  students: "edit_students",
+  advisors: "edit_advisors",
+  ambassadors: "edit_ambassadors",
+};
+
+function headerActionPermission(
+  actionId: string,
+  tabId: UsersTabId,
+): AdminPermission | null {
+  const direct = HEADER_ACTION_PERMISSION[actionId];
+  if (direct) return direct;
+
+  if (actionId === "bulk-import" || actionId === "download-sample") {
+    return TAB_EDIT_PERMISSION[tabId] ?? null;
+  }
+
+  return null;
+}
+
 function HeaderActionIcon({
   icon,
 }: {
@@ -267,7 +287,7 @@ export function UsersHeaderActions() {
             </button>
           );
 
-          const permission = HEADER_ACTION_PERMISSION[action.id];
+          const permission = headerActionPermission(action.id, tabId);
           if (permission) {
             return (
               <AdminControl key={action.id} permission={permission}>

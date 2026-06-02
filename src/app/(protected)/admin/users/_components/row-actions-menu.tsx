@@ -2,6 +2,8 @@
 
 import { deactivateAdvisor, deleteAdvisor } from "@/actions/admin-advisors";
 import { deactivateAmbassador, deleteAmbassador } from "@/actions/admin-ambassadors";
+import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
+import type { AdminPermission } from "@/lib/admin-permissions";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
@@ -20,6 +22,14 @@ type MenuPosition = {
   left: number;
 };
 
+const ROW_ACTIONS_PERMISSION: Partial<Record<UsersTabId, AdminPermission>> = {
+  students: "edit_students",
+  teachers: "edit_teachers",
+  advisors: "edit_advisors",
+  ambassadors: "edit_ambassadors",
+  admins: "edit_admins",
+};
+
 function getMenuPosition(trigger: HTMLButtonElement, menuHeight = 88): MenuPosition {
   const rect = trigger.getBoundingClientRect();
   const menuWidth = 160;
@@ -33,9 +43,25 @@ function getMenuPosition(trigger: HTMLButtonElement, menuHeight = 88): MenuPosit
   const top = openBelow ? rect.bottom + gap : rect.top - menuHeight - gap;
 
   return { top, left };
-}
+};
 
 export function RowActionsMenu({ tabId, userId, userName, isActive = true }: RowActionsMenuProps) {
+  const permission = ROW_ACTIONS_PERMISSION[tabId];
+  if (!permission) return null;
+
+  return (
+    <AdminControl permission={permission}>
+      <RowActionsMenuInner
+        tabId={tabId}
+        userId={userId}
+        userName={userName}
+        isActive={isActive}
+      />
+    </AdminControl>
+  );
+}
+
+function RowActionsMenuInner({ tabId, userId, userName, isActive = true }: RowActionsMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
