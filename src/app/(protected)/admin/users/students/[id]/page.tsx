@@ -206,6 +206,8 @@ export default async function AdminStudentDetailPage({
 
       canAssignCredits
 
+      canCreateTasks
+
       assignCredits={updateAdminStudentCreditLimits}
 
       creditAssignUsesSchoolPool={false}

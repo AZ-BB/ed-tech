@@ -310,7 +310,12 @@ export async function fetchSchoolStudentDetail(
       outcome,
       notes,
       created_at,
+      platform_admin_id,
       school_admin_profiles!student_counselor_interactions_author_id_fkey (
+        first_name,
+        last_name
+      ),
+      admins!student_counselor_interactions_platform_admin_id_fkey (
         first_name,
         last_name
       )
@@ -511,14 +516,21 @@ export async function fetchSchoolStudentDetail(
 
   const rawInteractions = interactionsRes.data ?? [];
   const studentInteractions = rawInteractions.map((row) => {
-    const embed = row.school_admin_profiles as
+    const schoolAdminEmbed = row.school_admin_profiles as
       | { first_name: string; last_name: string }
       | { first_name: string; last_name: string }[]
       | null;
-    const sap = Array.isArray(embed) ? embed[0] : embed;
-    const authorLabel =
-      `${sap?.first_name?.trim() ?? ""} ${sap?.last_name?.trim() ?? ""}`.trim() ||
-      "School admin";
+    const platformAdminEmbed = row.admins as
+      | { first_name: string; last_name: string }
+      | { first_name: string; last_name: string }[]
+      | null;
+    const sap = Array.isArray(schoolAdminEmbed) ? schoolAdminEmbed[0] : schoolAdminEmbed;
+    const admin = Array.isArray(platformAdminEmbed) ? platformAdminEmbed[0] : platformAdminEmbed;
+    const schoolAdminName =
+      `${sap?.first_name?.trim() ?? ""} ${sap?.last_name?.trim() ?? ""}`.trim();
+    const platformAdminName =
+      `${admin?.first_name?.trim() ?? ""} ${admin?.last_name?.trim() ?? ""}`.trim();
+    const authorLabel = schoolAdminName || platformAdminName || "Staff";
     return {
       id: row.id,
       interactionKind: row.interaction_kind,
