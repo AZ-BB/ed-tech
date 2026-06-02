@@ -10,7 +10,6 @@ import {
   ADMIN_PAGE_TITLE_BY_PATH,
   adminNavSections,
 } from "../_data/admin-nav-data";
-import { AdminDashboardHeaderActions } from "./admin-dashboard-header-actions";
 import { AdminApplicationsHeaderActions } from "../applications/_components/admin-applications-header-actions";
 import { ContentHeaderActions } from "../content/_components/content-header-actions";
 import {
@@ -395,7 +394,6 @@ export function AdminPortalShell({
               {schoolsSection ? <SchoolsHeaderActions /> : null}
               {contentSection ? <ContentHeaderActions /> : null}
               {applicationsSection ? <AdminApplicationsHeaderActions /> : null}
-              {dashboardHome ? <AdminDashboardHeaderActions /> : null}
               {usersSection &&
               !dashboardHome &&
               !schoolsSection &&

@@ -208,6 +208,8 @@ export default async function AdminStudentDetailPage({
 
       assignCredits={updateAdminStudentCreditLimits}
 
+      creditAssignUsesSchoolPool={false}
+
       schoolInfo={schoolInfo}
 
       historyPanel={historyPanel}

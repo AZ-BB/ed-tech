@@ -279,25 +279,6 @@ export async function studentSignUp(
         };
     }
 
-    const { error: studentsCountError, count: studentsCountCount } = await supabase
-        .from("student_profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("school_id", school.id);
-
-    if (studentsCountError || studentsCountCount === null) {
-        return {
-            data: false,
-            error: "School not found."
-        };
-    }
-
-    if (studentsCountCount >= school.students_limit!) {
-        return {
-            data: false,
-            error: "School has reached its students limit."
-        };
-    }
-
     const { data, error } = await supabase.auth.admin.createUser({
         email: emailNormalized,
         password,

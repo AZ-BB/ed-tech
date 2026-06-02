@@ -23,63 +23,6 @@ function cell(row: Record<string, string>, key: string): string {
   return row[key]?.trim() ?? "";
 }
 
-async function getSchoolCapacity(
-  supabase: SupabaseSecretClient,
-  schoolId: string,
-): Promise<
-  | { ok: true; limit: number | null; enrolled: number; pending: number; remaining: number | null }
-  | { ok: false; error: string }
-> {
-  const { data: school, error: schoolError } = await supabase
-    .from("schools")
-    .select("id, students_limit")
-    .eq("id", schoolId)
-    .maybeSingle();
-
-  if (schoolError) {
-    console.error("[admin-student-import] schools", schoolError);
-    return { ok: false, error: "Could not verify the selected school." };
-  }
-
-  if (!school) {
-    return { ok: false, error: "Selected school was not found." };
-  }
-
-  const limit = school.students_limit;
-  if (limit == null) {
-    return { ok: true, limit: null, enrolled: 0, pending: 0, remaining: null };
-  }
-
-  if (limit <= 0) {
-    return { ok: false, error: "This school has no student capacity configured." };
-  }
-
-  const { count: enrolledCount, error: enrolledError } = await supabase
-    .from("student_profiles")
-    .select("id", { count: "exact", head: true })
-    .eq("school_id", schoolId);
-
-  const { count: pendingCount, error: pendingError } = await supabase
-    .from("school_students")
-    .select("id", { count: "exact", head: true })
-    .eq("school_id", schoolId)
-    .eq("signed_up", false);
-
-  if (enrolledError || pendingError) {
-    console.error("[admin-student-import] capacity counts", enrolledError ?? pendingError);
-    return {
-      ok: false,
-      error: "Could not verify how many students and invites this school already has.",
-    };
-  }
-
-  const enrolled = enrolledCount ?? 0;
-  const pending = pendingCount ?? 0;
-  const remaining = Math.max(0, limit - enrolled - pending);
-
-  return { ok: true, limit, enrolled, pending, remaining };
-}
-
 async function loadExistingEmailsForSchool(
   supabase: SupabaseSecretClient,
   schoolId: string,
@@ -148,13 +91,22 @@ export async function importStudentsFromRecords(
     return summary;
   }
 
-  const capacity = await getSchoolCapacity(supabase, schoolId);
-  if (!capacity.ok) {
-    summary.errors.push(capacity.error);
+  const { data: school, error: schoolError } = await supabase
+    .from("schools")
+    .select("id")
+    .eq("id", schoolId)
+    .maybeSingle();
+
+  if (schoolError) {
+    console.error("[admin-student-import] schools", schoolError);
+    summary.errors.push("Could not verify the selected school.");
     return summary;
   }
 
-  let remainingSlots = capacity.remaining;
+  if (!school) {
+    summary.errors.push("Selected school was not found.");
+    return summary;
+  }
 
   const seenInFile = new Set<string>();
   const parsedRows: {
@@ -222,22 +174,7 @@ export async function importStudentsFromRecords(
     return true;
   });
 
-  if (remainingSlots != null && rowsToCreate.length > remainingSlots) {
-    summary.errors.push(
-      `Cannot import ${rowsToCreate.length} new students. This school has ${remainingSlots} slot${remainingSlots === 1 ? "" : "s"} remaining (${capacity.enrolled} enrolled, ${capacity.pending} pending invites, limit ${capacity.limit}).`,
-    );
-    return summary;
-  }
-
   for (const row of rowsToCreate) {
-    if (remainingSlots != null && remainingSlots <= 0) {
-      summary.failed += 1;
-      summary.errors.push(
-        `Row ${row.rowNumber}: School student limit reached before this row could be imported.`,
-      );
-      continue;
-    }
-
     const { error } = await supabase.from("school_students").insert({
       school_id: schoolId,
       email: row.email,
@@ -259,9 +196,6 @@ export async function importStudentsFromRecords(
     }
 
     schoolInviteEmails.add(row.email);
-    if (remainingSlots != null) {
-      remainingSlots -= 1;
-    }
     summary.created += 1;
   }
 
