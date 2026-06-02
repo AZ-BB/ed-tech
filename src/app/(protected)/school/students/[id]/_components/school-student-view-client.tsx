@@ -93,6 +93,8 @@ export type SchoolStudentViewClientProps = {
   readOnly?: boolean;
   canAssignCredits?: boolean;
   assignCredits?: StudentCreditAssignAction;
+  /** When false, credit assignment does not use or display the school pool (platform admin). */
+  creditAssignUsesSchoolPool?: boolean;
   schoolInfo?: AdminStudentSchoolInfo;
   historyPanel?: SchoolStudentHistoryPanelProps;
   activityLogsPanel?: StudentActivityLogsPanelProps;
@@ -235,6 +237,7 @@ function AddCreditsCard({
   studentId,
   remaining,
   availableCreditPool,
+  usesSchoolCreditPool = true,
   label,
   editable = true,
   assignCredits = updateSchoolStudentCreditLimits,
@@ -243,6 +246,7 @@ function AddCreditsCard({
   studentId: string;
   remaining: number | null;
   availableCreditPool: number | null;
+  usesSchoolCreditPool?: boolean;
   label: string;
   editable?: boolean;
   assignCredits?: StudentCreditAssignAction;
@@ -271,7 +275,11 @@ function AddCreditsCard({
       return;
     }
 
-    if (availableCreditPool != null && parsed.value > availableCreditPool) {
+    if (
+      usesSchoolCreditPool &&
+      availableCreditPool != null &&
+      parsed.value > availableCreditPool
+    ) {
       setLocalError(
         `Cannot assign more than the available credit pool (${availableCreditPool.toLocaleString()}).`,
       );
@@ -339,8 +347,10 @@ function AddCreditsCard({
             aria-invalid={Boolean(localError)}
           />
           <div className="text-[10px] text-[var(--text-hint)]">
-            Deducted from the school credit pool.
-            {availableCreditPool != null
+            {usesSchoolCreditPool
+              ? "Deducted from the school credit pool."
+              : "Added directly by platform admin (does not affect the school credit pool)."}
+            {usesSchoolCreditPool && availableCreditPool != null
               ? ` ${availableCreditPool.toLocaleString()} available in pool.`
               : null}
           </div>
@@ -439,6 +449,7 @@ function SnapshotContent({
   readOnly = false,
   canAssignCredits,
   assignCredits,
+  creditAssignUsesSchoolPool = true,
 }: {
   applicationProfile: ApplicationProfileRow | null;
   quickStats: SchoolStudentDetailPayload["quickStats"];
@@ -446,9 +457,13 @@ function SnapshotContent({
   readOnly?: boolean;
   canAssignCredits?: boolean;
   assignCredits?: StudentCreditAssignAction;
+  creditAssignUsesSchoolPool?: boolean;
 }) {
   const allowCreditAssign = canAssignCredits ?? !readOnly;
   const creditAction = assignCredits ?? updateSchoolStudentCreditLimits;
+  const creditPoolForAssign = creditAssignUsesSchoolPool
+    ? student.availableCreditPool
+    : null;
   const preferred = applicationProfile
     ? formatPreferredDestinationsForDisplay(
         applicationProfile.preferred_destinations,
@@ -612,7 +627,8 @@ function SnapshotContent({
               kind="advisor"
               studentId={student.id}
               remaining={student.advisorCreditRemaining}
-              availableCreditPool={student.availableCreditPool}
+              availableCreditPool={creditPoolForAssign}
+              usesSchoolCreditPool={creditAssignUsesSchoolPool}
               label="Advisor credits"
               editable={allowCreditAssign}
               assignCredits={creditAction}
@@ -621,7 +637,8 @@ function SnapshotContent({
               kind="ambassador"
               studentId={student.id}
               remaining={student.ambassadorCreditRemaining}
-              availableCreditPool={student.availableCreditPool}
+              availableCreditPool={creditPoolForAssign}
+              usesSchoolCreditPool={creditAssignUsesSchoolPool}
               label="Ambassador credits"
               editable={allowCreditAssign}
               assignCredits={creditAction}
@@ -860,6 +877,7 @@ export function SchoolStudentViewClient({
   readOnly = false,
   canAssignCredits,
   assignCredits,
+  creditAssignUsesSchoolPool = true,
   schoolInfo,
   historyPanel,
   activityLogsPanel,
@@ -944,6 +962,7 @@ export function SchoolStudentViewClient({
           readOnly={readOnly}
           canAssignCredits={canAssignCredits}
           assignCredits={assignCredits}
+          creditAssignUsesSchoolPool={creditAssignUsesSchoolPool}
         />
       </>
     );

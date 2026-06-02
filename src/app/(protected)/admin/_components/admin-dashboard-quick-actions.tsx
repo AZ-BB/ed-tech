@@ -1,17 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AdminAddAnnouncementDialog } from "../content/_components/admin-add-announcement-dialog";
-import { AdminAddSchoolDialog } from "../schools/_components/admin-add-school-dialog";
 import {
   AdminUserCreateDialogs,
   type AdminUserCreateRole,
   useAdminUserCreateDialogs,
 } from "../users/_components/admin-user-create-dialogs";
 
-function icon(action: "school" | "user" | "announcement" | "report") {
-  if (action === "school") return <path d="M12 5v14M5 12h14" />;
+function icon(action: "user" | "announcement" | "report") {
   if (action === "user")
     return (
       <>
@@ -44,7 +43,7 @@ const roles: { id: AdminUserCreateRole; label: string }[] = [
 ];
 
 export function AdminDashboardQuickActions() {
-  const [addSchoolOpen, setAddSchoolOpen] = useState(false);
+  const router = useRouter();
   const [addAnnouncementOpen, setAddAnnouncementOpen] = useState(false);
   const [userRolePickerOpen, setUserRolePickerOpen] = useState(false);
   const { openRole, openDialog, closeDialog } = useAdminUserCreateDialogs();
@@ -52,14 +51,7 @@ export function AdminDashboardQuickActions() {
   return (
     <>
       <div className="mb-4 text-[15px] font-semibold tracking-[-0.01em] text-[#1a1a1a]">Quick Actions</div>
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <ActionCard
-          title="Add School"
-          subtitle="Onboard a new school"
-          colorClass="bg-[#E8F5EE] text-[#2D6A4F]"
-          iconName="school"
-          onClick={() => setAddSchoolOpen(true)}
-        />
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <ActionCard
           title="Add User"
           subtitle="Choose role before creating"
@@ -79,7 +71,7 @@ export function AdminDashboardQuickActions() {
           subtitle="Monthly school report"
           colorClass="bg-[#F3E5F5] text-[#8E44AD]"
           iconName="report"
-          disabled
+          onClick={() => router.push("/admin/reports")}
         />
       </div>
 
@@ -123,7 +115,6 @@ export function AdminDashboardQuickActions() {
         </div>
       ) : null}
 
-      <AdminAddSchoolDialog open={addSchoolOpen} onClose={() => setAddSchoolOpen(false)} />
       <AdminAddAnnouncementDialog
         open={addAnnouncementOpen}
         onClose={() => setAddAnnouncementOpen(false)}
@@ -144,7 +135,7 @@ function ActionCard({
   title: string;
   subtitle: string;
   colorClass: string;
-  iconName: "school" | "user" | "announcement" | "report";
+  iconName: "user" | "announcement" | "report";
   onClick?: () => void;
   disabled?: boolean;
 }) {

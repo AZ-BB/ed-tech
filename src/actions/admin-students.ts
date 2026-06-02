@@ -166,49 +166,7 @@ export async function updateAdminStudentCreditLimits(
   }
 
   const schoolId = studentProfile.school_id;
-
-  const { data: school, error: schoolError } = await secret
-    .from("schools")
-    .select("credit_pool")
-    .eq("id", schoolId)
-    .maybeSingle();
-
-  if (schoolError) {
-    console.error("[updateAdminStudentCreditLimits] school pool", schoolError);
-    return { data: null, error: "Could not verify the school credit pool." };
-  }
-
-  const currentPool = school?.credit_pool ?? 0;
-  if (currentPool < totalToAdd) {
-    return {
-      data: null,
-      error: `Not enough credits in the school pool (${currentPool.toLocaleString()} available, ${totalToAdd.toLocaleString()} requested).`,
-    };
-  }
-
   const now = new Date().toISOString();
-  const { data: updatedSchool, error: poolError } = await secret
-    .from("schools")
-    .update({
-      credit_pool: currentPool - totalToAdd,
-      updated_at: now,
-    })
-    .eq("id", schoolId)
-    .gte("credit_pool", totalToAdd)
-    .select("id")
-    .maybeSingle();
-
-  if (poolError) {
-    console.error("[updateAdminStudentCreditLimits] deduct pool", poolError);
-    return { data: null, error: "Could not deduct credits from the school pool." };
-  }
-
-  if (!updatedSchool) {
-    return {
-      data: null,
-      error: "Not enough credits in the school pool. Refresh and try again.",
-    };
-  }
 
   type StudentProfileUpdate =
     Database["public"]["Tables"]["student_profiles"]["Update"];

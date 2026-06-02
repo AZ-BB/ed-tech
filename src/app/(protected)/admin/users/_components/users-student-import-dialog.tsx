@@ -133,8 +133,7 @@ export function UsersStudentImportDialog({
         <p className="mt-2 text-[13px] text-[#666]">
           Upload an Excel file with <strong>email</strong> and <strong>grade</strong> columns.
           Students are added as pending invites for the selected school. Existing enrolled or
-          already-invited emails are skipped. The school&apos;s student limit is checked before
-          importing.
+          already-invited emails are skipped.
         </p>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
