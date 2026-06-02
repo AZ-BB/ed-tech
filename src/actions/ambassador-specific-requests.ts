@@ -1,5 +1,9 @@
 "use server";
 
+import {
+  isPlatformFeatureEnabledByKey,
+  PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
+} from "@/lib/platform-settings";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 async function requireStudentActor(): Promise<{ studentId: string } | { error: string }> {
@@ -44,6 +48,11 @@ export type CreateAmbassadorSpecificRequestInput = {
 export async function createAmbassadorSpecificRequest(
   input: CreateAmbassadorSpecificRequestInput,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const featureEnabled = await isPlatformFeatureEnabledByKey("ambassador_booking");
+  if (!featureEnabled) {
+    return { ok: false, error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE };
+  }
+
   const studentName = input.studentName?.trim() ?? "";
   const studentEmail = input.studentEmail?.trim() ?? "";
   const studentPhone = input.studentPhone?.trim() ?? "";

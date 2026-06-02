@@ -1,4 +1,10 @@
 import {
+  permissionsFromUserMetadata,
+  resolveAdminPermissions,
+  type AdminPermission,
+} from "@/lib/admin-permissions";
+import { fetchAdminRolePermissionTemplates } from "@/lib/admin-role-permissions";
+import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
@@ -16,6 +22,7 @@ export type AdminPlatformAdminDetailPayload = {
     isActive: boolean;
     joinedLabel: string;
     lastActiveLabel: string;
+    permissions: AdminPermission[];
   };
 };
 
@@ -107,6 +114,19 @@ export async function fetchAdminPlatformAdminDetail(
 
   const roleValue = row.role?.trim() || "admin";
 
+  const [authUserData, roleTemplates] = await Promise.all([
+    secret.auth.admin.getUserById(adminId),
+    fetchAdminRolePermissionTemplates(),
+  ]);
+
+  if (authUserData.error) {
+    console.error("[fetchAdminPlatformAdminDetail] auth user", authUserData.error);
+  }
+
+  const permissions = authUserData.data?.user
+    ? permissionsFromUserMetadata(authUserData.data.user.user_metadata, roleValue, roleTemplates)
+    : resolveAdminPermissions(undefined, roleValue, roleTemplates);
+
   return {
     admin: {
       id: row.id,
@@ -119,6 +139,7 @@ export async function fetchAdminPlatformAdminDetail(
       isActive: row.is_active,
       joinedLabel: formatJoined(row.created_at),
       lastActiveLabel: formatLastActive(latestLog?.created_at),
+      permissions,
     },
   };
 }

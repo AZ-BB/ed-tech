@@ -22,6 +22,8 @@ import {
 import { UsersHeaderActions } from "../users/_components/users-header-actions";
 import { SchoolsHeaderActions } from "../schools/_components/admin-schools-header-actions";
 import { isAdminUserDetailPath, isAdminUsersPath } from "../users/_data/users-tabs-data";
+import type { AdminPermission } from "@/lib/admin-permissions";
+import { AdminPermissionsProvider } from "./admin-permissions-provider";
 
 const fontSans =
   '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
@@ -31,6 +33,7 @@ export type AdminPortalShellProps = {
   displayName: string;
   avatarInitials: string;
   userRole?: string;
+  permissions: AdminPermission[];
   children: React.ReactNode;
 };
 
@@ -89,6 +92,7 @@ export function AdminPortalShell({
   displayName,
   avatarInitials,
   userRole = "Admin",
+  permissions,
   children,
 }: AdminPortalShellProps) {
   const pathname = usePathname();
@@ -405,7 +409,9 @@ export function AdminPortalShell({
         <main
           className={`flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${detailPage ? "lg:px-6 lg:pt-4" : ""}`}
         >
-          {children}
+          <AdminPermissionsProvider permissions={permissions}>
+            {children}
+          </AdminPermissionsProvider>
         </main>
       </div>
 

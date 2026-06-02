@@ -6,6 +6,10 @@ import {
   recordStudentPlatformCompletionOnce,
   STUDENT_PLATFORM_COMPLETION_FLAGS,
 } from "@/lib/student-platform-completion";
+import {
+  isPlatformFeatureEnabledByKey,
+  PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
+} from "@/lib/platform-settings";
 
 function uuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -94,6 +98,11 @@ export type CreateAdvisorSessionInput = {
 export async function createAdvisorSessionBooking(
   input: CreateAdvisorSessionInput,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const featureEnabled = await isPlatformFeatureEnabledByKey("advisor_sessions");
+  if (!featureEnabled) {
+    return { ok: false, error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE };
+  }
+
   const advisorId = typeof input.advisorId === "string" ? input.advisorId.trim() : "";
   if (!uuidLike(advisorId)) {
     return { ok: false, error: "Invalid advisor." };

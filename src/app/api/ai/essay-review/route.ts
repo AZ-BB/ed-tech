@@ -10,6 +10,10 @@ import {
   recordStudentPlatformCompletionOnce,
   STUDENT_PLATFORM_COMPLETION_FLAGS,
 } from "@/lib/student-platform-completion";
+import {
+  isPlatformFeatureEnabledByKey,
+  PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
+} from "@/lib/platform-settings";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 const fallbackModel = "gpt-4.1-mini";
@@ -161,6 +165,12 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return NextResponse.json({ error: auth.message }, { status: auth.status });
   }
+
+  const featureEnabled = await isPlatformFeatureEnabledByKey("essay_review");
+  if (!featureEnabled) {
+    return NextResponse.json({ error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE }, { status: 403 });
+  }
+
   const { studentId } = auth;
 
   const apiKey = process.env.OPENAI_API_KEY;

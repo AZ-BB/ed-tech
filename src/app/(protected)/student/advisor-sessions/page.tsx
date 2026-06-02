@@ -1,7 +1,13 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
+import {
+  fetchPlatformSettings,
+  isPlatformFeatureEnabled,
+  PLATFORM_FEATURE_LABELS,
+} from "@/lib/platform-settings";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { StudentFeatureUnavailable } from "../_components/student-feature-unavailable";
 import { AdvisorSessionsClient } from "./_components/advisor-sessions-client";
 import { mapAdvisorRows, type AdvisorQueryRow } from "./_lib/advisor-catalog";
 
@@ -12,6 +18,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AdvisorSessionsPage() {
+  const { features } = await fetchPlatformSettings();
+  if (!isPlatformFeatureEnabled(features, "advisor_sessions")) {
+    return <StudentFeatureUnavailable featureLabel={PLATFORM_FEATURE_LABELS.advisor_sessions} />;
+  }
+
   const auth = await requireStudentSession();
   if (!auth.ok) {
     redirect("/login");

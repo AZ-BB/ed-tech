@@ -1,8 +1,14 @@
 import type { StudentContactDefaults } from "./_components/request-specific-ambassador-modal";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
+import {
+  fetchPlatformSettings,
+  isPlatformFeatureEnabled,
+  PLATFORM_FEATURE_LABELS,
+} from "@/lib/platform-settings";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { StudentFeatureUnavailable } from "../_components/student-feature-unavailable";
 import { AmbassadorsClient } from "./_components/ambassadors-client";
 import { mapAmbassadorRows, type AmbassadorQueryRow } from "./_lib/ambassador-catalog";
 
@@ -13,6 +19,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AmbassadorsPage() {
+  const { features } = await fetchPlatformSettings();
+  if (!isPlatformFeatureEnabled(features, "ambassador_booking")) {
+    return <StudentFeatureUnavailable featureLabel={PLATFORM_FEATURE_LABELS.ambassador_booking} />;
+  }
+
   const auth = await requireStudentSession();
   if (!auth.ok) {
     redirect("/login");

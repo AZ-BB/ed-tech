@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { fetchAdminActivityLogsPanel } from "@/app/(protected)/school/students/[id]/_lib/fetch-student-activity-logs-page";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
 
 import { AdminPlatformAdminViewClient } from "./_components/admin-admin-view-client";
 import { fetchAdminPlatformAdminDetail } from "./_lib/fetch-admin-admin-detail";
@@ -51,11 +54,17 @@ export default async function AdminPlatformAdminDetailPage({
   const tabParam = typeof sp.tab === "string" ? sp.tab : "";
   const initialTab = parseInitialTab(tabParam);
 
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <AdminPlatformAdminViewClient
       admin={payload.admin}
       activityLogsPanel={activityLogsPanel}
       initialTab={initialTab}
+      currentUserId={user?.id ?? null}
     />
   );
 }

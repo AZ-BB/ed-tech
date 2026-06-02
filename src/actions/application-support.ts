@@ -9,6 +9,10 @@ import {
   recordStudentPlatformCompletionOnce,
   STUDENT_PLATFORM_COMPLETION_FLAGS,
 } from "@/lib/student-platform-completion";
+import {
+  isPlatformFeatureEnabledByKey,
+  PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
+} from "@/lib/platform-settings";
 
 import type { Database } from "@/database.types";
 
@@ -102,6 +106,11 @@ function buildIntakeNotes(payload: ApplicationSupportPayload): string {
 export async function submitApplicationSupport(
   formData: FormData,
 ): Promise<{ ok: true; applicationId: number } | { ok: false; error: string }> {
+  const featureEnabled = await isPlatformFeatureEnabledByKey("application_support");
+  if (!featureEnabled) {
+    return { ok: false, error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE };
+  }
+
   const actor = await requireStudentActor();
   if ("error" in actor) {
     return { ok: false, error: actor.error };

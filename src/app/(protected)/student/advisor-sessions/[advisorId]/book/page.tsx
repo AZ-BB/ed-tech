@@ -1,7 +1,13 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
+import {
+  fetchPlatformSettings,
+  isPlatformFeatureEnabled,
+  PLATFORM_FEATURE_LABELS,
+} from "@/lib/platform-settings";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { StudentFeatureUnavailable } from "../../../_components/student-feature-unavailable";
 import { BookAdvisorSessionClient } from "./_components/book-advisor-session-client";
 
 function isUuid(value: string): boolean {
@@ -17,6 +23,11 @@ export const metadata: Metadata = {
 type PageProps = { params: Promise<{ advisorId: string }> };
 
 export default async function BookAdvisorSessionPage({ params }: PageProps) {
+  const { features } = await fetchPlatformSettings();
+  if (!isPlatformFeatureEnabled(features, "advisor_sessions")) {
+    return <StudentFeatureUnavailable featureLabel={PLATFORM_FEATURE_LABELS.advisor_sessions} />;
+  }
+
   const auth = await requireStudentSession();
   if (!auth.ok) {
     redirect("/login");

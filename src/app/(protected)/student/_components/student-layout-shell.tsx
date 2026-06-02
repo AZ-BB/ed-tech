@@ -5,6 +5,7 @@ import {
   Brain,
   ClipboardList,
   Compass,
+  FilePenLine,
   LayoutDashboard,
   LogOut,
   Package,
@@ -47,6 +48,8 @@ function StudentNavIcon({
       return <Brain {...common} />;
     case "program-discovery":
       return <Compass {...common} />;
+    case "essay-review":
+      return <FilePenLine {...common} />;
     case "university-search":
       return <ScanSearch {...common} />;
     case "scholarships":
@@ -79,12 +82,14 @@ function isSidebarNavLinkActive(
   if (item.href === "#") return false;
   const n = normalizePath(pathname);
   const h = normalizePath(item.href);
+  if (item.id === "program-discovery") {
+    return (
+      n === "/student/ai-matching" || n.startsWith("/student/ai-matching/")
+    );
+  }
   if (item.id === "university-search") {
     return (
-      n === "/student/universities" ||
-      n.startsWith("/student/universities/") ||
-      n === "/student/ai-matching" ||
-      n.startsWith("/student/ai-matching/")
+      n === "/student/universities" || n.startsWith("/student/universities/")
     );
   }
   if (n === h) return true;

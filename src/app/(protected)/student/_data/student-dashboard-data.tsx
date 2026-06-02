@@ -32,7 +32,13 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "program-discovery",
     label: "Program Discovery",
-    href: "#",
+    href: "/student/ai-matching",
+  },
+  {
+    type: "link",
+    id: "essay-review",
+    label: "Essay Review",
+    href: "/student/essay-review",
   },
   {
     type: "link",
@@ -166,7 +172,7 @@ export const quickActions: QuickAction[] = [
   {
     name: "Program Discovery",
     desc: "Search and filter wide range of programs",
-    href: "#",
+    href: "/student/ai-matching",
     iconWrap: "bg-[#E0F2FE]",
     iconStroke: "#0369A1",
     icon: (

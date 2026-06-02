@@ -4,6 +4,9 @@ import {
 } from "@/utils/supabase-server";
 import { redirect } from "next/navigation";
 
+import { permissionsFromUserMetadata } from "@/lib/admin-permissions";
+import { fetchAdminRolePermissionTemplates } from "@/lib/admin-role-permissions";
+
 import { AdminPortalShell } from "./_components/admin-portal-shell";
 
 function initialsFromNames(first: string, last: string) {
@@ -49,6 +52,8 @@ export default async function AdminLayout({
   let firstName = "";
   let lastName = "";
   let userRole = "Admin";
+  let permissions = permissionsFromUserMetadata(undefined, "admin");
+  const roleTemplates = await fetchAdminRolePermissionTemplates();
 
   if (user?.id) {
     const service = await createSupabaseSecretClient();
@@ -67,6 +72,7 @@ export default async function AdminLayout({
       firstName = profile.first_name?.trim() ?? "";
       lastName = profile.last_name?.trim() ?? "";
       userRole = formatAdminRole(profile.role);
+      permissions = permissionsFromUserMetadata(user.user_metadata, profile.role, roleTemplates);
     }
   }
 
@@ -82,6 +88,7 @@ export default async function AdminLayout({
       displayName={displayName}
       avatarInitials={avatarInitials}
       userRole={userRole}
+      permissions={permissions}
     >
       {children}
     </AdminPortalShell>

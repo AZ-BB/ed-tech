@@ -2,7 +2,8 @@
 
 import { updateAdminAdminProfile } from "@/actions/admin-admins";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type AdminEditPlatformAdminDialogProps = {
   open: boolean;
@@ -39,6 +40,15 @@ export function AdminEditPlatformAdminDialog({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -62,7 +72,7 @@ export function AdminEditPlatformAdminDialog({
     window.setTimeout(() => onClose(), 600);
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4"
       role="presentation"
@@ -189,6 +199,7 @@ export function AdminEditPlatformAdminDialog({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
