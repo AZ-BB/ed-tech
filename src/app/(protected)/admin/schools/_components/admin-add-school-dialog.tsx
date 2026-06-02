@@ -1,6 +1,7 @@
 "use client";
 
 import { createAdminSchool, fetchAdminSchoolFormCountries } from "@/actions/admin-schools";
+import { fetchAdminSchoolFormDefaults } from "@/actions/admin-settings";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -23,7 +24,12 @@ export function AdminAddSchoolDialog({ open, onClose }: AdminAddSchoolDialogProp
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [isLoadingDefaults, setIsLoadingDefaults] = useState(false);
   const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [defaultAdvisorCreditLimit, setDefaultAdvisorCreditLimit] = useState<number | null>(null);
+  const [defaultAmbassadorCreditLimit, setDefaultAmbassadorCreditLimit] = useState<number | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,18 +37,32 @@ export function AdminAddSchoolDialog({ open, onClose }: AdminAddSchoolDialogProp
 
     let cancelled = false;
     setIsLoadingCountries(true);
+    setIsLoadingDefaults(true);
     setError(null);
 
-    void fetchAdminSchoolFormCountries().then((result) => {
-      if (cancelled) return;
-      if (!result.ok) {
-        setError(result.error);
-        setCountries([]);
-      } else {
-        setCountries(result.countries);
-      }
-      setIsLoadingCountries(false);
-    });
+    void Promise.all([fetchAdminSchoolFormCountries(), fetchAdminSchoolFormDefaults()]).then(
+      ([countriesResult, defaultsResult]) => {
+        if (cancelled) return;
+
+        if (!countriesResult.ok) {
+          setError(countriesResult.error);
+          setCountries([]);
+        } else {
+          setCountries(countriesResult.countries);
+        }
+        setIsLoadingCountries(false);
+
+        if (!defaultsResult.ok) {
+          setError((prev) => prev ?? defaultsResult.error);
+          setDefaultAdvisorCreditLimit(null);
+          setDefaultAmbassadorCreditLimit(null);
+        } else {
+          setDefaultAdvisorCreditLimit(defaultsResult.defaultAdvisorCreditLimit);
+          setDefaultAmbassadorCreditLimit(defaultsResult.defaultAmbassadorCreditLimit);
+        }
+        setIsLoadingDefaults(false);
+      },
+    );
 
     return () => {
       cancelled = true;
@@ -216,11 +236,14 @@ export function AdminAddSchoolDialog({ open, onClose }: AdminAddSchoolDialogProp
                 </label>
                 <input
                   id="add-school-advisor-limit"
+                  key={`advisor-${defaultAdvisorCreditLimit ?? "empty"}`}
                   name="defaultAdvisorCreditLimit"
                   type="number"
                   min={0}
                   className={inputClassName}
                   placeholder="Optional"
+                  defaultValue={defaultAdvisorCreditLimit ?? undefined}
+                  disabled={isLoadingDefaults}
                 />
               </div>
               <div>
@@ -229,11 +252,14 @@ export function AdminAddSchoolDialog({ open, onClose }: AdminAddSchoolDialogProp
                 </label>
                 <input
                   id="add-school-ambassador-limit"
+                  key={`ambassador-${defaultAmbassadorCreditLimit ?? "empty"}`}
                   name="defaultAmbassadorCreditLimit"
                   type="number"
                   min={0}
                   className={inputClassName}
                   placeholder="Optional"
+                  defaultValue={defaultAmbassadorCreditLimit ?? undefined}
+                  disabled={isLoadingDefaults}
                 />
               </div>
             </div>
@@ -251,7 +277,7 @@ export function AdminAddSchoolDialog({ open, onClose }: AdminAddSchoolDialogProp
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || isLoadingCountries}
+              disabled={isSubmitting || isLoadingCountries || isLoadingDefaults}
               className="rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
             >
               {isSubmitting ? "Creating…" : "Create school"}

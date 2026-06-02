@@ -25,8 +25,18 @@ import {
   AdminUserCreateDialogs,
   useAdminUserCreateDialogs,
 } from "./admin-user-create-dialogs";
+import { AdminControl } from "../../_components/admin-control";
 import { UsersCsvImportDialog } from "./users-csv-import-dialog";
 import { UsersStudentImportDialog } from "./users-student-import-dialog";
+import type { AdminPermission } from "@/lib/admin-permissions";
+
+const HEADER_ACTION_PERMISSION: Partial<Record<string, AdminPermission>> = {
+  "add-student": "edit_students",
+  "add-teacher": "edit_teachers",
+  "add-advisor": "edit_advisors",
+  "add-ambassador": "edit_ambassadors",
+  "add-admin": "edit_admins",
+};
 
 function HeaderActionIcon({
   icon,
@@ -239,22 +249,35 @@ export function UsersHeaderActions() {
   return (
     <>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
-        {actions.map((action) => (
-          <button
-            key={action.id}
-            type="button"
-            disabled={action.id === "export" && isExportPending}
-            className={`flex cursor-pointer items-center gap-[6px] rounded-[8px] border px-4 py-[7px] text-[12px] font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${
-              action.variant === "primary"
-                ? "border-[#2D6A4F] bg-[#2D6A4F] text-white hover:bg-[#1B4332]"
-                : "border-[#e0deda] bg-white text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
-            }`}
-            onClick={() => handleActionClick(action.id)}
-          >
-            <HeaderActionIcon icon={action.icon} />
-            {action.id === "export" && isExportPending ? "Exporting…" : action.label}
-          </button>
-        ))}
+        {actions.map((action) => {
+          const button = (
+            <button
+              key={action.id}
+              type="button"
+              disabled={action.id === "export" && isExportPending}
+              className={`flex cursor-pointer items-center gap-[6px] rounded-[8px] border px-4 py-[7px] text-[12px] font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${
+                action.variant === "primary"
+                  ? "border-[#2D6A4F] bg-[#2D6A4F] text-white hover:bg-[#1B4332]"
+                  : "border-[#e0deda] bg-white text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+              }`}
+              onClick={() => handleActionClick(action.id)}
+            >
+              <HeaderActionIcon icon={action.icon} />
+              {action.id === "export" && isExportPending ? "Exporting…" : action.label}
+            </button>
+          );
+
+          const permission = HEADER_ACTION_PERMISSION[action.id];
+          if (permission) {
+            return (
+              <AdminControl key={action.id} permission={permission}>
+                {button}
+              </AdminControl>
+            );
+          }
+
+          return button;
+        })}
       </div>
 
       {importConfig ? (

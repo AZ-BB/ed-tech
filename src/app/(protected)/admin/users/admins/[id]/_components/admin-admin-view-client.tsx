@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { AdminPlatformAdminDetailPayload } from "../_lib/fetch-admin-admin-detail";
 import { AdminPlatformAdminActions } from "./admin-admin-actions";
+import { AdminAdminPermissionsPanel } from "./admin-admin-permissions-panel";
 
 type TabId = "overview" | "activity_logs";
 
@@ -21,6 +22,7 @@ export type AdminPlatformAdminViewClientProps = {
   admin: AdminPlatformAdminDetailPayload["admin"];
   activityLogsPanel: StudentActivityLogsPanelProps;
   initialTab?: TabId;
+  currentUserId: string | null;
 };
 
 function initials(first: string, last: string): string {
@@ -47,6 +49,7 @@ export function AdminPlatformAdminViewClient({
   admin,
   activityLogsPanel,
   initialTab = "overview",
+  currentUserId,
 }: AdminPlatformAdminViewClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -92,16 +95,24 @@ export function AdminPlatformAdminViewClient({
   let tabBody: ReactNode;
   if (tab === "overview") {
     tabBody = (
-      <SchoolStudentPanel head="Profile" sub="Platform admin account details">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <SnapItem label="First name" value={admin.firstName || "—"} />
-          <SnapItem label="Last name" value={admin.lastName || "—"} />
-          <SnapItem label="Email" value={admin.email || "—"} />
-          <SnapItem label="Phone" value={admin.phone ?? "—"} />
-          <SnapItem label="Role" value={admin.role} />
-          <SnapItem label="Status" value={admin.isActive ? "Active" : "Inactive"} />
-        </div>
-      </SchoolStudentPanel>
+      <>
+        <SchoolStudentPanel head="Profile" sub="Platform admin account details">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SnapItem label="First name" value={admin.firstName || "—"} />
+            <SnapItem label="Last name" value={admin.lastName || "—"} />
+            <SnapItem label="Email" value={admin.email || "—"} />
+            <SnapItem label="Phone" value={admin.phone ?? "—"} />
+            <SnapItem label="Role" value={admin.role} />
+            <SnapItem label="Status" value={admin.isActive ? "Active" : "Inactive"} />
+          </div>
+        </SchoolStudentPanel>
+        <AdminAdminPermissionsPanel
+          adminId={admin.id}
+          adminRole={admin.roleValue}
+          initialPermissions={admin.permissions}
+          currentUserId={currentUserId}
+        />
+      </>
     );
   } else {
     tabBody = (

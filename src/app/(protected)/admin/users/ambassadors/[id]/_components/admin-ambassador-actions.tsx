@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { AdminEditAmbassadorDialog } from "./admin-edit-ambassador-dialog";
+import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
 
 export type AdminAmbassadorActionsProps = {
   ambassadorId: string;
@@ -74,14 +75,16 @@ export function AdminAmbassadorActions({
         </span>
       ) : null}
 
-      <button
-        type="button"
-        disabled={isPending}
-        onClick={() => setEditOpen(true)}
-        className={`${actionBtnClass} border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]`}
-      >
-        Edit
-      </button>
+      <AdminControl permission="edit_ambassadors">
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() => setEditOpen(true)}
+          className={`${actionBtnClass} border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]`}
+        >
+          Edit
+        </button>
+      </AdminControl>
       {isActive ? (
         <button
           type="button"
@@ -118,12 +121,14 @@ export function AdminAmbassadorActions({
         </p>
       ) : null}
 
-      <AdminEditAmbassadorDialog
-        open={editOpen}
-        ambassadorId={ambassadorId}
-        defaults={editDefaults}
-        onClose={() => setEditOpen(false)}
-      />
+      <AdminControl permission="edit_ambassadors">
+        <AdminEditAmbassadorDialog
+          open={editOpen}
+          ambassadorId={ambassadorId}
+          defaults={editDefaults}
+          onClose={() => setEditOpen(false)}
+        />
+      </AdminControl>
     </>
   );
 }

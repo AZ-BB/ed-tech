@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { AdminEditTeacherDialog } from "./admin-edit-teacher-dialog";
+import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
 
 export type AdminTeacherActionsProps = {
   teacherId: string;
@@ -66,14 +67,16 @@ export function AdminTeacherActions({
         </span>
       ) : null}
 
-      <button
-        type="button"
-        disabled={isPending}
-        onClick={() => setEditOpen(true)}
-        className={`${actionBtnClass} border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]`}
-      >
-        Edit
-      </button>
+      <AdminControl permission="edit_teachers">
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() => setEditOpen(true)}
+          className={`${actionBtnClass} border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]`}
+        >
+          Edit
+        </button>
+      </AdminControl>
       <button
         type="button"
         disabled={isPending}
@@ -128,12 +131,14 @@ export function AdminTeacherActions({
         </p>
       ) : null}
 
-      <AdminEditTeacherDialog
-        open={editOpen}
-        teacherId={teacherId}
-        defaults={editDefaults}
-        onClose={() => setEditOpen(false)}
-      />
+      <AdminControl permission="edit_teachers">
+        <AdminEditTeacherDialog
+          open={editOpen}
+          teacherId={teacherId}
+          defaults={editDefaults}
+          onClose={() => setEditOpen(false)}
+        />
+      </AdminControl>
     </>
   );
 }

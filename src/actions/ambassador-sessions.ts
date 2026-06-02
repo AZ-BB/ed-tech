@@ -5,6 +5,10 @@ import {
   recordStudentPlatformCompletionOnce,
   STUDENT_PLATFORM_COMPLETION_FLAGS,
 } from "@/lib/student-platform-completion";
+import {
+  isPlatformFeatureEnabledByKey,
+  PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
+} from "@/lib/platform-settings";
 
 function uuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -111,6 +115,11 @@ function parseOptionalIso(value: string | null | undefined): string | null {
 export async function createAmbassadorSessionRequest(
   input: CreateAmbassadorSessionInput,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const featureEnabled = await isPlatformFeatureEnabledByKey("ambassador_booking");
+  if (!featureEnabled) {
+    return { ok: false, error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE };
+  }
+
   const ambassadorId = typeof input.ambassadorId === "string" ? input.ambassadorId.trim() : "";
   if (!uuidLike(ambassadorId)) {
     return { ok: false, error: "Invalid ambassador." };

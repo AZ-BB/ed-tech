@@ -7,6 +7,8 @@ import {
 import { revalidatePath } from "next/cache";
 
 import type { Database } from "@/database.types";
+import { fetchAdminRolePermissionTemplates, permissionsForRoleFromTemplates } from "@/lib/admin-role-permissions";
+import { assertAdminPermission } from "@/lib/assert-admin-permission";
 
 import type { AdvisorCsvExportRow } from "@/app/(protected)/admin/users/_lib/admin-advisors-csv";
 import type { AmbassadorCsvExportRow } from "@/app/(protected)/admin/users/_lib/admin-ambassadors-csv";
@@ -122,7 +124,7 @@ export async function fetchAdminSchoolsForStudentImport(): Promise<FetchAdminSch
 type CreateAdminUserResult = { ok: true } | { ok: false; error: string };
 
 export async function createAdminUser(formData: FormData): Promise<CreateAdminUserResult> {
-  const access = await assertAdminAccess();
+  const access = await assertAdminPermission("edit_admins");
   if (!access.ok) return access;
 
   const firstName = String(formData.get("firstName") ?? "").trim();
@@ -148,6 +150,8 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminUs
   }
 
   const role = roleRaw as AdminRole;
+  const roleTemplates = await fetchAdminRolePermissionTemplates();
+  const permissions = permissionsForRoleFromTemplates(roleTemplates, role);
   const service = await createSupabaseSecretClient();
 
   const { data: existingAdmin } = await service
@@ -168,6 +172,7 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminUs
       firstName,
       lastName,
       type: "admin",
+      permissions,
     },
   });
 

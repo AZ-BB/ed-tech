@@ -1,8 +1,14 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import {
+  fetchPlatformSettings,
+  isPlatformFeatureEnabled,
+  PLATFORM_FEATURE_LABELS,
+} from "@/lib/platform-settings";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { StudentFeatureUnavailable } from "../../../_components/student-feature-unavailable";
 import { BookAmbassadorSessionClient } from "./_components/book-ambassador-session-client";
 
 function isUuid(value: string): boolean {
@@ -18,6 +24,11 @@ export const metadata: Metadata = {
 type PageProps = { params: Promise<{ ambassadorId: string }> };
 
 export default async function BookAmbassadorSessionPage({ params }: PageProps) {
+  const { features } = await fetchPlatformSettings();
+  if (!isPlatformFeatureEnabled(features, "ambassador_booking")) {
+    return <StudentFeatureUnavailable featureLabel={PLATFORM_FEATURE_LABELS.ambassador_booking} />;
+  }
+
   const auth = await requireStudentSession();
   if (!auth.ok) {
     redirect("/login");
