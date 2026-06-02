@@ -92,33 +92,37 @@ export function AdminPlatformAdminActions({
         Reset password
       </button>
       {isActive ? (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() =>
-            runAction(
-              `Deactivate ${adminName}? They will no longer be able to sign in.`,
-              () => deactivateAdminAdmin(adminId),
-            )
-          }
-          className={`${actionBtnClass} border-[rgba(231,76,60,.35)] bg-white text-[#c0392b] hover:border-[#E74C3C] hover:bg-[rgba(231,76,60,.06)]`}
-        >
-          Deactivate
-        </button>
+        <AdminControl permission="edit_admins">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() =>
+              runAction(
+                `Deactivate ${adminName}? They will no longer be able to sign in.`,
+                () => deactivateAdminAdmin(adminId),
+              )
+            }
+            className={`${actionBtnClass} border-[rgba(231,76,60,.35)] bg-white text-[#c0392b] hover:border-[#E74C3C] hover:bg-[rgba(231,76,60,.06)]`}
+          >
+            Deactivate
+          </button>
+        </AdminControl>
       ) : (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() =>
-            runAction(
-              `Activate ${adminName}? They will be able to sign in again.`,
-              () => activateAdminAdmin(adminId),
-            )
-          }
-          className={`${actionBtnClass} border-[var(--green)] bg-[var(--green)] text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]`}
-        >
-          Activate
-        </button>
+        <AdminControl permission="edit_admins">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() =>
+              runAction(
+                `Activate ${adminName}? They will be able to sign in again.`,
+                () => activateAdminAdmin(adminId),
+              )
+            }
+            className={`${actionBtnClass} border-[var(--green)] bg-[var(--green)] text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]`}
+          >
+            Activate
+          </button>
+        </AdminControl>
       )}
 
       {statusError ? (

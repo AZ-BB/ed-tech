@@ -109,23 +109,27 @@ export function AdminStudentActions({
         Reset password
       </button>
       {isActive ? (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleDeactivate}
-          className={`${actionBtnClass} border-[rgba(231,76,60,.35)] bg-white text-[#c0392b] hover:border-[#E74C3C] hover:bg-[rgba(231,76,60,.06)]`}
-        >
-          Deactivate
-        </button>
+        <AdminControl permission="edit_students">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleDeactivate}
+            className={`${actionBtnClass} border-[rgba(231,76,60,.35)] bg-white text-[#c0392b] hover:border-[#E74C3C] hover:bg-[rgba(231,76,60,.06)]`}
+          >
+            Deactivate
+          </button>
+        </AdminControl>
       ) : (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleActivate}
-          className={`${actionBtnClass} border-[var(--green)] bg-[var(--green)] text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]`}
-        >
-          Activate
-        </button>
+        <AdminControl permission="edit_students">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleActivate}
+            className={`${actionBtnClass} border-[var(--green)] bg-[var(--green)] text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]`}
+          >
+            Activate
+          </button>
+        </AdminControl>
       )}
 
       {statusError ? (

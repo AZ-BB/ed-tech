@@ -288,9 +288,10 @@ export function AdminPortalShell({
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
-        <header
-          className={`sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-4 max-[760px]:px-4 lg:gap-[10px] lg:px-7 ${detailPage ? "lg:hidden" : ""}`}
-        >
+        <AdminPermissionsProvider permissions={permissions}>
+          <header
+            className={`sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-4 max-[760px]:px-4 lg:gap-[10px] lg:px-7 ${detailPage ? "lg:hidden" : ""}`}
+          >
           <div className="flex min-w-0 flex-1 items-start gap-3 lg:gap-3">
             <button
               type="button"
@@ -409,10 +410,9 @@ export function AdminPortalShell({
         <main
           className={`flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${detailPage ? "lg:px-6 lg:pt-4" : ""}`}
         >
-          <AdminPermissionsProvider permissions={permissions}>
-            {children}
-          </AdminPermissionsProvider>
+          {children}
         </main>
+        </AdminPermissionsProvider>
       </div>
 
       <LogoutConfirmDialog
