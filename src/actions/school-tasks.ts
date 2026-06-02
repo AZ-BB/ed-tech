@@ -24,6 +24,23 @@ function normalizePriority(raw: string): "high" | "medium" | "low" {
 async function requireSchoolAdminSchoolId(): Promise<
   { schoolId: string; userId: string } | { error: string }
 > {
+  const access = await requireTaskManagerAccess();
+  if ("error" in access) {
+    return access;
+  }
+  if (access.kind !== "school_admin") {
+    return { error: "Your account is not linked to a school." };
+  }
+  return { schoolId: access.schoolId, userId: access.userId };
+}
+
+type TaskManagerAccess =
+  | { kind: "school_admin"; schoolId: string; userId: string }
+  | { kind: "platform_admin"; userId: string };
+
+async function requireTaskManagerAccess(): Promise<
+  TaskManagerAccess | { error: string }
+> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -35,20 +52,36 @@ async function requireSchoolAdminSchoolId(): Promise<
 
   const { data: sap, error } = await supabase
     .from("school_admin_profiles")
-    .select("school_id, first_name, last_name")
+    .select("school_id")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (!error && sap?.school_id) {
+    return { kind: "school_admin", schoolId: sap.school_id, userId: user.id };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: admin, error: adminError } = await secret
+    .from("admins")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (adminError) {
+    console.error("[school-tasks] admins", adminError);
+    return { error: "Could not verify access." };
+  }
+
+  if (admin) {
+    return { kind: "platform_admin", userId: user.id };
+  }
 
   if (error) {
     console.error("[school-tasks] school_admin_profiles", error);
     return { error: "Could not load your school admin profile." };
   }
 
-  if (!sap?.school_id) {
-    return { error: "Your account is not linked to a school." };
-  }
-
-  return { schoolId: sap.school_id, userId: user.id };
+  return { error: "Your account is not linked to a school." };
 }
 
 async function assertStudentInSchool(
@@ -104,14 +137,41 @@ async function fetchSchoolStudentIdsForTaskBulk(
   return ids;
 }
 
+async function assertStudentExists(
+  secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
+  studentId: string,
+): Promise<boolean> {
+  const { data } = await secret
+    .from("student_profiles")
+    .select("id")
+    .eq("id", studentId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
 async function resolveAssignedByName(
-  userId: string,
+  access: TaskManagerAccess,
 ): Promise<string | null> {
   const supabase = await createSupabaseServerClient();
+
+  if (access.kind === "platform_admin") {
+    const secret = await createSupabaseSecretClient();
+    const { data: admin } = await secret
+      .from("admins")
+      .select("first_name, last_name")
+      .eq("id", access.userId)
+      .maybeSingle();
+
+    return (
+      `${admin?.first_name?.trim() ?? ""} ${admin?.last_name?.trim() ?? ""}`.trim() ||
+      "Platform admin"
+    );
+  }
+
   const { data: sap } = await supabase
     .from("school_admin_profiles")
     .select("first_name, last_name")
-    .eq("id", userId)
+    .eq("id", access.userId)
     .maybeSingle();
 
   return (
@@ -124,7 +184,7 @@ export async function createSchoolStudentTask(
   _prev: GeneralResponse<null | { created: number }> | null,
   formData: FormData,
 ): Promise<GeneralResponse<null | { created: number }>> {
-  const auth = await requireSchoolAdminSchoolId();
+  const auth = await requireTaskManagerAccess();
   if ("error" in auth) {
     return { data: null, error: auth.error };
   }
@@ -152,9 +212,13 @@ export async function createSchoolStudentTask(
       : notesRaw || null;
 
   const secret = await createSupabaseSecretClient();
-  const assignedBy = await resolveAssignedByName(auth.userId);
+  const assignedBy = await resolveAssignedByName(auth);
 
   if (studentId === BULK_ASSIGN_ALL_SENTINEL) {
+    if (auth.kind !== "school_admin") {
+      return { data: null, error: "Bulk task assignment is school-admin only." };
+    }
+
     const gradeRaw = String(formData.get("grade") ?? "").trim();
     if (gradeRaw && !GRADE_ALLOWED.has(gradeRaw)) {
       return { data: null, error: "Pick a valid grade." };
@@ -208,13 +272,18 @@ export async function createSchoolStudentTask(
     return { data: null, error: "Pick a student." };
   }
 
-  const okStudent = await assertStudentInSchool(
-    secret,
-    studentId,
-    auth.schoolId,
-  );
+  const okStudent =
+    auth.kind === "school_admin"
+      ? await assertStudentInSchool(secret, studentId, auth.schoolId)
+      : await assertStudentExists(secret, studentId);
   if (!okStudent) {
-    return { data: null, error: "That student is not at your school." };
+    return {
+      data: null,
+      error:
+        auth.kind === "school_admin"
+          ? "That student is not at your school."
+          : "That student was not found.",
+    };
   }
 
   const { error: insErr } = await secret
@@ -360,7 +429,7 @@ export async function toggleSchoolStudentTask(
     return { error: "Invalid task." };
   }
 
-  const auth = await requireSchoolAdminSchoolId();
+  const auth = await requireTaskManagerAccess();
   if ("error" in auth) {
     return { error: auth.error };
   }
@@ -377,11 +446,10 @@ export async function toggleSchoolStudentTask(
     return { error: "Task not found." };
   }
 
-  const okStudent = await assertStudentInSchool(
-    secret,
-    task.student_id,
-    auth.schoolId,
-  );
+  const okStudent =
+    auth.kind === "school_admin"
+      ? await assertStudentInSchool(secret, task.student_id, auth.schoolId)
+      : await assertStudentExists(secret, task.student_id);
   if (!okStudent) {
     return { error: "You do not have access to this task." };
   }

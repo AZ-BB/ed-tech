@@ -95,6 +95,8 @@ export type SchoolStudentViewClientProps = {
   assignCredits?: StudentCreditAssignAction;
   /** When false, credit assignment does not use or display the school pool (platform admin). */
   creditAssignUsesSchoolPool?: boolean;
+  /** When true, Tasks tab can open the new-task modal (e.g. platform admin on read-only student view). */
+  canCreateTasks?: boolean;
   schoolInfo?: AdminStudentSchoolInfo;
   historyPanel?: SchoolStudentHistoryPanelProps;
   activityLogsPanel?: StudentActivityLogsPanelProps;
@@ -878,6 +880,7 @@ export function SchoolStudentViewClient({
   canAssignCredits,
   assignCredits,
   creditAssignUsesSchoolPool = true,
+  canCreateTasks,
   schoolInfo,
   historyPanel,
   activityLogsPanel,
@@ -889,6 +892,7 @@ export function SchoolStudentViewClient({
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<TabId>(initialTab);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const allowTaskCreate = canCreateTasks ?? !readOnly;
 
   useEffect(() => {
     if (tab !== "tasks") setNewTaskOpen(false);
@@ -1027,9 +1031,9 @@ export function SchoolStudentViewClient({
         status={tasksPanel.status}
         studentOptions={[]}
         newTaskModal={
-          readOnly
-            ? { open: false, onOpenChange: () => {} }
-            : { open: newTaskOpen, onOpenChange: setNewTaskOpen }
+          allowTaskCreate
+            ? { open: newTaskOpen, onOpenChange: setNewTaskOpen }
+            : { open: false, onOpenChange: () => {} }
         }
       />
     );
@@ -1135,7 +1139,7 @@ export function SchoolStudentViewClient({
             {sidebarActions ? (
               <div className="flex flex-col gap-1.5">{sidebarActions}</div>
             ) : null}
-            {!readOnly ? (
+            {!allowTaskCreate ? null : (
               <button
                 type="button"
                 onClick={() => {
@@ -1146,7 +1150,7 @@ export function SchoolStudentViewClient({
               >
                 + Add task
               </button>
-            ) : null}
+            )}
           </div>
         </aside>
 

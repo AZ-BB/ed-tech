@@ -1669,7 +1669,7 @@ export type Database = {
       }
       student_counselor_interactions: {
         Row: {
-          author_id: string
+          author_id: string | null
           created_at: string
           duration_minutes: number | null
           id: string
@@ -1677,10 +1677,11 @@ export type Database = {
           notes: string
           occurred_on: string
           outcome: string
+          platform_admin_id: string | null
           student_id: string
         }
         Insert: {
-          author_id: string
+          author_id?: string | null
           created_at?: string
           duration_minutes?: number | null
           id?: string
@@ -1688,10 +1689,11 @@ export type Database = {
           notes: string
           occurred_on: string
           outcome: string
+          platform_admin_id?: string | null
           student_id: string
         }
         Update: {
-          author_id?: string
+          author_id?: string | null
           created_at?: string
           duration_minutes?: number | null
           id?: string
@@ -1699,6 +1701,7 @@ export type Database = {
           notes?: string
           occurred_on?: string
           outcome?: string
+          platform_admin_id?: string | null
           student_id?: string
         }
         Relationships: [
@@ -1707,6 +1710,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "school_admin_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_counselor_interactions_platform_admin_id_fkey"
+            columns: ["platform_admin_id"]
+            isOneToOne: false
+            referencedRelation: "admins"
             referencedColumns: ["id"]
           },
           {

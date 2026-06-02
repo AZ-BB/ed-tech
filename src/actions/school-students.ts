@@ -622,13 +622,69 @@ export async function addSchoolStudentInteraction(
     return { data: null, error: "You must be signed in." };
   }
 
+  const interactionRow = {
+    student_id: studentId,
+    interaction_kind: kind,
+    occurred_on: occurredRaw,
+    duration_minutes: durationMinutes,
+    outcome,
+    notes,
+  };
+
   const { data: sap, error: sapError } = await supabase
     .from("school_admin_profiles")
     .select("school_id")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (sapError || !sap?.school_id) {
+  if (!sapError && sap?.school_id) {
+    const { data: spRow, error: spErr } = await supabase
+      .from("student_profiles")
+      .select("id")
+      .eq("id", studentId)
+      .eq("school_id", sap.school_id)
+      .maybeSingle();
+
+    if (spErr) {
+      console.error("[addSchoolStudentInteraction] student_profiles", spErr);
+      return { data: null, error: "Could not verify this student." };
+    }
+    if (!spRow) {
+      return {
+        data: null,
+        error: "That student was not found or is not enrolled at your school.",
+      };
+    }
+
+    const { error: insertError } = await supabase
+      .from("student_counselor_interactions")
+      .insert({
+        ...interactionRow,
+        author_id: user.id,
+      });
+
+    if (insertError) {
+      console.error("[addSchoolStudentInteraction] insert", insertError);
+      return { data: null, error: insertError.message };
+    }
+
+    revalidatePath(`/school/students/${studentId}`);
+    return { data: null, error: null };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: admin, error: adminError } = await secret
+    .from("admins")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (adminError) {
+    console.error("[addSchoolStudentInteraction] admins", adminError);
+    return { data: null, error: "Could not verify admin access." };
+  }
+
+  if (!admin) {
     return {
       data: null,
       error:
@@ -636,11 +692,10 @@ export async function addSchoolStudentInteraction(
     };
   }
 
-  const { data: spRow, error: spErr } = await supabase
+  const { data: spRow, error: spErr } = await secret
     .from("student_profiles")
     .select("id")
     .eq("id", studentId)
-    .eq("school_id", sap.school_id)
     .maybeSingle();
 
   if (spErr) {
@@ -648,30 +703,24 @@ export async function addSchoolStudentInteraction(
     return { data: null, error: "Could not verify this student." };
   }
   if (!spRow) {
-    return {
-      data: null,
-      error: "That student was not found or is not enrolled at your school.",
-    };
+    return { data: null, error: "That student was not found." };
   }
 
-  const { error: insertError } = await supabase
+  const { error: insertError } = await secret
     .from("student_counselor_interactions")
     .insert({
-      student_id: studentId,
-      author_id: user.id,
-      interaction_kind: kind,
-      occurred_on: occurredRaw,
-      duration_minutes: durationMinutes,
-      outcome,
-      notes,
+      ...interactionRow,
+      platform_admin_id: user.id,
     });
 
   if (insertError) {
-    console.error("[addSchoolStudentInteraction] insert", insertError);
+    console.error("[addSchoolStudentInteraction] admin insert", insertError);
     return { data: null, error: insertError.message };
   }
 
   revalidatePath(`/school/students/${studentId}`);
+  revalidatePath("/admin/users/students");
+  revalidatePath(`/admin/users/students/${studentId}`);
   return { data: null, error: null };
 }
 
