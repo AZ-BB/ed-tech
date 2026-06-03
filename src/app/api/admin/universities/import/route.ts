@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 
 import { parseExcelFirstSheetToRecords } from "@/lib/admin-excel-parse";
 import { isExcelFilename } from "@/lib/admin-excel-utils";
+import { assertAdminImportAccess } from "@/lib/admin-import-route-auth";
+import type { ImportProgressPayload } from "@/lib/admin-import-progress";
+import { createImportSseStream, importSseResponse } from "@/lib/admin-import-sse";
 import { csvToRecords, importUniversitiesFromCsvRecords } from "@/lib/university-csv-import";
-import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
-export const maxDuration = 300;
+export const maxDuration = 600;
 
 const LOG = "[admin-universities-import]";
 
@@ -22,30 +24,10 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   log("POST received", startedAt);
 
-  const supabaseAuth = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabaseAuth.auth.getUser();
-
-  log("auth.getUser done", startedAt, { hasUser: Boolean(user?.id) });
-
-  if (!user) {
-    log("rejected: unauthorized", startedAt);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const service = await createSupabaseSecretClient();
-  const { data: adminRow } = await service
-    .from("admins")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  log("admin lookup done", startedAt, { isAdmin: Boolean(adminRow) });
-
-  if (!adminRow) {
-    log("rejected: forbidden", startedAt);
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await assertAdminImportAccess();
+  if (!auth.ok) {
+    log(`rejected: ${auth.error}`, startedAt);
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   const form = await request.formData();
@@ -83,20 +65,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No data rows found in file" }, { status: 400 });
     }
 
-    log("starting DB import", startedAt, { recordCount: records.length });
+    log("starting DB import (SSE)", startedAt, { recordCount: records.length });
 
-    const summary = await importUniversitiesFromCsvRecords(service, records, {
-      defaultYear: new Date().getFullYear(),
+    const stream = createImportSseStream(async (send) => {
+      const onProgress = (progress: ImportProgressPayload) => {
+        send("progress", progress);
+      };
+
+      const summary = await importUniversitiesFromCsvRecords(auth.service, records, {
+        defaultYear: new Date().getFullYear(),
+        onProgress,
+      });
+
+      log("import finished", startedAt, {
+        processed: summary.processed,
+        universitiesUpserted: summary.universitiesUpserted,
+        errorCount: summary.errors.length,
+      });
+
+      return summary;
     });
 
-    log("import finished", startedAt, {
-      processed: summary.processed,
-      universitiesUpserted: summary.universitiesUpserted,
-      errorCount: summary.errors.length,
-    });
-
-    log("sending JSON response", startedAt);
-    return NextResponse.json(summary);
+    log("streaming SSE response", startedAt);
+    return importSseResponse(stream);
   } catch (error) {
     log("import failed with error", startedAt, {
       message: error instanceof Error ? error.message : String(error),
