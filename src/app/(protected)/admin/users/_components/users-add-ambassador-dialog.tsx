@@ -29,7 +29,6 @@ export function UsersAddAmbassadorDialog({ open, onClose }: UsersAddAmbassadorDi
   const [destinationCountryCode, setDestinationCountryCode] = useState("");
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const filteredUniversities = useMemo(() => {
     if (!destinationCountryCode) return universities;
@@ -89,23 +88,18 @@ export function UsersAddAmbassadorDialog({ open, onClose }: UsersAddAmbassadorDi
       {
         setSubmitting: setIsSubmitting,
         setError,
-        onBeforeSubmit: () => setSuccess(false),
       },
       () => createAmbassador(new FormData(form)),
       () => {
-        setSuccess(true);
         form.reset();
-        setDestinationCountryCode("");
-        if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-        setAvatarPreviewUrl(null);
         router.refresh();
+        handleClose();
       },
     );
   }
 
   function handleClose() {
     setError(null);
-    setSuccess(false);
     setDestinationCountryCode("");
     if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     setAvatarPreviewUrl(null);
@@ -379,9 +373,6 @@ export function UsersAddAmbassadorDialog({ open, onClose }: UsersAddAmbassadorDi
             </div>
 
             {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
-            {success ? (
-              <p className="text-[13px] text-[#2D6A4F]">Ambassador created successfully.</p>
-            ) : null}
           </div>
 
           <div className="flex justify-end gap-2 border-t border-[#e0deda] px-6 py-4">

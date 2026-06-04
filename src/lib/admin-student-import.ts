@@ -1,5 +1,10 @@
 import { parseExcelFirstSheetToRecords } from "@/lib/admin-excel-parse";
+import { isResendConfigured } from "@/lib/resend/config";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
+import {
+  sendInviteEmailAfterSchoolStudentCreated,
+  type SchoolStudentInviteInviter,
+} from "@/lib/school-student-invite-email";
 import { csvToRecords } from "@/lib/university-csv-import";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -10,6 +15,10 @@ export type StudentImportSummary = {
   skipped: number;
   failed: number;
   errors: string[];
+};
+
+export type ImportStudentsOptions = {
+  inviter?: SchoolStudentInviteInviter;
 };
 
 const GRADE_ALLOWED = new Set<string>(GRADE_FILTER_OPTIONS);
@@ -72,6 +81,7 @@ async function loadExistingEmailsForSchool(
 export async function importStudentsFromRecords(
   schoolId: string,
   records: Record<string, string>[],
+  options?: ImportStudentsOptions,
 ): Promise<StudentImportSummary> {
   const supabase = await createSupabaseSecretClient();
   const summary: StudentImportSummary = {
@@ -93,7 +103,7 @@ export async function importStudentsFromRecords(
 
   const { data: school, error: schoolError } = await supabase
     .from("schools")
-    .select("id")
+    .select("id, code, name")
     .eq("id", schoolId)
     .maybeSingle();
 
@@ -174,13 +184,29 @@ export async function importStudentsFromRecords(
     return true;
   });
 
+  const inviter = options?.inviter;
+  if (inviter && rowsToCreate.length > 0 && !isResendConfigured()) {
+    summary.failed += rowsToCreate.length;
+    summary.errors.push(
+      "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    );
+    return summary;
+  }
+
+  const schoolCode = school.code?.trim() ?? "";
+  const schoolName = school.name?.trim() ?? null;
+
   for (const row of rowsToCreate) {
-    const { error } = await supabase.from("school_students").insert({
-      school_id: schoolId,
-      email: row.email,
-      grade: row.grade,
-      signed_up: false,
-    });
+    const { data: inserted, error } = await supabase
+      .from("school_students")
+      .insert({
+        school_id: schoolId,
+        email: row.email,
+        grade: row.grade,
+        signed_up: false,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       summary.failed += 1;
@@ -195,6 +221,32 @@ export async function importStudentsFromRecords(
       continue;
     }
 
+    if (!inserted?.id) {
+      summary.failed += 1;
+      summary.errors.push(`Row ${row.rowNumber}: Import failed.`);
+      continue;
+    }
+
+    if (inviter) {
+      const emailResult = await sendInviteEmailAfterSchoolStudentCreated({
+        supabase,
+        schoolId,
+        schoolStudentId: inserted.id,
+        studentEmail: row.email,
+        inviter,
+        schoolCode,
+        schoolName,
+      });
+
+      if ("error" in emailResult) {
+        summary.failed += 1;
+        summary.errors.push(
+          `Row ${row.rowNumber}: Invitation email could not be sent. ${emailResult.error}`,
+        );
+        continue;
+      }
+    }
+
     schoolInviteEmails.add(row.email);
     summary.created += 1;
   }
@@ -205,16 +257,19 @@ export async function importStudentsFromRecords(
 export async function importStudentsFromCsvText(
   schoolId: string,
   text: string,
+  options?: ImportStudentsOptions,
 ): Promise<StudentImportSummary> {
-  return importStudentsFromRecords(schoolId, csvToRecords(text));
+  return importStudentsFromRecords(schoolId, csvToRecords(text), options);
 }
 
 export async function importStudentsFromExcelBuffer(
   schoolId: string,
   buffer: ArrayBuffer,
+  options?: ImportStudentsOptions,
 ): Promise<StudentImportSummary> {
   return importStudentsFromRecords(
     schoolId,
     await parseExcelFirstSheetToRecords(buffer),
+    options,
   );
 }

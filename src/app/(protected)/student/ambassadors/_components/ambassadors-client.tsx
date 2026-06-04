@@ -4,7 +4,9 @@ import { logAmbassadorsCatalogView } from "@/actions/ambassador-sessions";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AmbassadorProfileModal } from "./ambassador-profile-modal";
 import { RequestSpecificAmbassadorCta } from "./request-specific-ambassador-cta";
 import {
   RequestSpecificAmbassadorModal,
@@ -63,9 +65,16 @@ type Props = {
   initialAmbassadors: AmbassadorCatalogEntry[];
   catalogCountries: { id: string; name: string }[];
   studentDefaults?: StudentContactDefaults;
+  openAmbassadorId?: string;
 };
 
-export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studentDefaults }: Props) {
+export function AmbassadorsClient({
+  initialAmbassadors,
+  catalogCountries,
+  studentDefaults,
+  openAmbassadorId,
+}: Props) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dest, setDest] = useState("");
@@ -74,6 +83,27 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studen
   const [status, setStatus] = useState("");
   const [detail, setDetail] = useState<AmbassadorCatalogEntry | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const deepLinkHandled = useRef(false);
+
+  useEffect(() => {
+    if (!openAmbassadorId || deepLinkHandled.current) return;
+    deepLinkHandled.current = true;
+
+    const entry = initialAmbassadors.find((a) => a.id === openAmbassadorId);
+    if (entry) {
+      setDetail(entry);
+    } else {
+      setToast("Ambassador no longer available in the catalog.");
+    }
+    router.replace("/student/ambassadors");
+  }, [openAmbassadorId, initialAmbassadors, router]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 200);
@@ -132,8 +162,15 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studen
     "min-w-0 flex-1 basis-0 cursor-pointer appearance-none rounded-[50px] border-[1.5px] border-[var(--border)] bg-white py-2 pl-3.5 pr-7 text-xs whitespace-nowrap text-[var(--text-mid)] transition hover:border-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none";
 
   return (
-    <div className="mx-auto w-full pb-16">
-      
+    <div className="mx-auto w-full max-w-7xl pb-16">
+      {toast ? (
+        <div
+          role="status"
+          className="fixed bottom-8 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-[var(--green-dark)] px-6 py-2.5 text-[12.5px] font-medium text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
+        >
+          {toast}
+        </div>
+      ) : null}
 
       <div className="page-header mb-5 px-4">
         <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] font-bold text-[var(--text)]">
@@ -370,95 +407,7 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studen
       ) : null}
 
       {detail ? (
-        <div
-          role="presentation"
-          className="fixed inset-0 z-[100] overflow-y-auto bg-black/30 px-5 py-10"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setDetail(null);
-          }}
-        >
-          <div className="relative mx-auto max-w-[600px] rounded-[var(--radius-xl)] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
-            <button
-              type="button"
-              className="absolute right-4 top-4 z-[5] flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-white hover:bg-[var(--sand)]"
-              onClick={() => setDetail(null)}
-              aria-label="Close"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-            {(() => {
-              const pal = paletteForId(detail.id);
-              const ini = initials(detail.firstName, detail.lastName);
-              const helps =
-                detail.helps.length > 0
-                  ? detail.helps
-                  : ["Campus life and culture", "Application experience", "Scholarships and housing"];
-              return (
-                <>
-                  <div className="flex gap-4 rounded-t-[var(--radius-xl)] bg-[var(--green-pale)] px-7 pb-5 pt-7">
-                    <div
-                      className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white text-xl font-bold shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
-                      style={{ background: pal.bg, color: pal.fg }}
-                    >
-                      {detail.avatarUrl ? (
-                        <img src={detail.avatarUrl} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        ini
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1 pr-8">
-                      <div className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">
-                        {detail.firstName} {detail.lastName}
-                      </div>
-                      <div className="text-[13px] text-[var(--text-mid)]">{detail.displayUniversity}</div>
-                      <div className="mt-2 flex flex-wrap gap-1.5 text-[12px] text-[var(--text-light)]">
-                        <span>{getCountryNameByAlpha2(detail.destinationCode) ?? detail.destinationCode}</span>
-                        {detail.major ? <span>· {detail.major}</span> : null}
-                        <span>· {detail.isCurrentStudent ? "Current student" : "Graduate"}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-7 pb-2 pt-6">
-                    {detail.about ? (
-                      <div className="mb-5">
-                        <div className="mb-2.5 text-[13px] font-semibold text-[var(--text)]">About</div>
-                        <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">{detail.about}</p>
-                      </div>
-                    ) : null}
-                    <div className="mb-6">
-                      <div className="mb-2.5 text-[13px] font-semibold text-[var(--text)]">Can help with</div>
-                      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {helps.map((x) => (
-                          <li key={x} className="flex items-center gap-2 text-[12.5px] text-[var(--text-mid)]">
-                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--green)]" />
-                            {x}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <div className="px-7 pb-7 text-center">
-                    <Link
-                      href={`/student/ambassadors/${detail.id}/book`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3 text-[13px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white"
-                      onClick={() => setDetail(null)}
-                    >
-                      Book a session
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
-                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                      </svg>
-                    </Link>
-                    <p className="mt-2 text-[10.5px] leading-snug text-[var(--text-hint)]">Opens in a new tab</p>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+        <AmbassadorProfileModal ambassador={detail} onClose={() => setDetail(null)} />
       ) : null}
 
       <RequestSpecificAmbassadorModal

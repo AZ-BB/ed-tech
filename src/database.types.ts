@@ -482,6 +482,7 @@ export type Database = {
       ambassador_specific_requests: {
         Row: {
           additional_notes: string | null
+          assigned_ambassador_id: string | null
           created_at: string | null
           id: number
           preferred_major: string | null
@@ -495,6 +496,7 @@ export type Database = {
         }
         Insert: {
           additional_notes?: string | null
+          assigned_ambassador_id?: string | null
           created_at?: string | null
           id?: number
           preferred_major?: string | null
@@ -508,6 +510,7 @@ export type Database = {
         }
         Update: {
           additional_notes?: string | null
+          assigned_ambassador_id?: string | null
           created_at?: string | null
           id?: number
           preferred_major?: string | null
@@ -520,6 +523,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ambassador_specific_requests_assigned_ambassador_id_fkey"
+            columns: ["assigned_ambassador_id"]
+            isOneToOne: false
+            referencedRelation: "ambassadors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ambassador_specific_requests_student_id_fkey"
             columns: ["student_id"]

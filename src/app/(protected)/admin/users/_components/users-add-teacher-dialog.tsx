@@ -39,7 +39,6 @@ export function UsersAddTeacherDialog({
   const [isLoadingSchools, setIsLoadingSchools] = useState(false);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (!open || fixedSchoolId) return;
@@ -74,20 +73,18 @@ export function UsersAddTeacherDialog({
       {
         setSubmitting: setIsSubmitting,
         setError,
-        onBeforeSubmit: () => setSuccess(false),
       },
       () => createAdminTeacher(new FormData(form)),
       () => {
-        setSuccess(true);
         form.reset();
         router.refresh();
+        handleClose();
       },
     );
   }
 
   function handleClose() {
     setError(null);
-    setSuccess(false);
     onClose();
   }
 
@@ -107,8 +104,7 @@ export function UsersAddTeacherDialog({
           Add Teacher
         </h2>
         <p className="mt-2 text-[13px] text-[#666]">
-          Create a school teacher account. They can sign in immediately with their email and
-          password.
+          Create a school teacher account. Login credentials are emailed to the address below.
         </p>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
@@ -222,9 +218,6 @@ export function UsersAddTeacherDialog({
           </div>
 
           {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
-          {success ? (
-            <p className="text-[13px] text-[#2D6A4F]">Teacher account created successfully.</p>
-          ) : null}
 
           <div className="flex justify-end gap-2">
             <button

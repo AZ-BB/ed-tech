@@ -1,6 +1,9 @@
 "use server";
 
 import type { Database } from "@/database.types";
+import { isResendConfigured } from "@/lib/resend/config";
+import { buildRecommendationSubmitUrl } from "@/lib/resend/site-url";
+import { sendRecommendationRequestEmail } from "@/lib/resend/recommendation-request-email";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import {
   createSupabaseSecretClient,
@@ -51,21 +54,18 @@ function resolveContentType(file: File): string {
   return byExt[ext] ?? "application/octet-stream";
 }
 
-function buildRecommendationLink(token: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
-  if (base) {
-    return `${base}/recommendation/${token}`;
-  }
-  return `/recommendation/${token}`;
-}
-
-function logRecommendationEmailPlaceholder(opts: {
-  to: string;
-  subject: string;
-  link: string;
-}) {
-  console.log("[Recommendation email placeholder]", opts);
-}
+type RecommendationEmailFields = Pick<
+  RecRow,
+  | "id"
+  | "teacher_name"
+  | "teacher_email"
+  | "teacher_subject"
+  | "submit_token"
+  | "student_id"
+  | "for_application"
+  | "personal_note"
+  | "needed_by"
+>;
 
 async function fetchStudentName(studentId: string): Promise<string> {
   const secret = await createSupabaseSecretClient();
@@ -78,16 +78,35 @@ async function fetchStudentName(studentId: string): Promise<string> {
   return `${profile.first_name} ${profile.last_name}`.trim() || "A student";
 }
 
-async function logEmailForRecommendation(
-  rec: Pick<RecRow, "teacher_email" | "submit_token" | "student_id">,
-) {
+async function sendEmailForRecommendation(
+  rec: RecommendationEmailFields,
+): Promise<{ ok: true } | { error: string }> {
+  if (!isResendConfigured()) {
+    return {
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    };
+  }
+
   const studentName = await fetchStudentName(rec.student_id);
-  const link = buildRecommendationLink(rec.submit_token);
-  logRecommendationEmailPlaceholder({
+  const submitUrl = await buildRecommendationSubmitUrl(rec.submit_token);
+
+  const result = await sendRecommendationRequestEmail({
     to: rec.teacher_email,
-    subject: `Recommendation request from ${studentName}`,
-    link,
+    teacherName: rec.teacher_name,
+    studentName,
+    forApplication: rec.for_application,
+    personalNote: rec.personal_note,
+    neededBy: rec.needed_by,
+    submitUrl,
+    teacherSubject: rec.teacher_subject,
   });
+
+  if ("error" in result) {
+    return { error: result.error || "Could not send the recommendation request email." };
+  }
+
+  return { ok: true };
 }
 
 export async function createRecommendationRequest(
@@ -107,6 +126,13 @@ export async function createRecommendationRequest(
   }
   if (!input.needed_by) {
     return { error: "Pick a deadline first." };
+  }
+
+  if (!isResendConfigured()) {
+    return {
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    };
   }
 
   const secret = await createSupabaseSecretClient();
@@ -130,7 +156,15 @@ export async function createRecommendationRequest(
     return { error: error?.message ?? "Could not send request." };
   }
 
-  await logEmailForRecommendation(data);
+  const emailResult = await sendEmailForRecommendation(data);
+  if ("error" in emailResult) {
+    await secret
+      .from("student_my_application_recommendations")
+      .delete()
+      .eq("id", data.id);
+    return { error: emailResult.error };
+  }
+
   return { row: data };
 }
 
@@ -145,7 +179,9 @@ export async function resendRecommendationRequestEmail(
   const supabase = await createSupabaseServerClient();
   const { data: rec, error } = await supabase
     .from("student_my_application_recommendations")
-    .select("id, student_id, teacher_email, submit_token, status")
+    .select(
+      "id, student_id, teacher_name, teacher_email, teacher_subject, submit_token, for_application, personal_note, needed_by, status",
+    )
     .eq("id", recommendationId)
     .maybeSingle();
 
@@ -159,7 +195,11 @@ export async function resendRecommendationRequestEmail(
     return { error: "This letter has already been submitted." };
   }
 
-  await logEmailForRecommendation(rec);
+  const emailResult = await sendEmailForRecommendation(rec);
+  if ("error" in emailResult) {
+    return { error: emailResult.error };
+  }
+
   return { ok: true };
 }
 

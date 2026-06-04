@@ -1,6 +1,11 @@
 "use server";
 
 import {
+  notifySuperAdminsOfAmbassadorSpecificRequest,
+  rollbackAmbassadorSpecificRequest,
+} from "@/lib/ambassador-specific-request-notify";
+import { isResendConfigured } from "@/lib/resend/config";
+import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
@@ -81,6 +86,14 @@ export async function createAmbassadorSpecificRequest(
     return { ok: false, error: actor.error };
   }
 
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    };
+  }
+
   const secret = await createSupabaseSecretClient();
   const { data: inserted, error: insertErr } = await secret
     .from("ambassador_specific_requests")
@@ -103,6 +116,24 @@ export async function createAmbassadorSpecificRequest(
       ok: false,
       error: insertErr?.message ?? "Could not submit your request. Please try again.",
     };
+  }
+
+  const notifyResult = await notifySuperAdminsOfAmbassadorSpecificRequest({
+    supabase: secret,
+    requestId: inserted.id,
+    form: {
+      studentName,
+      studentEmail,
+      studentPhone,
+      targetUniversity,
+      preferredMajor,
+      additionalNotes,
+    },
+  });
+
+  if ("error" in notifyResult) {
+    await rollbackAmbassadorSpecificRequest(secret, inserted.id);
+    return { ok: false, error: notifyResult.error };
   }
 
   const { error: logErr } = await secret.from("acitivity_logs").insert({

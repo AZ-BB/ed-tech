@@ -9,6 +9,8 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/database.types";
 import { fetchAdminRolePermissionTemplates, permissionsForRoleFromTemplates } from "@/lib/admin-role-permissions";
 import { assertAdminPermission } from "@/lib/assert-admin-permission";
+import { isResendConfigured } from "@/lib/resend/config";
+import { sendStaffCredentialsEmailOrRollback } from "@/lib/staff-credentials-email";
 
 import type { AdvisorCsvExportRow } from "@/app/(protected)/admin/users/_lib/admin-advisors-csv";
 import type { AmbassadorCsvExportRow } from "@/app/(protected)/admin/users/_lib/admin-ambassadors-csv";
@@ -168,6 +170,14 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminUs
     return { ok: false, error: "An admin with this email already exists." };
   }
 
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL before creating admins.",
+    };
+  }
+
   const { data: authData, error: authError } = await service.auth.admin.createUser({
     email,
     password,
@@ -198,6 +208,21 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminUs
     console.error("[createAdminUser] admins insert", profileError);
     await service.auth.admin.deleteUser(authData.user.id);
     return { ok: false, error: profileError.message || "Could not save admin profile." };
+  }
+
+  const emailResult = await sendStaffCredentialsEmailOrRollback({
+    supabase: service,
+    userId: authData.user.id,
+    profileTable: "admins",
+    to: email,
+    firstName,
+    email,
+    password,
+    accountLabel: "platform admin",
+  });
+
+  if ("error" in emailResult) {
+    return { ok: false, error: emailResult.error };
   }
 
   revalidatePath("/admin/users");

@@ -48,6 +48,17 @@ function personName(first: string | null | undefined, last: string | null | unde
   return [first?.trim(), last?.trim()].filter(Boolean).join(" ").trim() || "—";
 }
 
+export type AdminAmbassadorSpecificRequestAssignedAmbassador = {
+  id: string;
+  fullName: string;
+  email: string;
+  university: string;
+  major: string | null;
+  destinationLabel: string;
+  isActive: boolean;
+  href: string;
+};
+
 export type AdminAmbassadorSpecificRequestDetail = {
   id: number;
   status: string;
@@ -59,6 +70,7 @@ export type AdminAmbassadorSpecificRequestDetail = {
   additionalNotes: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  assignedAmbassador: AdminAmbassadorSpecificRequestAssignedAmbassador | null;
 };
 
 export type AdminAmbassadorSpecificRequestDetailStudent = {
@@ -99,6 +111,56 @@ function mapStudent(embed: StudentEmbed): AdminAmbassadorSpecificRequestDetailSt
   };
 }
 
+type AmbassadorEmbed =
+  | {
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      major: string | null;
+      university_name: string | null;
+      destination_country_code: string;
+      is_active: boolean;
+      universities: { name: string } | { name: string }[] | null;
+    }
+  | {
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      major: string | null;
+      university_name: string | null;
+      destination_country_code: string;
+      is_active: boolean;
+      universities: { name: string } | { name: string }[] | null;
+    }[]
+  | null;
+
+function mapAssignedAmbassador(
+  embed: AmbassadorEmbed,
+): AdminAmbassadorSpecificRequestAssignedAmbassador | null {
+  const row = firstEmbed(embed);
+  if (!row) return null;
+
+  const uniEmbed = firstEmbed(row.universities);
+  const university =
+    uniEmbed?.name?.trim() || row.university_name?.trim() || "—";
+
+  return {
+    id: row.id,
+    fullName: personName(row.first_name, row.last_name),
+    email: row.email?.trim() || "—",
+    university,
+    major: row.major?.trim() || null,
+    destinationLabel: row.destination_country_code
+      ? (getCountryNameByAlpha2(row.destination_country_code) ??
+        row.destination_country_code)
+      : "—",
+    isActive: row.is_active,
+    href: `/admin/users/ambassadors/${row.id}`,
+  };
+}
+
 function mapSchool(embed: StudentEmbed): AdminAmbassadorSpecificRequestDetailSchool | null {
   const profile = firstEmbed(embed);
   if (!profile) return null;
@@ -129,6 +191,7 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
       `
       id,
       status,
+      assigned_ambassador_id,
       student_name,
       student_email,
       student_phone,
@@ -137,6 +200,17 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
       additional_notes,
       created_at,
       updated_at,
+      ambassadors (
+        id,
+        first_name,
+        last_name,
+        email,
+        major,
+        university_name,
+        destination_country_code,
+        is_active,
+        universities ( name )
+      ),
       student_profiles (
         id,
         first_name,
@@ -161,6 +235,8 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
   const row = data as {
     id: number;
     status: string;
+    assigned_ambassador_id: string | null;
+    ambassadors: AmbassadorEmbed;
     student_name: string;
     student_email: string;
     student_phone: string;
@@ -184,6 +260,7 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
       additionalNotes: row.additional_notes?.trim() || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      assignedAmbassador: mapAssignedAmbassador(row.ambassadors),
     },
     student: mapStudent(row.student_profiles),
     school: mapSchool(row.student_profiles),

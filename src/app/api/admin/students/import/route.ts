@@ -40,9 +40,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const importOptions = { inviter: { kind: "platform" as const } };
   const summary = isExcelFilename(file.name)
-    ? await importStudentsFromExcelBuffer(schoolId, await file.arrayBuffer())
-    : await importStudentsFromCsvText(schoolId, await file.text());
+    ? await importStudentsFromExcelBuffer(
+        schoolId,
+        await file.arrayBuffer(),
+        importOptions,
+      )
+    : await importStudentsFromCsvText(schoolId, await file.text(), importOptions);
 
   return NextResponse.json(summary);
 }
