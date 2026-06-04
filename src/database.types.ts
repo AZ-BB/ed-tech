@@ -2558,15 +2558,15 @@ export type Database = {
       }
       admin_report_shortlist_top_stats: {
         Args: {
-          p_school_id?: string | null
-          p_start?: string | null
-          p_end?: string | null
+          p_end?: string
+          p_school_id?: string
+          p_start?: string
           p_top_n?: number
         }
         Returns: Json
       }
       admin_students_at_risk: {
-        Args: { p_school_id?: string | null; p_limit?: number }
+        Args: { p_limit?: number; p_school_id?: string }
         Returns: Json
       }
       create_school_admin_notification: {
