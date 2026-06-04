@@ -65,7 +65,7 @@ export async function fetchAdminReportsOverview(
       bounds.endExclusiveIso,
     ),
     supabase.rpc("admin_report_shortlist_top_stats", {
-      p_school_id: schoolId || null,
+      p_school_id: schoolId ?? undefined,
       p_start: bounds.startIso,
       p_end: bounds.endExclusiveIso,
       p_top_n: 1,

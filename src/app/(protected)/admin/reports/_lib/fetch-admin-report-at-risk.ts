@@ -13,7 +13,7 @@ export async function fetchAdminReportAtRiskStudents(
   const meta = await buildReportMeta(filters, bounds);
   const supabase = await createSupabaseSecretClient();
   const { data, error } = await supabase.rpc("admin_students_at_risk", {
-    p_school_id: filters.schoolId || null,
+    p_school_id: filters.schoolId ?? undefined,
     p_limit: 0,
   });
   if (error) {
