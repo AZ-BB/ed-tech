@@ -122,6 +122,11 @@ function isStudentAmbassadorSessionBookPath(pathname: string) {
   return /\/student\/ambassadors\/[^/]+\/book$/.test(normalized);
 }
 
+/** Catalog list only — booking subroutes hide the shell header. */
+function isStudentAmbassadorsCatalogPath(pathname: string) {
+  return normalizePath(pathname) === "/student/ambassadors";
+}
+
 function shellHeaderFromPathname(pathname: string): {
   label: string;
   navId: string;
@@ -289,6 +294,7 @@ export function StudentLayoutShell({
     isStudentUniversityDetailPath(pathname) ||
     isStudentAdvisorSessionBookPath(pathname) ||
     isStudentAmbassadorSessionBookPath(pathname);
+  const narrowTopNavToContent = isStudentAmbassadorsCatalogPath(pathname);
 
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -311,7 +317,11 @@ export function StudentLayoutShell({
     <div className="min-h-screen bg-[var(--sand)]">
       <div className="mx-auto w-full px-6 md:px-10 lg:px-16 pt-6 pb-16">
         {hideTopNav ? null : (
-          <header className="mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5">
+          <header
+            className={`mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5${
+              narrowTopNavToContent ? " mx-auto w-full max-w-7xl" : ""
+            }`}
+          >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--green-bg)]">
                 <StudentNavIcon

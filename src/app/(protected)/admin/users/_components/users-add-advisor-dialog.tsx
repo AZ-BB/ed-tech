@@ -29,7 +29,6 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
   const [specializationCountryCodes, setSpecializationCountryCodes] = useState<string[]>([]);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -82,23 +81,18 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
       {
         setSubmitting: setIsSubmitting,
         setError,
-        onBeforeSubmit: () => setSuccess(false),
       },
       () => createAdvisor(new FormData(form)),
       () => {
-        setSuccess(true);
         form.reset();
-        setSpecializationCountryCodes([]);
-        if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-        setAvatarPreviewUrl(null);
         router.refresh();
+        handleClose();
       },
     );
   }
 
   function handleClose() {
     setError(null);
-    setSuccess(false);
     setSpecializationCountryCodes([]);
     if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     setAvatarPreviewUrl(null);
@@ -366,9 +360,6 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
             </label>
 
             {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
-            {success ? (
-              <p className="text-[13px] text-[#2D6A4F]">Advisor created successfully.</p>
-            ) : null}
           </div>
 
           <div className="flex justify-end gap-2 border-t border-[#e0deda] px-6 py-4">
