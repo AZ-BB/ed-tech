@@ -31,6 +31,7 @@ import {
 } from "@/lib/student-credit-limit";
 
 import { SchoolStudentActivityLogsTab } from "./school-student-activity-logs-tab";
+import { AdminStudentDocumentsTab } from "@/app/(protected)/admin/users/students/[id]/_components/admin-student-documents-tab";
 import { SchoolStudentDocumentsTab } from "./school-student-documents-tab";
 import { SchoolStudentEssaysTab } from "./school-student-essays-tab";
 import { SchoolStudentCreditUsageTab } from "./school-student-credit-usage-tab";
@@ -97,6 +98,8 @@ export type SchoolStudentViewClientProps = {
   /** From `?tab=tasks` so filter Apply keeps the Tasks tab active after navigation. */
   initialTab?: TabId;
   backHref?: string;
+  /** When `"admin"`, documents tab uses platform admin upload/status/remove actions. */
+  documentsPortal?: "school" | "admin";
   readOnly?: boolean;
   canAssignCredits?: boolean;
   assignCredits?: StudentCreditAssignAction;
@@ -876,6 +879,7 @@ export function SchoolStudentViewClient({
   essays,
   initialTab = "snapshot",
   backHref = "/school/students",
+  documentsPortal = "school",
   readOnly = false,
   canAssignCredits,
   assignCredits,
@@ -1013,12 +1017,18 @@ export function SchoolStudentViewClient({
       />
     );
   } else if (tab === "docs") {
-    tabBody = (
-      <SchoolStudentDocumentsTab
-        studentId={student.id}
-        initialDocuments={documents}
-      />
-    );
+    tabBody =
+      documentsPortal === "admin" ? (
+        <AdminStudentDocumentsTab
+          studentId={student.id}
+          initialDocuments={documents}
+        />
+      ) : (
+        <SchoolStudentDocumentsTab
+          studentId={student.id}
+          initialDocuments={documents}
+        />
+      );
   } else if (tab === "tasks") {
     tabBody = (
       <SchoolTasksClient

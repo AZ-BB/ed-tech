@@ -1,53 +1,33 @@
 "use client";
 
-import { updateSchoolPredictedDocumentSlot } from "@/actions/school-students";
+import {
+  removeAdminStudentDocument,
+  updateAdminPredictedDocumentSlot,
+  updateAdminStudentDocumentStatus,
+} from "@/actions/admin-documents";
+import { adminStudentDocumentViewPath } from "@/lib/admin-student-document-view-path";
+import { uploadAdminStudentDocumentViaApi } from "@/lib/admin-student-document-upload-client";
 import { getSchoolMyApplicationDocumentViewUrl } from "@/actions/school-documents";
-import type { Database } from "@/database.types";
+import { updateSchoolPredictedDocumentSlot } from "@/actions/school-students";
+import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
 import {
   isOtherDocumentSlot,
   SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
 } from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
+import type { Database } from "@/database.types";
+import {
+  CHECKLIST_STATUS_LABEL,
+  CHECKLIST_STATUS_VALUES,
+  effectiveChecklistStatus,
+  normalizeChecklistStatus,
+} from "@/lib/student-application-document-status";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type DocRow =
   Database["public"]["Tables"]["student_my_application_documents"]["Row"];
-
-const CHECKLIST_STATUS_VALUES = [
-  "missing",
-  "submitted",
-  "needs_review",
-  "needs_revision",
-  "approved",
-  "not_required",
-] as const;
-
-type ChecklistStatusValue = (typeof CHECKLIST_STATUS_VALUES)[number];
-
-const CHECKLIST_STATUS_LABEL: Record<ChecklistStatusValue, string> = {
-  missing: "Missing",
-  submitted: "Uploaded",
-  needs_review: "Needs review",
-  needs_revision: "Needs revision",
-  approved: "Approved",
-  not_required: "Not required",
-};
-
-function normalizeChecklistStatus(raw: string): ChecklistStatusValue {
-  const t = raw.trim().toLowerCase().replace(/\s+/g, "_");
-  if ((CHECKLIST_STATUS_VALUES as readonly string[]).includes(t)) {
-    return t as ChecklistStatusValue;
-  }
-  return "missing";
-}
-
-function effectiveChecklistStatus(doc: DocRow): ChecklistStatusValue {
-  const s = normalizeChecklistStatus(doc.status);
-  if (doc.storage_path && s === "missing") return "submitted";
-  return s;
-}
 
 function checklistRowVisual(
   label: string,
@@ -88,6 +68,9 @@ function iconWrapForVisual(
 const selectSmClass =
   "max-w-[200px] cursor-pointer rounded-[8px] border-[1.5px] border-[var(--border)] bg-white py-1.5 pr-7 pl-2.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-medium text-[var(--text-mid)] outline-none focus:border-[var(--green-light)]";
 
+const actionBtnClass =
+  "inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:pointer-events-none disabled:opacity-45";
+
 function formatUpdated(iso: string | null | undefined): string {
   if (!iso) return "";
   try {
@@ -100,13 +83,26 @@ function formatUpdated(iso: string | null | undefined): string {
 export function SchoolStudentDocumentsTab({
   studentId,
   initialDocuments,
+  portal = "school",
+  canEditDocuments: canEditDocumentsProp,
 }: {
   studentId: string;
   initialDocuments: DocRow[];
+  portal?: "school" | "admin";
+  /** Required when `portal="admin"` — set from `AdminStudentDocumentsTab`. */
+  canEditDocuments?: boolean;
 }) {
+  const isAdminPortal = portal === "admin";
+  const canEditDocuments = isAdminPortal
+    ? (canEditDocumentsProp ?? false)
+    : true;
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+
   const [documents, setDocuments] = useState<DocRow[]>(initialDocuments);
+  const [uploadTargetId, setUploadTargetId] = useState<string | null>(null);
+  const [busyDocId, setBusyDocId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const predictedDoc = useMemo(
     () =>
@@ -143,17 +139,42 @@ export function SchoolStudentDocumentsTab({
   }, []);
 
   const savePredictedText = useCallback(async () => {
-    const res = await updateSchoolPredictedDocumentSlot(studentId, predDraft);
-    if ("error" in res) {
-      showToast(res.error);
-      return;
+    if (isAdminPortal) {
+      if (!canEditDocuments) return;
+      const res = await updateAdminPredictedDocumentSlot(studentId, predDraft);
+      if ("error" in res) {
+        showToast(res.error);
+        return;
+      }
+    } else {
+      const res = await updateSchoolPredictedDocumentSlot(studentId, predDraft);
+      if ("error" in res) {
+        showToast(res.error);
+        return;
+      }
     }
     showToast("Predicted saved.");
     router.refresh();
-  }, [predDraft, router, showToast, studentId]);
+  }, [canEditDocuments, isAdminPortal, predDraft, router, showToast, studentId]);
 
   const onChecklistStatusChange = async (doc: DocRow, value: string) => {
     const v = normalizeChecklistStatus(value);
+    if (isAdminPortal) {
+      const res = await updateAdminStudentDocumentStatus(doc.id, v);
+      if (!res.ok) {
+        showToast(res.error);
+        return;
+      }
+      const now = new Date().toISOString();
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === doc.id ? { ...d, status: v, updated_at: now } : d,
+        ),
+      );
+      router.refresh();
+      return;
+    }
+
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("student_my_application_documents")
@@ -170,17 +191,96 @@ export function SchoolStudentDocumentsTab({
     router.refresh();
   };
 
-  const openDocument = async (doc: DocRow) => {
+  const openDocument = (doc: DocRow) => {
     if (!doc.storage_path) {
-      showToast("No file yet — the student uploads from My applications.");
+      showToast(
+        isAdminPortal
+          ? "No file uploaded yet."
+          : "No file yet — the student uploads from My applications.",
+      );
       return;
     }
-    const res = await getSchoolMyApplicationDocumentViewUrl(doc.id);
-    if ("error" in res) {
-      showToast(res.error);
+    if (isAdminPortal) {
+      window.open(
+        adminStudentDocumentViewPath(doc.id),
+        "_blank",
+        "noopener,noreferrer",
+      );
       return;
     }
-    window.open(res.url, "_blank", "noopener,noreferrer");
+    void (async () => {
+      const res = await getSchoolMyApplicationDocumentViewUrl(doc.id);
+      if ("error" in res) {
+        showToast(res.error);
+        return;
+      }
+      window.open(res.url, "_blank", "noopener,noreferrer");
+    })();
+  };
+
+  const triggerUpload = (doc: DocRow) => {
+    if (!canEditDocuments) return;
+    setUploadTargetId(doc.id);
+    fileInputRef.current?.click();
+  };
+
+  const onFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const docId = uploadTargetId;
+    e.target.value = "";
+    setUploadTargetId(null);
+    if (!file || !docId) return;
+
+    setBusyDocId(docId);
+    try {
+      const res = await uploadAdminStudentDocumentViaApi(docId, file);
+      if (!res.ok) {
+        showToast(res.error);
+        return;
+      }
+      showToast("File uploaded.");
+      router.refresh();
+    } finally {
+      setBusyDocId(null);
+    }
+  };
+
+  const onRemoveFile = async (doc: DocRow) => {
+    if (!canEditDocuments) return;
+    if (
+      !window.confirm(
+        `Remove the uploaded file for "${doc.display_name}"? The document row will stay on the checklist.`,
+      )
+    ) {
+      return;
+    }
+    setBusyDocId(doc.id);
+    try {
+      const res = await removeAdminStudentDocument(doc.id);
+      if (!res.ok) {
+        showToast(res.error);
+        return;
+      }
+      const now = new Date().toISOString();
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === doc.id
+            ? {
+                ...d,
+                storage_path: null,
+                file_name: null,
+                uploaded_at: null,
+                status: "missing",
+                updated_at: now,
+              }
+            : d,
+        ),
+      );
+      showToast("Uploaded file removed.");
+      router.refresh();
+    } finally {
+      setBusyDocId(null);
+    }
   };
 
   const predHasText = !!predDraft.trim();
@@ -188,14 +288,39 @@ export function SchoolStudentDocumentsTab({
   const predVisual = predHasText ? "approved" : "missing";
   const predIconClass = iconWrapForVisual(predVisual);
 
+  const headerSubtitle = isAdminPortal
+    ? canEditDocuments
+      ? "Upload files on behalf of the student, change status, or remove uploaded files."
+      : "View document checklist and uploaded files."
+    : "Document checklist — change status anytime, click upload to add files";
+
+  const predictedInput = (
+    <input
+      value={predDraft}
+      onChange={(e) => setPredDraft(e.target.value)}
+      onBlur={() => void savePredictedText()}
+      readOnly={isAdminPortal && !canEditDocuments}
+      placeholder="e.g. 40/45 IB or A*A*A"
+      className="w-full min-w-[160px] rounded-[8px] border-[1.5px] border-[var(--border)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[12px] outline-none focus:border-[var(--green-light)] sm:w-[200px] disabled:bg-[#f8f8f6]"
+    />
+  );
+
   return (
     <div className="mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
+      {isAdminPortal ? (
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={(e) => void onFilePicked(e)}
+        />
+      ) : null}
       <div className="border-b border-[var(--border-light)] px-5 py-[18px]">
         <div className="text-[15px] font-semibold tracking-tight text-[var(--text)]">
           Documents
         </div>
         <div className="mt-0.5 text-[12px] text-[var(--text-light)]">
-          Document checklist — change status anytime, click upload to add files
+          {headerSubtitle}
         </div>
       </div>
       <div className="px-5 py-[18px]">
@@ -221,7 +346,7 @@ export function SchoolStudentDocumentsTab({
                 <div className="text-[13px] font-semibold text-[var(--text)]">
                   {predictedDoc.display_name}{" "}
                   <span className="ml-1 inline-flex items-center rounded-[20px] border border-[var(--border)] bg-transparent px-1.5 py-px align-middle text-[10px] font-semibold whitespace-nowrap text-[var(--text-mid)] leading-snug">
-                    School-only
+                    {isAdminPortal ? "Text only" : "School-only"}
                   </span>
                 </div>
                 <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
@@ -230,13 +355,19 @@ export function SchoolStudentDocumentsTab({
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                <input
-                  value={predDraft}
-                  onChange={(e) => setPredDraft(e.target.value)}
-                  onBlur={() => void savePredictedText()}
-                  placeholder="e.g. 40/45 IB or A*A*A"
-                  className="w-full min-w-[160px] rounded-[8px] border-[1.5px] border-[var(--border)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[12px] outline-none focus:border-[var(--green-light)] sm:w-[200px]"
-                />
+                {isAdminPortal ? (
+                  canEditDocuments ? (
+                    <AdminControl permission="edit_documents">
+                      {predictedInput}
+                    </AdminControl>
+                  ) : (
+                    <span className="min-w-[160px] text-[12px] text-[var(--text)] sm:w-[200px]">
+                      {predDraft.trim() || "—"}
+                    </span>
+                  )
+                ) : (
+                  predictedInput
+                )}
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug ${checklistPillClass(predPillLabel === "Entered" ? "Approved" : "Missing")}`}
                 >
@@ -248,11 +379,12 @@ export function SchoolStudentDocumentsTab({
           ) : null}
 
           {fileDocuments.map((doc) => {
-            const st = effectiveChecklistStatus(doc);
+            const st = effectiveChecklistStatus(doc.status, doc.storage_path);
             const label = CHECKLIST_STATUS_LABEL[st];
             const visual = checklistRowVisual(label);
             const iconCls = iconWrapForVisual(visual);
             const hasFile = !!doc.storage_path;
+            const isBusy = busyDocId === doc.id;
             const showSlotDescription =
               !!doc.description?.trim() &&
               !(
@@ -264,6 +396,68 @@ export function SchoolStudentDocumentsTab({
               : showSlotDescription
                 ? doc.description!.trim()
                 : "Not uploaded";
+
+            const statusSelect = (
+              <select
+                className={selectSmClass}
+                value={st}
+                disabled={isBusy}
+                onChange={(e) =>
+                  void onChecklistStatusChange(doc, e.target.value)
+                }
+              >
+                {CHECKLIST_STATUS_VALUES.map((key) => (
+                  <option key={key} value={key}>
+                    {CHECKLIST_STATUS_LABEL[key]}
+                  </option>
+                ))}
+              </select>
+            );
+
+            const uploadBtn = isAdminPortal && canEditDocuments ? (
+              <button
+                type="button"
+                title={hasFile ? "Replace file" : "Upload file"}
+                disabled={isBusy}
+                onClick={() => triggerUpload(doc)}
+                className={actionBtnClass}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width={14}
+                  height={14}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden
+                >
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+              </button>
+            ) : null;
+
+            const removeBtn =
+              isAdminPortal && canEditDocuments && hasFile ? (
+                <button
+                  type="button"
+                  title="Remove file"
+                  disabled={isBusy}
+                  onClick={() => void onRemoveFile(doc)}
+                  className={`${actionBtnClass} hover:border-[#e8b4b0] hover:bg-[#fcebeb] hover:text-[var(--red)]`}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width={14}
+                    height={14}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden
+                  >
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  </svg>
+                </button>
+              ) : null;
 
             return (
               <div
@@ -301,31 +495,25 @@ export function SchoolStudentDocumentsTab({
                     <span className="sd-pill-dot h-1.5 w-1.5 rounded-full" />
                     {label}
                   </span>
-                  <select
-                    className={selectSmClass}
-                    value={st}
-                    onChange={(e) =>
-                      void onChecklistStatusChange(doc, e.target.value)
-                    }
-                  >
-                    {CHECKLIST_STATUS_VALUES.map((key) => (
-                      <option key={key} value={key}>
-                        {CHECKLIST_STATUS_LABEL[key]}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    title={
-                      hasFile
-                        ? "View file"
-                        : "Student uploads from My applications"
-                    }
-                    onClick={() => void openDocument(doc)}
-                    className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:pointer-events-none disabled:opacity-45"
-                    disabled={!hasFile}
-                  >
-                    {hasFile ? (
+                  {isAdminPortal ? (
+                    canEditDocuments ? (
+                      <AdminControl permission="edit_documents">
+                        {statusSelect}
+                        {uploadBtn}
+                        {removeBtn}
+                      </AdminControl>
+                    ) : null
+                  ) : (
+                    statusSelect
+                  )}
+                  {hasFile ? (
+                    <button
+                      type="button"
+                      title="View file"
+                      onClick={() => void openDocument(doc)}
+                      className={actionBtnClass}
+                      disabled={isBusy}
+                    >
                       <svg
                         viewBox="0 0 24 24"
                         width={14}
@@ -338,20 +526,8 @@ export function SchoolStudentDocumentsTab({
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                         <circle cx="12" cy="12" r="3" />
                       </svg>
-                    ) : (
-                      <svg
-                        viewBox="0 0 24 24"
-                        width={14}
-                        height={14}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        aria-hidden
-                      >
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                      </svg>
-                    )}
-                  </button>
+                    </button>
+                  ) : null}
                 </div>
               </div>
             );
