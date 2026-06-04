@@ -33,6 +33,9 @@ const AMBASSADOR_STATUSES = new Set<string>([
 
 type SessionCreditType = "advisor" | "ambassador";
 
+type StudentCreditsHistoryInsert =
+  Database["public"]["Tables"]["student_credits_history"]["Insert"];
+
 async function refundSessionCredit(
   secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
   input: {
@@ -118,25 +121,25 @@ async function refundSessionCredit(
     return { ok: false, error: "Could not refund session credit." };
   }
 
-  const historyInsert =
+  const historyInsert: StudentCreditsHistoryInsert =
     input.creditType === "advisor"
       ? {
           student_id: input.studentId,
           school_id: input.schoolId,
           amount,
-          type: "advisor" as const,
+          type: "advisor",
           advisor_session_id: input.sessionId,
           ambassador_session_request_id: null,
-          status: "refunded" as const,
+          status: "refunded",
         }
       : {
           student_id: input.studentId,
           school_id: input.schoolId,
           amount,
-          type: "ambassador" as const,
+          type: "ambassador",
           advisor_session_id: null,
           ambassador_session_request_id: input.sessionId,
-          status: "refunded" as const,
+          status: "refunded",
         };
 
   const { error: historyErr } = await secret.from("student_credits_history").insert(historyInsert);
