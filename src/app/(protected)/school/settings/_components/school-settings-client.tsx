@@ -112,6 +112,7 @@ export type SchoolSettingsClientProps = {
   authEmail: string;
   profileEmail: string;
   initialPhone: string;
+  initialAvatarUrl: string | null;
   initialFullName: string;
   initialSchoolName: string;
   initialSchoolCity: string;
@@ -163,6 +164,7 @@ export function SchoolSettingsClient({
   authEmail,
   profileEmail,
   initialPhone,
+  initialAvatarUrl,
   initialFullName,
   initialSchoolName,
   initialSchoolCity,
@@ -193,11 +195,52 @@ export function SchoolSettingsClient({
   const pwMismatch =
     pwConfirmValue.length > 0 && pwNewValue.length > 0 && pwNewValue !== pwConfirmValue;
 
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profileState, profileAction, profilePending] = useActionState(
     updateSchoolAdminProfileAction,
     null as GeneralResponse<null> | null,
   );
   const profilePrevPending = useRef(false);
+
+  const avatarDisplayUrl = removeAvatar
+    ? avatarPreviewUrl
+    : (avatarPreviewUrl ?? initialAvatarUrl);
+  const canRemoveAvatar = Boolean(initialAvatarUrl) && !removeAvatar && !avatarPreviewUrl;
+  const profileInitials = (() => {
+    const parts = initialFullName.trim().split(/\s+/).filter(Boolean);
+    const a = parts[0]?.[0] ?? "";
+    const b = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+    const pair = `${a}${b}`.toUpperCase();
+    return pair || a.toUpperCase() || "?";
+  })();
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    };
+  }, [avatarPreviewUrl]);
+
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+
+    if (!file) {
+      setAvatarPreviewUrl(null);
+      return;
+    }
+
+    setRemoveAvatar(false);
+    setAvatarPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function handleRemoveAvatar() {
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    setAvatarPreviewUrl(null);
+    setRemoveAvatar(true);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }
 
   const [schoolState, schoolAction, schoolPending] = useActionState(
     updateSchoolSettingsAction,
@@ -220,6 +263,9 @@ export function SchoolSettingsClient({
   useEffect(() => {
     const done = profilePrevPending.current && !profilePending;
     if (done && profileState && profileState.error === null) {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+      setAvatarPreviewUrl(null);
+      setRemoveAvatar(false);
       showToast("Account settings saved.");
       router.refresh();
     }
@@ -362,6 +408,51 @@ export function SchoolSettingsClient({
             </div>
           </div>
           <form action={profileAction} className="space-y-3.5 px-5 py-[18px]">
+            <input type="hidden" name="remove_avatar" value={removeAvatar ? "1" : "0"} />
+            <div>
+              <span className={labelClass()}>Profile photo</span>
+              <div className="flex flex-wrap items-center gap-4">
+                {avatarDisplayUrl ? (
+                  <img
+                    src={avatarDisplayUrl}
+                    alt=""
+                    className="h-16 w-16 shrink-0 rounded-full border border-[var(--border-light)] object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[18px] font-bold text-[var(--green-dark)]">
+                    {profileInitials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <input
+                    id="settings-avatar"
+                    ref={avatarInputRef}
+                    name="avatar"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={handleAvatarChange}
+                    className={`${fieldClass()} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[var(--green-bg)] file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-[var(--green-dark)]`}
+                  />
+                  <p className="mt-1.5 text-[11px] text-[var(--text-light)]">
+                    PNG, JPEG, WebP, or GIF. Max 5 MB. Shown in the sidebar when set.
+                  </p>
+                  {canRemoveAvatar ? (
+                    <button
+                      type="button"
+                      className={`${btnSecondaryClass()} mt-2`}
+                      onClick={handleRemoveAvatar}
+                    >
+                      Remove photo
+                    </button>
+                  ) : null}
+                  {removeAvatar && !avatarPreviewUrl ? (
+                    <p className="mt-2 text-[11px] font-medium text-[var(--text-mid)]">
+                      Photo will be removed when you save changes.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
             <div>
               <label className={labelClass()} htmlFor="settings-full-name">
                 Full name

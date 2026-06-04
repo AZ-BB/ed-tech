@@ -58,6 +58,10 @@ export function AdminScholarshipOverviewTab({ payload }: AdminScholarshipOvervie
         <SnapItem label="TOEFL min" value={scholarship.toeflMinScore?.toString() ?? "—"} />
         <SnapItem label="SAT policy" value={scholarship.satPolicy ?? "—"} />
         <SnapItem label="Application method" value={scholarship.method ?? "—"} />
+        <SnapItem
+          label="Application website"
+          value={scholarship.applicationUrl ?? "—"}
+        />
         <SnapItem label="Intakes" value={scholarship.intakes ?? "—"} />
         <SnapItem
           label="Deadline"

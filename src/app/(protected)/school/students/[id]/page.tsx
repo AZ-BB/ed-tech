@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { SchoolStudentViewClient } from "./_components/school-student-view-client";
 import { fetchSchoolStudentDetail } from "./_lib/fetch-school-student-detail";
 import { fetchStudentActivityLogsPanel } from "./_lib/fetch-student-activity-logs-page";
+import { fetchStudentCreditUsagePanel } from "./_lib/fetch-student-credit-usage-page";
 import { fetchStudentUsageHistoryPanel } from "./_lib/fetch-student-usage-history-page";
 import { fetchSchoolTasksPage } from "../../tasks/_lib/fetch-school-tasks-page";
 import { parseStudentDetailInitialTab } from "@/lib/student-activity-logs";
 import { parseStudentUsageHistoryKind } from "@/lib/student-usage-history";
+import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 function parseIntParam(raw: string | string[] | undefined, fallback: number) {
@@ -47,10 +49,12 @@ export default async function SchoolStudentDetailPage({
     50,
     Math.max(5, parseIntParam(sp.activityLogsLimit, 10)),
   );
+  const usagePage = Math.max(1, parseIntParam(sp.usagePage, 1));
+  const usageLimit = Math.min(50, Math.max(5, parseIntParam(sp.usageLimit, 10)));
 
   const supabase = await createSupabaseServerClient();
 
-  const [{ rows, totalRows }, historyPanel, activityLogsPanel] =
+  const [{ rows, totalRows }, historyPanel, creditUsagePanel, activityLogsPanel] =
     await Promise.all([
       fetchSchoolTasksPage({
         q: "",
@@ -67,6 +71,11 @@ export default async function SchoolStudentDetailPage({
         limit: historyLimit,
         client: supabase,
       }),
+      fetchStudentCreditUsagePanel(id, {
+        page: usagePage,
+        limit: usageLimit,
+        client: supabase,
+      }),
       fetchStudentActivityLogsPanel(id, {
         page: activityLogsPage,
         limit: activityLogsLimit,
@@ -77,9 +86,14 @@ export default async function SchoolStudentDetailPage({
   const tabParam = typeof sp.tab === "string" ? sp.tab : "";
   const initialTab = parseStudentDetailInitialTab(tabParam);
 
+  const teacherOptions = await fetchSchoolTeacherOptions(payload.student.schoolId, {
+    includeTeacherId: payload.student.teacherId,
+  });
+
   return (
     <SchoolStudentViewClient
       student={payload.student}
+      teacherOptions={teacherOptions}
       applicationProfile={payload.applicationProfile}
       quickStats={payload.quickStats}
       platformActivity={payload.platformActivity}
@@ -91,6 +105,7 @@ export default async function SchoolStudentDetailPage({
       essays={payload.essays}
       initialTab={initialTab}
       historyPanel={historyPanel}
+      creditUsagePanel={creditUsagePanel}
       activityLogsPanel={activityLogsPanel}
       tasksPanel={{
         rows,

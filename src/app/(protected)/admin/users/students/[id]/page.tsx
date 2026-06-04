@@ -8,6 +8,7 @@ import { SchoolStudentViewClient } from "@/app/(protected)/school/students/[id]/
 
 import { fetchStudentActivityLogsPanel } from "@/app/(protected)/school/students/[id]/_lib/fetch-student-activity-logs-page";
 
+import { fetchStudentCreditUsagePanel } from "@/app/(protected)/school/students/[id]/_lib/fetch-student-credit-usage-page";
 import { fetchStudentUsageHistoryPanel } from "@/app/(protected)/school/students/[id]/_lib/fetch-student-usage-history-page";
 
 import { parseStudentDetailInitialTab } from "@/lib/student-activity-logs";
@@ -100,13 +101,17 @@ export default async function AdminStudentDetailPage({
 
   );
 
+  const usagePage = Math.max(1, parseIntParam(sp.usagePage, 1));
+
+  const usageLimit = Math.min(50, Math.max(5, parseIntParam(sp.usageLimit, 10)));
+
 
 
   const secret = await createSupabaseSecretClient();
 
 
 
-  const [{ rows, totalRows }, historyPanel, activityLogsPanel] =
+  const [{ rows, totalRows }, historyPanel, creditUsagePanel, activityLogsPanel] =
 
     await Promise.all([
 
@@ -117,6 +122,16 @@ export default async function AdminStudentDetailPage({
         page: historyPage,
 
         limit: historyLimit,
+
+        client: secret,
+
+      }),
+
+      fetchStudentCreditUsagePanel(id, {
+
+        page: usagePage,
+
+        limit: usageLimit,
 
         client: secret,
 
@@ -216,6 +231,8 @@ export default async function AdminStudentDetailPage({
 
       historyPanel={historyPanel}
 
+      creditUsagePanel={creditUsagePanel}
+
       activityLogsPanel={activityLogsPanel}
 
       sidebarActions={
@@ -241,6 +258,10 @@ export default async function AdminStudentDetailPage({
             grade: student.grade ?? "",
 
             nationalityCountryCode: student.nationalityCountryCode ?? "",
+
+            schoolId: schoolInfo.id,
+
+            teacherId: student.teacherId,
 
           }}
 

@@ -36,12 +36,6 @@ export const sidebarNavItems: SidebarNavItem[] = [
   },
   {
     type: "link",
-    id: "essay-review",
-    label: "Essay Review",
-    href: "/student/essay-review",
-  },
-  {
-    type: "link",
     id: "university-search",
     label: "University Search",
     href: "/student/universities",

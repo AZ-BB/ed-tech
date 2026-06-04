@@ -123,6 +123,7 @@ type UniversityRow = {
     is_public: boolean;
     description: string | null;
     logo_url: string | null;
+    cover_image_url: string | null;
     tuition_per_year: number | null;
     deadline_date: string | null;
     is_priority: boolean;
@@ -259,6 +260,7 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
         locationLine: formatLocation(row.city, row.state, countryName, row.country_code),
         isPublic: row.is_public,
         logoUrl: row.logo_url,
+        coverImageUrl: row.cover_image_url?.trim() || null,
         description: row.description,
         topMajorNames: topNames,
         tuitionDisplay: formatTuitionUsd(row.tuition_per_year),

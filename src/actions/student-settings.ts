@@ -4,8 +4,48 @@ import { revalidatePath } from "next/cache";
 
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
+import {
+  isAllowedImageFile,
+  publicStorageObjectUrl,
+  resolveContentType,
+  sanitizeFilename,
+} from "@/lib/storage-utils";
 import type { GeneralResponse } from "@/utils/response";
-import { createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
+
+const STUDENT_AVATARS_BUCKET = "student-avatars";
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
+async function uploadStudentAvatar(
+  service: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
+  studentId: string,
+  file: File,
+): Promise<string> {
+  if (!isAllowedImageFile(file)) {
+    throw new Error("Profile photo must be a PNG, JPEG, WebP, or GIF image.");
+  }
+
+  if (file.size > MAX_AVATAR_BYTES) {
+    throw new Error("Profile photo must be 5 MB or smaller.");
+  }
+
+  const safeName = sanitizeFilename(file.name);
+  const path = `${studentId}/${Date.now()}_${safeName}`;
+  const buf = Buffer.from(await file.arrayBuffer());
+  const contentType = resolveContentType(file);
+
+  const { error } = await service.storage.from(STUDENT_AVATARS_BUCKET).upload(path, buf, {
+    contentType,
+    upsert: true,
+  });
+
+  if (error) throw error;
+
+  return publicStorageObjectUrl(STUDENT_AVATARS_BUCKET, path);
+}
 
 const GRADE_ALLOWED = new Set<string>(STUDENT_SCHOOL_GRADE_OPTIONS);
 
@@ -69,6 +109,27 @@ export async function updateStudentPersonalAction(
     return { data: null, error: "Pick a valid country." };
   }
 
+  const avatarFile = formData.get("avatar");
+  const removeAvatar =
+    formData.get("remove_avatar") === "1" || formData.get("remove_avatar") === "true";
+  const now = new Date().toISOString();
+
+  let avatar_url: string | null | undefined;
+  if (avatarFile instanceof File && avatarFile.size > 0) {
+    try {
+      const service = await createSupabaseSecretClient();
+      avatar_url = await uploadStudentAvatar(service, auth.studentId, avatarFile);
+    } catch (error) {
+      console.error("[student-settings] upload avatar", error);
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : "Could not upload profile photo.",
+      };
+    }
+  } else if (removeAvatar) {
+    avatar_url = null;
+  }
+
   const { error } = await supabase
     .from("student_profiles")
     .update({
@@ -77,7 +138,8 @@ export async function updateStudentPersonalAction(
       phone,
       grade,
       nationality_country_code: nationalityCountryCode,
-      updated_at: new Date().toISOString(),
+      ...(avatar_url !== undefined ? { avatar_url } : {}),
+      updated_at: now,
     })
     .eq("id", auth.studentId);
 
@@ -88,6 +150,8 @@ export async function updateStudentPersonalAction(
 
   revalidatePath("/student/settings");
   revalidatePath("/student", "layout");
+  revalidatePath("/school", "layout");
+  revalidatePath("/admin", "layout");
   return { data: null, error: null };
 }
 

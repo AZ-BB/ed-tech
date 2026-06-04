@@ -1,4 +1,9 @@
 import { buildFullDestinationSelectItems } from "@/lib/school-portal-destination-options";
+import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
+import {
+  resolveSchoolStudentsTeacherFilter,
+  schoolStudentsTeacherSelectValue,
+} from "@/lib/student-teacher-assignment";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import { SchoolStudentsClient } from "./_components/school-students-client";
@@ -26,6 +31,30 @@ export default async function SchoolStudentsPage({
 
   const supabase = await createSupabaseServerClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const currentTeacherId = user?.id ?? null;
+
+  const teacher = resolveSchoolStudentsTeacherFilter(sp.teacher);
+  const teacherSelectValue = schoolStudentsTeacherSelectValue(
+    teacher,
+    currentTeacherId,
+  );
+
+  const { data: sap } = currentTeacherId
+    ? await supabase
+        .from("school_admin_profiles")
+        .select("school_id")
+        .eq("id", currentTeacherId)
+        .maybeSingle()
+    : { data: null };
+
+  const teacherOptions = sap?.school_id
+    ? await fetchSchoolTeacherOptions(sap.school_id)
+    : [];
+
   const { data: countries } = await supabase
     .from("countries")
     .select("name")
@@ -38,6 +67,7 @@ export default async function SchoolStudentsPage({
     studentQ,
     grade,
     destination: dest,
+    teacher,
     page,
     limit,
   });
@@ -52,6 +82,10 @@ export default async function SchoolStudentsPage({
       studentQ={studentQ}
       grade={grade}
       dest={dest}
+      teacher={teacher}
+      teacherSelectValue={teacherSelectValue}
+      currentTeacherId={currentTeacherId}
+      teacherOptions={teacherOptions}
       destinationItems={destinationItems}
     />
   );

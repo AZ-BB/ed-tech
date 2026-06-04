@@ -217,6 +217,11 @@ function ProgressTracker({
 
 export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
   const [step, setStep] = useState<Step>("landing");
+
+  const goToStep = useCallback((next: Step) => {
+    setStep(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
   const [toast, setToast] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -333,7 +338,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
   async function goFromSummaryToPay() {
     const ok = await persistApplication();
-    if (ok) setStep("pay");
+    if (ok) goToStep("pay");
   }
 
   const basicValid = Boolean(
@@ -347,13 +352,6 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
   );
 
   const strategyValid = selectedPack != null;
-
-  const summaryHeadline = useMemo(() => {
-    const first = fullName.trim().split(/\s+/)[0];
-    return first
-      ? `Your plan is ready, ${first}`
-      : "Your personalized application plan is ready";
-  }, [fullName]);
 
   const summaryNarrative = useMemo(() => {
     if (planClarity === "help") {
@@ -490,7 +488,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 <div className="mt-7 flex flex-wrap items-center gap-[18px] max-[768px]:justify-center">
                   <button
                     type="button"
-                    onClick={() => setStep("basic")}
+                    onClick={() => goToStep("basic")}
                     className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
                   >
                     Start your application journey
@@ -624,7 +622,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               </p>
               <button
                 type="button"
-                onClick={() => setStep("basic")}
+                onClick={() => goToStep("basic")}
                 className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-12 py-[18px] text-base font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
               >
                 Start your application journey
@@ -732,7 +730,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 </select>
               </label>
             </div>
-            {formNav(() => setStep("landing"), () => setStep("direction"), !basicValid)}
+            {formNav(() => goToStep("landing"), () => goToStep("direction"), !basicValid)}
           </div>
         </div>
       ) : null}
@@ -850,7 +848,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               ))}
             </div>
 
-            {formNav(() => setStep("basic"), () => setStep("strategy"))}
+            {formNav(() => goToStep("basic"), () => goToStep("strategy"))}
           </div>
         </div>
       ) : null}
@@ -922,7 +920,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               </div>
             </div>
 
-            {formNav(() => setStep("direction"), () => setStep("summary"), !strategyValid)}
+            {formNav(() => goToStep("direction"), () => goToStep("summary"), !strategyValid)}
           </div>
         </div>
       ) : null}
@@ -936,7 +934,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--green)]" />
                 You&apos;re minutes away from getting started
               </div>
-              <h2 className="as-summary-headline font-[family-name:var(--font-dm-serif)]">{summaryHeadline}</h2>
+              <h2 className="as-summary-headline font-[family-name:var(--font-dm-serif)]">Your plan is ready</h2>
               <p className="as-summary-narrative">{summaryNarrative}</p>
             </div>
 
@@ -1064,7 +1062,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             <div className="mt-6 flex justify-start border-t border-[var(--border-light)] pt-5">
               <button
                 type="button"
-                onClick={() => setStep("strategy")}
+                onClick={() => goToStep("strategy")}
                 className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)]"
               >
                 Back
@@ -1134,7 +1132,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                   <div className="my-3 h-px bg-[var(--border-light)]" />
                   <button
                     type="button"
-                    onClick={() => setStep("done")}
+                    onClick={() => goToStep("done")}
                     className="mb-3.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)]"
                   >
                     Book your session
@@ -1153,7 +1151,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             <div className="mt-6 flex justify-start">
               <button
                 type="button"
-                onClick={() => setStep("summary")}
+                onClick={() => goToStep("summary")}
                 className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)]"
               >
                 Back
@@ -1225,7 +1223,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setStep("pay")}
+                  onClick={() => goToStep("pay")}
                   className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-3 text-sm font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)]"
                 >
                   Back

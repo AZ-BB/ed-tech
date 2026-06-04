@@ -1,6 +1,13 @@
 export const ADMIN_SESSIONS_HOME = "/admin/sessions";
 
-export type SessionsTabId = "advisor" | "ambassador" | "pending" | "completed";
+export type SessionsTabId =
+  | "advisor"
+  | "ambassador"
+  | "ambassadorRequests"
+  | "pending"
+  | "completed";
+
+export const ADMIN_AMBASSADOR_SPECIFIC_REQUESTS_HOME = `${ADMIN_SESSIONS_HOME}/ambassador-requests`;
 
 export type SessionsTabCounts = Record<SessionsTabId, number>;
 
@@ -18,8 +25,13 @@ export const sessionsTabs: readonly SessionsTab[] = [
   },
   {
     id: "ambassador",
-    label: "Ambassador requests",
+    label: "Ambassador Sessions",
     href: `${ADMIN_SESSIONS_HOME}/ambassador`,
+  },
+  {
+    id: "ambassadorRequests",
+    label: "Ambassador Requests",
+    href: ADMIN_AMBASSADOR_SPECIFIC_REQUESTS_HOME,
   },
   {
     id: "pending",
@@ -47,6 +59,7 @@ export function getSessionsTabFromPath(pathname: string): SessionsTabId {
   if (n === ADMIN_SESSIONS_HOME) return "advisor";
 
   const segment = n.slice(`${ADMIN_SESSIONS_HOME}/`.length).split("/")[0];
+  if (segment === "ambassador-requests") return "ambassadorRequests";
   const match = sessionsTabs.find((tab) => tab.id === segment);
   return match?.id ?? "advisor";
 }
@@ -82,4 +95,30 @@ export function parseAdminSessionDetailParams(
   const id = Number.parseInt(idRaw, 10);
   if (!Number.isFinite(id) || id < 1) return null;
   return { kind: kindRaw as AdminSessionKind, id };
+}
+
+export function getAdminAmbassadorSpecificRequestHref(id: number): string {
+  return `${ADMIN_AMBASSADOR_SPECIFIC_REQUESTS_HOME}/${id}`;
+}
+
+export function parseAdminAmbassadorSpecificRequestId(
+  idRaw: string,
+): number | null {
+  const id = Number.parseInt(idRaw, 10);
+  if (!Number.isFinite(id) || id < 1) return null;
+  return id;
+}
+
+/** e.g. /admin/sessions/ambassador-requests/42 — hide list tab chrome. */
+export function isAdminAmbassadorSpecificRequestDetailPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  return /^\/admin\/sessions\/ambassador-requests\/\d+$/.test(n);
+}
+
+/** Hide sessions tab bar on any sessions detail view. */
+export function isAdminSessionsDetailChromeHidden(pathname: string): boolean {
+  return (
+    isAdminSessionDetailPath(pathname) ||
+    isAdminAmbassadorSpecificRequestDetailPath(pathname)
+  );
 }

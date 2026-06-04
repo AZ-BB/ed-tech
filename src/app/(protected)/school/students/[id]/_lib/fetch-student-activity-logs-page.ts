@@ -1,4 +1,7 @@
-import type { StudentActivityLogItem } from "@/lib/student-activity-logs";
+import {
+  formatActivityLogMessageForAdmin,
+  type StudentActivityLogItem,
+} from "@/lib/student-activity-logs";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -84,10 +87,12 @@ export async function fetchStudentActivityLogsPage(
       personNameFromEmbed(row.student_profiles),
     );
 
+    const rawMessage = row.message?.trim() || "—";
+
     return {
       id: row.id,
       action: row.action,
-      message: row.message?.trim() || "—",
+      message: formatActivityLogMessageForAdmin(rawMessage, actorName, createdByType),
       entityType: row.entitiy_type?.trim() || "—",
       entityId: row.entity_id?.trim() || "—",
       createdByType,
@@ -153,10 +158,12 @@ export async function fetchTeacherActivityLogsPage(
       personNameFromEmbed(row.student_profiles),
     );
 
+    const rawMessage = row.message?.trim() || "—";
+
     return {
       id: row.id,
       action: row.action,
-      message: row.message?.trim() || "—",
+      message: formatActivityLogMessageForAdmin(rawMessage, actorName, createdByType),
       entityType: row.entitiy_type?.trim() || "—",
       entityId: row.entity_id?.trim() || "—",
       createdByType,
@@ -222,10 +229,12 @@ export async function fetchAdminActivityLogsPage(
       personNameFromEmbed(row.student_profiles),
     );
 
+    const rawMessage = row.message?.trim() || "—";
+
     return {
       id: row.id,
       action: row.action,
-      message: row.message?.trim() || "—",
+      message: formatActivityLogMessageForAdmin(rawMessage, actorName, createdByType),
       entityType: row.entitiy_type?.trim() || "—",
       entityId: row.entity_id?.trim() || "—",
       createdByType,

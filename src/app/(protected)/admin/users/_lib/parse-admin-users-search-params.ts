@@ -8,11 +8,17 @@ export type AdminUsersRoleFilter =
 
 export type AdminUsersStatusFilter = "" | "active" | "inactive";
 
+import {
+  parseStudentTeacherFilterParam,
+  type StudentTeacherFilterValue,
+} from "@/lib/student-teacher-assignment";
+
 export type AdminUsersPageFilters = {
   q: string;
   role: AdminUsersRoleFilter;
   schoolId: string;
   status: AdminUsersStatusFilter;
+  teacher: StudentTeacherFilterValue;
   page: number;
   limit: number;
 };
@@ -75,8 +81,9 @@ export function parseAdminUsersSearchParams(
     scopedSchoolId?.trim() ||
     (typeof sp.school === "string" ? sp.school : "");
   const status = parseStatusParam(sp.status);
+  const teacher = parseStudentTeacherFilterParam(sp.teacher);
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 20)));
 
-  return { q, role, schoolId, status, page, limit };
+  return { q, role, schoolId, status, teacher, page, limit };
 }

@@ -157,14 +157,8 @@ export async function recordStudentCreditAssignments(
   return { ok: true };
 }
 
-export function formatCreditHistoryAmount(amount: number, status: string | null): string {
-  if (status === "added") {
-    return `+${amount.toLocaleString()}`;
-  }
-  if (status === "refunded") {
-    return `+${amount.toLocaleString()}`;
-  }
-  return `−${amount.toLocaleString()}`;
+export function formatCreditHistoryAmount(amount: number, _status?: string | null): string {
+  return amount.toLocaleString();
 }
 
 export function formatCreditHistoryStatus(status: string | null): string {

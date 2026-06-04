@@ -19,6 +19,7 @@ import {
   isStudentInteractionOutcome,
 } from "@/lib/student-interaction-constants";
 import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
+import { parseStudentTeacherAssignParam } from "@/lib/student-teacher-assignment";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
@@ -842,11 +843,114 @@ export async function updateSchoolPredictedDocumentSlot(
   return { ok: true };
 }
 
+type AssignStudentTeacherResult = { ok: true } | { ok: false; error: string };
+
+async function assertSchoolAdminSchoolId(): Promise<
+  { ok: true; schoolId: string; userId: string } | { ok: false; error: string }
+> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { ok: false, error: "You must be signed in." };
+  }
+
+  const { data: sap, error: sapError } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (sapError || !sap?.school_id) {
+    return { ok: false, error: "Your account is not linked to a school." };
+  }
+
+  return { ok: true, schoolId: sap.school_id, userId: user.id };
+}
+
+export async function assignStudentTeacher(
+  studentIdRaw: string,
+  teacherIdRaw: string,
+): Promise<AssignStudentTeacherResult> {
+  const access = await assertSchoolAdminSchoolId();
+  if (!access.ok) return access;
+
+  const studentId = studentIdRaw.trim();
+  if (!studentId || !UUID_RE.test(studentId)) {
+    return { ok: false, error: "Invalid student." };
+  }
+
+  const parsed = parseStudentTeacherAssignParam(teacherIdRaw);
+  if (parsed === "invalid") {
+    return { ok: false, error: "Select a valid teacher." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: student, error: studentErr } = await supabase
+    .from("student_profiles")
+    .select("id, school_id, teacher_id")
+    .eq("id", studentId)
+    .maybeSingle();
+
+  if (studentErr || !student) {
+    return { ok: false, error: "Student not found." };
+  }
+
+  if (student.school_id !== access.schoolId) {
+    return { ok: false, error: "That student is not at your school." };
+  }
+
+  if (parsed === student.teacher_id) {
+    return { ok: true };
+  }
+
+  if (parsed) {
+    const { data: teacher, error: teacherErr } = await supabase
+      .from("school_admin_profiles")
+      .select("id, school_id, is_active")
+      .eq("id", parsed)
+      .maybeSingle();
+
+    if (teacherErr || !teacher) {
+      return { ok: false, error: "Teacher not found." };
+    }
+
+    if (teacher.school_id !== student.school_id) {
+      return { ok: false, error: "Teacher must belong to the same school as the student." };
+    }
+
+    if (
+      teacher.is_active === false &&
+      teacher.id !== student.teacher_id
+    ) {
+      return { ok: false, error: "That teacher is inactive." };
+    }
+  }
+
+  const now = new Date().toISOString();
+  const { error: updateErr } = await supabase
+    .from("student_profiles")
+    .update({ teacher_id: parsed, updated_at: now })
+    .eq("id", studentId);
+
+  if (updateErr) {
+    console.error("[assignStudentTeacher]", updateErr);
+    return { ok: false, error: updateErr.message || "Could not assign teacher." };
+  }
+
+  revalidatePath("/school/students");
+  revalidatePath(`/school/students/${studentId}`);
+  return { ok: true };
+}
+
 /** Full student list for CSV export (current search / grade / destination filters, no pagination). */
 export async function getSchoolStudentsFullExportRows(
   q: string,
   grade: string,
   dest: string,
+  teacher = "",
 ): Promise<GeneralResponse<SchoolStudentTableRow[] | null>> {
   const supabase = await createSupabaseServerClient();
   const {
@@ -882,6 +986,7 @@ export async function getSchoolStudentsFullExportRows(
     q: typeof q === "string" ? q : "",
     grade: typeof grade === "string" ? grade : "",
     destination: typeof dest === "string" ? dest : "",
+    teacher: typeof teacher === "string" ? teacher : "",
   });
 
   return { data: rows, error: null };

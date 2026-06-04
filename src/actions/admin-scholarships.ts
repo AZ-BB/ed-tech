@@ -190,6 +190,7 @@ type ScholarshipFormFields = {
   other: string | null;
   tooltip: string | null;
   discoverySlug: string | null;
+  applicationUrl: string | null;
 };
 
 function parseScholarshipFormFields(formData: FormData): ScholarshipFormFields {
@@ -232,7 +233,52 @@ function parseScholarshipFormFields(formData: FormData): ScholarshipFormFields {
     other: String(formData.get("other") ?? "").trim() || null,
     tooltip: String(formData.get("tooltip") ?? "").trim() || null,
     discoverySlug: discoverySlugRaw || slugifyName(name) || null,
+    applicationUrl: String(formData.get("applicationUrl") ?? "").trim() || null,
   };
+}
+
+function normalizeApplicationUrl(raw: string | null): string {
+  const trimmed = raw?.trim() ?? "";
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function hostnameFromApplicationUrl(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "") || null;
+  } catch {
+    return null;
+  }
+}
+
+function mergeDiscoveryPayloadApplicationUrl(
+  existing: Json | null,
+  fields: ScholarshipFormFields,
+): Json | null {
+  const applicationUrl = normalizeApplicationUrl(fields.applicationUrl);
+  const hasExistingObject =
+    existing != null && typeof existing === "object" && !Array.isArray(existing);
+  const base: Record<string, unknown> = hasExistingObject
+    ? { ...(existing as Record<string, unknown>) }
+    : {};
+
+  const slug = fields.discoverySlug?.trim() || "";
+  if (!hasExistingObject && !applicationUrl && !slug) return null;
+
+  if (!base.id && slug) base.id = slug;
+  if (!base.name && fields.name) base.name = fields.name;
+
+  base.applicationUrl = applicationUrl;
+  if (applicationUrl) {
+    const domain = hostnameFromApplicationUrl(applicationUrl);
+    if (domain) base.applicationWebsiteDomain = domain;
+    if (!base.linkStatus || base.linkStatus === "missing") base.linkStatus = "verified";
+  } else if (hasExistingObject) {
+    base.linkStatus = "missing";
+  }
+
+  return base as Json;
 }
 
 function validateScholarshipFormFields(
@@ -245,7 +291,10 @@ function validateScholarshipFormFields(
   return { ok: true };
 }
 
-function scholarshipFieldsToDbPayload(fields: ScholarshipFormFields) {
+function scholarshipFieldsToDbPayload(
+  fields: ScholarshipFormFields,
+  existingDiscoveryPayload: Json | null = null,
+) {
   return {
     name: fields.name,
     nationality_country_code: fields.nationalityCountryCode,
@@ -278,6 +327,10 @@ function scholarshipFieldsToDbPayload(fields: ScholarshipFormFields) {
     other: fields.other,
     tooltip: fields.tooltip,
     discovery_slug: fields.discoverySlug,
+    discovery_payload: mergeDiscoveryPayloadApplicationUrl(
+      existingDiscoveryPayload,
+      fields,
+    ),
   };
 }
 
@@ -461,10 +514,21 @@ export async function updateAdminScholarship(
     }
   }
 
+  const { data: existingRow, error: existingFetchError } = await service
+    .from("scholarships")
+    .select("discovery_payload")
+    .eq("id", scholarshipId)
+    .maybeSingle();
+
+  if (existingFetchError) {
+    console.error("[admin-scholarships] update fetch payload", existingFetchError);
+    return { ok: false, error: "Could not load scholarship." };
+  }
+
   const { error } = await service
     .from("scholarships")
     .update({
-      ...scholarshipFieldsToDbPayload(fields),
+      ...scholarshipFieldsToDbPayload(fields, existingRow?.discovery_payload ?? null),
       updated_at: new Date().toISOString(),
     })
     .eq("id", scholarshipId);

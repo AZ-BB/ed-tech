@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import { createAdminTeacher } from "@/actions/admin-teachers";
 import { fetchAdminSchoolsForStudentImport } from "@/actions/admin-users";
 import { useRouter } from "next/navigation";
@@ -68,23 +69,20 @@ export function UsersAddTeacherDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const formData = new FormData(form);
-    const result = await createAdminTeacher(formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    form.reset();
-    router.refresh();
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => createAdminTeacher(new FormData(form)),
+      () => {
+        setSuccess(true);
+        form.reset();
+        router.refresh();
+      },
+    );
   }
 
   function handleClose() {

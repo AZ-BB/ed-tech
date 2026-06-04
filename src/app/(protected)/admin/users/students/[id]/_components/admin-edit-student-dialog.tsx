@@ -1,11 +1,15 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import {
   fetchAdminStudentFormCountries,
+  fetchAdminStudentFormTeachers,
   updateAdminStudentProfile,
   type AdminCountryOption,
 } from "@/actions/admin-students";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
+import type { SchoolTeacherOption } from "@/lib/fetch-school-teacher-options";
+import { STUDENT_TEACHER_UNASSIGNED_FILTER } from "@/lib/student-teacher-assignment";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -19,6 +23,8 @@ export type AdminEditStudentDialogProps = {
     phone: string;
     grade: string;
     nationalityCountryCode: string;
+    schoolId: string;
+    teacherId: string | null;
   };
   onClose: () => void;
 };
@@ -36,8 +42,9 @@ export function AdminEditStudentDialog({
 }: AdminEditStudentDialogProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [isLoadingFormOptions, setIsLoadingFormOptions] = useState(false);
   const [countries, setCountries] = useState<AdminCountryOption[]>([]);
+  const [teachers, setTeachers] = useState<SchoolTeacherOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -45,47 +52,53 @@ export function AdminEditStudentDialog({
     if (!open) return;
 
     let cancelled = false;
-    setIsLoadingCountries(true);
+    setIsLoadingFormOptions(true);
     setError(null);
     setSuccess(false);
 
-    void fetchAdminStudentFormCountries().then((result) => {
+    void Promise.all([
+      fetchAdminStudentFormCountries(),
+      fetchAdminStudentFormTeachers(defaults.schoolId, defaults.teacherId),
+    ]).then(([countriesResult, teachersResult]) => {
       if (cancelled) return;
-      if (!result.ok) {
-        setError(result.error);
+      if (!countriesResult.ok) {
+        setError(countriesResult.error);
         setCountries([]);
       } else {
-        setCountries(result.countries);
+        setCountries(countriesResult.countries);
       }
-      setIsLoadingCountries(false);
+      if (!teachersResult.ok) {
+        setError((prev) => prev ?? teachersResult.error);
+        setTeachers([]);
+      } else {
+        setTeachers(teachersResult.teachers);
+      }
+      setIsLoadingFormOptions(false);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, defaults.schoolId, defaults.teacherId]);
 
   if (!open) return null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const formData = new FormData(form);
-    const result = await updateAdminStudentProfile(studentId, formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    router.refresh();
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => updateAdminStudentProfile(studentId, new FormData(form)),
+      () => {
+        setSuccess(true);
+        router.refresh();
+      },
+    );
   }
 
   function handleClose() {
@@ -198,16 +211,36 @@ export function AdminEditStudentDialog({
               id="edit-student-nationality"
               name="nationalityCountryCode"
               required
-              disabled={isLoadingCountries || isSubmitting}
+              disabled={isLoadingFormOptions || isSubmitting}
               defaultValue={defaults.nationalityCountryCode}
               className={`${inputClassName} cursor-pointer disabled:opacity-60`}
             >
               <option value="">
-                {isLoadingCountries ? "Loading countries…" : "Select country"}
+                {isLoadingFormOptions ? "Loading countries…" : "Select country"}
               </option>
               {countries.map((country) => (
                 <option key={country.id} value={country.id}>
                   {country.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="edit-student-teacher" className={labelClassName}>
+              Teacher
+            </label>
+            <select
+              id="edit-student-teacher"
+              name="teacherId"
+              disabled={isLoadingFormOptions || isSubmitting}
+              defaultValue={defaults.teacherId ?? STUDENT_TEACHER_UNASSIGNED_FILTER}
+              className={`${inputClassName} cursor-pointer disabled:opacity-60`}
+            >
+              <option value={STUDENT_TEACHER_UNASSIGNED_FILTER}>Unassigned</option>
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.label}
                 </option>
               ))}
             </select>
@@ -228,7 +261,7 @@ export function AdminEditStudentDialog({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || isLoadingCountries}
+              disabled={isSubmitting || isLoadingFormOptions}
               className="rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
             >
               {isSubmitting ? "Saving…" : "Save changes"}

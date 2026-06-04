@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import { updateAdminTeacherProfile } from "@/actions/admin-teachers";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,24 +43,20 @@ export function AdminEditTeacherDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const result = await updateAdminTeacherProfile(teacherId, new FormData(form));
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    router.refresh();
-    window.setTimeout(() => {
-      onClose();
-    }, 600);
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => updateAdminTeacherProfile(teacherId, new FormData(form)),
+      () => {
+        setSuccess(true);
+        router.refresh();
+        window.setTimeout(() => onClose(), 600);
+      },
+    );
   }
 
   return (

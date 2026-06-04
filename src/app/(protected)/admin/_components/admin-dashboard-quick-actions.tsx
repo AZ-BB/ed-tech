@@ -36,7 +36,7 @@ function icon(action: "user" | "announcement" | "report") {
 
 const roles: { id: AdminUserCreateRole; label: string }[] = [
   { id: "student", label: "Student" },
-  { id: "school_admin", label: "School Admin" },
+  { id: "school_admin", label: "School Counselor" },
   { id: "admin", label: "Admin" },
   { id: "ambassador", label: "Ambassador" },
   { id: "advisor", label: "Advisor" },

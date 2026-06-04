@@ -9,6 +9,7 @@ import {
   createSchoolStudentTask,
   toggleSchoolStudentTask,
 } from "@/actions/school-tasks";
+import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { Pagination } from "@/components/pagination";
 import type { GeneralResponse } from "@/utils/response";
 import { useRouter } from "next/navigation";
@@ -47,13 +48,6 @@ function metaDescriptionSnippet(text: string, max = 72) {
   const t = text.replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
-}
-
-function initials(first: string, last: string) {
-  const a = first.trim()[0];
-  const b = last.trim()[0];
-  const pair = `${a ?? ""}${b ?? ""}`.toUpperCase();
-  return pair || "?";
 }
 
 function priorityPill(priority: string) {
@@ -527,9 +521,12 @@ export function SchoolTasksClient({
                       >
                         {!isStudentProfile ? (
                           <span className="inline-flex items-center gap-1">
-                            <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[9px] font-semibold text-[var(--green-dark)]">
-                              {initials(r.firstName, r.lastName)}
-                            </span>
+                            <PersonProfileAvatar
+                              avatarUrl={r.avatarUrl}
+                              firstName={r.firstName}
+                              lastName={r.lastName}
+                              size="xs"
+                            />
                             {studentName}
                           </span>
                         ) : null}

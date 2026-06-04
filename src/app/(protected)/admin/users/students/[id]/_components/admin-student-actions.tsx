@@ -22,6 +22,8 @@ export type AdminStudentActionsProps = {
     phone: string;
     grade: string;
     nationalityCountryCode: string;
+    schoolId: string;
+    teacherId: string | null;
   };
 };
 

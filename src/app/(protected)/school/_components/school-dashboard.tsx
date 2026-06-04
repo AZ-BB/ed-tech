@@ -1,3 +1,4 @@
+import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import Link from "next/link";
 
 import type { SchoolDashboardPayload } from "../_lib/fetch-school-dashboard";
@@ -102,9 +103,13 @@ export function SchoolDashboard({ data }: Props) {
                     className="flex items-center justify-between gap-4 border-b border-[#ece9e4] py-[14px] first:pt-[6px] last:border-b-0"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#E8F5EE] text-[11.5px] font-semibold text-[#1B4332]">
-                        {row.initials}
-                      </div>
+                      <PersonProfileAvatar
+                        avatarUrl={row.avatarUrl}
+                        firstName={row.firstName}
+                        lastName={row.lastName}
+                        size="sm"
+                        className="bg-[#E8F5EE] text-[#1B4332]"
+                      />
                       <div className="min-w-0">
                         <div className="text-[13.5px] font-semibold tracking-[-0.005em] text-[#1a1a1a]">
                           {row.firstName} {row.lastName}

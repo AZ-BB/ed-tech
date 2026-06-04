@@ -169,6 +169,7 @@ export function UsersHeaderActions() {
         role: filters.role,
         schoolId: filters.schoolId,
         status: filters.status,
+        teacher: filters.teacher,
       });
 
       if (!result.ok) {

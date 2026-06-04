@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import { updateAdminRolePermissionsFromForm } from "@/actions/admin-permissions";
 import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
 import {
@@ -62,21 +63,20 @@ export function AdminSettingsRolePermissions({ rolePermissions }: Props) {
 
   async function handleRoleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setRoleSaving(true);
-    setRoleError(null);
-    setRoleSuccess(false);
 
-    const result = await updateAdminRolePermissionsFromForm(new FormData(event.currentTarget));
-    if (!result.ok) {
-      setRoleError(result.error);
-      setRoleSaving(false);
-      return;
-    }
-
-    setRoleSuccess(true);
-    setRoleSaving(false);
-    setFormKey((value) => value + 1);
-    router.refresh();
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setRoleSaving,
+        setError: setRoleError,
+        onBeforeSubmit: () => setRoleSuccess(false),
+      },
+      () => updateAdminRolePermissionsFromForm(new FormData(event.currentTarget)),
+      () => {
+        setRoleSuccess(true);
+        setFormKey((value) => value + 1);
+        router.refresh();
+      },
+    );
   }
 
   return (

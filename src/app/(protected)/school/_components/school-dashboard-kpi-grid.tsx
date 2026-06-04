@@ -212,7 +212,7 @@ export function SchoolDashboardKpiGrid({
           const isClickable = k.clickable === true;
           const cardClassName = `group relative flex min-h-[130px] flex-col rounded-[14px] border border-[#ece9e4] bg-white px-5 pb-4 pt-[18px] transition-[border-color,box-shadow,transform] duration-150 hover:border-[#e0deda] hover:shadow-[0_1px_2px_rgba(15,30,20,0.04)]${
             isClickable
-              ? " cursor-pointer hover:border-[#40916C] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#40916C]"
+              ? " cursor-pointer text-left hover:border-[#40916C] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#40916C]"
               : ""
           }`;
 

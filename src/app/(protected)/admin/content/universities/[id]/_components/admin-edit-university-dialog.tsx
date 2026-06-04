@@ -1,6 +1,7 @@
 "use client";
 
 import { updateAdminUniversity } from "@/actions/admin-universities";
+import { uploadAdminUniversityImages } from "@/lib/admin-university-image-upload-client";
 import type { AdminUniversityDetailPayload } from "../_lib/fetch-admin-university-detail";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -37,20 +38,31 @@ export function AdminEditUniversityDialog({
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(
     university.logoUrl,
   );
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(
+    university.coverImageUrl,
+  );
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (open) {
       setLogoPreviewUrl(university.logoUrl);
+      setCoverPreviewUrl(university.coverImageUrl);
+      setLogoFile(null);
+      setCoverFile(null);
     }
-  }, [open, university.logoUrl]);
+  }, [open, university.logoUrl, university.coverImageUrl]);
 
   useEffect(() => {
     return () => {
       if (logoPreviewUrl?.startsWith("blob:")) {
         URL.revokeObjectURL(logoPreviewUrl);
       }
+      if (coverPreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(coverPreviewUrl);
+      }
     };
-  }, [logoPreviewUrl]);
+  }, [logoPreviewUrl, coverPreviewUrl]);
 
   if (!open) return null;
 
@@ -61,11 +73,29 @@ export function AdminEditUniversityDialog({
     }
 
     if (!file) {
+      setLogoFile(null);
       setLogoPreviewUrl(university.logoUrl);
       return;
     }
 
+    setLogoFile(file);
     setLogoPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function handleCoverChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (coverPreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(coverPreviewUrl);
+    }
+
+    if (!file) {
+      setCoverFile(null);
+      setCoverPreviewUrl(university.coverImageUrl);
+      return;
+    }
+
+    setCoverFile(file);
+    setCoverPreviewUrl(URL.createObjectURL(file));
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -74,6 +104,23 @@ export function AdminEditUniversityDialog({
     setError(null);
 
     const formData = new FormData(event.currentTarget);
+
+    const uploadResult = await uploadAdminUniversityImages(university.id, {
+      logo: logoFile,
+      cover: coverFile,
+    });
+    if (!uploadResult.ok) {
+      setError(uploadResult.error);
+      setIsSubmitting(false);
+      return;
+    }
+    if (uploadResult.logoUrl) {
+      formData.set("logoUrl", uploadResult.logoUrl);
+    }
+    if (uploadResult.coverImageUrl) {
+      formData.set("coverImageUrl", uploadResult.coverImageUrl);
+    }
+
     const result = await updateAdminUniversity(formData);
 
     if (!result.ok) {
@@ -90,26 +137,32 @@ export function AdminEditUniversityDialog({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+      onClick={isSubmitting ? undefined : onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="admin-edit-university-title"
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[12px] border border-[#e0deda] bg-white p-6 shadow-xl"
+        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[12px] border border-[#e0deda] bg-white shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2
-          id="admin-edit-university-title"
-          className="text-[18px] font-semibold text-[#1a1a1a]"
-        >
-          Edit University
-        </h2>
-        <p className="mt-2 text-[13px] text-[#666]">
-          Update catalog profile, admissions, and visibility settings.
-        </p>
+        <div className="shrink-0 px-6 pt-6">
+          <h2
+            id="admin-edit-university-title"
+            className="text-[18px] font-semibold text-[#1a1a1a]"
+          >
+            Edit University
+          </h2>
+          <p className="mt-2 text-[13px] text-[#666]">
+            Update catalog profile, admissions, and visibility settings.
+          </p>
+        </div>
 
-        <form className="mt-5 space-y-6" onSubmit={handleSubmit}>
+        <form className="flex min-h-0 flex-1 flex-col px-6" onSubmit={handleSubmit}>
+          <fieldset
+            disabled={isSubmitting}
+            className="m-0 min-h-0 min-w-0 flex-1 space-y-6 overflow-y-auto border-0 p-0 pb-4 disabled:pointer-events-none disabled:opacity-60"
+          >
           <input type="hidden" name="universityId" value={university.id} />
 
           <div>
@@ -214,7 +267,6 @@ export function AdminEditUniversityDialog({
                   <div className="min-w-0 flex-1 space-y-3">
                     <input
                       id="edit-uni-logo-file"
-                      name="logo"
                       type="file"
                       accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
                       onChange={handleLogoChange}
@@ -241,6 +293,52 @@ export function AdminEditUniversityDialog({
                         Used only if you do not upload a new file.
                       </p>
                     </div>
+                  </div>
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="edit-uni-cover-file" className={labelClassName}>
+                  Cover image
+                </label>
+                <div className="space-y-3">
+                  {coverPreviewUrl ? (
+                    <img
+                      src={coverPreviewUrl}
+                      alt={`${university.name} cover preview`}
+                      className="h-[100px] w-full max-w-md rounded-[8px] border border-[#e0deda] object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-[100px] w-full max-w-md items-center justify-center rounded-[8px] border border-dashed border-[#e0deda] bg-[#fafaf8] text-[10px] font-medium text-[#a0a0a0]">
+                      No cover image
+                    </div>
+                  )}
+                  <input
+                    id="edit-uni-cover-file"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={handleCoverChange}
+                    className={`${inputClassName} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-[6px] file:border-0 file:bg-[#e8f5ee] file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-[#1B4332]`}
+                  />
+                  <p className="text-[11px] text-[#a0a0a0]">
+                    Banner shown on the university page (PNG, JPEG, WebP, or GIF, max 5 MB).
+                    Uploading replaces the current cover.
+                  </p>
+                  <div>
+                    <label htmlFor="edit-uni-cover-url" className={labelClassName}>
+                      Or paste cover image URL
+                    </label>
+                    <input
+                      id="edit-uni-cover-url"
+                      name="coverImageUrl"
+                      type="url"
+                      key={university.coverImageUrl ?? "no-cover"}
+                      defaultValue={university.coverImageUrl ?? ""}
+                      placeholder="https://…"
+                      className={inputClassName}
+                    />
+                    <p className="mt-1 text-[11px] text-[#a0a0a0]">
+                      Used only if you do not upload a new file.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -539,27 +637,31 @@ export function AdminEditUniversityDialog({
             </div>
           </div>
 
-          {error ? (
-            <p className="text-[13px] text-red-600" role="alert">
-              {error}
-            </p>
-          ) : null}
+          </fieldset>
 
-          <div className="flex flex-wrap justify-end gap-2 border-t border-[#ece9e4] pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-2 text-[12px] font-semibold text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="cursor-pointer rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#1B4332] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? "Saving…" : "Save changes"}
-            </button>
+          <div className="shrink-0 border-t border-[#ece9e4] bg-white py-4">
+            {error ? (
+              <p className="mb-3 text-[13px] text-red-600" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-2 text-[12px] font-semibold text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="cursor-pointer rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#1B4332] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? "Saving…" : "Save changes"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

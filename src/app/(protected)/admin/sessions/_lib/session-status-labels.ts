@@ -91,8 +91,13 @@ export function sessionKindLabel(kind: "advisor" | "ambassador"): string {
   return kind === "advisor" ? "Advisor" : "Ambassador";
 }
 
+/** Status options for the session detail dropdown (cancelled is set via Cancel Session only). */
 export const ADMIN_ADVISOR_SESSION_STATUS_OPTIONS =
-  ADMIN_ADVISOR_SESSION_STATUS_FILTER_OPTIONS.filter((o) => o.value !== "");
+  ADMIN_ADVISOR_SESSION_STATUS_FILTER_OPTIONS.filter(
+    (o) => o.value !== "" && o.value !== "cancelled",
+  );
 
 export const ADMIN_AMBASSADOR_SESSION_STATUS_OPTIONS =
-  ADMIN_AMBASSADOR_SESSION_STATUS_FILTER_OPTIONS.filter((o) => o.value !== "");
+  ADMIN_AMBASSADOR_SESSION_STATUS_FILTER_OPTIONS.filter(
+    (o) => o.value !== "" && o.value !== "cancelled",
+  );

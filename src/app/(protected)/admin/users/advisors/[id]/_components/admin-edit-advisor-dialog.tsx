@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import {
   fetchAdvisorFormOptions,
   updateAdminAdvisorProfile,
@@ -82,7 +83,7 @@ export function AdminEditAdvisorDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, defaults.specializationCountryCodes]);
+  }, [open]);
 
   useEffect(() => {
     return () => {
@@ -107,27 +108,20 @@ export function AdminEditAdvisorDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const formData = new FormData(form);
-    for (const code of specializationCountryCodes) {
-      formData.append("specializationCountryCodes", code);
-    }
-
-    const result = await updateAdminAdvisorProfile(advisorId, formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    router.refresh();
-    window.setTimeout(() => onClose(), 600);
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => updateAdminAdvisorProfile(advisorId, new FormData(form)),
+      () => {
+        setSuccess(true);
+        router.refresh();
+        window.setTimeout(() => onClose(), 600);
+      },
+    );
   }
 
   const avatarDisplayUrl = avatarPreviewUrl ?? defaults.avatarUrl;

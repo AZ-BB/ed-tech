@@ -192,9 +192,9 @@ export function AdminPortalShell({
 
       <aside
         id="admin-sidebar"
-        className={`fixed bottom-0 left-0 top-0 z-[100] flex w-[240px] flex-col overflow-y-auto bg-[#1B4332] transition-transform duration-[250ms] lg:translate-x-0 ${sidebarMobileClass}`}
+        className={`fixed bottom-0 left-0 top-0 z-[100] flex w-[240px] flex-col overflow-hidden bg-[#1B4332] transition-transform duration-[250ms] lg:translate-x-0 ${sidebarMobileClass}`}
       >
-        <div className="flex items-center gap-[10px] border-b border-white/[0.08] px-5 pb-4 pt-5">
+        <div className="flex shrink-0 items-center gap-[10px] border-b border-white/[0.08] px-5 pb-4 pt-5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-white/[0.12] text-white">
             <svg
               viewBox="0 0 24 24"
@@ -217,7 +217,7 @@ export function AdminPortalShell({
           </span>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           {adminNavSections.map((sec) => (
             <div key={sec.title}>
               <div className="px-3 pb-2 pt-4 text-[9px] font-bold uppercase tracking-[1.5px] text-white/30">
@@ -250,7 +250,7 @@ export function AdminPortalShell({
           ))}
         </div>
 
-        <div className="mt-auto border-t border-white/[0.06] p-3">
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#1B4332] p-3">
           <div className="flex items-center gap-[10px] px-2 py-[10px]">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.12] text-[11px] font-bold text-white">
               {avatarInitials}

@@ -1,6 +1,11 @@
 import { formatDistanceToNow } from "date-fns";
 
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
+import { applyStudentTeacherFilter } from "@/lib/fetch-school-teacher-options";
+import {
+  teacherNameFromEmbed,
+  type StudentTeacherFilterValue,
+} from "@/lib/student-teacher-assignment";
 import {
   getStudentApplicationProfileCompletion,
   studentApplicationProfileRowToCompletionInput,
@@ -9,19 +14,36 @@ import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 type SchoolSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
+type TeacherEmbed = {
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+};
+
 type StudentProfileListRow = {
   id: string;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
+  avatar_url: string | null;
   grade: string;
+  teacher_id: string | null;
+  school_admin_profiles: TeacherEmbed | TeacherEmbed[] | null;
   updated_at: string | null;
 };
+
+function teacherEmbedFromRow(
+  embed: TeacherEmbed | TeacherEmbed[] | null | undefined,
+): TeacherEmbed | null {
+  if (!embed) return null;
+  return Array.isArray(embed) ? (embed[0] ?? null) : embed;
+}
 
 export type SchoolStudentTableRow = {
   id: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   email: string;
   grade: string;
   destinationsSummary: string;
@@ -30,6 +52,8 @@ export type SchoolStudentTableRow = {
   unisCount: number;
   lastActiveIso: string | null;
   lastActiveLabel: string;
+  teacherId: string | null;
+  teacherName: string | null;
 };
 
 export type SchoolStudentsPageFilters = {
@@ -38,6 +62,7 @@ export type SchoolStudentsPageFilters = {
   studentQ: string;
   grade: string;
   destination: string;
+  teacher: StudentTeacherFilterValue;
   page: number;
   limit: number;
 };
@@ -183,10 +208,13 @@ async function profilesToSchoolStudentTableRows(
       }
     }
 
+    const teacherEmbed = teacherEmbedFromRow(p.school_admin_profiles);
+
     return {
       id: p.id,
       firstName: p.first_name?.trim() ?? "",
       lastName: p.last_name?.trim() ?? "",
+      avatarUrl: p.avatar_url?.trim() || null,
       email: p.email?.trim() ?? "",
       grade: p.grade.trim(),
       destinationsSummary: slMeta?.destinationsSummary ?? "—",
@@ -195,14 +223,20 @@ async function profilesToSchoolStudentTableRows(
       unisCount: slMeta?.unisCount ?? 0,
       lastActiveIso: activityIso,
       lastActiveLabel,
+      teacherId: p.teacher_id,
+      teacherName: teacherNameFromEmbed(teacherEmbed),
     };
   });
 }
+
+const STUDENT_LIST_SELECT =
+  "id, first_name, last_name, email, avatar_url, grade, teacher_id, updated_at, school_admin_profiles:teacher_id ( first_name, last_name, email )";
 
 export type SchoolStudentsExportFilters = {
   q: string;
   grade: string;
   destination: string;
+  teacher: StudentTeacherFilterValue;
 };
 
 const EXPORT_CHUNK = 250;
@@ -244,9 +278,7 @@ export async function fetchAllSchoolStudentTableRows(
   for (;;) {
     let listQuery = supabase
       .from("student_profiles")
-      .select(
-        "id, first_name, last_name, email, grade, updated_at",
-      )
+      .select(STUDENT_LIST_SELECT)
       .eq("school_id", schoolId);
 
     const qTrim = filters.q.trim();
@@ -260,6 +292,8 @@ export async function fetchAllSchoolStudentTableRows(
     if (filters.grade.trim()) {
       listQuery = listQuery.eq("grade", filters.grade.trim());
     }
+
+    listQuery = applyStudentTeacherFilter(listQuery, filters.teacher);
 
     if (destStudentIds) {
       listQuery = listQuery.in("id", destStudentIds);
@@ -347,12 +381,9 @@ export async function fetchSchoolStudentsPage(
   const offset = (page - 1) * limit;
   let listQuery = supabase
     .from("student_profiles")
-    .select(
-      "id, first_name, last_name, email, grade, updated_at",
-      {
-        count: "exact",
-      },
-    )
+    .select(STUDENT_LIST_SELECT, {
+      count: "exact",
+    })
     .eq("school_id", schoolId);
 
   const qTrim = filters.q.trim();
@@ -373,6 +404,8 @@ export async function fetchSchoolStudentsPage(
   if (filters.grade.trim()) {
     listQuery = listQuery.eq("grade", filters.grade.trim());
   }
+
+  listQuery = applyStudentTeacherFilter(listQuery, filters.teacher);
 
   if (destStudentIds) {
     listQuery = listQuery.in("id", destStudentIds);

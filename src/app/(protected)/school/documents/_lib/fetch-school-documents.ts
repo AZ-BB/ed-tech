@@ -12,6 +12,7 @@ export type SchoolDocumentTableRow = {
   studentId: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   email: string;
   documentName: string;
   description: string | null;
@@ -60,6 +61,7 @@ type DocQueryRow = {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    avatar_url: string | null;
   };
 };
 
@@ -112,6 +114,7 @@ export async function fetchSchoolDocumentsPage(
         first_name,
         last_name,
         email,
+        avatar_url,
         school_id
       )
     `,
@@ -173,6 +176,7 @@ export async function fetchSchoolDocumentsPage(
       studentId: d.student_id,
       firstName: sp?.first_name?.trim() ?? "",
       lastName: sp?.last_name?.trim() ?? "",
+      avatarUrl: sp?.avatar_url?.trim() || null,
       email: sp?.email?.trim() ?? "",
       documentName: d.display_name,
       description: d.description,

@@ -46,11 +46,12 @@ export default async function SchoolLayout({
   let firstName = "";
   let lastName = "";
   let schoolName = "";
+  let avatarUrl: string | null = null;
 
   if (user?.id) {
     const { data: profile } = await supabase
       .from("school_admin_profiles")
-      .select("first_name, last_name, school_id, is_active, schools(name, is_active)")
+      .select("first_name, last_name, avatar_url, school_id, is_active, schools(name, is_active)")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -75,6 +76,7 @@ export default async function SchoolLayout({
     if (profile) {
       firstName = profile.first_name?.trim() ?? "";
       lastName = profile.last_name?.trim() ?? "";
+      avatarUrl = profile.avatar_url?.trim() || null;
       schoolName = nameFromSchoolsEmbed(profile.schools) ?? "";
 
       if (!schoolName && profile.school_id) {
@@ -105,6 +107,7 @@ export default async function SchoolLayout({
       schoolName={schoolName}
       displayName={displayName}
       avatarInitials={avatarInitials}
+      avatarUrl={avatarUrl}
     >
       {children}
     </SchoolPortalShell>

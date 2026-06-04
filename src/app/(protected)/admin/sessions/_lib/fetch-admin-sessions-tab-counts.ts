@@ -8,6 +8,7 @@ export async function fetchAdminSessionsTabCounts(): Promise<SessionsTabCounts> 
   const [
     advisorRes,
     ambassadorRes,
+    ambassadorRequestsRes,
     advisorPendingRes,
     ambassadorPendingRes,
     advisorCompletedRes,
@@ -18,6 +19,9 @@ export async function fetchAdminSessionsTabCounts(): Promise<SessionsTabCounts> 
       .select("id", { count: "exact", head: true }),
     supabase
       .from("ambassador_session_requests")
+      .select("id", { count: "exact", head: true }),
+    supabase
+      .from("ambassador_specific_requests")
       .select("id", { count: "exact", head: true }),
     supabase
       .from("advisor_sessions")
@@ -40,6 +44,7 @@ export async function fetchAdminSessionsTabCounts(): Promise<SessionsTabCounts> 
   return {
     advisor: advisorRes.count ?? 0,
     ambassador: ambassadorRes.count ?? 0,
+    ambassadorRequests: ambassadorRequestsRes.count ?? 0,
     pending: (advisorPendingRes.count ?? 0) + (ambassadorPendingRes.count ?? 0),
     completed:
       (advisorCompletedRes.count ?? 0) + (ambassadorCompletedRes.count ?? 0),

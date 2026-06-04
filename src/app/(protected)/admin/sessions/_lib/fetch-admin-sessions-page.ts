@@ -615,5 +615,7 @@ export async function fetchAdminSessionsPage(
       return fetchMergedSessionsPage(supabase, effectiveFilters, "pending");
     case "completed":
       return fetchMergedSessionsPage(supabase, effectiveFilters, "completed");
+    case "ambassadorRequests":
+      return { rows: [], totalRows: 0 };
   }
 }

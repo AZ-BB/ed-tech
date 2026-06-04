@@ -15,6 +15,7 @@ type TaskQueryRow = {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    avatar_url: string | null;
   } | null;
 };
 
@@ -43,7 +44,8 @@ export async function fetchAdminStudentTasksPage(
       student_profiles!inner (
         first_name,
         last_name,
-        email
+        email,
+        avatar_url
       )
     `,
       { count: "exact" },
@@ -67,6 +69,7 @@ export async function fetchAdminStudentTasksPage(
       studentId: t.student_id,
       firstName: sp?.first_name?.trim() ?? "",
       lastName: sp?.last_name?.trim() ?? "",
+      avatarUrl: sp?.avatar_url?.trim() || null,
       email: sp?.email?.trim() ?? "",
       title: t.title,
       notes: t.notes,

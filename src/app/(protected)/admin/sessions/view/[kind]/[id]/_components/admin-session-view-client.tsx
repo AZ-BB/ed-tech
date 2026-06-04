@@ -1,6 +1,6 @@
 "use client";
 
-import { updateAdminSessionStatus } from "@/actions/admin-sessions";
+import { cancelAdminSession, updateAdminSessionStatus } from "@/actions/admin-sessions";
 import { SchoolStudentPanel } from "@/app/(protected)/school/students/[id]/_components/school-student-panel";
 import {
   ADMIN_ADVISOR_SESSION_STATUS_OPTIONS,
@@ -85,6 +85,7 @@ export function AdminSessionViewClient({ payload }: AdminSessionViewClientProps)
 
   const { session, provider, student, school } = payload;
   const isAdvisor = session.kind === "advisor";
+  const isCancelled = status === "cancelled";
 
   useEffect(() => {
     setStatus(payload.session.status);
@@ -96,6 +97,28 @@ export function AdminSessionViewClient({ payload }: AdminSessionViewClientProps)
 
   const statusLabel =
     ADMIN_SESSION_STATUS_LABEL[status] ?? status.replace(/_/g, " ");
+
+  function handleCancelSession() {
+    if (isCancelled) return;
+    if (
+      !window.confirm(
+        "Cancel this session? The student's session credit will be refunded and the status cannot be changed afterward.",
+      )
+    ) {
+      return;
+    }
+
+    setActionError(null);
+    startTransition(async () => {
+      const result = await cancelAdminSession(session.kind, String(session.id));
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      setStatus("cancelled");
+      router.refresh();
+    });
+  }
 
   function handleStatusChange(nextStatus: string) {
     setActionError(null);
@@ -131,24 +154,46 @@ export function AdminSessionViewClient({ payload }: AdminSessionViewClientProps)
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <label htmlFor="session-status" className="sr-only">
-            Session status
-          </label>
-          <select
-            id="session-status"
-            value={status}
-            disabled={isPending}
-            onChange={(event) => handleStatusChange(event.target.value)}
-            className={headerSelectClass}
-            style={{ backgroundImage: SELECT_CHEVRON }}
-            aria-label="Session status"
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          {isCancelled ? (
+            <span
+              className={`inline-flex min-w-[140px] items-center justify-center rounded-[8px] border border-[#e0deda] bg-[#faf9f7] px-3 py-[7px] text-[12px] font-medium text-[#4a4a4a]`}
+              aria-label={`Session status: ${statusLabel}`}
+            >
+              {statusLabel}
+            </span>
+          ) : (
+            <>
+              <label htmlFor="session-status" className="sr-only">
+                Session status
+              </label>
+              <select
+                id="session-status"
+                value={status}
+                disabled={isPending}
+                onChange={(event) => handleStatusChange(event.target.value)}
+                className={headerSelectClass}
+                style={{ backgroundImage: SELECT_CHEVRON }}
+                aria-label="Session status"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {!isCancelled ? (
+            <button
+              type="button"
+              onClick={handleCancelSession}
+              disabled={isPending}
+              className="cursor-pointer rounded-[8px] border border-[#e74c3c] bg-white px-3.5 py-[7px] text-[12px] font-semibold text-[#c0392b] transition-opacity hover:bg-[#fef2f2] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel Session
+            </button>
+          ) : null}
 
           <button
             type="button"

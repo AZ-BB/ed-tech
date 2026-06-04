@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import { updateAdminAdminProfile } from "@/actions/admin-admins";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -54,22 +55,20 @@ export function AdminEditPlatformAdminDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const result = await updateAdminAdminProfile(adminId, new FormData(form));
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    router.refresh();
-    window.setTimeout(() => onClose(), 600);
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => updateAdminAdminProfile(adminId, new FormData(form)),
+      () => {
+        setSuccess(true);
+        router.refresh();
+        window.setTimeout(() => onClose(), 600);
+      },
+    );
   }
 
   return createPortal(

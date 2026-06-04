@@ -8,6 +8,7 @@ import {
 } from "@/actions/school-students";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
+import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { SCHOOL_STUDENT_NOTE_TAGS } from "@/lib/school-student-note-tags";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -16,6 +17,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { SchoolStudentDetailPayload } from "../_lib/fetch-school-student-detail";
 import type { AdminStudentSchoolInfo } from "@/app/(protected)/admin/users/students/[id]/_lib/fetch-admin-student-detail";
+import { StudentTeacherAssignSelect } from "@/components/student-teacher-assign-select";
+import type { SchoolTeacherOption } from "@/lib/fetch-school-teacher-options";
 
 import {
   STUDENT_DETAIL_URL_TABS,
@@ -30,8 +33,10 @@ import {
 import { SchoolStudentActivityLogsTab } from "./school-student-activity-logs-tab";
 import { SchoolStudentDocumentsTab } from "./school-student-documents-tab";
 import { SchoolStudentEssaysTab } from "./school-student-essays-tab";
+import { SchoolStudentCreditUsageTab } from "./school-student-credit-usage-tab";
 import { SchoolStudentHistoryTab } from "./school-student-history-tab";
 import type { SchoolStudentHistoryPanelProps } from "./school-student-history-tab";
+import type { StudentCreditUsagePanelProps } from "@/lib/student-credit-usage";
 import { SchoolStudentInteractionsTab } from "./school-student-interactions-tab";
 import { SchoolStudentPanel } from "./school-student-panel";
 import { SchoolStudentShortlistTab } from "./school-student-shortlist-tab";
@@ -48,6 +53,7 @@ type TabId =
   | "interactions"
   | "tasks"
   | "history"
+  | "usage"
   | "activity_logs";
 
 const TAB_DEFS: { id: TabId; label: string }[] = [
@@ -60,6 +66,7 @@ const TAB_DEFS: { id: TabId; label: string }[] = [
   { id: "interactions", label: "Interactions" },
   { id: "tasks", label: "Tasks" },
   { id: "history", label: "History" },
+  { id: "usage", label: "Usage" },
   { id: "activity_logs", label: "Activity logs" },
 ];
 
@@ -99,8 +106,10 @@ export type SchoolStudentViewClientProps = {
   canCreateTasks?: boolean;
   schoolInfo?: AdminStudentSchoolInfo;
   historyPanel?: SchoolStudentHistoryPanelProps;
+  creditUsagePanel?: StudentCreditUsagePanelProps;
   activityLogsPanel?: StudentActivityLogsPanelProps;
   sidebarActions?: ReactNode;
+  teacherOptions?: SchoolTeacherOption[];
   tasksPanel: {
     rows: SchoolTaskTableRow[];
     totalRows: number;
@@ -112,15 +121,6 @@ export type SchoolStudentViewClientProps = {
     status: string;
   };
 };
-
-function initials(first: string, last: string): string {
-  const a = first.trim()[0];
-  const b = last.trim()[0];
-  const pair = `${a ?? ""}${b ?? ""}`.toUpperCase();
-  if (pair) return pair.slice(0, 2);
-  if (a) return a.toUpperCase();
-  return "?";
-}
 
 function joinList(items: string[] | null | undefined): string {
   if (!Array.isArray(items) || items.length === 0) return "—";
@@ -883,8 +883,10 @@ export function SchoolStudentViewClient({
   canCreateTasks,
   schoolInfo,
   historyPanel,
+  creditUsagePanel,
   activityLogsPanel,
   sidebarActions,
+  teacherOptions = [],
   tasksPanel,
 }: SchoolStudentViewClientProps) {
   const router = useRouter();
@@ -919,11 +921,6 @@ export function SchoolStudentViewClient({
     }
   }, [tab, pathname, router, searchParams]);
 
-  const ini = useMemo(
-    () => initials(student.firstName, student.lastName),
-    [student.firstName, student.lastName],
-  );
-
   const advisorCreditExhausted = useMemo(
     () => isStudentCreditBalanceExhausted(student.advisorCreditRemaining),
     [student.advisorCreditRemaining],
@@ -939,8 +936,22 @@ export function SchoolStudentViewClient({
     .join(" ")
     .trim();
 
-  const sidebarRows: { lab: string; val: string; valSmall?: boolean }[] = [
+  const teacherSidebarValue =
+    readOnly || !teacherOptions.length ? (
+      student.teacherName ?? "Unassigned"
+    ) : (
+      <StudentTeacherAssignSelect
+        studentId={student.id}
+        value={student.teacherId}
+        options={teacherOptions}
+        className="mt-0.5"
+        aria-label="Assigned teacher"
+      />
+    );
+
+  const sidebarRows: { lab: string; val: ReactNode; valSmall?: boolean }[] = [
     { lab: "School", val: schoolInfo?.name ?? student.schoolName ?? "—" },
+    { lab: "Teacher", val: teacherSidebarValue },
     { lab: "Grade", val: student.gradeDisplay ?? "—" },
     { lab: "Nationality", val: student.nationalityName ?? "—" },
     { lab: "Curriculum", val: student.curriculumDisplay ?? "—" },
@@ -1048,6 +1059,17 @@ export function SchoolStudentViewClient({
         <EmptyBlock message="History is unavailable." />
       </SchoolStudentPanel>
     );
+  } else if (tab === "usage") {
+    tabBody = creditUsagePanel ? (
+      <SchoolStudentCreditUsageTab {...creditUsagePanel} />
+    ) : (
+      <SchoolStudentPanel
+        head="Credit usage"
+        sub="Full ledger of credits for this student"
+      >
+        <EmptyBlock message="Credit usage is unavailable." />
+      </SchoolStudentPanel>
+    );
   } else if (tab === "activity_logs") {
     tabBody = activityLogsPanel ? (
       <SchoolStudentActivityLogsTab {...activityLogsPanel} />
@@ -1081,9 +1103,12 @@ export function SchoolStudentViewClient({
       <div className="sd-grid grid grid-cols-1 items-start gap-5 xl:grid-cols-[280px_1fr] xl:gap-5">
         <aside className="sd-side flex flex-col gap-3.5 rounded-[14px] border border-[var(--border-light)] bg-white p-[22px] xl:sticky xl:top-[80px]">
           <div className="sd-side-top flex flex-col items-center gap-2.5 border-b border-[var(--border-light)] pb-[18px] text-center">
-            <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] font-[family-name:var(--font-dm-serif)] text-2xl font-bold text-[var(--green-dark)]">
-              {ini}
-            </div>
+            <PersonProfileAvatar
+              avatarUrl={student.avatarUrl}
+              firstName={student.firstName}
+              lastName={student.lastName}
+              size="lg"
+            />
             <div className="font-[family-name:var(--font-dm-serif)] text-xl leading-snug text-[var(--text)]">
               {fullName || "Student"}
             </div>
