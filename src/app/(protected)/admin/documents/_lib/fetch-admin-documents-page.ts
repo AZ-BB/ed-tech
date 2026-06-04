@@ -12,6 +12,8 @@ import type { AdminDocumentsPageFilters } from "./parse-admin-documents-search-p
 export type AdminDocumentTableRow = {
   documentId: string;
   studentId: string;
+  slotKey: string;
+  checklistStatus: string;
   firstName: string;
   lastName: string;
   avatarUrl: string | null;
@@ -46,6 +48,7 @@ function normalizeDocStatus(
 type DocQueryRow = {
   id: string;
   student_id: string;
+  slot_key: string;
   display_name: string;
   description: string | null;
   status: string;
@@ -82,6 +85,7 @@ export async function fetchAdminDocumentsPage(
       `
       id,
       student_id,
+      slot_key,
       display_name,
       description,
       status,
@@ -150,6 +154,8 @@ export async function fetchAdminDocumentsPage(
     return {
       documentId: d.id,
       studentId: d.student_id,
+      slotKey: d.slot_key,
+      checklistStatus: d.status,
       firstName: sp?.first_name?.trim() ?? "",
       lastName: sp?.last_name?.trim() ?? "",
       avatarUrl: sp?.avatar_url?.trim() || null,

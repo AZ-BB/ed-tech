@@ -217,6 +217,8 @@ export default async function AdminStudentDetailPage({
 
       backHref="/admin/users/students"
 
+      documentsPortal="admin"
+
       readOnly
 
       canAssignCredits
