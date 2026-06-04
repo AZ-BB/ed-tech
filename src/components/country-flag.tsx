@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function CountryFlag({ code, size = 18, className }: Props) {
-  const src = countryFlagImageUrl(code, 20);
+  const src = countryFlagImageUrl(code, size <= 20 ? 40 : 80);
   if (!src) return null;
 
   const height = Math.max(12, Math.round(size * 0.72));
