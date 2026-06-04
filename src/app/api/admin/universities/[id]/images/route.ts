@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { assertAdminImportAccess } from "@/lib/admin-import-route-auth";
 import {
   uploadUniversityImageToStorage,
-  universityImageColumn,
   type UniversityImageKind,
 } from "@/lib/university-image-upload";
 
@@ -72,10 +71,14 @@ export async function POST(
       file,
     );
 
-    const column = universityImageColumn(kind);
+    const updatedAt = new Date().toISOString();
     const { error: updateError } = await auth.service
       .from("universities")
-      .update({ [column]: url, updated_at: new Date().toISOString() })
+      .update(
+        kind === "logo"
+          ? { logo_url: url, updated_at: updatedAt }
+          : { cover_image_url: url, updated_at: updatedAt },
+      )
       .eq("id", universityId);
 
     if (updateError) {
