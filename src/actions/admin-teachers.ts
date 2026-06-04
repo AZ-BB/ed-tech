@@ -1,11 +1,13 @@
 "use server";
 
 import type { Database } from "@/database.types";
+import { isResendConfigured } from "@/lib/resend/config";
+import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
+import { sendStaffCredentialsEmailOrRollback } from "@/lib/staff-credentials-email";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 type Gender = Database["public"]["Enums"]["gender"];
@@ -58,16 +60,6 @@ function displayNameFromParts(first: string, last: string): string {
   return [first.trim(), last.trim()].filter(Boolean).join(" ").trim() || "Teacher";
 }
 
-async function resolveSiteUrl(): Promise<string> {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${proto}://${host}`;
-  return "http://localhost:3000";
-}
-
 type CreateAdminTeacherResult = { ok: true } | { ok: false; error: string };
 
 export async function createAdminTeacher(formData: FormData): Promise<CreateAdminTeacherResult> {
@@ -106,7 +98,7 @@ export async function createAdminTeacher(formData: FormData): Promise<CreateAdmi
 
   const { data: school, error: schoolError } = await service
     .from("schools")
-    .select("id")
+    .select("id, name")
     .eq("id", schoolId)
     .maybeSingle();
 
@@ -127,6 +119,14 @@ export async function createAdminTeacher(formData: FormData): Promise<CreateAdmi
 
   if (existingTeacher) {
     return { ok: false, error: "A teacher with this email already exists." };
+  }
+
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL before creating teachers.",
+    };
   }
 
   const { data: authData, error: authError } = await service.auth.admin.createUser({
@@ -158,6 +158,22 @@ export async function createAdminTeacher(formData: FormData): Promise<CreateAdmi
     console.error("[createAdminTeacher] school_admin_profiles insert", profileError);
     await service.auth.admin.deleteUser(authData.user.id);
     return { ok: false, error: profileError.message || "Could not save teacher profile." };
+  }
+
+  const emailResult = await sendStaffCredentialsEmailOrRollback({
+    supabase: service,
+    userId: authData.user.id,
+    profileTable: "school_admin_profiles",
+    to: email,
+    firstName,
+    email,
+    password,
+    accountLabel: "school counselor",
+    schoolName: school.name ?? null,
+  });
+
+  if ("error" in emailResult) {
+    return { ok: false, error: emailResult.error };
   }
 
   revalidatePath("/admin/users");
@@ -241,7 +257,7 @@ export async function resetAdminTeacherPassword(
   }
 
   const email = teacher.email.trim().toLowerCase();
-  const siteUrl = await resolveSiteUrl();
+  const siteUrl = await getPublicSiteBaseUrl();
   const redirectTo = `${siteUrl}/auth/reset-password`;
 
   const { data, error } = await secret.auth.admin.generateLink({

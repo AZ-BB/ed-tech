@@ -70,7 +70,11 @@ export async function createAdminStudentInvite(
     return { ok: false, error: "Select a grade." };
   }
 
-  const summary = await importStudentsFromRecords(schoolId, [{ email, grade }]);
+  const summary = await importStudentsFromRecords(
+    schoolId,
+    [{ email, grade }],
+    { inviter: { kind: "platform" } },
+  );
 
   if (summary.created === 1) {
     revalidatePath("/admin/users");

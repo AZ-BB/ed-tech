@@ -19,6 +19,7 @@ import {
   isStudentInteractionOutcome,
 } from "@/lib/student-interaction-constants";
 import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
+import { sendInviteEmailAfterSchoolStudentCreated } from "@/lib/school-student-invite-email";
 import { parseStudentTeacherAssignParam } from "@/lib/student-teacher-assignment";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
@@ -122,7 +123,7 @@ export async function inviteSchoolStudentEmail(
 
   const { data: school, error: schoolError } = await supabase
     .from("schools")
-    .select("students_limit")
+    .select("students_limit, code, name")
     .eq("id", schoolId)
     .maybeSingle();
 
@@ -180,12 +181,16 @@ export async function inviteSchoolStudentEmail(
     };
   }
 
-  const { error: insertError } = await supabase.from("school_students").insert({
-    school_id: schoolId,
-    email,
-    signed_up: false,
-    grade,
-  });
+  const { data: inserted, error: insertError } = await supabase
+    .from("school_students")
+    .insert({
+      school_id: schoolId,
+      email,
+      signed_up: false,
+      grade,
+    })
+    .select("id")
+    .single();
 
   if (insertError) {
     if (insertError.code === "23505") {
@@ -196,6 +201,24 @@ export async function inviteSchoolStudentEmail(
       };
     }
     return { data: null, error: insertError.message };
+  }
+
+  if (!inserted?.id) {
+    return { data: null, error: "Could not create the student invite." };
+  }
+
+  const emailResult = await sendInviteEmailAfterSchoolStudentCreated({
+    supabase: secret,
+    schoolId,
+    schoolStudentId: inserted.id,
+    studentEmail: email,
+    inviter: { kind: "school_admin", userId: user.id },
+    schoolCode: school?.code?.trim(),
+    schoolName: school?.name ?? null,
+  });
+
+  if ("error" in emailResult) {
+    return { data: null, error: emailResult.error };
   }
 
   return { data: null, error: null };

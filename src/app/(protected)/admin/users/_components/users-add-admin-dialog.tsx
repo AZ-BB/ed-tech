@@ -68,8 +68,7 @@ export function UsersAddAdminDialog({ open, onClose }: UsersAddAdminDialogProps)
           Add Admin
         </h2>
         <p className="mt-2 text-[13px] text-[#666]">
-          Create a new platform admin account. The user can sign in immediately with the email and
-          password you set.
+          Create a new platform admin account. Login credentials are emailed to the address below.
         </p>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
