@@ -2,7 +2,7 @@
 
 import { logAmbassadorsCatalogView } from "@/actions/ambassador-sessions";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
-import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { CountryFlag } from "@/components/country-flag";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -37,6 +37,34 @@ function paletteForId(id: string): { bg: string; fg: string } {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h + id.charCodeAt(i) * (i + 1)) % 997;
   return AVATAR_PALETTE[h % AVATAR_PALETTE.length]!;
+}
+
+function formatHeadlineSubtitle(a: AmbassadorCatalogEntry): string {
+  const status = a.isCurrentStudent ? "Student" : "Graduate";
+  const majorPart = a.major?.trim();
+  const yearPart = a.isCurrentStudent
+    ? null
+    : a.graduationYear != null
+      ? String(a.graduationYear)
+      : a.startYear != null
+        ? String(a.startYear)
+        : null;
+
+  if (majorPart && yearPart) return `${majorPart} ${status} — ${yearPart}`;
+  if (majorPart) return `${majorPart} ${status}`;
+  if (yearPart) return `${status} — ${yearPart}`;
+  return status;
+}
+
+function statusPillLabel(a: AmbassadorCatalogEntry): string {
+  if (a.isCurrentStudent) return "Current student";
+  const year =
+    a.graduationYear != null
+      ? String(a.graduationYear)
+      : a.startYear != null
+        ? String(a.startYear)
+        : null;
+  return year ? `Graduate — ${year}` : "Graduate";
 }
 
 function filterAmbassadors(
@@ -304,13 +332,12 @@ export function AmbassadorsClient({
         {filtered.map((a) => {
           const pal = paletteForId(a.id);
           const ini = initials(a.firstName, a.lastName);
-          const destLabel = getCountryNameByAlpha2(a.destinationCode) ?? a.destinationCode;
           return (
             <div
               key={a.id}
               role="button"
               tabIndex={0}
-              className="cursor-pointer rounded-2xl border border-[var(--border-light)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
+              className="flex h-full cursor-pointer flex-col rounded-2xl border border-[var(--border-light)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
               onClick={() => setDetail(a)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -334,56 +361,51 @@ export function AmbassadorsClient({
                   <div className="text-[15px] font-semibold text-[var(--text)]">
                     {a.firstName} {a.lastName}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1 text-[13px] text-[var(--text-mid)]">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                      <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
-                    </svg>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[13px] text-[var(--text-mid)]">
+                    <CountryFlag code={a.destinationCode} size={18} />
                     <span className="truncate">{a.displayUniversity}</span>
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-[var(--text-light)]">
-                    <span>{destLabel}</span>
-                    {a.major ? <span>· {a.major}</span> : null}
-                  </div>
+                  <p className="mt-1 text-[12px] text-[var(--text-light)]">{formatHeadlineSubtitle(a)}</p>
                 </div>
               </div>
               {a.about ? (
                 <p className="mb-3 line-clamp-2 text-[12.5px] leading-relaxed text-[var(--text-mid)]">{a.about}</p>
               ) : null}
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                {a.tags.slice(0, 6).map((t) => (
+              {a.tags.length > 0 ? (
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {a.tags.slice(0, 6).map((t) => (
+                    <span
+                      key={t}
+                      className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10.5px] font-medium text-[var(--text-mid)]"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <div className="mt-auto pt-3">
+                <div className="flex items-center justify-between border-t border-[var(--border-light)] pt-3">
                   <span
-                    key={t}
-                    className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10.5px] font-medium text-[var(--text-mid)]"
+                    className={`inline-flex items-center gap-1 rounded-[50px] px-3 py-1 text-[10.5px] font-medium ${
+                      a.isCurrentStudent ? "bg-[var(--green-bg)] text-[var(--green)]" : "border border-[var(--border-light)] bg-[var(--sand)] text-[var(--text-mid)]"
+                    }`}
                   >
-                    {t}
+                    {statusPillLabel(a)}
                   </span>
-                ))}
+                  <Link
+                    href={`/student/ambassadors/${a.id}/book`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Book a call
+                  </Link>
+                </div>
+                <p className="mt-2 text-center text-[10px] leading-snug text-[var(--text-hint)]">
+                  Submit a booking request and we&apos;ll confirm your session within 24 hours.
+                </p>
               </div>
-              <div className="flex items-center justify-between border-t border-[var(--border-light)] pt-3">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-0.5 text-[10px] font-semibold ${
-                    a.isCurrentStudent ? "bg-[var(--green-bg)] text-[var(--green)]" : "border border-[var(--border-light)] bg-[var(--sand)] text-[var(--text-mid)]"
-                  }`}
-                >
-                  {a.isCurrentStudent ? "Current student" : "Graduate"}
-                </span>
-                <Link
-                  href={`/student/ambassadors/${a.id}/book`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-[50px] bg-[var(--green)] px-4 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Book session
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                  </svg>
-                </Link>
-              </div>
-              <p className="mt-2 text-center text-[10px] leading-snug text-[var(--text-hint)]">
-                Opens booking in a new tab — your request is saved to ambassador sessions.
-              </p>
             </div>
           );
         })}
