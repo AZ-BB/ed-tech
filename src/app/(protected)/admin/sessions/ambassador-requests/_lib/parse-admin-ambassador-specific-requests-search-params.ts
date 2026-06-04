@@ -1,4 +1,4 @@
-export type AdminAmbassadorSpecificRequestStatusFilter = "" | "pending";
+export type AdminAmbassadorSpecificRequestStatusFilter = "" | "pending" | "confirmed";
 
 export type AdminAmbassadorSpecificRequestsPageFilters = {
   q: string;
@@ -24,6 +24,7 @@ function parseStatusParam(
   const value =
     typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
   if (value === "pending") return "pending";
+  if (value === "confirmed") return "confirmed";
   return "";
 }
 
@@ -49,4 +50,5 @@ export function parseAdminAmbassadorSpecificRequestsSearchParams(
 export const ADMIN_AMBASSADOR_SPECIFIC_REQUEST_STATUS_FILTER_OPTIONS = [
   { value: "", label: "All statuses" },
   { value: "pending", label: "Pending" },
+  { value: "confirmed", label: "Confirmed" },
 ] as const;

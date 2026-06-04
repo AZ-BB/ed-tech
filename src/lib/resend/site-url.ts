@@ -24,3 +24,8 @@ export async function buildSignupPageUrl(): Promise<string> {
 export async function buildLoginPageUrl(): Promise<string> {
   return `${await getPublicSiteBaseUrl()}/login`;
 }
+
+export async function buildRecommendationSubmitUrl(token: string): Promise<string> {
+  const trimmed = token.trim();
+  return `${await getPublicSiteBaseUrl()}/recommendation/${encodeURIComponent(trimmed)}`;
+}

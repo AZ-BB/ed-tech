@@ -2,6 +2,9 @@
 
 import { SchoolStudentPanel } from "@/app/(protected)/school/students/[id]/_components/school-student-panel";
 import Link from "next/link";
+import { useState } from "react";
+
+import { AdminConfirmAmbassadorPickerDialog } from "./admin-confirm-ambassador-picker-dialog";
 
 import {
   ADMIN_AMBASSADOR_SPECIFIC_REQUESTS_HOME,
@@ -70,6 +73,8 @@ export function AdminAmbassadorSpecificRequestViewClient({
 }: AdminAmbassadorSpecificRequestViewClientProps) {
   const { request, student, school } = payload;
   const statusLabel = request.status.replace(/_/g, " ");
+  const isPending = request.status === "pending";
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
     <div className="w-full">
@@ -107,8 +112,23 @@ export function AdminAmbassadorSpecificRequestViewClient({
           <p className="mt-0.5 text-[12px] text-[#a0a0a0]">
             Looking for: {request.targetUniversity}
           </p>
+          {isPending ? (
+            <button
+              type="button"
+              className="mt-3 rounded-[8px] bg-[#2d6a4f] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#245a42]"
+              onClick={() => setConfirmOpen(true)}
+            >
+              Confirm ambassador &amp; notify student
+            </button>
+          ) : null}
         </div>
       </div>
+
+      <AdminConfirmAmbassadorPickerDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        requestId={request.id}
+      />
 
       <div className="flex flex-col gap-4">
         <SchoolStudentPanel
@@ -137,6 +157,39 @@ export function AdminAmbassadorSpecificRequestViewClient({
             </div>
           ) : null}
         </SchoolStudentPanel>
+
+        {request.assignedAmbassador ? (
+          <SchoolStudentPanel
+            head="Assigned ambassador"
+            sub="Confirmed match sent to the student"
+          >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <DetailLink
+                href={request.assignedAmbassador.href}
+                label={request.assignedAmbassador.fullName}
+                sub={request.assignedAmbassador.email}
+              />
+              <SnapItem
+                label="University"
+                value={request.assignedAmbassador.university}
+              />
+              <SnapItem
+                label="Major"
+                value={request.assignedAmbassador.major ?? "—"}
+              />
+              <SnapItem
+                label="Destination"
+                value={request.assignedAmbassador.destinationLabel}
+              />
+              <SnapItem
+                label="Catalog status"
+                value={
+                  request.assignedAmbassador.isActive ? "Active" : "Inactive"
+                }
+              />
+            </div>
+          </SchoolStudentPanel>
+        ) : null}
 
         {student ? (
           <SchoolStudentPanel head="Student" sub="Linked student account">

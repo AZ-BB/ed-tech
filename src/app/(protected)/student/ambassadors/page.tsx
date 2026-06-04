@@ -18,7 +18,30 @@ export const metadata: Metadata = {
   title: "University Ambassadors",
 };
 
-export default async function AmbassadorsPage() {
+const AMBASSADOR_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function parseOpenAmbassadorId(
+  sp: Record<string, string | string[] | undefined>,
+): string | undefined {
+  const raw =
+    typeof sp.ambassador === "string"
+      ? sp.ambassador
+      : Array.isArray(sp.ambassador)
+        ? sp.ambassador[0]
+        : undefined;
+  const id = raw?.trim();
+  if (!id || !AMBASSADOR_UUID_RE.test(id)) return undefined;
+  return id;
+}
+
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AmbassadorsPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const openAmbassadorId = parseOpenAmbassadorId(sp);
   const { features } = await fetchPlatformSettings();
   if (!isPlatformFeatureEnabled(features, "ambassador_booking")) {
     return <StudentFeatureUnavailable featureLabel={PLATFORM_FEATURE_LABELS.ambassador_booking} />;
@@ -90,6 +113,7 @@ export default async function AmbassadorsPage() {
       initialAmbassadors={ambassadors}
       catalogCountries={catalogCountries}
       studentDefaults={studentDefaults}
+      openAmbassadorId={openAmbassadorId}
     />
   );
 }

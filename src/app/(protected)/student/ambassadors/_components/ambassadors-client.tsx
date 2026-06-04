@@ -4,7 +4,8 @@ import { logAmbassadorsCatalogView } from "@/actions/ambassador-sessions";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RequestSpecificAmbassadorCta } from "./request-specific-ambassador-cta";
 import {
   RequestSpecificAmbassadorModal,
@@ -63,9 +64,16 @@ type Props = {
   initialAmbassadors: AmbassadorCatalogEntry[];
   catalogCountries: { id: string; name: string }[];
   studentDefaults?: StudentContactDefaults;
+  openAmbassadorId?: string;
 };
 
-export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studentDefaults }: Props) {
+export function AmbassadorsClient({
+  initialAmbassadors,
+  catalogCountries,
+  studentDefaults,
+  openAmbassadorId,
+}: Props) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dest, setDest] = useState("");
@@ -74,6 +82,27 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studen
   const [status, setStatus] = useState("");
   const [detail, setDetail] = useState<AmbassadorCatalogEntry | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const deepLinkHandled = useRef(false);
+
+  useEffect(() => {
+    if (!openAmbassadorId || deepLinkHandled.current) return;
+    deepLinkHandled.current = true;
+
+    const entry = initialAmbassadors.find((a) => a.id === openAmbassadorId);
+    if (entry) {
+      setDetail(entry);
+    } else {
+      setToast("Ambassador no longer available in the catalog.");
+    }
+    router.replace("/student/ambassadors");
+  }, [openAmbassadorId, initialAmbassadors, router]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 200);
@@ -133,7 +162,14 @@ export function AmbassadorsClient({ initialAmbassadors, catalogCountries, studen
 
   return (
     <div className="mx-auto w-full pb-16">
-      
+      {toast ? (
+        <div
+          role="status"
+          className="fixed bottom-8 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-[var(--green-dark)] px-6 py-2.5 text-[12.5px] font-medium text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
+        >
+          {toast}
+        </div>
+      ) : null}
 
       <div className="page-header mb-5 px-4">
         <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] font-bold text-[var(--text)]">

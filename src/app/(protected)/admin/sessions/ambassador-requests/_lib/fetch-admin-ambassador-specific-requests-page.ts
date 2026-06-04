@@ -184,6 +184,8 @@ export async function fetchAdminAmbassadorSpecificRequestsPage(
 
   if (filters.status === "pending") {
     query = query.eq("status", "pending");
+  } else if (filters.status === "confirmed") {
+    query = query.eq("status", "confirmed");
   }
 
   if (searchOr) {
