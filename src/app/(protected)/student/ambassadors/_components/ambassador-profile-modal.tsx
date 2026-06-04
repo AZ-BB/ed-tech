@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
-import { flagFromCountryCode } from "@/lib/country-flag-emoji";
+import { CountryFlag } from "@/components/country-flag";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import Link from "next/link";
 
@@ -92,7 +92,6 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
     getCountryNameByAlpha2(ambassador.destinationCode) ?? ambassador.destinationCode;
   const natName =
     getCountryNameByAlpha2(ambassador.nationalityCode) ?? ambassador.nationalityCode;
-  const destFlag = flagFromCountryCode(ambassador.destinationCode);
   const statusLabel = ambassador.isCurrentStudent ? "Current student" : "Graduate";
   const helps =
     ambassador.helps.length > 0
@@ -162,9 +161,7 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
                 {ambassador.firstName} {ambassador.lastName}
               </h2>
               <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-[var(--text-mid)]">
-                <span className="text-base leading-none" aria-hidden>
-                  {destFlag}
-                </span>
+                <CountryFlag code={ambassador.destinationCode} size={18} />
                 <span>{ambassador.displayUniversity}</span>
               </div>
               <p className="mt-1 text-[13px] text-[var(--text-light)]">
