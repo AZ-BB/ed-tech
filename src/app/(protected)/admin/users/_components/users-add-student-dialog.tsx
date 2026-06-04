@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import { createAdminStudentInvite } from "@/actions/admin-students";
 import { fetchAdminSchoolsForStudentImport } from "@/actions/admin-users";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
@@ -64,23 +65,20 @@ export function UsersAddStudentDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const formData = new FormData(form);
-    const result = await createAdminStudentInvite(formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    form.reset();
-    router.refresh();
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => createAdminStudentInvite(new FormData(form)),
+      () => {
+        setSuccess(true);
+        form.reset();
+        router.refresh();
+      },
+    );
   }
 
   function handleClose() {

@@ -11,6 +11,9 @@ import {
   type AdminUsersRoleFilter,
   type AdminUsersStatusFilter,
 } from "../_lib/parse-admin-users-search-params";
+import type { SchoolTeacherOption } from "@/lib/fetch-school-teacher-options";
+import { STUDENT_TEACHER_UNASSIGNED_FILTER } from "@/lib/student-teacher-assignment";
+import type { StudentTeacherFilterValue } from "@/lib/student-teacher-assignment";
 import type { AdminSchoolOption } from "../_lib/fetch-admin-school-options";
 import type { AdminUserTableRow } from "../_lib/fetch-admin-users-page";
 import { getAdminUsersTableColumns } from "./admin-users-table-columns";
@@ -48,6 +51,8 @@ export type AdminUsersTableClientProps = {
   role: AdminUsersRoleFilter;
   schoolId: string;
   status: AdminUsersStatusFilter;
+  teacher: StudentTeacherFilterValue;
+  teacherFilterOptions: SchoolTeacherOption[];
   schoolOptions: AdminSchoolOption[];
   embedMode?: boolean;
   embedTabParam?: string;
@@ -64,6 +69,8 @@ export function AdminUsersTableClient({
   role,
   schoolId,
   status,
+  teacher,
+  teacherFilterOptions,
   schoolOptions,
   embedMode = false,
   embedTabParam,
@@ -74,7 +81,8 @@ export function AdminUsersTableClient({
     q.trim().length > 0 ||
     role !== "" ||
     (!embedMode && schoolId.trim().length > 0) ||
-    status !== "";
+    status !== "" ||
+    (tabId === "students" && teacher !== "");
   const columns = getAdminUsersTableColumns(
     tabId,
     (row) => (
@@ -131,7 +139,7 @@ export function AdminUsersTableClient({
             </label>
             <input
               id="admin-users-search"
-              key={`${q}-${role}-${schoolId}-${status}`}
+              key={`${q}-${role}-${schoolId}-${status}-${teacher}`}
               type="search"
               name="q"
               defaultValue={q}
@@ -168,6 +176,24 @@ export function AdminUsersTableClient({
               {schoolOptions.map((school) => (
                 <option key={school.id} value={school.id}>
                   {school.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+
+          {tabId === "students" && schoolId.trim() ? (
+            <select
+              name="teacher"
+              aria-label="Filter by teacher"
+              className={filterSelectClass}
+              style={{ backgroundImage: SELECT_CHEVRON }}
+              defaultValue={teacher}
+            >
+              <option value="">All students</option>
+              <option value={STUDENT_TEACHER_UNASSIGNED_FILTER}>Unassigned</option>
+              {teacherFilterOptions.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
                 </option>
               ))}
             </select>

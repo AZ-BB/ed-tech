@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import type { SessionsTabCounts } from "../_data/sessions-tabs-data";
-import { isAdminSessionDetailPath, sessionsTabs } from "../_data/sessions-tabs-data";
+import {
+  isAdminSessionsDetailChromeHidden,
+  sessionsTabs,
+} from "../_data/sessions-tabs-data";
 
 function normalizePath(pathname: string) {
   return pathname.replace(/\/$/, "") || "/";
@@ -21,7 +24,7 @@ export type SessionsTabsNavProps = {
 export function SessionsTabsNav({ counts }: SessionsTabsNavProps) {
   const pathname = usePathname() ?? "";
 
-  if (isAdminSessionDetailPath(pathname)) {
+  if (isAdminSessionsDetailChromeHidden(pathname)) {
     return null;
   }
 

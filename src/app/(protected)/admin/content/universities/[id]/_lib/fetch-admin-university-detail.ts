@@ -17,6 +17,7 @@ export type AdminUniversityDetailUniversity = {
   description: string | null;
   ranking: number | null;
   logoUrl: string | null;
+  coverImageUrl: string | null;
   acceptanceRate: number | null;
   intlStudents: number | null;
   websiteUrl: string | null;
@@ -157,6 +158,7 @@ export async function fetchAdminUniversityDetail(
     description: university.description?.trim() || null,
     ranking: university.ranking,
     logoUrl: university.logo_url?.trim() || null,
+    coverImageUrl: university.cover_image_url?.trim() || null,
     acceptanceRate: university.acceptance_rate,
     intlStudents: university.intl_students,
     websiteUrl: university.website_url?.trim() || null,

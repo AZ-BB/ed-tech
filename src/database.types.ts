@@ -1335,6 +1335,7 @@ export type Database = {
       }
       school_admin_profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string | null
           email: string
           first_name: string
@@ -1347,6 +1348,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string | null
           email: string
           first_name: string
@@ -1359,6 +1361,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string | null
           email?: string
           first_name?: string
@@ -2155,6 +2158,7 @@ export type Database = {
         Row: {
           advisor_credit_limit: number | null
           ambassador_credit_limit: number | null
+          avatar_url: string | null
           created_at: string | null
           email: string
           first_name: string
@@ -2171,12 +2175,14 @@ export type Database = {
           signup_advisor_credit_limit: number | null
           signup_ambassador_credit_limit: number | null
           status: Database["public"]["Enums"]["student_status"] | null
+          teacher_id: string | null
           total_logins: number | null
           updated_at: string | null
         }
         Insert: {
           advisor_credit_limit?: number | null
           ambassador_credit_limit?: number | null
+          avatar_url?: string | null
           created_at?: string | null
           email: string
           first_name: string
@@ -2193,12 +2199,14 @@ export type Database = {
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
+          teacher_id?: string | null
           total_logins?: number | null
           updated_at?: string | null
         }
         Update: {
           advisor_credit_limit?: number | null
           ambassador_credit_limit?: number | null
+          avatar_url?: string | null
           created_at?: string | null
           email?: string
           first_name?: string
@@ -2215,6 +2223,7 @@ export type Database = {
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
+          teacher_id?: string | null
           total_logins?: number | null
           updated_at?: string | null
         }
@@ -2231,6 +2240,13 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_profiles_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "school_admin_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2336,6 +2352,7 @@ export type Database = {
           application_fee: number | null
           city: string
           country_code: string
+          cover_image_url: string | null
           created_at: string | null
           deadline_date: string | null
           description: string | null
@@ -2373,6 +2390,7 @@ export type Database = {
           application_fee?: number | null
           city: string
           country_code: string
+          cover_image_url?: string | null
           created_at?: string | null
           deadline_date?: string | null
           description?: string | null
@@ -2410,6 +2428,7 @@ export type Database = {
           application_fee?: number | null
           city?: string
           country_code?: string
+          cover_image_url?: string | null
           created_at?: string | null
           deadline_date?: string | null
           description?: string | null

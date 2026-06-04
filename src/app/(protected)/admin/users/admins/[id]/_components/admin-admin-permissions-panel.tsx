@@ -37,32 +37,39 @@ export function AdminAdminPermissionsPanel({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (readOnly) return;
+    if (readOnly || isSaving) return;
 
     setIsSaving(true);
     setError(null);
     setSuccess(false);
 
-    const result = await updateAdminUserPermissionsFromForm(
-      adminId,
-      new FormData(event.currentTarget),
-    );
+    try {
+      const result = await updateAdminUserPermissionsFromForm(
+        adminId,
+        new FormData(event.currentTarget),
+      );
 
-    if (!result.ok) {
-      setError(result.error);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      setSuccess(true);
+      router.refresh();
+
+      if (currentUserId && currentUserId === adminId) {
+        void (async () => {
+          const supabase = createSupabaseBrowserClient();
+          await supabase.auth.refreshSession();
+          await refreshCurrentAdminSessionAfterPermissionChange();
+        })();
+      }
+    } catch (error) {
+      console.error("[admin permissions submit]", error);
+      setError(error instanceof Error ? error.message : "Could not save permissions.");
+    } finally {
       setIsSaving(false);
-      return;
     }
-
-    if (currentUserId && currentUserId === adminId) {
-      const supabase = createSupabaseBrowserClient();
-      await supabase.auth.refreshSession();
-      await refreshCurrentAdminSessionAfterPermissionChange();
-    }
-
-    setSuccess(true);
-    setIsSaving(false);
-    router.refresh();
   }
 
   return (

@@ -1,7 +1,9 @@
 "use server";
 
 import { importStudentsFromRecords } from "@/lib/admin-student-import";
+import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
 import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
+import { parseStudentTeacherAssignParam } from "@/lib/student-teacher-assignment";
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
@@ -246,6 +248,29 @@ export async function fetchAdminStudentFormCountries(): Promise<
   };
 }
 
+export async function fetchAdminStudentFormTeachers(
+  schoolId: string,
+  includeTeacherId?: string | null,
+): Promise<
+  | { ok: true; teachers: Awaited<ReturnType<typeof fetchSchoolTeacherOptions>> }
+  | { ok: false; error: string }
+> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const sid = schoolId.trim();
+  if (!sid || !UUID_RE.test(sid)) {
+    return { ok: false, error: "Invalid school." };
+  }
+
+  const teachers = await fetchSchoolTeacherOptions(sid, {
+    includeTeacherId: includeTeacherId ?? null,
+    useSecretClient: true,
+  });
+
+  return { ok: true, teachers };
+}
+
 type AdminStudentActionResult = { ok: true } | { ok: false; error: string };
 
 type AdminStudentActionResultWithMessage =
@@ -302,15 +327,48 @@ export async function updateAdminStudentProfile(
     return { ok: false, error: "Pick a valid country." };
   }
 
+  const teacherParsed = parseStudentTeacherAssignParam(
+    String(formData.get("teacherId") ?? ""),
+  );
+  if (teacherParsed === "invalid") {
+    return { ok: false, error: "Select a valid teacher." };
+  }
+
   const { data: existing, error: fetchErr } = await secret
     .from("student_profiles")
-    .select("id")
+    .select("id, school_id, teacher_id")
     .eq("id", id)
     .maybeSingle();
 
   if (fetchErr || !existing) {
     console.error("[updateAdminStudentProfile] fetch", fetchErr);
     return { ok: false, error: "Student not found." };
+  }
+
+  if (teacherParsed) {
+    const { data: teacher, error: teacherErr } = await secret
+      .from("school_admin_profiles")
+      .select("id, school_id, is_active")
+      .eq("id", teacherParsed)
+      .maybeSingle();
+
+    if (teacherErr || !teacher) {
+      return { ok: false, error: "Teacher not found." };
+    }
+
+    if (teacher.school_id !== existing.school_id) {
+      return {
+        ok: false,
+        error: "Teacher must belong to the same school as the student.",
+      };
+    }
+
+    if (
+      teacher.is_active === false &&
+      teacher.id !== existing.teacher_id
+    ) {
+      return { ok: false, error: "That teacher is inactive." };
+    }
   }
 
   const now = new Date().toISOString();
@@ -322,6 +380,7 @@ export async function updateAdminStudentProfile(
       phone,
       grade,
       nationality_country_code: nationalityCountryCode,
+      teacher_id: teacherParsed,
       updated_at: now,
     })
     .eq("id", id);

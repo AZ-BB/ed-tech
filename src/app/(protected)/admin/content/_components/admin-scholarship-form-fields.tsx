@@ -57,12 +57,14 @@ export type AdminScholarshipFormFieldsProps = {
   countries: AdminCountryOption[];
   initial?: Partial<AdminScholarshipDetailScholarship>;
   scholarshipId?: string;
+  disabled?: boolean;
 };
 
 export function AdminScholarshipFormFields({
   countries,
   initial,
   scholarshipId,
+  disabled = false,
 }: AdminScholarshipFormFieldsProps) {
   const s = initial;
   const [destinationCountryCodes, setDestinationCountryCodes] = useState<string[]>(() =>
@@ -76,7 +78,10 @@ export function AdminScholarshipFormFields({
   const countryOptions = countries.map((c) => ({ id: c.id, name: c.name }));
 
   return (
-    <div className="max-h-[min(70vh,640px)] space-y-6 overflow-y-auto pr-1">
+    <fieldset
+      disabled={disabled}
+      className="m-0 min-w-0 space-y-6 border-0 p-0 disabled:pointer-events-none disabled:opacity-60"
+    >
       {scholarshipId ? <input type="hidden" name="scholarshipId" value={scholarshipId} /> : null}
 
       <section>
@@ -130,6 +135,7 @@ export function AdminScholarshipFormFields({
               hint="Type to search, then press Enter or click a suggestion to add a destination."
               inputClassName={inputClassName}
               labelClassName={labelClassName}
+              disabled={disabled}
             />
           </div>
           <div className="sm:col-span-2">
@@ -307,6 +313,17 @@ export function AdminScholarshipFormFields({
             <label className={labelClassName}>Application method</label>
             <input name="method" defaultValue={s?.method ?? ""} className={inputClassName} />
           </div>
+          <div className="sm:col-span-2">
+            <label className={labelClassName}>Application website URL</label>
+            <input
+              name="applicationUrl"
+              type="url"
+              inputMode="url"
+              placeholder="https://example.edu/apply"
+              defaultValue={s?.applicationUrl ?? ""}
+              className={inputClassName}
+            />
+          </div>
           <div>
             <label className={labelClassName}>Discovery slug</label>
             <input
@@ -325,6 +342,6 @@ export function AdminScholarshipFormFields({
           </div>
         </div>
       </section>
-    </div>
+    </fieldset>
   );
 }

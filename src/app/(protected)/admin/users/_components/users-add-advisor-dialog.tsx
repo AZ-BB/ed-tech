@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import {
   createAdvisor,
   fetchAdvisorFormOptions,
@@ -76,26 +77,23 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const formData = new FormData(form);
-    const result = await createAdvisor(formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    form.reset();
-    setSpecializationCountryCodes([]);
-    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-    setAvatarPreviewUrl(null);
-    router.refresh();
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => createAdvisor(new FormData(form)),
+      () => {
+        setSuccess(true);
+        form.reset();
+        setSpecializationCountryCodes([]);
+        if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+        setAvatarPreviewUrl(null);
+        router.refresh();
+      },
+    );
   }
 
   function handleClose() {

@@ -11,6 +11,7 @@ import {
   getStudentApplicationProfileCompletion,
   studentApplicationProfileRowToCompletionInput,
 } from "@/lib/student-application-profile-completion";
+import { teacherNameFromEmbed } from "@/lib/student-teacher-assignment";
 import { netSessionCreditsByKindFromRows } from "@/app/(protected)/school/settings/_lib/net-session-credits-used";
 import {
   createSupabaseSecretClient,
@@ -70,6 +71,10 @@ export type SchoolStudentDetailPayload = {
     grade: string | null;
     nationalityCountryCode: string | null;
     isActive: boolean;
+    avatarUrl: string | null;
+    schoolId: string;
+    teacherId: string | null;
+    teacherName: string | null;
   };
   applicationProfile:
     | Database["public"]["Tables"]["student_application_profile"]["Row"]
@@ -145,12 +150,20 @@ export async function fetchSchoolStudentDetail(
       first_name,
       last_name,
       email,
+      avatar_url,
       grade,
+      school_id,
+      teacher_id,
       phone,
       nationality_country_code,
       is_active,
       created_at,
       updated_at,
+      school_admin_profiles:teacher_id (
+        first_name,
+        last_name,
+        email
+      ),
       advisor_credit_limit,
       ambassador_credit_limit,
       signup_advisor_credit_limit,
@@ -182,6 +195,14 @@ export async function fetchSchoolStudentDetail(
     : schoolsEmbedRaw;
   const countriesEmbed = profile.countries as { name?: string } | null;
   const schoolName = schoolsEmbed?.name?.trim() || "School";
+  const teacherEmbedRaw = profile.school_admin_profiles as
+    | { first_name: string | null; last_name: string | null; email: string | null }
+    | { first_name: string | null; last_name: string | null; email: string | null }[]
+    | null;
+  const teacherEmbed = Array.isArray(teacherEmbedRaw)
+    ? (teacherEmbedRaw[0] ?? null)
+    : teacherEmbedRaw;
+  const teacherName = teacherNameFromEmbed(teacherEmbed);
   const nationalityName =
     typeof countriesEmbed?.name === "string"
       ? countriesEmbed.name.trim() || null
@@ -571,6 +592,10 @@ export async function fetchSchoolStudentDetail(
       grade: profile.grade?.trim() ?? null,
       nationalityCountryCode: profile.nationality_country_code?.trim() ?? null,
       isActive: profile.is_active ?? true,
+      avatarUrl: profile.avatar_url?.trim() || null,
+      schoolId: profile.school_id,
+      teacherId: profile.teacher_id,
+      teacherName,
     },
     applicationProfile: app,
     quickStats: {

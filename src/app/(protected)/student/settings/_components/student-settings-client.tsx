@@ -5,6 +5,7 @@ import {
   updateStudentNotificationPreferencesAction,
   updateStudentPersonalAction,
 } from "@/actions/student-settings";
+import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import type { GeneralResponse } from "@/utils/response";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
@@ -24,6 +25,7 @@ export type StudentSettingsInitial = {
   firstName: string;
   lastName: string;
   email: string;
+  avatarUrl: string | null;
   phone: string;
   grade: string;
   nationalityCountryCode: string;
@@ -121,6 +123,16 @@ export function StudentSettingsClient({
 
   const [logoutOpen, setLogoutOpen] = useState(false);
 
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const avatarDisplayUrl = removeAvatar
+    ? avatarPreviewUrl
+    : (avatarPreviewUrl ?? initial.avatarUrl);
+  const canRemoveAvatar =
+    Boolean(initial.avatarUrl) && !removeAvatar && !avatarPreviewUrl;
+
   const [personalState, personalAction, personalPending] = useActionState(
     updateStudentPersonalAction,
     null as GeneralResponse<null> | null,
@@ -138,8 +150,29 @@ export function StudentSettingsClient({
   useEffect(() => {
     return () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     };
-  }, []);
+  }, [avatarPreviewUrl]);
+
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+
+    if (!file) {
+      setAvatarPreviewUrl(null);
+      return;
+    }
+
+    setRemoveAvatar(false);
+    setAvatarPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function handleRemoveAvatar() {
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    setAvatarPreviewUrl(null);
+    setRemoveAvatar(true);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }
 
   useEffect(() => {
     if (editingPersonal) return;
@@ -157,6 +190,9 @@ export function StudentSettingsClient({
   useEffect(() => {
     const done = personalPrevPending.current && !personalPending;
     if (done && personalState && personalState.error === null) {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+      setAvatarPreviewUrl(null);
+      setRemoveAvatar(false);
       showToast("Personal information saved.");
       setEditingPersonal(false);
       router.refresh();
@@ -173,12 +209,22 @@ export function StudentSettingsClient({
   }, [displayFullName, initial.phone, initial.grade, initial.nationalityCountryCode]);
 
   const cancelEditPersonal = useCallback(() => {
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    setAvatarPreviewUrl(null);
+    setRemoveAvatar(false);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
     setFullName(displayFullName);
     setPhone(initial.phone);
     setGrade(initial.grade);
     setNationalityCode(initial.nationalityCountryCode);
     setEditingPersonal(false);
-  }, [displayFullName, initial.phone, initial.grade, initial.nationalityCountryCode]);
+  }, [
+    avatarPreviewUrl,
+    displayFullName,
+    initial.phone,
+    initial.grade,
+    initial.nationalityCountryCode,
+  ]);
 
   const persistPrefs = useCallback(
     (nextApp: boolean, nextNews: boolean) => {
@@ -376,6 +422,24 @@ export function StudentSettingsClient({
           )}
         </div>
         <div className="px-6 py-5 sm:px-7 sm:py-6">
+          <div className="mb-5 flex flex-wrap items-center gap-4 border-b border-[var(--border-light)] pb-5">
+            <PersonProfileAvatar
+              avatarUrl={avatarDisplayUrl}
+              firstName={initial.firstName}
+              lastName={initial.lastName}
+              size="md"
+            />
+            <div className="min-w-0">
+              <div className="text-[15px] font-semibold text-[var(--text)]">
+                {displayFullName || "—"}
+              </div>
+              <p className="mt-0.5 text-[12px] text-[var(--text-light)]">
+                {editingPersonal
+                  ? "Update your photo below, then save."
+                  : "Profile photo — edit personal info to change."}
+              </p>
+            </div>
+          </div>
           {!editingPersonal ? (
             <div className="grid grid-cols-1 sm:grid-cols-2">
               <div className="border-b border-[var(--border-light)] border-r-0 px-[18px] py-4 transition-colors sm:border-r sm:border-[var(--border-light)]">
@@ -404,6 +468,46 @@ export function StudentSettingsClient({
             </div>
           ) : (
             <form id="student-personal-form" action={personalAction} className="grid grid-cols-1 gap-[18px] sm:grid-cols-2">
+              <input type="hidden" name="remove_avatar" value={removeAvatar ? "1" : "0"} />
+              <div className="sm:col-span-2">
+                <span className={labelClass()}>Profile photo</span>
+                <div className="flex flex-wrap items-center gap-4">
+                  <PersonProfileAvatar
+                    avatarUrl={avatarDisplayUrl}
+                    firstName={initial.firstName}
+                    lastName={initial.lastName}
+                    size="md"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <input
+                      id="ss-avatar"
+                      ref={avatarInputRef}
+                      name="avatar"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={handleAvatarChange}
+                      className={`${fieldClass()} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[var(--green-bg)] file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-[var(--green-dark)]`}
+                    />
+                    <p className="mt-1.5 text-[11px] text-[var(--text-hint)]">
+                      PNG, JPEG, WebP, or GIF. Max 5 MB.
+                    </p>
+                    {canRemoveAvatar ? (
+                      <button
+                        type="button"
+                        className={`${btnOutlineClass()} mt-2`}
+                        onClick={handleRemoveAvatar}
+                      >
+                        Remove photo
+                      </button>
+                    ) : null}
+                    {removeAvatar && !avatarPreviewUrl ? (
+                      <p className="mt-2 text-[11px] font-medium text-[var(--text-mid)]">
+                        Photo will be removed when you save.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
               <div>
                 <label className={labelClass()} htmlFor="ss-full-name">
                   Full name

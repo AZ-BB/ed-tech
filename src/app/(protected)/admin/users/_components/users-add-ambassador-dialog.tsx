@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import {
   createAmbassador,
   fetchAmbassadorFormOptions,
@@ -83,26 +84,23 @@ export function UsersAddAmbassadorDialog({ open, onClose }: UsersAddAmbassadorDi
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const formData = new FormData(form);
-    const result = await createAmbassador(formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    form.reset();
-    setDestinationCountryCode("");
-    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-    setAvatarPreviewUrl(null);
-    router.refresh();
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => createAmbassador(new FormData(form)),
+      () => {
+        setSuccess(true);
+        form.reset();
+        setDestinationCountryCode("");
+        if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+        setAvatarPreviewUrl(null);
+        router.refresh();
+      },
+    );
   }
 
   function handleClose() {

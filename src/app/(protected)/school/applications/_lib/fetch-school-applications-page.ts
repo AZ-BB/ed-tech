@@ -13,6 +13,7 @@ export type SchoolApplicationTableRow = {
   studentId: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   email: string;
   universityName: string;
   country: string | null;
@@ -61,6 +62,7 @@ type AppRowRaw = {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    avatar_url: string | null;
   } | null;
 };
 
@@ -87,6 +89,7 @@ function buildRowsFromApplications(
     const split = splitStudentName(r.student_name);
     const firstName = fromProfileFirst || split.first;
     const lastName = fromProfileLast || split.last;
+    const avatarUrl = sp?.avatar_url?.trim() || null;
     const email = fromProfileEmail || r.student_email?.trim() || "";
 
     const unis = parsePreferencesUniversities(r.preferences_universities);
@@ -107,6 +110,7 @@ function buildRowsFromApplications(
         studentId: r.student_id,
         firstName,
         lastName,
+        avatarUrl,
         email,
         universityName,
         country,
@@ -171,7 +175,8 @@ export async function fetchSchoolApplicationsPage(
       student_profiles (
         first_name,
         last_name,
-        email
+        email,
+        avatar_url
       )
     `,
     )

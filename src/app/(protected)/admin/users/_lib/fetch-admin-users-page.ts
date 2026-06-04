@@ -1,7 +1,9 @@
 import { formatDistanceToNow } from "date-fns";
 
 import { applyNameEmailSearch } from "@/app/(protected)/school/_lib/student-search";
+import { applyStudentTeacherFilter } from "@/lib/fetch-school-teacher-options";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { teacherNameFromEmbed } from "@/lib/student-teacher-assignment";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import type { UsersTabId } from "../_data/users-tabs-data";
@@ -43,6 +45,7 @@ export type AdminUserTableRow = {
   isActive: boolean;
   sortLastName: string;
   sortFirstName: string;
+  teacherName?: string | null;
   advisorDetail?: AdminAdvisorTableDetail;
   ambassadorDetail?: AdminAmbassadorTableDetail;
 };
@@ -273,14 +276,18 @@ async function fetchStudentRows(
   q: string,
   schoolId = "",
   status: AdminUsersStatusFilter = "",
+  teacher: AdminUsersPageFilters["teacher"] = "",
 ): Promise<AdminUserTableRow[]> {
   let query = supabase
     .from("student_profiles")
-    .select("id, first_name, last_name, email, created_at, is_active, schools(name)");
+    .select(
+      "id, first_name, last_name, email, created_at, is_active, teacher_id, schools(name), school_admin_profiles:teacher_id ( first_name, last_name, email )",
+    );
 
   query = applyNameEmailSearch(query, q);
   query = applySchoolFilter(query, schoolId);
   query = applyStatusFilter(query, status);
+  query = applyStudentTeacherFilter(query, teacher);
 
   const { data, error } = await query
     .order("last_name", { ascending: true })
@@ -294,6 +301,13 @@ async function fetchStudentRows(
   return (data ?? []).map((row) => {
     const firstName = row.first_name?.trim() ?? "";
     const lastName = row.last_name?.trim() ?? "";
+    const teacherEmbedRaw = row.school_admin_profiles as
+      | { first_name: string | null; last_name: string | null; email: string | null }
+      | { first_name: string | null; last_name: string | null; email: string | null }[]
+      | null;
+    const teacherEmbed = Array.isArray(teacherEmbedRaw)
+      ? (teacherEmbedRaw[0] ?? null)
+      : teacherEmbedRaw;
     return {
       id: row.id,
       firstName,
@@ -306,6 +320,7 @@ async function fetchStudentRows(
       isActive: row.is_active,
       sortLastName: lastName.toLowerCase(),
       sortFirstName: firstName.toLowerCase(),
+      teacherName: teacherNameFromEmbed(teacherEmbed),
     };
   });
 }
@@ -449,12 +464,13 @@ async function fetchPaginatedSingleTab(
     let query = supabase
       .from("student_profiles")
       .select(
-        "id, first_name, last_name, email, created_at, is_active, schools(name)",
+        "id, first_name, last_name, email, created_at, is_active, teacher_id, schools(name), school_admin_profiles:teacher_id ( first_name, last_name, email )",
         { count: "exact" },
       );
     query = applyNameEmailSearch(query, filters.q);
     query = applySchoolFilter(query, filters.schoolId);
     query = applyStatusFilter(query, filters.status);
+    query = applyStudentTeacherFilter(query, filters.teacher);
     const { data, error, count } = await query
       .order("last_name", { ascending: true })
       .order("first_name", { ascending: true })
@@ -470,6 +486,13 @@ async function fetchPaginatedSingleTab(
       data.map((row) => {
         const firstName = row.first_name?.trim() ?? "";
         const lastName = row.last_name?.trim() ?? "";
+        const teacherEmbedRaw = row.school_admin_profiles as
+          | { first_name: string | null; last_name: string | null; email: string | null }
+          | { first_name: string | null; last_name: string | null; email: string | null }[]
+          | null;
+        const teacherEmbed = Array.isArray(teacherEmbedRaw)
+          ? (teacherEmbedRaw[0] ?? null)
+          : teacherEmbedRaw;
         return {
           id: row.id,
           firstName,
@@ -482,6 +505,7 @@ async function fetchPaginatedSingleTab(
           isActive: row.is_active,
           sortLastName: lastName.toLowerCase(),
           sortFirstName: firstName.toLowerCase(),
+          teacherName: teacherNameFromEmbed(teacherEmbed),
         };
       }),
       formatLastActive,
@@ -677,12 +701,12 @@ async function fetchAllTabMergedRows(
   supabase: AdminSupabase,
   filters: AdminUsersPageFilters,
 ): Promise<AdminUserTableRow[]> {
-  const { q, role, schoolId, status } = filters;
+  const { q, role, schoolId, status, teacher } = filters;
   const hasSchool = Boolean(schoolId.trim());
   const fetches: Promise<AdminUserTableRow[]>[] = [];
 
   if (!role || role === "student") {
-    fetches.push(fetchStudentRows(supabase, q, schoolId, status));
+    fetches.push(fetchStudentRows(supabase, q, schoolId, status, teacher));
   }
   if (!role || role === "teacher") {
     fetches.push(fetchTeacherRows(supabase, q, schoolId, status));
@@ -719,6 +743,7 @@ export async function fetchAdminUsersExportRows(
       effectiveFilters.q,
       effectiveFilters.schoolId,
       effectiveFilters.status,
+      effectiveFilters.teacher,
     );
   } else if (tabId === "teachers") {
     rows = await fetchTeacherRows(

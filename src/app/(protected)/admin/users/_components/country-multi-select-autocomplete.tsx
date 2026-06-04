@@ -19,6 +19,7 @@ type CountryMultiSelectAutocompleteProps = {
   hint?: string;
   inputClassName?: string;
   labelClassName?: string;
+  disabled?: boolean;
 };
 
 export function CountryMultiSelectAutocomplete({
@@ -32,6 +33,7 @@ export function CountryMultiSelectAutocomplete({
   hint = "Search and press Enter to add. Use Backspace to remove the last country.",
   inputClassName = "w-full rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C]",
   labelClassName = "mb-1.5 block text-[12px] font-semibold text-[#4a4a4a]",
+  disabled = false,
 }: CountryMultiSelectAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -76,6 +78,7 @@ export function CountryMultiSelectAutocomplete({
   }, []);
 
   function addCountry(code: string) {
+    if (disabled) return;
     const normalized = code.toUpperCase();
     if (selectedSet.has(normalized)) return;
     onChange([...value, normalized]);
@@ -85,11 +88,13 @@ export function CountryMultiSelectAutocomplete({
   }
 
   function removeCountry(code: string) {
+    if (disabled) return;
     const normalized = code.toUpperCase();
     onChange(value.filter((item) => item.toUpperCase() !== normalized));
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (disabled) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setOpen(true);
@@ -142,7 +147,8 @@ export function CountryMultiSelectAutocomplete({
                 {labelText}
                 <button
                   type="button"
-                  className="rounded-full p-0.5 text-[#1B4332] opacity-70 hover:opacity-100"
+                  disabled={disabled}
+                  className="rounded-full p-0.5 text-[#1B4332] opacity-70 hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label={`Remove ${labelText}`}
                   onClick={() => removeCountry(code)}
                 >
@@ -170,11 +176,15 @@ export function CountryMultiSelectAutocomplete({
           id={id}
           type="search"
           value={query}
+          disabled={disabled}
           onChange={(event) => {
+            if (disabled) return;
             setQuery(event.target.value);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            if (!disabled) setOpen(true);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
@@ -195,7 +205,8 @@ export function CountryMultiSelectAutocomplete({
               <li key={option.id} role="option" aria-selected={index === activeIndex}>
                 <button
                   type="button"
-                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-[13px] transition ${
+                  disabled={disabled}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-[13px] transition disabled:cursor-not-allowed disabled:opacity-60 ${
                     index === activeIndex
                       ? "bg-[#e8f5ee] text-[#1B4332]"
                       : "text-[#1a1a1a] hover:bg-[#f7f6f4]"

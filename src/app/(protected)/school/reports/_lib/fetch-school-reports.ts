@@ -1,5 +1,6 @@
 import type { Database } from "@/database.types";
 import { parseSchoolStudentsNeedingFollowUp } from "@/lib/school-student-risk";
+import { fetchStudentAvatarUrlMap } from "@/lib/student-avatar-url-map";
 import {
   getStudentApplicationProfileCompletion,
   studentApplicationProfileRowToCompletionInput,
@@ -20,7 +21,7 @@ export type SchoolReportsAttentionRow = {
   firstName: string;
   lastName: string;
   grade: string;
-  initials: string;
+  avatarUrl: string | null;
   riskClass: "red" | "amber";
   riskLabel: string;
   issue: string;
@@ -30,7 +31,7 @@ export type SchoolReportsOutcomeRow = {
   studentId: string;
   firstName: string;
   lastName: string;
-  initials: string;
+  avatarUrl: string | null;
   destinationsSummary: string;
   programsSummary: string;
   applicationsSubmitted: number;
@@ -58,15 +59,6 @@ export type SchoolReportsPayload = {
   attentionStudents: SchoolReportsAttentionRow[];
   outcomes: SchoolReportsOutcomeRow[];
 };
-
-function initialsFromStudent(first: string, last: string): string {
-  const a = first.trim()[0];
-  const b = last.trim()[0];
-  const pair = `${a ?? ""}${b ?? ""}`.toUpperCase();
-  if (pair) return pair.slice(0, 2);
-  if (a) return a.toUpperCase();
-  return "?";
-}
 
 function utcMonthBounds(reference = new Date()): {
   monthStartIso: string;
@@ -437,7 +429,7 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
       }),
       supabase
         .from("student_profiles")
-        .select("id, first_name, last_name, grade, updated_at, created_at")
+        .select("id, first_name, last_name, avatar_url, grade, updated_at, created_at")
         .eq("school_id", schoolId)
         .order("last_name", { ascending: true })
         .order("first_name", { ascending: true }),
@@ -584,13 +576,17 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
   }
   const followUp = parseSchoolStudentsNeedingFollowUp(followUpRes.data);
   const needAttentionCount = followUp.need_attention_count;
+  const attentionAvatarMap = await fetchStudentAvatarUrlMap(
+    supabase,
+    followUp.students.map((s) => s.id),
+  );
   const attentionStudents: SchoolReportsAttentionRow[] = followUp.students.map(
     (s) => ({
       id: s.id,
       firstName: s.first_name.trim(),
       lastName: s.last_name.trim(),
       grade: s.grade,
-      initials: initialsFromStudent(s.first_name, s.last_name),
+      avatarUrl: attentionAvatarMap.get(s.id) ?? null,
       riskClass: s.risk_class,
       riskLabel: s.risk_label,
       issue: s.issue,
@@ -611,10 +607,7 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
       studentId: p.id,
       firstName: p.first_name?.trim() ?? "",
       lastName: p.last_name?.trim() ?? "",
-      initials: initialsFromStudent(
-        p.first_name?.trim() ?? "",
-        p.last_name?.trim() ?? "",
-      ),
+      avatarUrl: p.avatar_url?.trim() || null,
       destinationsSummary: sl?.destinationsSummary ?? "—",
       programsSummary: sl?.programsSummary ?? "—",
       applicationsSubmitted: counts.submitted,

@@ -9,6 +9,14 @@ import {
 } from "@/actions/school-students";
 import { bulkCreateSchoolStudentTasks } from "@/actions/school-tasks";
 import type { SchoolStudentTableRow } from "@/app/(protected)/school/students/_lib/fetch-school-students-page";
+import { PersonProfileAvatar } from "@/components/person-profile-avatar";
+import { StudentTeacherAssignSelect } from "@/components/student-teacher-assign-select";
+import type { SchoolTeacherOption } from "@/lib/fetch-school-teacher-options";
+import {
+  STUDENT_TEACHER_ALL_FILTER,
+  STUDENT_TEACHER_UNASSIGNED_FILTER,
+  type StudentTeacherFilterValue,
+} from "@/lib/student-teacher-assignment";
 import { Pagination } from "@/components/pagination";
 import type { DestinationSelectItem } from "@/lib/school-portal-destination-options";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
@@ -53,6 +61,7 @@ const STUDENT_CSV_HEADERS = [
   "Last name",
   "Email",
   "Grade",
+  "Teacher",
   "Destinations",
   "Programs",
   "Profile %",
@@ -69,6 +78,7 @@ function studentRowsToCsvLines(rows: SchoolStudentTableRow[]): string[] {
         r.lastName,
         r.email,
         r.grade,
+        r.teacherName ?? "Unassigned",
         r.destinationsSummary,
         r.programsSummary,
         r.profilePercent,
@@ -166,6 +176,10 @@ export function SchoolStudentsClient({
   studentQ,
   grade,
   dest,
+  teacher,
+  teacherSelectValue,
+  currentTeacherId,
+  teacherOptions,
   destinationItems,
 }: {
   rows: SchoolStudentTableRow[];
@@ -176,6 +190,10 @@ export function SchoolStudentsClient({
   studentQ: string;
   grade: string;
   dest: string;
+  teacher: StudentTeacherFilterValue;
+  teacherSelectValue: string;
+  currentTeacherId: string | null;
+  teacherOptions: SchoolTeacherOption[];
   destinationItems: DestinationSelectItem[];
 }) {
   const router = useRouter();
@@ -267,7 +285,7 @@ export function SchoolStudentsClient({
 
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [page, q, grade, dest, limit]);
+  }, [page, q, grade, dest, teacherSelectValue, limit]);
 
   const openPendingModal = () => {
     setPendingOpen(true);
@@ -373,7 +391,7 @@ export function SchoolStudentsClient({
 
   function handleExportAllCsv() {
     startExportAllTransition(async () => {
-      const res = await getSchoolStudentsFullExportRows(q, grade, dest);
+      const res = await getSchoolStudentsFullExportRows(q, grade, dest, teacher);
       if (res.error || res.data === null) {
         window.alert(String(res.error ?? "Could not export students."));
         return;
@@ -539,6 +557,26 @@ export function SchoolStudentsClient({
               ),
             )}
           </select>
+          <select
+            name="teacher"
+            aria-label="Filter by teacher"
+            style={{ backgroundImage: SELECT_CHEVRON }}
+            className={`${filterSelectClass} min-w-[150px]`}
+            defaultValue={teacherSelectValue}
+          >
+            <option value={STUDENT_TEACHER_ALL_FILTER}>All students</option>
+            {currentTeacherId ? (
+              <option value={currentTeacherId}>My Students</option>
+            ) : null}
+            <option value={STUDENT_TEACHER_UNASSIGNED_FILTER}>Unassigned</option>
+            {teacherOptions
+              .filter((t) => t.id !== currentTeacherId)
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+          </select>
           <button
             type="submit"
             className="rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
@@ -568,6 +606,9 @@ export function SchoolStudentsClient({
                   Grade
                 </th>
                 <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                  Teacher
+                </th>
+                <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   Destination
                 </th>
                 <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
@@ -589,7 +630,7 @@ export function SchoolStudentsClient({
                 <tr>
                   <td
                     className="px-5 py-10 text-center text-[13px] text-[var(--text-light)]"
-                    colSpan={8}
+                    colSpan={9}
                   >
                     No students match your filters yet.
                   </td>
@@ -623,10 +664,12 @@ export function SchoolStudentsClient({
                     </td>
                     <td className="py-3 pl-3 pr-3 align-middle">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-semibold text-[var(--green-dark)]">
-                          {(r.firstName[0] ?? "?").toUpperCase()}
-                          {(r.lastName[0] ?? "").toUpperCase()}
-                        </div>
+                        <PersonProfileAvatar
+                          avatarUrl={r.avatarUrl}
+                          firstName={r.firstName}
+                          lastName={r.lastName}
+                          size="sm"
+                        />
                         <div className="min-w-0">
                           <div className="font-semibold leading-tight text-[var(--text)] group-hover:text-[var(--green-dark)]">
                             {r.firstName} {r.lastName}
@@ -639,6 +682,18 @@ export function SchoolStudentsClient({
                     </td>
                     <td className="px-4 py-3 align-middle text-[12.5px] text-[var(--text-light)]">
                       {r.grade ?? "—"}
+                    </td>
+                    <td
+                      className="px-4 py-3 align-middle"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      <StudentTeacherAssignSelect
+                        studentId={r.id}
+                        value={r.teacherId}
+                        options={teacherOptions}
+                        aria-label={`Assign teacher for ${r.firstName} ${r.lastName}`}
+                      />
                     </td>
                     <td className="max-w-[200px] px-4 py-3 align-middle text-[12.5px] leading-snug text-[var(--text-mid)]">
                       {r.destinationsSummary}

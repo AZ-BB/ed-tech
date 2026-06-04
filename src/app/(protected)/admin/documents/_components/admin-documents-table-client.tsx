@@ -6,6 +6,7 @@ import {
   getAdminMyApplicationDocumentViewUrl,
   sendAdminDocumentReminder,
 } from "@/actions/admin-documents";
+import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { Pagination } from "@/components/pagination";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,13 +16,6 @@ const filterSelectClass =
 
 const SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22 fill=%22none%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236a6a6a%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E")';
-
-function initials(first: string, last: string) {
-  const a = first.trim()[0];
-  const b = last.trim()[0];
-  const pair = `${a ?? ""}${b ?? ""}`.toUpperCase();
-  return pair || "?";
-}
 
 function normalizeStatusSelect(raw: string): string {
   if (raw === "missing" || raw === "uploaded") return raw;
@@ -248,9 +242,12 @@ export function AdminDocumentsTableClient({
                   >
                     <td className="py-3 pl-5 pr-3 align-middle">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-semibold text-[var(--green-dark)]">
-                          {initials(r.firstName, r.lastName)}
-                        </div>
+                        <PersonProfileAvatar
+                          avatarUrl={r.avatarUrl}
+                          firstName={r.firstName}
+                          lastName={r.lastName}
+                          size="sm"
+                        />
                         <div className="min-w-0">
                           <div className="font-semibold leading-tight text-[var(--text)]">
                             {r.firstName} {r.lastName}

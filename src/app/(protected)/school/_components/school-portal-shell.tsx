@@ -19,9 +19,34 @@ export type SchoolPortalShellProps = {
   schoolName: string;
   displayName: string;
   avatarInitials: string;
+  avatarUrl?: string | null;
   userRole?: string;
   children: React.ReactNode;
 };
+
+function SidebarProfileAvatar({
+  avatarUrl,
+  avatarInitials,
+}: {
+  avatarUrl?: string | null;
+  avatarInitials: string;
+}) {
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        className="h-[34px] w-[34px] shrink-0 rounded-full object-cover ring-2 ring-[#52B788]/40"
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#52B788] text-[13px] font-bold leading-none text-[#1B4332]">
+      {avatarInitials}
+    </div>
+  );
+}
 
 function normalizePath(pathname: string) {
   return pathname.replace(/\/$/, "") || "/";
@@ -319,6 +344,7 @@ export function SchoolPortalShell({
   schoolName,
   displayName,
   avatarInitials,
+  avatarUrl = null,
   userRole = "School administrator",
   children,
 }: SchoolPortalShellProps) {
@@ -384,9 +410,9 @@ export function SchoolPortalShell({
 
       <aside
         id="school-sidebar"
-        className={`fixed bottom-0 left-0 top-0 z-[100] flex w-[240px] flex-col bg-[#1B4332] py-5 transition-transform duration-[250ms] lg:translate-x-0 ${sidebarMobileClass}`}
+        className={`fixed bottom-0 left-0 top-0 z-[100] flex w-[240px] flex-col overflow-hidden bg-[#1B4332] transition-transform duration-[250ms] lg:translate-x-0 ${sidebarMobileClass}`}
       >
-        <div className="flex items-center gap-[10px] border-b border-white/[0.08] px-[22px] pb-[22px]">
+        <div className="flex shrink-0 items-center gap-[10px] border-b border-white/[0.08] px-[22px] pb-[22px] pt-5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-white/[0.12] text-sm font-bold leading-none text-white">
             U
           </div>
@@ -400,7 +426,7 @@ export function SchoolPortalShell({
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-[14px]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pt-[14px]">
           {navSections.map((sec) => (
             <div key={sec.title} className={sec.className}>
               <div className="px-[22px] pb-[6px] pt-[10px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[rgba(255,255,255,0.4)] first:pt-0">
@@ -433,11 +459,9 @@ export function SchoolPortalShell({
           ))}
         </div>
 
-        <div className="mt-auto border-t border-white/[0.08] px-[18px] pt-[14px]">
+        <div className="shrink-0 border-t border-white/[0.08] bg-[#1B4332] px-[18px] py-[14px]">
           <div className="flex items-center gap-[10px]">
-            <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#52B788] text-[13px] font-bold leading-none text-[#1B4332]">
-              {avatarInitials}
-            </div>
+            <SidebarProfileAvatar avatarUrl={avatarUrl} avatarInitials={avatarInitials} />
             <div className="min-w-0 flex-1 py-1">
               <div
                 className="truncate text-[13px] font-semibold leading-tight text-white"

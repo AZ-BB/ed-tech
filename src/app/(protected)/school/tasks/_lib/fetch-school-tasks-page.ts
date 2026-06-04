@@ -13,6 +13,7 @@ export type SchoolTaskTableRow = {
   studentId: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   email: string;
   title: string;
   notes: string | null;
@@ -96,6 +97,7 @@ type TaskQueryRow = {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    avatar_url: string | null;
   };
 };
 
@@ -210,6 +212,7 @@ export async function fetchSchoolTasksPage(
         first_name,
         last_name,
         email,
+        avatar_url,
         school_id
       )
     `,
@@ -294,6 +297,7 @@ export async function fetchSchoolTasksPage(
       studentId: t.student_id,
       firstName: sp?.first_name?.trim() ?? "",
       lastName: sp?.last_name?.trim() ?? "",
+      avatarUrl: sp?.avatar_url?.trim() || null,
       email: sp?.email?.trim() ?? "",
       title: t.title,
       notes: t.notes,

@@ -6,21 +6,12 @@ import {
   type AdminUniversityExportRow,
 } from "@/app/(protected)/admin/content/_lib/fetch-admin-universities-export";
 import {
-  isAllowedImageFile,
-  publicStorageObjectUrl,
-  resolveContentType,
-  sanitizeFilename,
-} from "@/lib/storage-utils";
-import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
 import { revalidatePath } from "next/cache";
 
 type UniversityDifficulty = Database["public"]["Enums"]["university_difficulty"];
-
-const UNIVERSITY_LOGOS_BUCKET = "university-logos";
-const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -106,7 +97,7 @@ type UniversityFormFields = {
   countryCode: string;
   description: string | null;
   logoUrlManual: string | null;
-  logoFile: FormDataEntryValue | null;
+  coverImageUrlManual: string | null;
   websiteUrl: string | null;
   email: string | null;
   phone: string | null;
@@ -142,7 +133,7 @@ function parseUniversityFormFields(formData: FormData): UniversityFormFields {
     countryCode: String(formData.get("countryCode") ?? "").trim().toUpperCase(),
     description: String(formData.get("description") ?? "").trim() || null,
     logoUrlManual: String(formData.get("logoUrl") ?? "").trim() || null,
-    logoFile: formData.get("logo"),
+    coverImageUrlManual: String(formData.get("coverImageUrl") ?? "").trim() || null,
     websiteUrl: String(formData.get("websiteUrl") ?? "").trim() || null,
     email: String(formData.get("email") ?? "").trim() || null,
     phone: String(formData.get("phone") ?? "").trim() || null,
@@ -185,6 +176,7 @@ function validateUniversityFormFields(
 function universityFieldsToDbPayload(
   fields: UniversityFormFields,
   logoUrl: string | null,
+  coverImageUrl: string | null,
 ) {
   return {
     name: fields.name,
@@ -198,6 +190,7 @@ function universityFieldsToDbPayload(
     description: fields.description,
     ranking: fields.ranking,
     logo_url: logoUrl,
+    cover_image_url: coverImageUrl,
     acceptance_rate: fields.acceptanceRate,
     intl_students: fields.intlStudents,
     website_url: fields.websiteUrl,
@@ -222,34 +215,7 @@ function universityFieldsToDbPayload(
 function revalidateUniversityPaths(universityId: string) {
   revalidatePath("/admin/content");
   revalidatePath(`/admin/content/universities/${universityId}`);
-}
-
-async function uploadUniversityLogo(
-  service: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
-  universityId: string,
-  file: File,
-): Promise<string> {
-  if (!isAllowedImageFile(file)) {
-    throw new Error("Logo must be a PNG, JPEG, WebP, GIF, or SVG image.");
-  }
-
-  if (file.size > MAX_LOGO_BYTES) {
-    throw new Error("Logo image must be 5 MB or smaller.");
-  }
-
-  const safeName = sanitizeFilename(file.name);
-  const path = `${universityId}/${Date.now()}_${safeName}`;
-  const buf = Buffer.from(await file.arrayBuffer());
-  const contentType = resolveContentType(file);
-
-  const { error } = await service.storage.from(UNIVERSITY_LOGOS_BUCKET).upload(path, buf, {
-    contentType,
-    upsert: true,
-  });
-
-  if (error) throw error;
-
-  return publicStorageObjectUrl(UNIVERSITY_LOGOS_BUCKET, path);
+  revalidatePath(`/student/universities/${universityId}`);
 }
 
 export async function exportAdminUniversitiesExcel(): Promise<ExportAdminUniversitiesResult> {
@@ -319,7 +285,11 @@ export async function createAdminUniversity(
   const { data: created, error: insertError } = await service
     .from("universities")
     .insert({
-      ...universityFieldsToDbPayload(fields, fields.logoUrlManual),
+      ...universityFieldsToDbPayload(
+        fields,
+        fields.logoUrlManual,
+        fields.coverImageUrlManual,
+      ),
       updated_at: new Date().toISOString(),
     })
     .select("id")
@@ -331,24 +301,6 @@ export async function createAdminUniversity(
   }
 
   const universityId = created.id;
-
-  if (fields.logoFile instanceof File && fields.logoFile.size > 0) {
-    try {
-      const logoUrl = await uploadUniversityLogo(service, universityId, fields.logoFile);
-      const { error: logoError } = await service
-        .from("universities")
-        .update({ logo_url: logoUrl, updated_at: new Date().toISOString() })
-        .eq("id", universityId);
-
-      if (logoError) {
-        console.error("[admin-universities] create logo update", logoError);
-        return { ok: false, error: "University created but logo upload failed." };
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not upload logo.";
-      return { ok: false, error: message };
-    }
-  }
 
   revalidateUniversityPaths(universityId);
   return { ok: true, universityId };
@@ -392,18 +344,12 @@ export async function updateAdminUniversity(
     return { ok: false, error: "A university with this name already exists." };
   }
 
-  let logoUrl = fields.logoUrlManual;
-  if (fields.logoFile instanceof File && fields.logoFile.size > 0) {
-    try {
-      logoUrl = await uploadUniversityLogo(service, universityId, fields.logoFile);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not upload logo.";
-      return { ok: false, error: message };
-    }
-  }
-
   const payload = {
-    ...universityFieldsToDbPayload(fields, logoUrl),
+    ...universityFieldsToDbPayload(
+      fields,
+      fields.logoUrlManual,
+      fields.coverImageUrlManual,
+    ),
     updated_at: new Date().toISOString(),
   };
 

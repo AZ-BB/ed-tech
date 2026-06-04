@@ -1,4 +1,5 @@
 import { parseSchoolStudentsNeedingFollowUp } from "@/lib/school-student-risk";
+import { fetchStudentAvatarUrlMap } from "@/lib/student-avatar-url-map";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import { countSchoolActiveStudentsMonth } from "./school-active-students-month";
@@ -14,7 +15,7 @@ export type SchoolDashboardAttentionRow = {
   firstName: string;
   lastName: string;
   grade: string;
-  initials: string;
+  avatarUrl: string | null;
   riskClass: "red" | "amber";
   riskLabel: string;
   issue: string;
@@ -41,15 +42,6 @@ export type SchoolDashboardPayload = {
   topDestinations: { label: string; count: number }[];
   topPopularUniversities: { label: string; count: number }[];
 };
-
-function initialsFromStudent(first: string, last: string): string {
-  const a = first.trim()[0];
-  const b = last.trim()[0];
-  const pair = `${a ?? ""}${b ?? ""}`.toUpperCase();
-  if (pair) return pair.slice(0, 2);
-  if (a) return a.toUpperCase();
-  return "?";
-}
 
 async function paginateStudentIds(
   fetchPage: (
@@ -200,13 +192,17 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
       followUpRes.data,
     );
   }
+  const avatarByStudent = await fetchStudentAvatarUrlMap(
+    supabase,
+    followUp.students.map((s) => s.id),
+  );
   const attention: SchoolDashboardAttentionRow[] = followUp.students.map(
     (s) => ({
       id: s.id,
       firstName: s.first_name.trim(),
       lastName: s.last_name.trim(),
       grade: s.grade,
-      initials: initialsFromStudent(s.first_name, s.last_name),
+      avatarUrl: avatarByStudent.get(s.id) ?? null,
       riskClass: s.risk_class,
       riskLabel: s.risk_label,
       issue: s.issue,

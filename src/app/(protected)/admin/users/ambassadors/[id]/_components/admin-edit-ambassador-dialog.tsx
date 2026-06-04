@@ -1,5 +1,6 @@
 "use client";
 
+import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import {
   fetchAmbassadorFormOptions,
   updateAdminAmbassadorProfile,
@@ -91,7 +92,7 @@ export function AdminEditAmbassadorDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, defaults.destinationCountryCode]);
+  }, [open]);
 
   useEffect(() => {
     return () => {
@@ -116,23 +117,20 @@ export function AdminEditAmbassadorDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
-    const formData = new FormData(form);
-    const result = await updateAdminAmbassadorProfile(ambassadorId, formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    router.refresh();
-    window.setTimeout(() => onClose(), 600);
+    await runAdminFormSubmit(
+      {
+        setSubmitting: setIsSubmitting,
+        setError,
+        onBeforeSubmit: () => setSuccess(false),
+      },
+      () => updateAdminAmbassadorProfile(ambassadorId, new FormData(form)),
+      () => {
+        setSuccess(true);
+        router.refresh();
+        window.setTimeout(() => onClose(), 600);
+      },
+    );
   }
 
   const avatarDisplayUrl = avatarPreviewUrl ?? defaults.avatarUrl;

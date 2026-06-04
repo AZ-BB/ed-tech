@@ -5,7 +5,6 @@ import {
   Brain,
   ClipboardList,
   Compass,
-  FilePenLine,
   LayoutDashboard,
   LogOut,
   Package,
@@ -48,8 +47,6 @@ function StudentNavIcon({
       return <Brain {...common} />;
     case "program-discovery":
       return <Compass {...common} />;
-    case "essay-review":
-      return <FilePenLine {...common} />;
     case "university-search":
       return <ScanSearch {...common} />;
     case "scholarships":

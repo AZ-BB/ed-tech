@@ -5,6 +5,7 @@ import {
   fetchAdminUniversityFormCountries,
   type AdminCountryOption,
 } from "@/actions/admin-universities";
+import { uploadAdminUniversityImages } from "@/lib/admin-university-image-upload-client";
 import { getAdminUniversityDetailHref } from "../_lib/admin-university-detail-href";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -34,6 +35,9 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
   const [countries, setCountries] = useState<AdminCountryOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
@@ -62,6 +66,9 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
   useEffect(() => {
     if (!open) return;
     setLogoPreviewUrl(null);
+    setCoverPreviewUrl(null);
+    setLogoFile(null);
+    setCoverFile(null);
     setFormKey((k) => k + 1);
   }, [open]);
 
@@ -70,8 +77,11 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
       if (logoPreviewUrl?.startsWith("blob:")) {
         URL.revokeObjectURL(logoPreviewUrl);
       }
+      if (coverPreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(coverPreviewUrl);
+      }
     };
-  }, [logoPreviewUrl]);
+  }, [logoPreviewUrl, coverPreviewUrl]);
 
   if (!open) return null;
 
@@ -82,11 +92,29 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
     }
 
     if (!file) {
+      setLogoFile(null);
       setLogoPreviewUrl(null);
       return;
     }
 
+    setLogoFile(file);
     setLogoPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function handleCoverChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (coverPreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(coverPreviewUrl);
+    }
+
+    if (!file) {
+      setCoverFile(null);
+      setCoverPreviewUrl(null);
+      return;
+    }
+
+    setCoverFile(file);
+    setCoverPreviewUrl(URL.createObjectURL(file));
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -100,6 +128,20 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
     if (!result.ok) {
       setError(result.error);
       setIsSubmitting(false);
+      return;
+    }
+
+    const uploadResult = await uploadAdminUniversityImages(result.universityId, {
+      logo: logoFile,
+      cover: coverFile,
+    });
+    if (!uploadResult.ok) {
+      setError(
+        `University was created, but image upload failed: ${uploadResult.error}`,
+      );
+      setIsSubmitting(false);
+      router.refresh();
+      router.push(getAdminUniversityDetailHref(result.universityId));
       return;
     }
 
@@ -117,29 +159,35 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={handleClose}
+      onClick={isSubmitting ? undefined : handleClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="admin-add-university-title"
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[12px] border border-[#e0deda] bg-white p-6 shadow-xl"
+        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[12px] border border-[#e0deda] bg-white shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2
-          id="admin-add-university-title"
-          className="text-[18px] font-semibold text-[#1a1a1a]"
-        >
-          Add University
-        </h2>
-        <p className="mt-2 text-[13px] text-[#666]">
-          Create a new catalog entry with profile, admissions, and visibility settings.
-        </p>
+        <div className="shrink-0 px-6 pt-6">
+          <h2
+            id="admin-add-university-title"
+            className="text-[18px] font-semibold text-[#1a1a1a]"
+          >
+            Add University
+          </h2>
+          <p className="mt-2 text-[13px] text-[#666]">
+            Create a new catalog entry with profile, admissions, and visibility settings.
+          </p>
+        </div>
 
         {isLoadingCountries ? (
-          <p className="mt-6 text-[13px] text-[#666]">Loading countries…</p>
+          <p className="px-6 py-6 text-[13px] text-[#666]">Loading countries…</p>
         ) : (
-          <form key={formKey} className="mt-5 space-y-6" onSubmit={handleSubmit}>
+          <form key={formKey} className="flex min-h-0 flex-1 flex-col px-6" onSubmit={handleSubmit}>
+            <fieldset
+              disabled={isSubmitting}
+              className="m-0 min-h-0 min-w-0 flex-1 space-y-6 overflow-y-auto border-0 p-0 pb-4 disabled:pointer-events-none disabled:opacity-60"
+            >
             <div>
               <SectionTitle>Profile</SectionTitle>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -233,7 +281,6 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
                     <div className="min-w-0 flex-1 space-y-3">
                       <input
                         id="add-uni-logo-file"
-                        name="logo"
                         type="file"
                         accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
                         onChange={handleLogoChange}
@@ -257,6 +304,49 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
                           Used only if you do not upload a file.
                         </p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="sm:col-span-2">
+                  <label htmlFor="add-uni-cover-file" className={labelClassName}>
+                    Cover image
+                  </label>
+                  <div className="space-y-3">
+                    {coverPreviewUrl ? (
+                      <img
+                        src={coverPreviewUrl}
+                        alt="Cover preview"
+                        className="h-[100px] w-full max-w-md rounded-[8px] border border-[#e0deda] object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-[100px] w-full max-w-md items-center justify-center rounded-[8px] border border-dashed border-[#e0deda] bg-[#fafaf8] text-[10px] font-medium text-[#a0a0a0]">
+                        No cover image
+                      </div>
+                    )}
+                    <input
+                      id="add-uni-cover-file"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={handleCoverChange}
+                      className={`${inputClassName} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-[6px] file:border-0 file:bg-[#e8f5ee] file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-[#1B4332]`}
+                    />
+                    <p className="text-[11px] text-[#a0a0a0]">
+                      Banner shown on the university page (PNG, JPEG, WebP, or GIF, max 5 MB).
+                    </p>
+                    <div>
+                      <label htmlFor="add-uni-cover-url" className={labelClassName}>
+                        Or paste cover image URL
+                      </label>
+                      <input
+                        id="add-uni-cover-url"
+                        name="coverImageUrl"
+                        type="url"
+                        placeholder="https://…"
+                        className={inputClassName}
+                      />
+                      <p className="mt-1 text-[11px] text-[#a0a0a0]">
+                        Used only if you do not upload a file.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -500,27 +590,31 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
               </div>
             </div>
 
-            {error ? (
-              <p className="text-[13px] text-red-600" role="alert">
-                {error}
-              </p>
-            ) : null}
+            </fieldset>
 
-            <div className="flex flex-wrap justify-end gap-2 border-t border-[#ece9e4] pt-4">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-2 text-[12px] font-semibold text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || countries.length === 0}
-                className="cursor-pointer rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#1B4332] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSubmitting ? "Creating…" : "Add university"}
-              </button>
+            <div className="shrink-0 border-t border-[#ece9e4] bg-white py-4">
+              {error ? (
+                <p className="mb-3 text-[13px] text-red-600" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                  className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-2 text-[12px] font-semibold text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || countries.length === 0}
+                  className="cursor-pointer rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#1B4332] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? "Creating…" : "Add university"}
+                </button>
+              </div>
             </div>
           </form>
         )}

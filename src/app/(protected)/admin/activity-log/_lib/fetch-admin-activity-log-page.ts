@@ -1,6 +1,9 @@
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import { resolveActivityLogActorUserId } from "@/lib/activity-log-user-links";
-import type { StudentActivityLogItem } from "@/lib/student-activity-logs";
+import {
+  formatActivityLogMessageForAdmin,
+  type StudentActivityLogItem,
+} from "@/lib/student-activity-logs";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import type { AdminActivityLogPageFilters } from "./parse-admin-activity-log-search-params";
@@ -81,10 +84,12 @@ function mapActivityLogRows(
       row.student_id,
     );
 
+    const rawMessage = row.message?.trim() || "—";
+
     return {
       id: row.id,
       action: row.action,
-      message: row.message?.trim() || "—",
+      message: formatActivityLogMessageForAdmin(rawMessage, actorName, createdByType),
       entityType: row.entitiy_type?.trim() || "—",
       entityId: row.entity_id?.trim() || "—",
       createdByType,

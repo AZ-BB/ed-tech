@@ -18,6 +18,7 @@ export type UniversityDetailModel = {
     locationLine: string;
     isPublic: boolean;
     logoUrl: string | null;
+    coverImageUrl: string | null;
     description: string | null;
     topMajorNames: string[];
     tuitionDisplay: string;
@@ -174,13 +175,23 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
                 <div className="min-w-0 flex-1">
                     <div className="relative mb-4 overflow-visible rounded-[12px] border border-[#ece9e4] bg-white">
-                        <div
-                            className="relative h-[190px] overflow-hidden rounded-t-[12px]"
-                            style={{
-                                background:
-                                    "linear-gradient(135deg, #1B4332 0%, #2D6A4F 35%, #40916C 70%, #52B788 100%)",
-                            }}
-                        >
+                        <div className="relative h-[190px] overflow-hidden rounded-t-[12px]">
+                            {uni.coverImageUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element -- remote cover images; domains vary
+                                <img
+                                    src={uni.coverImageUrl}
+                                    alt=""
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                />
+                            ) : (
+                                <div
+                                    className="absolute inset-0"
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, #1B4332 0%, #2D6A4F 35%, #40916C 70%, #52B788 100%)",
+                                    }}
+                                />
+                            )}
                             <div
                                 className="pointer-events-none absolute inset-0"
                                 style={{
@@ -188,10 +199,12 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                         "linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.15) 100%)",
                                 }}
                             />
-                            <div
-                                className="pointer-events-none absolute inset-0 opacity-30"
-                                style={{ backgroundImage: bannerPatternSvg }}
-                            />
+                            {!uni.coverImageUrl ? (
+                                <div
+                                    className="pointer-events-none absolute inset-0 opacity-30"
+                                    style={{ backgroundImage: bannerPatternSvg }}
+                                />
+                            ) : null}
                         </div>
 
                         <div className="absolute top-[162px] left-6 z-[5] flex h-16 w-16 items-center justify-center rounded-2xl border-[3px] border-white bg-white shadow-[0_2px_12px_rgba(0,0,0,0.1)]">

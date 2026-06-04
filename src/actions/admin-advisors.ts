@@ -213,7 +213,10 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
       .select("id")
       .in("id", specializationCountryCodes);
 
-    if (specializationError) throw specializationError;
+    if (specializationError) {
+      console.error("[createAdvisor] specializations", specializationError);
+      return { ok: false, error: "Could not validate specialization countries." };
+    }
 
     if ((specializationCountries ?? []).length !== specializationCountryCodes.length) {
       return { ok: false, error: "One or more specialization countries are invalid." };

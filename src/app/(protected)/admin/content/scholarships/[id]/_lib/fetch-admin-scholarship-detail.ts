@@ -50,6 +50,7 @@ export type AdminScholarshipDetailScholarship = {
   other: string | null;
   tooltip: string | null;
   discoverySlug: string | null;
+  applicationUrl: string | null;
 };
 
 export type AdminScholarshipDetailPayload = {
@@ -67,6 +68,14 @@ function documentsToText(doc: Json | null): string {
     return doc.filter((x): x is string => typeof x === "string").join("\n");
   }
   return "";
+}
+
+function applicationUrlFromPayload(payload: Json | null): string | null {
+  if (payload == null || typeof payload !== "object" || Array.isArray(payload)) return null;
+  const url = (payload as Record<string, unknown>).applicationUrl;
+  if (typeof url !== "string") return null;
+  const trimmed = url.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 function fieldsToText(fields: Json | null): string {
@@ -183,6 +192,7 @@ export async function fetchAdminScholarshipDetail(
     other: scholarship.other?.trim() || null,
     tooltip: scholarship.tooltip?.trim() || null,
     discoverySlug: scholarship.discovery_slug?.trim() || null,
+    applicationUrl: applicationUrlFromPayload(scholarship.discovery_payload),
   };
 
   return {

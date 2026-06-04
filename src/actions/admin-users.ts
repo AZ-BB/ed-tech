@@ -72,7 +72,10 @@ async function assertAdminAccess() {
 
 export async function exportAdminUsersCsv(
   tabId: UsersTabId,
-  filters: Pick<AdminUsersPageFilters, "q" | "role" | "schoolId" | "status">,
+  filters: Pick<
+    AdminUsersPageFilters,
+    "q" | "role" | "schoolId" | "status" | "teacher"
+  >,
 ): Promise<ExportAdminUsersResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -93,6 +96,7 @@ export async function exportAdminUsersCsv(
       role: filters.role,
       schoolId: filters.schoolId,
       status: filters.status,
+      teacher: filters.teacher ?? "",
       page: 1,
       limit: 20,
     });

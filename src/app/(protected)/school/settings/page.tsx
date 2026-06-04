@@ -20,7 +20,7 @@ export default async function SchoolSettingsPage() {
   const { data: profile, error: profileError } = await supabase
     .from("school_admin_profiles")
     .select(
-      `first_name, last_name, email, phone, school_id, schools(
+      `first_name, last_name, email, phone, avatar_url, school_id, schools(
         id, name, country_code, city, students_limit, credit_pool,
         yearly_credit_plan, renewal_date, subscription_status,
         default_ambasador_credit_limit, default_advisor_credit_limit
@@ -188,6 +188,7 @@ export default async function SchoolSettingsPage() {
       authEmail={user.email ?? ""}
       profileEmail={profile.email}
       initialPhone={profile.phone?.trim() ?? ""}
+      initialAvatarUrl={profile.avatar_url?.trim() || null}
       initialFullName={initialFullName}
       initialSchoolName={schoolName}
       initialSchoolCity={schoolCity}

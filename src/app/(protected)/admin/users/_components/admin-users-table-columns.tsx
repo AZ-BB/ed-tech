@@ -240,19 +240,36 @@ export function getAdminUsersTableColumns(
   }
 
   if (tabId === "students") {
-    return applyColumnOptions(
-      [
-        defaultColumns[0]!,
-        ...defaultColumns.slice(1),
-        {
-          id: "actions",
-          heading: "Actions",
-          align: "center",
-          render: renderActions,
-        },
-      ],
-      options,
-    );
+    const teacherColumn: AdminUsersTableColumn = {
+      id: "teacher",
+      heading: "Teacher",
+      render: (row) => {
+        const name = row.teacherName?.trim();
+        if (!name) {
+          return (
+            <span className="inline-flex rounded-full bg-[#FCEBEB] px-2.5 py-0.5 text-[10px] font-semibold text-[#E74C3C]">
+              Unassigned
+            </span>
+          );
+        }
+        return <TextCell value={name} />;
+      },
+    };
+
+    const base = [
+      defaultColumns[0]!,
+      ...defaultColumns.slice(1, 3),
+      teacherColumn,
+      ...defaultColumns.slice(3),
+      {
+        id: "actions",
+        heading: "Actions",
+        align: "center" as const,
+        render: renderActions,
+      },
+    ];
+
+    return applyColumnOptions(base, options);
   }
 
   if (tabId === "teachers") {

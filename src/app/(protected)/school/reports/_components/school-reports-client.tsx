@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import type { SchoolReportsPayload } from "../_lib/fetch-school-reports";
 
 const REPORT_SCOPE = "school-reports-print-root";
@@ -322,7 +323,13 @@ export function SchoolReportsClient({ data }: Props) {
                           >
                             <td>
                               <div className="cell-name">
-                                <div className="cell-avatar">{o.initials}</div>
+                                <PersonProfileAvatar
+                                  avatarUrl={o.avatarUrl}
+                                  firstName={o.firstName}
+                                  lastName={o.lastName}
+                                  size="sm"
+                                  className="!h-[26px] !w-[26px] !text-[10.5px]"
+                                />
                                 <div
                                   style={{
                                     fontWeight: 600,
@@ -493,7 +500,13 @@ export function SchoolReportsClient({ data }: Props) {
                         }}
                       >
                         <div className="att-left">
-                          <div className="cell-avatar">{s.initials}</div>
+                          <PersonProfileAvatar
+                            avatarUrl={s.avatarUrl}
+                            firstName={s.firstName}
+                            lastName={s.lastName}
+                            size="sm"
+                            className="!h-[26px] !w-[26px] !text-[10.5px]"
+                          />
                           <div>
                             <div className="att-name">
                               {[s.firstName, s.lastName]

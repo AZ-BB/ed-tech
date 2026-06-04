@@ -1,6 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
 
 import { fetchAdminApplicationsStats } from "../applications/_lib/fetch-admin-applications-stats";
+import {
+  formatActivityLogMessageForAdmin,
+  type StudentActivityLogItem,
+} from "@/lib/student-activity-logs";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import { parseAdminDashboardShortlistTopStats } from "./parse-admin-dashboard-shortlist-stats";
@@ -10,8 +14,15 @@ type Trend = {
   direction: "up" | "down" | "neutral";
 };
 
+export type AdminDashboardKpiKey =
+  | "students"
+  | "schools"
+  | "ambassador_sessions"
+  | "sessions"
+  | "applications";
+
 type DashboardKpiCard = {
-  key: "students" | "schools" | "essays" | "sessions" | "applications";
+  key: AdminDashboardKpiKey;
   label: string;
   value: number;
   accentColor: string;
@@ -64,19 +75,20 @@ function trendFromCounts(current: number, previous: number): Trend {
 }
 
 async function countCreatedRows(
-  table: "student_profiles" | "schools" | "ai_usage" | "advisor_sessions",
+  table:
+    | "student_profiles"
+    | "schools"
+    | "advisor_sessions"
+    | "ambassador_session_requests",
   startIso: string,
   endIso: string,
-  extra?: { column: string; value: string },
 ) {
   const supabase = await createSupabaseSecretClient();
-  let query = supabase
+  const { count, error } = await supabase
     .from(table)
     .select("id", { count: "exact", head: true })
     .gte("created_at", startIso)
     .lt("created_at", endIso);
-  if (extra) query = query.eq(extra.column, extra.value);
-  const { count, error } = await query;
   if (error) return 0;
   return count ?? 0;
 }
@@ -87,6 +99,35 @@ function activityTone(action: string): AdminDashboardActivityItem["tone"] {
   if (normalized.includes("alert") || normalized.includes("warning")) return "orange";
   if (normalized.includes("update") || normalized.includes("edit")) return "blue";
   return "green";
+}
+
+function personNameFromEmbed(
+  embed:
+    | { first_name: string; last_name: string }
+    | { first_name: string; last_name: string }[]
+    | null
+    | undefined,
+): string | null {
+  const person = Array.isArray(embed) ? embed[0] : embed;
+  if (!person) return null;
+  const name = [person.first_name, person.last_name].filter(Boolean).join(" ").trim();
+  return name || null;
+}
+
+function resolveActivityLogActorName(
+  createdByType: StudentActivityLogItem["createdByType"],
+  adminName: string | null,
+  schoolAdminName: string | null,
+  studentName: string | null,
+): string | null {
+  switch (createdByType) {
+    case "admin":
+      return adminName;
+    case "school_admin":
+      return schoolAdminName;
+    case "student":
+      return studentName;
+  }
 }
 
 function tokenMeta(creditPool: number | null, yearlyCreditPlan: number | null) {
@@ -110,15 +151,15 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
   const [
     totalStudentsRes,
     activeSchoolsRes,
-    essaysReviewedRes,
+    ambassadorSessionsRes,
     advisorSessionsRes,
     appsStats,
     studentsCurrentMonth,
     studentsPreviousMonth,
     schoolsCurrentMonth,
     schoolsPreviousMonth,
-    essaysCurrentMonth,
-    essaysPreviousMonth,
+    ambassadorSessionsCurrentMonth,
+    ambassadorSessionsPreviousMonth,
     sessionsCurrentMonth,
     sessionsPreviousMonth,
     activityRes,
@@ -133,29 +174,39 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
       .from("schools")
       .select("id", { count: "exact", head: true })
       .eq("is_active", true),
-    supabase
-      .from("ai_usage")
-      .select("id", { count: "exact", head: true })
-      .eq("type", "essay_review"),
+    supabase.from("ambassador_session_requests").select("id", { count: "exact", head: true }),
     supabase.from("advisor_sessions").select("id", { count: "exact", head: true }),
     fetchAdminApplicationsStats(),
     countCreatedRows("student_profiles", currentMonth.startIso, currentMonth.endIso),
     countCreatedRows("student_profiles", previousMonth.startIso, previousMonth.endIso),
     countCreatedRows("schools", currentMonth.startIso, currentMonth.endIso),
     countCreatedRows("schools", previousMonth.startIso, previousMonth.endIso),
-    countCreatedRows("ai_usage", currentMonth.startIso, currentMonth.endIso, {
-      column: "type",
-      value: "essay_review",
-    }),
-    countCreatedRows("ai_usage", previousMonth.startIso, previousMonth.endIso, {
-      column: "type",
-      value: "essay_review",
-    }),
+    countCreatedRows(
+      "ambassador_session_requests",
+      currentMonth.startIso,
+      currentMonth.endIso,
+    ),
+    countCreatedRows(
+      "ambassador_session_requests",
+      previousMonth.startIso,
+      previousMonth.endIso,
+    ),
     countCreatedRows("advisor_sessions", currentMonth.startIso, currentMonth.endIso),
     countCreatedRows("advisor_sessions", previousMonth.startIso, previousMonth.endIso),
     supabase
       .from("acitivity_logs")
-      .select("id, action, message, created_at")
+      .select(
+        `
+        id,
+        action,
+        message,
+        created_at,
+        created_by_type,
+        admins:admin_id ( first_name, last_name ),
+        school_admin_profiles:school_admin_id ( first_name, last_name ),
+        student_profiles:student_id ( first_name, last_name )
+      `,
+      )
       .order("created_at", { ascending: false })
       .limit(5),
     supabase
@@ -181,7 +232,7 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
 
   const totalStudents = totalStudentsRes.count ?? 0;
   const activeSchools = activeSchoolsRes.count ?? 0;
-  const essaysReviewed = essaysReviewedRes.count ?? 0;
+  const ambassadorSessionsBooked = ambassadorSessionsRes.count ?? 0;
   const advisorSessions = advisorSessionsRes.count ?? 0;
 
   const schoolsTrendCount = schoolsCurrentMonth - schoolsPreviousMonth;
@@ -213,12 +264,12 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
       },
     },
     {
-      key: "essays",
-      label: "Essays Reviewed",
-      value: essaysReviewed,
+      key: "ambassador_sessions",
+      label: "Ambassador Sessions Booked",
+      value: ambassadorSessionsBooked,
       accentColor: "#8E44AD",
       valueColor: "#8E44AD",
-      trend: trendFromCounts(essaysCurrentMonth, essaysPreviousMonth),
+      trend: trendFromCounts(ambassadorSessionsCurrentMonth, ambassadorSessionsPreviousMonth),
     },
     {
       key: "sessions",
@@ -241,14 +292,25 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
     },
   ];
 
-  const recentActivity: AdminDashboardActivityItem[] = (activityRes.data ?? []).map((row) => ({
-    id: String(row.id),
-    text: row.message?.trim() || "Activity logged",
-    timeLabel: row.created_at
-      ? formatDistanceToNow(new Date(row.created_at), { addSuffix: true })
-      : "Unknown time",
-    tone: activityTone(row.action ?? ""),
-  }));
+  const recentActivity: AdminDashboardActivityItem[] = (activityRes.data ?? []).map((row) => {
+    const createdByType = row.created_by_type as StudentActivityLogItem["createdByType"];
+    const actorName = resolveActivityLogActorName(
+      createdByType,
+      personNameFromEmbed(row.admins),
+      personNameFromEmbed(row.school_admin_profiles),
+      personNameFromEmbed(row.student_profiles),
+    );
+    const rawMessage = row.message?.trim() || "Activity logged";
+
+    return {
+      id: String(row.id),
+      text: formatActivityLogMessageForAdmin(rawMessage, actorName, createdByType),
+      timeLabel: row.created_at
+        ? formatDistanceToNow(new Date(row.created_at), { addSuffix: true })
+        : "Unknown time",
+      tone: activityTone(row.action ?? ""),
+    };
+  });
 
   const lowTokenSchools = (schoolsCreditRes.data ?? [])
     .map((row) => ({
