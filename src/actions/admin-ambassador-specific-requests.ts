@@ -15,10 +15,14 @@ import { revalidatePath } from "next/cache";
 
 type AdminActionResult = { ok: true } | { ok: false; error: string };
 
+type AdminAccessResult =
+  | { ok: false; error: string }
+  | { ok: true; adminId: string };
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-async function assertAdminAccess(): Promise<AdminActionResult | { ok: true; adminId: string }> {
+async function assertAdminAccess(): Promise<AdminAccessResult> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
