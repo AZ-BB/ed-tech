@@ -3,7 +3,7 @@
 import { createAdvisorSessionBooking } from "@/actions/advisor-sessions";
 import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
 import { COUNTRIES } from "@/lib/countries";
-import { buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
+import { advisorSessionUtmContent, buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
@@ -43,26 +43,30 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
   const [stage, setStage] = useState("");
   const [specificUnis, setSpecificUnis] = useState("");
   const [helpWith, setHelpWith] = useState("");
+  const [sessionId, setSessionId] = useState<number | null>(null);
 
   const displayName = `${advisor.firstName} ${advisor.lastName}`;
 
   const calendlyPageUrl = useMemo(() => {
+    if (sessionId == null) return "";
     const destinationLabel = destinationAlpha2
       ? (COUNTRIES.find((c) => c.alpha2 === destinationAlpha2)?.name ?? destinationAlpha2)
       : "";
     return buildCalendlySchedulingPageUrl({
       name: fullName.trim(),
       email: email.trim(),
+      utmContent: advisorSessionUtmContent(sessionId),
       ctxParts: [
         `Advisor session with ${displayName}`,
         `Advisor ID: ${advisor.id}`,
+        `Session ID: ${sessionId}`,
         destinationLabel ? `Destination: ${destinationLabel}` : "",
         stage ? `Stage: ${stage}` : "",
         specificUnis.trim() ? `Universities: ${specificUnis.trim().slice(0, 120)}` : "",
         helpWith.trim() ? `Help: ${helpWith.trim().slice(0, 160)}` : "",
       ].filter(Boolean),
     });
-  }, [advisor.id, destinationAlpha2, displayName, email, fullName, helpWith, specificUnis, stage]);
+  }, [advisor.id, destinationAlpha2, displayName, email, fullName, helpWith, sessionId, specificUnis, stage]);
 
   const goConfirm = useCallback(() => {
     setError(null);
@@ -108,6 +112,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
         setError(res.error);
         return;
       }
+      setSessionId(res.sessionId);
       setStep(3);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
@@ -360,13 +365,15 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                   </p>
                   <p className="mt-2 text-xs font-medium text-[var(--green)]">You&apos;re one step closer to your university journey</p>
                 </div>
-                <div className="mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
-                  <CalendlyInlineEmbed
-                    url={calendlyPageUrl}
-                    title={`Book a session with ${displayName} — Calendly`}
-                    className="min-h-[720px] w-full min-w-[280px] rounded-none border-0 bg-white"
-                  />
-                </div>
+                {calendlyPageUrl ? (
+                  <div className="mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+                    <CalendlyInlineEmbed
+                      url={calendlyPageUrl}
+                      title={`Book a session with ${displayName} — Calendly`}
+                      className="min-h-[720px] w-full min-w-[280px] rounded-none border-0 bg-white"
+                    />
+                  </div>
+                ) : null}
                 <div className="mt-8 text-center">
                   <Link
                     href="/student/advisor-sessions"

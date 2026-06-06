@@ -29,3 +29,7 @@ export async function buildRecommendationSubmitUrl(token: string): Promise<strin
   const trimmed = token.trim();
   return `${await getPublicSiteBaseUrl()}/recommendation/${encodeURIComponent(trimmed)}`;
 }
+
+export async function buildStudentDashboardUrl(): Promise<string> {
+  return `${await getPublicSiteBaseUrl()}/student`;
+}

@@ -33,7 +33,7 @@ export async function fetchAdminReportApplicationsProgress(
   let appsQuery = supabase
     .from("applications")
     .select(
-      "id, status, created_at, school_name, student_id, assigned_to, student_profiles(first_name, last_name), admins(first_name, last_name)",
+      "id, status, created_at, school_name, student_id, assigned_to, student_profiles(first_name, last_name), handlers:assigned_to(first_name, last_name)",
     )
     .gte("created_at", bounds.startIso)
     .lt("created_at", bounds.endExclusiveIso)
@@ -107,7 +107,7 @@ export async function fetchAdminReportApplicationsProgress(
     const student = Array.isArray(row.student_profiles)
       ? row.student_profiles[0]
       : row.student_profiles;
-    const handler = Array.isArray(row.admins) ? row.admins[0] : row.admins;
+    const handler = Array.isArray(row.handlers) ? row.handlers[0] : row.handlers;
     const first = student?.first_name?.trim() ?? "";
     const last = student?.last_name?.trim() ?? "";
     const studentName = [first, last].filter(Boolean).join(" ") || "Student";

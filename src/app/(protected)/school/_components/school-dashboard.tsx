@@ -16,8 +16,21 @@ type Props = {
 const btnGhostClassName =
   "inline-flex cursor-pointer items-center gap-[5px] rounded-[6px] border-[1.5px] border-[#e0deda] bg-white px-[10px] py-[5px] text-[11.5px] font-semibold leading-none text-[#4a4a4a] transition-all duration-[150ms] hover:border-[#40916C] hover:bg-[#f0f7f2] hover:text-[#1B4332]";
 
+function formatOfferDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export function SchoolDashboard({ data }: Props) {
-  const { attention, topDestinations, topPopularUniversities } = data;
+  const { attention, offerHighlights, topDestinations, topPopularUniversities } =
+    data;
 
   const destMax = Math.max(1, ...topDestinations.map((d) => d.count));
   const popularMax = Math.max(
@@ -165,24 +178,90 @@ export function SchoolDashboard({ data }: Props) {
               View all
             </Link>
           </div>
-          <div className="p-0">
-            <div className="px-5 py-10 text-center text-[13px] text-[#6a6a6a]">
-              <div className="mx-auto mb-2.5 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f2] text-[#2D6A4F]">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden
-                >
-                  <path d="M9 12l2 2 4-4" />
-                  <circle cx="12" cy="12" r="10" />
-                </svg>
+          <div className="px-5 py-[18px]">
+            {offerHighlights.length === 0 ? (
+              <div className="px-5 py-10 text-center text-[13px] text-[#6a6a6a]">
+                <div className="mx-auto mb-2.5 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f2] text-[#2D6A4F]">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden
+                  >
+                    <path d="M9 12l2 2 4-4" />
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                </div>
+                No offers yet. They&apos;ll appear here as your students hear back.
               </div>
-              No offers yet. They&apos;ll appear here as your students hear back.
-            </div>
+            ) : (
+              <div>
+                {offerHighlights.map((row) => {
+                  const studentName =
+                    `${row.firstName} ${row.lastName}`.trim() || "Student";
+                  const detailLine = [row.country, row.program]
+                    .filter(Boolean)
+                    .join(" · ");
+                  return (
+                    <div
+                      key={row.shortlistId}
+                      className="flex items-center justify-between gap-4 border-b border-[#ece9e4] py-[14px] first:pt-[6px] last:border-b-0"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <PersonProfileAvatar
+                          avatarUrl={row.avatarUrl}
+                          firstName={row.firstName}
+                          lastName={row.lastName}
+                          size="sm"
+                          className="bg-[#E8F5EE] text-[#1B4332]"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-[13.5px] font-semibold tracking-[-0.005em] text-[#1a1a1a]">
+                            {studentName}
+                            {row.grade ? (
+                              <span className="text-[11.5px] font-normal text-[#a0a0a0]">
+                                {" "}
+                                · {row.grade}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-[3px] text-[12px] font-medium leading-[1.45] text-[#1B4332]">
+                            Offer received from {row.universityName}
+                          </p>
+                          {detailLine ? (
+                            <p className="mt-[2px] text-[11.5px] leading-[1.45] text-[#6a6a6a]">
+                              {detailLine}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <span className="inline-flex items-center gap-[5px] rounded-full bg-[rgba(45,106,79,0.12)] px-[10px] py-[3px] text-[11.5px] font-semibold leading-[1.4] text-[#1B4332]">
+                          <span
+                            className="h-[6px] w-[6px] rounded-full bg-[#52B788]"
+                            aria-hidden
+                          />
+                          Offer received
+                        </span>
+                        <span className="text-[11px] text-[#a0a0a0]">
+                          {formatOfferDate(row.updatedAt)}
+                        </span>
+                        <Link
+                          href={`/school/students/${row.studentId}`}
+                          className="cursor-pointer whitespace-nowrap rounded-[6px] px-[10px] py-[6px] text-[12px] font-semibold tracking-[0.005em] text-[#1B4332] transition-colors duration-[120ms] hover:bg-[#f0f7f2]"
+                          style={{ fontFamily: fontSans }}
+                        >
+                          Open profile →
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

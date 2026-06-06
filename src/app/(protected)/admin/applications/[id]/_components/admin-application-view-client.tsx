@@ -231,7 +231,7 @@ export function AdminApplicationViewClient({
       const unassign = assignSelection === ADMIN_APPLICATIONS_UNASSIGNED_FILTER;
       const selected = handlerOptions.find((option) => option.id === assignSelection);
       setHandlerId(unassign ? "" : assignSelection);
-      setHandlerName(unassign ? "Unassigned" : (selected?.label ?? "Admin"));
+      setHandlerName(unassign ? "Unassigned" : (selected?.label ?? "Handler"));
       setAssignOpen(false);
       router.refresh();
     });
@@ -661,7 +661,7 @@ export function AdminApplicationViewClient({
               Assign handler
             </h3>
             <p className="mt-1 text-[12px] text-[var(--text-light)]">
-              Choose the admin responsible for this application case.
+              Choose the handler responsible for this application case.
             </p>
 
             <label

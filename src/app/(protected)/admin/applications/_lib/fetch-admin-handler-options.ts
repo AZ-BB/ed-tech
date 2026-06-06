@@ -7,20 +7,36 @@ export type AdminHandlerOption = {
 
 export const ADMIN_APPLICATIONS_UNASSIGNED_FILTER = "unassigned" as const;
 
-function formatAdminLabel(firstName: string, lastName: string, email: string): string {
+type FetchAdminHandlerOptionsParams = {
+  /** Keep the current assignment visible in the assign modal when marked inactive. */
+  includeHandlerId?: string | null;
+};
+
+function formatHandlerLabel(firstName: string, lastName: string, email: string): string {
   const name = [firstName, lastName].filter(Boolean).join(" ").trim();
   if (name) return name;
-  return email.trim() || "Admin";
+  return email.trim() || "Handler";
 }
 
-export async function fetchAdminHandlerOptions(): Promise<AdminHandlerOption[]> {
+export async function fetchAdminHandlerOptions(
+  params?: FetchAdminHandlerOptionsParams,
+): Promise<AdminHandlerOption[]> {
   const supabase = await createSupabaseSecretClient();
-  const { data, error } = await supabase
-    .from("admins")
+  const includeHandlerId = params?.includeHandlerId?.trim() ?? "";
+
+  let query = supabase
+    .from("handlers")
     .select("id, first_name, last_name, email")
-    .eq("is_active", true)
     .order("last_name", { ascending: true })
     .order("first_name", { ascending: true });
+
+  if (includeHandlerId) {
+    query = query.or(`is_active.eq.true,id.eq.${includeHandlerId}`);
+  } else {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("[fetchAdminHandlerOptions]", error);
@@ -29,7 +45,7 @@ export async function fetchAdminHandlerOptions(): Promise<AdminHandlerOption[]> 
 
   return (data ?? []).map((row) => ({
     id: row.id,
-    label: formatAdminLabel(
+    label: formatHandlerLabel(
       row.first_name?.trim() ?? "",
       row.last_name?.trim() ?? "",
       row.email?.trim() ?? "",

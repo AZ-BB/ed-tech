@@ -103,7 +103,7 @@ function rollupShortlist(
       map.set(r.student_id, acc);
     }
     const c = r.country?.trim();
-    if (c && acc.countries.length < 3) {
+    if (c && acc.countries.length < 2) {
       const key = c.toLowerCase();
       if (!acc.countrySeen.has(key)) {
         acc.countrySeen.add(key);

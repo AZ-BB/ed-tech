@@ -468,7 +468,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
       {step === "landing" ? (
         <>
-          <section className="as-hero relative overflow-hidden bg-[var(--green-pale)] px-10 py-20 max-[768px]:px-5 max-[768px]:py-[60px]">
+          <section className="as-hero relative overflow-x-hidden bg-[var(--green-pale)] px-10 pb-20 pt-20 max-[768px]:px-5 max-[768px]:pb-[60px]">
             <div className="as-hero-inner">
               <div className="max-[768px]:text-center">
                 <div className="mb-6 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[rgba(45,106,79,0.12)] bg-white px-[18px] py-1.5 text-xs font-semibold text-[var(--green)]">

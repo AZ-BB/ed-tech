@@ -97,7 +97,7 @@ export type CreateAdvisorSessionInput = {
 
 export async function createAdvisorSessionBooking(
   input: CreateAdvisorSessionInput,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; sessionId: number } | { ok: false; error: string }> {
   const featureEnabled = await isPlatformFeatureEnabledByKey("advisor_sessions");
   if (!featureEnabled) {
     return { ok: false, error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE };
@@ -251,5 +251,5 @@ export async function createAdvisorSessionBooking(
     STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_advisor_sessions,
   ).catch(() => {});
 
-  return { ok: true };
+  return { ok: true, sessionId };
 }

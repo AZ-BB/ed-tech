@@ -284,7 +284,7 @@ export async function assignAdminApplicationHandler(
     unassign
       ? Promise.resolve({ data: null, error: null })
       : secret
-          .from("admins")
+          .from("handlers")
           .select("id, first_name, last_name, is_active")
           .eq("id", handlerId)
           .maybeSingle(),
@@ -300,7 +300,7 @@ export async function assignAdminApplicationHandler(
       return { ok: false, error: "Handler not found." };
     }
     if (handler.is_active === false) {
-      return { ok: false, error: "That admin is inactive." };
+      return { ok: false, error: "That handler is inactive." };
     }
   }
 
@@ -325,7 +325,7 @@ export async function assignAdminApplicationHandler(
   }
 
   const handlerName = handler
-    ? [handler.first_name, handler.last_name].filter(Boolean).join(" ").trim() || "Admin"
+    ? [handler.first_name, handler.last_name].filter(Boolean).join(" ").trim() || "Handler"
     : null;
 
   const message = unassign

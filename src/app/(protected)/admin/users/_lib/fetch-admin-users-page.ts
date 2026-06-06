@@ -451,9 +451,11 @@ async function fetchAdminRows(
   });
 }
 
+type AdminUsersListTabId = Exclude<UsersTabId, "all" | "handlers">;
+
 async function fetchPaginatedSingleTab(
   supabase: AdminSupabase,
-  tabId: Exclude<UsersTabId, "all">,
+  tabId: AdminUsersListTabId,
   filters: AdminUsersPageFilters,
 ): Promise<{ rows: AdminUserTableRow[]; totalRows: number }> {
   const page = Math.max(1, filters.page);
@@ -678,6 +680,10 @@ export async function fetchAdminUsersPage(
 
   if (tabId === "all") {
     return fetchAllTab(supabase, effectiveFilters);
+  }
+
+  if (tabId === "handlers") {
+    return { rows: [], totalRows: 0 };
   }
 
   return fetchPaginatedSingleTab(supabase, tabId, effectiveFilters);

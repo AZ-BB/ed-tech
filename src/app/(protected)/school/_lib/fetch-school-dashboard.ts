@@ -9,6 +9,20 @@ import { parseSchoolDashboardShortlistTopStats } from "./parse-shortlist-top-sta
 const PAGE_SIZE = 1000;
 const DASHBOARD_SHORTLIST_TOP_N = 6;
 const DASHBOARD_FOLLOW_UP_LIMIT = 5;
+const DASHBOARD_OFFER_HIGHLIGHTS_LIMIT = 8;
+
+export type SchoolDashboardOfferHighlight = {
+  shortlistId: string;
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  grade: string;
+  avatarUrl: string | null;
+  universityName: string;
+  country: string | null;
+  program: string | null;
+  updatedAt: string;
+};
 
 export type SchoolDashboardAttentionRow = {
   id: string;
@@ -39,9 +53,78 @@ export type SchoolDashboardPayload = {
   universitiesShortlistedCount: number;
   shortlistedUniversities: SchoolDashboardShortlistedUniversity[];
   attention: SchoolDashboardAttentionRow[];
+  offerHighlights: SchoolDashboardOfferHighlight[];
   topDestinations: { label: string; count: number }[];
   topPopularUniversities: { label: string; count: number }[];
 };
+
+type OfferHighlightQueryRow = {
+  id: string;
+  student_id: string;
+  university_name: string;
+  country: string | null;
+  major_program: string | null;
+  updated_at: string;
+  student_profiles: {
+    first_name: string | null;
+    last_name: string | null;
+    grade: string | null;
+    avatar_url: string | null;
+    school_id: string;
+  };
+};
+
+async function fetchSchoolOfferHighlights(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  schoolId: string,
+): Promise<SchoolDashboardOfferHighlight[]> {
+  const { data, error } = await supabase
+    .from("student_shortlist_universities")
+    .select(
+      `
+      id,
+      student_id,
+      university_name,
+      country,
+      major_program,
+      updated_at,
+      student_profiles!inner (
+        first_name,
+        last_name,
+        grade,
+        avatar_url,
+        school_id
+      )
+    `,
+    )
+    .eq("student_profiles.school_id", schoolId)
+    .eq("decision", "offer_received")
+    .order("updated_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(DASHBOARD_OFFER_HIGHLIGHTS_LIMIT);
+
+  if (error) {
+    console.error("[fetchSchoolOfferHighlights]", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((raw) => {
+    const row = raw as unknown as OfferHighlightQueryRow;
+    const sp = row.student_profiles;
+    return {
+      shortlistId: row.id,
+      studentId: row.student_id,
+      firstName: sp?.first_name?.trim() ?? "",
+      lastName: sp?.last_name?.trim() ?? "",
+      grade: sp?.grade?.trim() ?? "",
+      avatarUrl: sp?.avatar_url?.trim() || null,
+      universityName: row.university_name?.trim() || "—",
+      country: row.country?.trim() || null,
+      program: row.major_program?.trim() || null,
+      updatedAt: row.updated_at,
+    };
+  });
+}
 
 async function paginateStudentIds(
   fetchPage: (
@@ -86,6 +169,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     universitiesShortlistedCount: 0,
     shortlistedUniversities: [],
     attention: [],
+    offerHighlights: [],
     topDestinations: [],
     topPopularUniversities: [],
   };
@@ -114,6 +198,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     shortlistTopStatsRes,
     profilesRes,
     followUpRes,
+    offerHighlights,
   ] = await Promise.all([
     supabase
       .from("student_profiles")
@@ -143,6 +228,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
       p_limit: DASHBOARD_FOLLOW_UP_LIMIT,
       p_school_id: schoolId,
     }),
+    fetchSchoolOfferHighlights(supabase, schoolId),
   ]);
 
   if (totalStudentsRes.error) {
@@ -223,6 +309,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
       studentsLimit,
       advisorSessionsCount,
       attention,
+      offerHighlights,
       topDestinations: shortlistTopStats.topDestinations,
       topPopularUniversities: [],
     };
@@ -282,6 +369,7 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     universitiesShortlistedCount: shortlistedUniversities.length,
     shortlistedUniversities,
     attention,
+    offerHighlights,
     topDestinations: shortlistTopStats.topDestinations,
     topPopularUniversities,
   };
