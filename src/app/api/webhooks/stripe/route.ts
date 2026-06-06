@@ -1,5 +1,5 @@
+import { confirmApplicationPaymentFromSession } from "@/lib/stripe/confirm-application-payment-from-session";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/stripe/config";
-import { markApplicationPaymentPaid } from "@/lib/stripe/mark-payment-paid";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
@@ -8,33 +8,24 @@ export const dynamic = "force-dynamic";
 async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<void> {
-  const paymentIdRaw = session.metadata?.payment_id?.trim();
-  if (!paymentIdRaw) {
-    console.warn("[stripe webhook] checkout.session.completed missing payment_id metadata");
+  if (session.payment_status !== "paid") {
+    console.warn(
+      "[stripe webhook] checkout.session.completed with non-paid status",
+      session.id,
+      session.payment_status,
+    );
     return;
   }
 
-  const paymentId = Number.parseInt(paymentIdRaw, 10);
-  if (!Number.isFinite(paymentId) || paymentId < 1) {
-    console.warn("[stripe webhook] invalid payment_id metadata", paymentIdRaw);
+  const sessionId = session.id?.trim();
+  if (!sessionId) {
+    console.warn("[stripe webhook] checkout.session.completed missing session id");
     return;
   }
 
-  const applicationIdRaw = session.metadata?.application_id?.trim();
-  const applicationId = applicationIdRaw
-    ? Number.parseInt(applicationIdRaw, 10)
-    : NaN;
-  const applicationRef =
-    Number.isFinite(applicationId) && applicationId > 0
-      ? `application #${applicationId}`
-      : "application support";
-
-  const result = await markApplicationPaymentPaid(paymentId, {
-    message: `Stripe payment completed for ${applicationRef}.`,
-  });
-
+  const result = await confirmApplicationPaymentFromSession(sessionId);
   if (!result.ok) {
-    console.error("[stripe webhook] mark paid failed", result.error);
+    console.error("[stripe webhook] confirm session failed", result.error);
     throw new Error(result.error);
   }
 }

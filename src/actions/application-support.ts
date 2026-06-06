@@ -4,7 +4,6 @@ import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
-import { ONBOARDING_DEPOSIT_AED } from "@/lib/application-support-payment";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
   recordStudentPlatformCompletionOnce,
@@ -280,16 +279,6 @@ export async function submitApplicationSupport(
       ok: false,
       error: `Your application was saved (reference #${applicationId}), but uploading one or more documents failed. Please contact support with this reference number.`,
     };
-  }
-
-  const { error: payErr } = await secret.from("payments").insert({
-    student_id: studentId,
-    application_id: applicationId,
-    amount: ONBOARDING_DEPOSIT_AED,
-    status: "pending",
-  });
-  if (payErr) {
-    console.error(payErr);
   }
 
   const { error: logErr } = await secret.from("acitivity_logs").insert({

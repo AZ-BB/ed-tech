@@ -165,46 +165,63 @@ export async function sendApplicationPaymentRequest(
     };
   }
 
-  const { data: payment, error: payErr } = await secret
+  const { data: existingPayments, error: payErr } = await secret
     .from("payments")
     .select("id, status")
     .eq("application_id", applicationId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
-  if (payErr || !payment) {
+  if (payErr) {
     console.error("[sendApplicationPaymentRequest] payment", payErr);
-    return { ok: false, error: "No payment record found for this application." };
+    return { ok: false, error: "Could not load payment records." };
   }
 
-  if (payment.status === "paid") {
+  const paidPayment = (existingPayments ?? []).find(
+    (row) => row.status === "paid",
+  );
+  if (paidPayment) {
     return { ok: false, error: "This application has already been paid." };
   }
 
-  if (payment.status !== "pending") {
-    return {
-      ok: false,
-      error: "Payment cannot be requested for the current payment status.",
-    };
-  }
+  const reusablePayment = (existingPayments ?? []).find(
+    (row) => row.status === "pending" || row.status === "failed",
+  );
 
   const token = randomUUID();
   const now = new Date().toISOString();
 
-  const { error: updateErr } = await secret
-    .from("payments")
-    .update({
+  if (reusablePayment) {
+    const { error: updateErr } = await secret
+      .from("payments")
+      .update({
+        status: "pending",
+        payment_request_token: token,
+        payment_request_sent_at: now,
+        amount: ONBOARDING_DEPOSIT_AED,
+        paid_at: null,
+        stripe_checkout_session_id: null,
+        updated_at: now,
+      })
+      .eq("id", reusablePayment.id);
+
+    if (updateErr) {
+      console.error("[sendApplicationPaymentRequest] token update", updateErr);
+      return { ok: false, error: "Could not prepare payment request." };
+    }
+  } else {
+    const { error: insertErr } = await secret.from("payments").insert({
+      student_id: application.student_id,
+      application_id: applicationId,
+      amount: ONBOARDING_DEPOSIT_AED,
+      status: "pending",
       payment_request_token: token,
       payment_request_sent_at: now,
-      amount: ONBOARDING_DEPOSIT_AED,
-      updated_at: now,
-    })
-    .eq("id", payment.id);
+    });
 
-  if (updateErr) {
-    console.error("[sendApplicationPaymentRequest] token update", updateErr);
-    return { ok: false, error: "Could not prepare payment request." };
+    if (insertErr) {
+      console.error("[sendApplicationPaymentRequest] insert", insertErr);
+      return { ok: false, error: "Could not create payment request." };
+    }
   }
 
   const payUrl = await buildApplicationPaymentUrl(token);

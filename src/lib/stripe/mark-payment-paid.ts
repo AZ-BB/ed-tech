@@ -32,7 +32,7 @@ export async function markApplicationPaymentPaid(
     return { ok: false, error: "Payment is not pending." };
   }
 
-  const { error: updateErr } = await secret
+  const { data: updated, error: updateErr } = await secret
     .from("payments")
     .update({
       status: "paid",
@@ -40,11 +40,27 @@ export async function markApplicationPaymentPaid(
       updated_at: now,
     })
     .eq("id", paymentId)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
 
   if (updateErr) {
     console.error("[markApplicationPaymentPaid] update", updateErr);
     return { ok: false, error: "Could not update payment status." };
+  }
+
+  if (!updated) {
+    const { data: current } = await secret
+      .from("payments")
+      .select("status")
+      .eq("id", paymentId)
+      .maybeSingle();
+
+    if (current?.status === "paid") {
+      return { ok: true };
+    }
+
+    return { ok: false, error: "Payment is not pending." };
   }
 
   const studentId = options?.studentId ?? payment.student_id;

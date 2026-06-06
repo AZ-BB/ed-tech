@@ -1,5 +1,6 @@
 import { MarketingSubpageNav } from "@/components/landing/marketing-subpage-chrome";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import { confirmApplicationPaymentFromSession } from "@/lib/stripe/confirm-application-payment-from-session";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -8,17 +9,30 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+function readParam(
+  sp: Record<string, string | string[] | undefined>,
+  key: string,
+): string | undefined {
+  const raw = sp[key];
+  if (typeof raw === "string") return raw;
+  if (Array.isArray(raw)) return raw[0];
+  return undefined;
+}
+
 export default async function ApplicationSupportPaymentSuccessPage({
   searchParams,
 }: PageProps) {
   const sp = await searchParams;
-  const raw =
-    typeof sp.application_id === "string"
-      ? sp.application_id
-      : Array.isArray(sp.application_id)
-        ? sp.application_id[0]
-        : undefined;
-  const applicationId = raw ? Number.parseInt(raw, 10) : NaN;
+  const applicationId = Number.parseInt(readParam(sp, "application_id") ?? "", 10);
+  const sessionId = readParam(sp, "session_id")?.trim() ?? "";
+
+  if (sessionId) {
+    const confirmed = await confirmApplicationPaymentFromSession(sessionId);
+    if (!confirmed.ok) {
+      console.error("[payment success] confirm session", confirmed.error);
+    }
+  }
+
   const refLabel =
     Number.isFinite(applicationId) && applicationId > 0
       ? `Application #${applicationId}`
