@@ -1,5 +1,6 @@
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { tuitionCardLabel } from "@/lib/university-cost-display";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import { fetchUniversityShortlistCounts } from "./fetch-university-shortlist-counts";
@@ -19,18 +20,7 @@ export type AdminUniversityTableRow = {
 const DB_PAGE_SIZE = 1000;
 
 const LIST_SELECT =
-  "id, name, city, country_code, is_public, is_active, tuition_per_year, countries(name)";
-
-const tuitionFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
-function formatTuition(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return "—";
-  return `${tuitionFormatter.format(value)}/yr`;
-}
+  "id, name, city, country_code, is_public, is_active, tuition_per_year, tuition_display, countries(name)";
 
 function formatLocation(city: string, countryCode: string): string {
   const country = getCountryNameByAlpha2(countryCode);
@@ -49,6 +39,7 @@ type UniversityQueryRow = {
   is_public: boolean;
   is_active: boolean;
   tuition_per_year: number | null;
+  tuition_display: string | null;
   countries: { name: string } | null;
 };
 
@@ -176,7 +167,7 @@ function toTableRow(
     locationLabel: formatLocation(row.city, row.country_code),
     countryLabel,
     typeLabel: row.is_public ? "Public" : "Private",
-    tuitionLabel: formatTuition(row.tuition_per_year),
+    tuitionLabel: tuitionCardLabel(row.tuition_display, row.tuition_per_year),
     isActive: row.is_active,
     shortlistedCount: shortlistCounts.get(row.id) ?? 0,
   };

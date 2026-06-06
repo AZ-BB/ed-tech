@@ -1,5 +1,6 @@
 "use client";
 
+import { formatImportError } from "@/lib/admin-import-error";
 import type {
   ImportFieldChange,
   ImportRowAddition,
@@ -102,11 +103,14 @@ export function ContentImportResultPanel({ summary, entityLabel }: ContentImport
         <div className="mt-3">
           <p className="text-[12px] font-semibold uppercase tracking-wide text-red-700">Errors</p>
           <ul className="mt-1.5 max-h-28 list-disc space-y-0.5 overflow-y-auto pl-5 text-[12px] text-red-700">
-            {summary.errors.map((item) => (
-              <li key={`${item.rowNumber}-${item.message}`}>
-                Row {item.rowNumber}: {item.message}
-              </li>
-            ))}
+            {summary.errors.map((item) => {
+              const message = formatImportError(item.message);
+              return (
+                <li key={`${item.rowNumber}-${message}`} className="break-words">
+                  Row {item.rowNumber}: {message}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}

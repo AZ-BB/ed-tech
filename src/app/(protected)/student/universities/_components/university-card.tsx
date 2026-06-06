@@ -1,6 +1,7 @@
 "use client";
 
 import { addUniversityToFavourites, addUniversityToShortlist, removeUniversityFromFavourites, removeUniversityFromShortlist } from "@/actions/universities";
+import { tuitionCardLabel } from "@/lib/university-cost-display";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -18,6 +19,7 @@ export type UniversityCardUniversity = {
     description: string | null;
     logo_url: string | null;
     tuition_per_year: number | null;
+    tuition_display: string | null;
     deadline_date: string | null;
     is_priority: boolean;
     ielts_min_score: number | null;
@@ -28,17 +30,6 @@ export type UniversityCardUniversity = {
     /** True when the student has a `student_activities` row with type `save` (favourite) for this university. */
     is_favourite: boolean;
 };
-
-const tuitionFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-});
-
-function formatTuition(value: number | null): string {
-    if (value == null || Number.isNaN(value)) return "—";
-    return `${tuitionFormatter.format(value)}/yr`;
-}
 
 function formatDeadline(iso: string | null, isPriority: boolean): string {
     if (!iso) return "—";
@@ -345,7 +336,7 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 <Stat
                     label="Tuition"
                     icon={<IconTuition />}
-                    value={formatTuition(u.tuition_per_year)}
+                    value={tuitionCardLabel(u.tuition_display, u.tuition_per_year)}
                 />
                 <Stat
                     label="Deadline"

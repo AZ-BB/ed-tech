@@ -48,9 +48,7 @@ export type AdminUniversityExportRow = {
   prog4_items: string;
 };
 
-const tuitionFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const amountFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
@@ -91,7 +89,9 @@ type UniversityExportQueryRow = {
   application_fee: number | null;
   intakes: string | null;
   tuition_per_year: number | null;
+  tuition_display: string | null;
   estimated_living_cost_per_year: number | null;
+  living_display: string | null;
   difficulty: string | null;
   countries: { name: string } | null;
   university_majors: UnivMajorRow[] | null;
@@ -133,12 +133,12 @@ function documentsToArray(doc: Json | null): string[] {
 
 function formatTuitionDisplay(amount: number | null): string {
   if (amount == null || !Number.isFinite(amount)) return "";
-  return `${tuitionFormatter.format(amount)} per year`;
+  return `${amountFormatter.format(amount)} per year`;
 }
 
 function formatLivingDisplay(amount: number | null): string {
   if (amount == null || !Number.isFinite(amount)) return "";
-  return `${tuitionFormatter.format(amount)} per year`;
+  return `${amountFormatter.format(amount)} per year`;
 }
 
 function str(value: string | number | null | undefined): string {
@@ -189,9 +189,11 @@ function mapUniversityToExportRow(row: UniversityExportQueryRow): AdminUniversit
     application_fee: str(row.application_fee),
     intakes: row.intakes?.trim() ?? "",
     tuition_amount: str(row.tuition_per_year),
-    tuition_display: formatTuitionDisplay(row.tuition_per_year),
+    tuition_display:
+      row.tuition_display?.trim() || formatTuitionDisplay(row.tuition_per_year),
     living_cost_annual: str(row.estimated_living_cost_per_year),
-    living_display: formatLivingDisplay(row.estimated_living_cost_per_year),
+    living_display:
+      row.living_display?.trim() || formatLivingDisplay(row.estimated_living_cost_per_year),
     scholarship_note: row.is_scholarship_available ? "Scholarships available" : "",
     difficulty: row.difficulty?.trim() ?? "",
     is_active: row.is_active ? "true" : "false",
@@ -240,7 +242,9 @@ export async function fetchAdminUniversitiesExport(): Promise<AdminUniversityExp
       application_fee,
       intakes,
       tuition_per_year,
+      tuition_display,
       estimated_living_cost_per_year,
+      living_display,
       difficulty,
       countries ( name ),
       university_majors (

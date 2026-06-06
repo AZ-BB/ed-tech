@@ -416,7 +416,7 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="add-uni-tuition" className={labelClassName}>
-                    Tuition per year (USD)
+                    Tuition per year
                   </label>
                   <input
                     id="add-uni-tuition"
@@ -429,7 +429,7 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
                 </div>
                 <div>
                   <label htmlFor="add-uni-living" className={labelClassName}>
-                    Est. living cost / year (USD)
+                    Est. living cost / year
                   </label>
                   <input
                     id="add-uni-living"
@@ -437,6 +437,30 @@ export function AdminAddUniversityDialog({ open, onClose }: AdminAddUniversityDi
                     type="number"
                     min={0}
                     step="any"
+                    className={inputClassName}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="add-uni-tuition-display" className={labelClassName}>
+                    Tuition display (student-facing)
+                  </label>
+                  <input
+                    id="add-uni-tuition-display"
+                    name="tuitionDisplay"
+                    type="text"
+                    placeholder="e.g. 52,000 per year"
+                    className={inputClassName}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="add-uni-living-display" className={labelClassName}>
+                    Living cost display (student-facing)
+                  </label>
+                  <input
+                    id="add-uni-living-display"
+                    name="livingDisplay"
+                    type="text"
+                    placeholder="e.g. 18,000 per year"
                     className={inputClassName}
                   />
                 </div>

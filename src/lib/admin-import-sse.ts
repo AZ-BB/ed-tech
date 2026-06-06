@@ -1,3 +1,4 @@
+import { formatImportError } from "@/lib/admin-import-error";
 import type { ImportProgressPayload } from "@/lib/admin-import-progress";
 
 export type ImportSseEventName = "progress" | "complete" | "error";
@@ -27,7 +28,7 @@ export function createImportSseStream<TSummary>(
         const summary = await run(send);
         send("complete", summary);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Import failed.";
+        const message = formatImportError(error);
         send("error", { message });
       } finally {
         controller.close();

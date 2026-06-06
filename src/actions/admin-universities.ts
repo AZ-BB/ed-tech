@@ -118,7 +118,9 @@ type UniversityFormFields = {
   toeflMinScore: number | null;
   applicationFee: number | null;
   tuitionPerYear: number | null;
+  tuitionDisplay: string | null;
   estimatedLivingCostPerYear: number | null;
+  livingDisplay: string | null;
   difficulty: UniversityDifficulty | null;
   documents: Json | null;
 };
@@ -154,9 +156,11 @@ function parseUniversityFormFields(formData: FormData): UniversityFormFields {
     toeflMinScore: parseOptionalInt(formData.get("toeflMinScore")),
     applicationFee: parseOptionalFloat(formData.get("applicationFee")),
     tuitionPerYear: parseOptionalFloat(formData.get("tuitionPerYear")),
+    tuitionDisplay: String(formData.get("tuitionDisplay") ?? "").trim() || null,
     estimatedLivingCostPerYear: parseOptionalFloat(
       formData.get("estimatedLivingCostPerYear"),
     ),
+    livingDisplay: String(formData.get("livingDisplay") ?? "").trim() || null,
     difficulty: parseDifficulty(formData.get("difficulty")),
     documents: parseDocuments(formData.get("documents")),
   };
@@ -207,7 +211,9 @@ function universityFieldsToDbPayload(
     application_fee: fields.applicationFee,
     intakes: fields.intakes,
     tuition_per_year: fields.tuitionPerYear,
+    tuition_display: fields.tuitionDisplay,
     estimated_living_cost_per_year: fields.estimatedLivingCostPerYear,
+    living_display: fields.livingDisplay,
     difficulty: fields.difficulty,
   };
 }

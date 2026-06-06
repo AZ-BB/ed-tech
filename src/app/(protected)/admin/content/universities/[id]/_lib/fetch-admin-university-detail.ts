@@ -1,5 +1,6 @@
 import type { Json } from "@/database.types";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { livingCostLabel, tuitionCardLabel } from "@/lib/university-cost-display";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type AdminUniversityDetailUniversity = {
@@ -35,7 +36,9 @@ export type AdminUniversityDetailUniversity = {
   applicationFee: number | null;
   intakes: string | null;
   tuitionPerYear: number | null;
+  tuitionDisplay: string | null;
   estimatedLivingCostPerYear: number | null;
+  livingDisplay: string | null;
   difficulty: string | null;
   typeLabel: string;
   tuitionLabel: string;
@@ -50,17 +53,6 @@ export type AdminUniversityDetailPayload = {
     favorites: number;
   };
 };
-
-const tuitionFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
-function formatTuition(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return "—";
-  return `${tuitionFormatter.format(value)}/yr`;
-}
 
 function formatLocation(
   city: string,
@@ -176,11 +168,16 @@ export async function fetchAdminUniversityDetail(
     applicationFee: university.application_fee,
     intakes: university.intakes?.trim() || null,
     tuitionPerYear: university.tuition_per_year,
+    tuitionDisplay: university.tuition_display?.trim() || null,
     estimatedLivingCostPerYear: university.estimated_living_cost_per_year,
+    livingDisplay: university.living_display?.trim() || null,
     difficulty: university.difficulty,
     typeLabel: university.is_public ? "Public" : "Private",
-    tuitionLabel: formatTuition(university.tuition_per_year),
-    livingCostLabel: formatTuition(university.estimated_living_cost_per_year),
+    tuitionLabel: tuitionCardLabel(university.tuition_display, university.tuition_per_year),
+    livingCostLabel: livingCostLabel(
+      university.living_display,
+      university.estimated_living_cost_per_year,
+    ),
   };
 
   return {
