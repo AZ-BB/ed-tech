@@ -1,5 +1,6 @@
 "use client";
 
+import { sendApplicationPaymentRequest } from "@/actions/admin-application-payments";
 import {
   assignAdminApplicationHandler,
   updateAdminApplicationInternalNotes,
@@ -127,9 +128,18 @@ export function AdminApplicationViewClient({
   );
   const [actionError, setActionError] = useState<string | null>(null);
   const [notesSaved, setNotesSaved] = useState(false);
+  const [paymentRequestMessage, setPaymentRequestMessage] = useState<string | null>(
+    null,
+  );
   const [isPending, startTransition] = useTransition();
 
   const { application, plan, handler, student, school, documents, payments } = payload;
+
+  const pendingPayment = payments.find((payment) => payment.status === "pending");
+  const canSendPaymentRequest =
+    Boolean(pendingPayment) &&
+    application.studentEmail.trim() !== "" &&
+    application.studentEmail !== "—";
 
   useEffect(() => {
     setStatus(payload.application.status);
@@ -176,6 +186,20 @@ export function AdminApplicationViewClient({
     { lab: "Created", val: formatDate(application.createdAt) },
     { lab: "Updated", val: formatDateTime(application.updatedAt) },
   ];
+
+  function handleSendPaymentRequest() {
+    setActionError(null);
+    setPaymentRequestMessage(null);
+    startTransition(async () => {
+      const result = await sendApplicationPaymentRequest(application.id);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      setPaymentRequestMessage(`Payment request sent to ${result.email}.`);
+      router.refresh();
+    });
+  }
 
   function handleStatusChange(nextStatus: string) {
     setActionError(null);
@@ -427,7 +451,27 @@ export function AdminApplicationViewClient({
           )}
         </SchoolStudentPanel>
 
-        <SchoolStudentPanel head="Payments" sub="Onboarding deposit and payment status">
+        <SchoolStudentPanel
+          head="Payments"
+          sub="Onboarding deposit and payment status"
+          actions={
+            canSendPaymentRequest ? (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleSendPaymentRequest}
+                className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isPending ? "Sending…" : "Send Payment Request"}
+              </button>
+            ) : undefined
+          }
+        >
+          {paymentRequestMessage ? (
+            <p className="mb-3 text-[12px] font-medium text-[var(--green-dark)]">
+              {paymentRequestMessage}
+            </p>
+          ) : null}
           {payments.length === 0 ? (
             <p className="text-[13px] text-[var(--text-light)]">
               No payment records for this application.
@@ -439,7 +483,7 @@ export function AdminApplicationViewClient({
                   <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                     <th className="px-4 py-3">Amount (AED)</th>
                     <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Paid at</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -459,7 +503,9 @@ export function AdminApplicationViewClient({
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-[var(--text-mid)]">
-                        {formatDateTime(payment.createdAt)}
+                        {payment.status === "paid" && payment.paidAt
+                          ? formatDateTime(payment.paidAt)
+                          : formatDateTime(payment.createdAt)}
                       </td>
                     </tr>
                   ))}

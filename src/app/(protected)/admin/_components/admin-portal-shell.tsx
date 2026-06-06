@@ -11,6 +11,10 @@ import {
   adminNavSections,
 } from "../_data/admin-nav-data";
 import { AdminApplicationsHeaderActions } from "../applications/_components/admin-applications-header-actions";
+import {
+  isAdminApplicationDetailPath,
+  isAdminApplicationsListPath,
+} from "../applications/_data/applications-tabs-data";
 import { ContentHeaderActions } from "../content/_components/content-header-actions";
 import {
   isAdminContentListPath,
@@ -41,21 +45,10 @@ function normalizePath(pathname: string) {
 }
 
 const ADMIN_SCHOOLS = `${ADMIN_HOME}/schools`;
-const ADMIN_APPLICATIONS = `${ADMIN_HOME}/applications`;
 
 function isAdminSchoolsPath(pathname: string): boolean {
   const n = normalizePath(pathname);
   return n === ADMIN_SCHOOLS || n.startsWith(`${ADMIN_SCHOOLS}/`);
-}
-
-function isAdminApplicationsPath(pathname: string): boolean {
-  const n = normalizePath(pathname);
-  return n === ADMIN_APPLICATIONS || n.startsWith(`${ADMIN_APPLICATIONS}/`);
-}
-
-function isAdminApplicationDetailPath(pathname: string): boolean {
-  const n = normalizePath(pathname);
-  return /^\/admin\/applications\/\d+$/.test(n);
 }
 
 function isAdminSchoolDetailPath(pathname: string): boolean {
@@ -124,7 +117,7 @@ export function AdminPortalShell({
   }, [pathname]);
   const applicationsSection = useMemo(() => {
     const n = pathname ?? ADMIN_HOME;
-    return isAdminApplicationsPath(n) && !isAdminApplicationDetailPath(n);
+    return isAdminApplicationsListPath(n);
   }, [pathname]);
   const userDetailPage = useMemo(
     () => isAdminUserDetailPath(pathname ?? ADMIN_HOME),

@@ -16,6 +16,7 @@ export type AdminApplicationPaymentRow = {
   amount: number;
   status: string;
   createdAt: string | null;
+  paidAt: string | null;
 };
 
 export type AdminApplicationDetailPayload = {
@@ -214,7 +215,7 @@ export async function fetchAdminApplicationDetail(
       .order("created_at", { ascending: false }),
     supabase
       .from("payments")
-      .select("id, amount, status, created_at")
+      .select("id, amount, status, created_at, paid_at, updated_at")
       .eq("application_id", applicationId)
       .order("created_at", { ascending: false }),
   ]);
@@ -352,6 +353,10 @@ export async function fetchAdminApplicationDetail(
       amount: payment.amount,
       status: payment.status?.trim() || "pending",
       createdAt: payment.created_at,
+      paidAt:
+        payment.status === "paid"
+          ? payment.paid_at ?? payment.updated_at
+          : payment.paid_at,
     })),
   };
 }

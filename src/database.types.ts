@@ -1048,7 +1048,11 @@ export type Database = {
           application_id: number
           created_at: string | null
           id: number
+          paid_at: string | null
+          payment_request_sent_at: string | null
+          payment_request_token: string | null
           status: Database["public"]["Enums"]["payment_status"] | null
+          stripe_checkout_session_id: string | null
           student_id: string
           updated_at: string | null
         }
@@ -1057,7 +1061,11 @@ export type Database = {
           application_id: number
           created_at?: string | null
           id?: number
+          paid_at?: string | null
+          payment_request_sent_at?: string | null
+          payment_request_token?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
+          stripe_checkout_session_id?: string | null
           student_id: string
           updated_at?: string | null
         }
@@ -1066,7 +1074,11 @@ export type Database = {
           application_id?: number
           created_at?: string | null
           id?: number
+          paid_at?: string | null
+          payment_request_sent_at?: string | null
+          payment_request_token?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
+          stripe_checkout_session_id?: string | null
           student_id?: string
           updated_at?: string | null
         }

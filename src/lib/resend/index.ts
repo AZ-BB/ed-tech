@@ -10,11 +10,16 @@ export {
   type SendResendEmailResult,
 } from "@/lib/resend/send-email";
 export {
+  buildApplicationPaymentUrl,
   buildLoginPageUrl,
   buildRecommendationSubmitUrl,
   buildSignupPageUrl,
   getPublicSiteBaseUrl,
 } from "@/lib/resend/site-url";
+export {
+  sendApplicationPaymentRequestEmail,
+  type SendApplicationPaymentRequestEmailInput,
+} from "@/lib/resend/application-payment-request-email";
 export {
   formatRecommendationDeadline,
   sendRecommendationRequestEmail,

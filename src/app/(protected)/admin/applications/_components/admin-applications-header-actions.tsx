@@ -1,7 +1,6 @@
 "use client";
 
 import { exportAdminApplicationsExcel } from "@/actions/admin-applications";
-import { usePathname } from "next/navigation";
 import { useTransition } from "react";
 
 import { triggerAdminApplicationsExcelDownload } from "../_lib/admin-applications-excel";
@@ -23,12 +22,7 @@ function ExportIcon() {
 }
 
 export function AdminApplicationsHeaderActions() {
-  const pathname = usePathname() ?? "";
   const [isExportPending, startExportTransition] = useTransition();
-
-  const isApplicationsListPage =
-    pathname.replace(/\/$/, "") === "/admin/applications";
-  if (!isApplicationsListPage) return null;
 
   function handleExport() {
     startExportTransition(async () => {
