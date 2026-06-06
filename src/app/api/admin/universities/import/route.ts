@@ -80,6 +80,7 @@ export async function POST(request: Request) {
       log("import finished", startedAt, {
         processed: summary.processed,
         universitiesUpserted: summary.universitiesUpserted,
+        programsQueued: summary.programsQueued,
         errorCount: summary.errors.length,
       });
 

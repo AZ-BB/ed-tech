@@ -143,7 +143,7 @@ export function AdminEditUniversityDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="admin-edit-university-title"
-        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[12px] border border-[#e0deda] bg-white shadow-xl"
+        className="flex max-h-[90vh] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-[12px] border border-[#e0deda] bg-white shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="shrink-0 px-6 pt-6">
@@ -158,12 +158,13 @@ export function AdminEditUniversityDialog({
           </p>
         </div>
 
-        <form className="flex min-h-0 flex-1 flex-col px-6" onSubmit={handleSubmit}>
-          <fieldset
-            disabled={isSubmitting}
-            className="m-0 min-h-0 min-w-0 flex-1 space-y-6 overflow-y-auto border-0 p-0 pb-4 disabled:pointer-events-none disabled:opacity-60"
-          >
-          <input type="hidden" name="universityId" value={university.id} />
+        <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
+            <fieldset
+              disabled={isSubmitting}
+              className="m-0 space-y-6 border-0 p-0 disabled:pointer-events-none disabled:opacity-60"
+            >
+            <input type="hidden" name="universityId" value={university.id} />
 
           <div>
             <SectionTitle>Profile</SectionTitle>
@@ -429,7 +430,7 @@ export function AdminEditUniversityDialog({
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="edit-uni-tuition" className={labelClassName}>
-                  Tuition per year (USD)
+                  Tuition per year
                 </label>
                 <input
                   id="edit-uni-tuition"
@@ -441,24 +442,50 @@ export function AdminEditUniversityDialog({
                   className={inputClassName}
                 />
               </div>
-              <div>
-                <label htmlFor="edit-uni-living" className={labelClassName}>
-                  Est. living cost / year (USD)
-                </label>
-                <input
-                  id="edit-uni-living"
-                  name="estimatedLivingCostPerYear"
-                  type="number"
-                  min={0}
-                  step="any"
-                  defaultValue={university.estimatedLivingCostPerYear ?? ""}
-                  className={inputClassName}
-                />
-              </div>
-              <div>
-                <label htmlFor="edit-uni-fee" className={labelClassName}>
-                  Application fee (USD)
-                </label>
+                <div>
+                  <label htmlFor="edit-uni-living" className={labelClassName}>
+                    Est. living cost / year
+                  </label>
+                  <input
+                    id="edit-uni-living"
+                    name="estimatedLivingCostPerYear"
+                    type="number"
+                    min={0}
+                    step="any"
+                    defaultValue={university.estimatedLivingCostPerYear ?? ""}
+                    className={inputClassName}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="edit-uni-tuition-display" className={labelClassName}>
+                    Tuition display (student-facing)
+                  </label>
+                  <input
+                    id="edit-uni-tuition-display"
+                    name="tuitionDisplay"
+                    type="text"
+                    defaultValue={university.tuitionDisplay ?? ""}
+                    placeholder="e.g. 52,000 per year"
+                    className={inputClassName}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="edit-uni-living-display" className={labelClassName}>
+                    Living cost display (student-facing)
+                  </label>
+                  <input
+                    id="edit-uni-living-display"
+                    name="livingDisplay"
+                    type="text"
+                    defaultValue={university.livingDisplay ?? ""}
+                    placeholder="e.g. 18,000 per year"
+                    className={inputClassName}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="edit-uni-fee" className={labelClassName}>
+                    Application fee (USD)
+                  </label>
                 <input
                   id="edit-uni-fee"
                   name="applicationFee"
@@ -637,9 +664,10 @@ export function AdminEditUniversityDialog({
             </div>
           </div>
 
-          </fieldset>
+            </fieldset>
+          </div>
 
-          <div className="shrink-0 border-t border-[#ece9e4] bg-white py-4">
+          <div className="shrink-0 border-t border-[#ece9e4] bg-white px-6 py-4">
             {error ? (
               <p className="mb-3 text-[13px] text-red-600" role="alert">
                 {error}

@@ -2372,6 +2372,7 @@ export type Database = {
           documents: Json | null
           email: string | null
           estimated_living_cost_per_year: number | null
+          living_display: string | null
           id: string
           ielts_min_score: number | null
           intakes: string | null
@@ -2388,7 +2389,9 @@ export type Database = {
           sat_policy: string | null
           search_region_rank: number | null
           state: string | null
+          temp_meta_data: Json | null
           toefl_min_score: number | null
+          tuition_display: string | null
           tuition_per_year: number | null
           updated_at: string | null
           website_url: string | null
@@ -2410,6 +2413,7 @@ export type Database = {
           documents?: Json | null
           email?: string | null
           estimated_living_cost_per_year?: number | null
+          living_display?: string | null
           id?: string
           ielts_min_score?: number | null
           intakes?: string | null
@@ -2426,7 +2430,9 @@ export type Database = {
           sat_policy?: string | null
           search_region_rank?: number | null
           state?: string | null
+          temp_meta_data?: Json | null
           toefl_min_score?: number | null
+          tuition_display?: string | null
           tuition_per_year?: number | null
           updated_at?: string | null
           website_url?: string | null
@@ -2448,6 +2454,7 @@ export type Database = {
           documents?: Json | null
           email?: string | null
           estimated_living_cost_per_year?: number | null
+          living_display?: string | null
           id?: string
           ielts_min_score?: number | null
           intakes?: string | null
@@ -2464,7 +2471,9 @@ export type Database = {
           sat_policy?: string | null
           search_region_rank?: number | null
           state?: string | null
+          temp_meta_data?: Json | null
           toefl_min_score?: number | null
+          tuition_display?: string | null
           tuition_per_year?: number | null
           updated_at?: string | null
           website_url?: string | null

@@ -19,6 +19,7 @@ type ContentUniversitiesImportDialogProps = {
 
 type ImportSummary = ContentImportResultSummary & {
   universitiesUpserted: number;
+  programsQueued: number;
 };
 
 export function ContentUniversitiesImportDialog({
@@ -117,7 +118,30 @@ export function ContentUniversitiesImportDialog({
           {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
 
           {summary ? (
-            <ContentImportResultPanel summary={summary} entityLabel="universities" />
+            <div className="space-y-3">
+              <div className="rounded-[8px] border border-[#e0deda] bg-[#faf9f7] p-3 text-[13px] text-[#4a4a4a]">
+                <p className="font-semibold text-[#1a1a1a]">
+                  Imported {summary.universitiesUpserted} universit
+                  {summary.universitiesUpserted === 1 ? "y" : "ies"}
+                </p>
+                <p className="mt-1 text-[12px] text-[#666]">
+                  Rows processed: {summary.processed}
+                  {summary.errors.length > 0
+                    ? ` · ${summary.errors.length} error${summary.errors.length === 1 ? "" : "s"}`
+                    : ""}
+                </p>
+                {summary.programsQueued > 0 ? (
+                  <p className="mt-1.5 text-[12px] text-[#666]">
+                    Program links for {summary.programsQueued} universit
+                    {summary.programsQueued === 1 ? "y" : "ies"} will be applied in the background
+                    (up to 300 every 20 minutes).
+                  </p>
+                ) : null}
+              </div>
+              {summary.errors.length > 0 ? (
+                <ContentImportResultPanel summary={summary} entityLabel="universities" />
+              ) : null}
+            </div>
           ) : null}
 
           <div className="flex justify-end gap-2">

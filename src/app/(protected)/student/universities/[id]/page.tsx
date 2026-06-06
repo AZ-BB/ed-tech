@@ -1,4 +1,9 @@
 import type { Json } from "@/database.types";
+import {
+    livingCostLabel,
+    tuitionDetailLabel,
+    tuitionSentenceLabel,
+} from "@/lib/university-cost-display";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -41,21 +46,6 @@ function formatLocation(city: string, state: string | null, countryName: string,
     const country = countryName?.trim() || countryCode;
     if (state?.trim()) return `${city}, ${state}, ${country}`;
     return `${city}, ${country}`;
-}
-
-function formatTuitionUsd(n: number | null): string {
-    if (n == null || Number.isNaN(n)) return "—";
-    return `${tuitionFormatter.format(n)}/yr`;
-}
-
-function tuitionSentenceUsd(n: number | null): string {
-    if (n == null || Number.isNaN(n)) return "Contact the university — varies by program";
-    return `${tuitionFormatter.format(n)} per year`;
-}
-
-function formatLivingUsd(n: number | null): string {
-    if (n == null || Number.isNaN(n)) return "—";
-    return `~${tuitionFormatter.format(n)} / year`;
 }
 
 function formatApplicationFee(n: number | null): string {
@@ -125,6 +115,7 @@ type UniversityRow = {
     logo_url: string | null;
     cover_image_url: string | null;
     tuition_per_year: number | null;
+    tuition_display: string | null;
     deadline_date: string | null;
     is_priority: boolean;
     ielts_min_score: number | null;
@@ -139,6 +130,7 @@ type UniversityRow = {
     method: string | null;
     intakes: string | null;
     estimated_living_cost_per_year: number | null;
+    living_display: string | null;
     is_scholarship_available: boolean;
     toefl_min_score: number | null;
     documents: Json | null;
@@ -263,8 +255,8 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
         coverImageUrl: row.cover_image_url?.trim() || null,
         description: row.description,
         topMajorNames: topNames,
-        tuitionDisplay: formatTuitionUsd(row.tuition_per_year),
-        tuitionSentence: tuitionSentenceUsd(row.tuition_per_year),
+        tuitionDisplay: tuitionDetailLabel(row.tuition_display, row.tuition_per_year),
+        tuitionSentence: tuitionSentenceLabel(row.tuition_display, row.tuition_per_year),
         deadlineFormatted: formatDeadline(row.deadline_date, row.is_priority),
         ieltsFormatted: formatIelts(row.ielts_min_score),
         satPolicy: row.sat_policy,
@@ -273,7 +265,10 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
         methodFormatted: row.method?.trim() || "—",
         feeFormatted: formatApplicationFee(row.application_fee),
         intakesFormatted: row.intakes?.trim() || "—",
-        livingFormatted: formatLivingUsd(row.estimated_living_cost_per_year),
+        livingFormatted: livingCostLabel(
+            row.living_display,
+            row.estimated_living_cost_per_year,
+        ),
         scholarshipsAvailable: row.is_scholarship_available,
         scholarshipNote,
         acceptanceFormatted: formatAcceptance(row.acceptance_rate),

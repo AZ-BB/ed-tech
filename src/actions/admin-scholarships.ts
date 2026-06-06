@@ -7,6 +7,11 @@ import {
 } from "@/app/(protected)/admin/content/_lib/fetch-admin-scholarships-export";
 import { ADMIN_SCHOLARSHIPS_HOME } from "@/app/(protected)/admin/content/_data/content-tabs-data";
 import {
+  loadUsedDiscoverySlugs,
+  pickUniqueDiscoverySlug,
+  slugifyScholarshipName,
+} from "@/lib/scholarship-discovery-slug";
+import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
@@ -148,15 +153,6 @@ function parseDestinationCodes(formData: FormData): string[] {
   ];
 }
 
-function slugifyName(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
-
 type ScholarshipFormFields = {
   name: string;
   nationalityCountryCode: string;
@@ -232,7 +228,7 @@ function parseScholarshipFormFields(formData: FormData): ScholarshipFormFields {
     method: String(formData.get("method") ?? "").trim() || null,
     other: String(formData.get("other") ?? "").trim() || null,
     tooltip: String(formData.get("tooltip") ?? "").trim() || null,
-    discoverySlug: discoverySlugRaw || slugifyName(name) || null,
+    discoverySlug: discoverySlugRaw || slugifyScholarshipName(name) || null,
     applicationUrl: String(formData.get("applicationUrl") ?? "").trim() || null,
   };
 }
@@ -438,10 +434,17 @@ export async function createAdminScholarship(
     }
   }
 
+  const usedSlugs = await loadUsedDiscoverySlugs(service);
+  const resolvedSlug = pickUniqueDiscoverySlug(
+    fields.discoverySlug || slugifyScholarshipName(fields.name),
+    usedSlugs,
+  );
+  const fieldsWithSlug = { ...fields, discoverySlug: resolvedSlug };
+
   const { data: created, error: insertError } = await service
     .from("scholarships")
     .insert({
-      ...scholarshipFieldsToDbPayload(fields),
+      ...scholarshipFieldsToDbPayload(fieldsWithSlug),
       updated_at: new Date().toISOString(),
     })
     .select("id")
@@ -516,7 +519,7 @@ export async function updateAdminScholarship(
 
   const { data: existingRow, error: existingFetchError } = await service
     .from("scholarships")
-    .select("discovery_payload")
+    .select("discovery_payload, discovery_slug")
     .eq("id", scholarshipId)
     .maybeSingle();
 
@@ -525,10 +528,21 @@ export async function updateAdminScholarship(
     return { ok: false, error: "Could not load scholarship." };
   }
 
+  const usedSlugs = await loadUsedDiscoverySlugs(service);
+  const resolvedSlug = pickUniqueDiscoverySlug(
+    fields.discoverySlug || slugifyScholarshipName(fields.name),
+    usedSlugs,
+    existingRow?.discovery_slug,
+  );
+  const fieldsWithSlug = { ...fields, discoverySlug: resolvedSlug };
+
   const { error } = await service
     .from("scholarships")
     .update({
-      ...scholarshipFieldsToDbPayload(fields, existingRow?.discovery_payload ?? null),
+      ...scholarshipFieldsToDbPayload(
+        fieldsWithSlug,
+        existingRow?.discovery_payload ?? null,
+      ),
       updated_at: new Date().toISOString(),
     })
     .eq("id", scholarshipId);
