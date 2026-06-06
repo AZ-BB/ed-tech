@@ -1,0 +1,244 @@
+"use server";
+
+import {
+  APPLICATION_ACTIVITY_ENTITY_TYPE,
+  applicationActivityEntityId,
+} from "@/lib/application-activity-log";
+import { ONBOARDING_DEPOSIT_AED } from "@/lib/application-support-payment";
+import { isResendConfigured } from "@/lib/resend/config";
+import { sendApplicationPaymentRequestEmail } from "@/lib/resend/application-payment-request-email";
+import { buildApplicationPaymentUrl } from "@/lib/resend/site-url";
+import { isStripeConfigured } from "@/lib/stripe/config";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import { randomUUID } from "node:crypto";
+import { revalidatePath } from "next/cache";
+
+type AdminPaymentActionResult =
+  | { ok: true; email: string }
+  | { ok: false; error: string };
+
+async function assertAdminAccess() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { ok: false as const, error: "You must be signed in." };
+  }
+
+  const service = await createSupabaseSecretClient();
+  const { data: admin, error: adminError } = await service
+    .from("admins")
+    .select("id, first_name, last_name, is_active")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (adminError) {
+    console.error("[admin-application-payments] admin lookup", adminError);
+    return { ok: false as const, error: "Could not verify admin access." };
+  }
+
+  if (!admin) {
+    return {
+      ok: false as const,
+      error: "You do not have permission to manage applications.",
+    };
+  }
+
+  if (admin.is_active === false) {
+    return { ok: false as const, error: "Your admin account is inactive." };
+  }
+
+  return {
+    ok: true as const,
+    userId: user.id,
+    actorName:
+      [admin.first_name, admin.last_name].filter(Boolean).join(" ").trim() || "Admin",
+  };
+}
+
+function parseApplicationId(raw: number): number | null {
+  if (!Number.isFinite(raw) || raw < 1) return null;
+  return Math.trunc(raw);
+}
+
+function firstEmbed<T>(embed: T | T[] | null | undefined): T | null {
+  if (!embed) return null;
+  return Array.isArray(embed) ? (embed[0] ?? null) : embed;
+}
+
+function resolvePackageLabel(
+  plan:
+    | { name: string; universities_count: number }
+    | { name: string; universities_count: number }[]
+    | null,
+): string {
+  const row = firstEmbed(plan);
+  if (!row) return "Application support";
+  const count = row.universities_count;
+  if (Number.isFinite(count) && count > 0) {
+    return `${count} ${count === 1 ? "university" : "universities"}`;
+  }
+  return row.name?.trim() || "Application support";
+}
+
+function resolveStudentName(
+  application: { student_name: string | null },
+  profile: { first_name: string; last_name: string } | null,
+): string {
+  if (profile) {
+    const name = [profile.first_name, profile.last_name].filter(Boolean).join(" ").trim();
+    if (name) return name;
+  }
+  return application.student_name?.trim() || "Student";
+}
+
+function resolveStudentEmail(
+  application: { student_email: string | null },
+  profile: { email: string | null } | null,
+): string {
+  const fromProfile = profile?.email?.trim();
+  if (fromProfile) return fromProfile;
+  return application.student_email?.trim() || "";
+}
+
+function revalidateApplicationPaths(applicationId: number) {
+  revalidatePath("/admin/applications");
+  revalidatePath("/admin/applications/paid");
+  revalidatePath(`/admin/applications/${applicationId}`);
+}
+
+export async function sendApplicationPaymentRequest(
+  applicationIdRaw: number,
+): Promise<AdminPaymentActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const applicationId = parseApplicationId(applicationIdRaw);
+  if (applicationId == null) {
+    return { ok: false, error: "Invalid application." };
+  }
+
+  if (!isStripeConfigured()) {
+    return {
+      ok: false,
+      error: "Stripe is not configured. Set STRIPE_SECRET_KEY.",
+    };
+  }
+
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error: "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    };
+  }
+
+  const secret = await createSupabaseSecretClient();
+
+  const { data: application, error: appErr } = await secret
+    .from("applications")
+    .select(
+      `
+      id,
+      student_id,
+      student_name,
+      student_email,
+      applications_plans ( name, universities_count ),
+      student_profiles ( first_name, last_name, email )
+    `,
+    )
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (appErr || !application) {
+    console.error("[sendApplicationPaymentRequest] application", appErr);
+    return { ok: false, error: "Application not found." };
+  }
+
+  const profile = firstEmbed(application.student_profiles);
+  const studentEmail = resolveStudentEmail(application, profile);
+  if (!studentEmail) {
+    return {
+      ok: false,
+      error: "This application has no student email on file.",
+    };
+  }
+
+  const { data: payment, error: payErr } = await secret
+    .from("payments")
+    .select("id, status")
+    .eq("application_id", applicationId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (payErr || !payment) {
+    console.error("[sendApplicationPaymentRequest] payment", payErr);
+    return { ok: false, error: "No payment record found for this application." };
+  }
+
+  if (payment.status === "paid") {
+    return { ok: false, error: "This application has already been paid." };
+  }
+
+  if (payment.status !== "pending") {
+    return {
+      ok: false,
+      error: "Payment cannot be requested for the current payment status.",
+    };
+  }
+
+  const token = randomUUID();
+  const now = new Date().toISOString();
+
+  const { error: updateErr } = await secret
+    .from("payments")
+    .update({
+      payment_request_token: token,
+      payment_request_sent_at: now,
+      amount: ONBOARDING_DEPOSIT_AED,
+      updated_at: now,
+    })
+    .eq("id", payment.id);
+
+  if (updateErr) {
+    console.error("[sendApplicationPaymentRequest] token update", updateErr);
+    return { ok: false, error: "Could not prepare payment request." };
+  }
+
+  const payUrl = await buildApplicationPaymentUrl(token);
+  const studentName = resolveStudentName(application, profile);
+  const packageLabel = resolvePackageLabel(application.applications_plans);
+
+  const emailResult = await sendApplicationPaymentRequestEmail({
+    to: studentEmail,
+    studentName,
+    applicationId,
+    packageLabel,
+    payUrl,
+  });
+
+  if ("error" in emailResult) {
+    return { ok: false, error: emailResult.error };
+  }
+
+  const { error: logErr } = await secret.from("acitivity_logs").insert({
+    entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
+    entity_id: applicationActivityEntityId(applicationId),
+    action: "payment_request_sent",
+    message: `${access.actorName} sent a payment request to ${studentEmail} for application #${applicationId}.`,
+    created_by_type: "admin",
+    admin_id: access.userId,
+    school_admin_id: null,
+    student_id: application.student_id,
+  });
+
+  if (logErr) {
+    console.error("[sendApplicationPaymentRequest] activity log", logErr);
+  }
+
+  revalidateApplicationPaths(applicationId);
+
+  return { ok: true, email: studentEmail };
+}

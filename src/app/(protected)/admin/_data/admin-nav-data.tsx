@@ -132,6 +132,21 @@ export const adminNavSections: readonly AdminNavSection[] = [
         ),
       },
       {
+        href: `${ADMIN_HOME}/paid-applicants`,
+        label: "Paid Applicant",
+        icon: (
+          <NavSvg
+            paths={
+              <>
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <path d="M2 10h20" />
+                <path d="M6 15h4" />
+              </>
+            }
+          />
+        ),
+      },
+      {
         href: `${ADMIN_HOME}/documents`,
         label: "Documents",
         icon: (
@@ -223,6 +238,7 @@ export const ADMIN_PAGE_TITLE_BY_PATH: Record<string, string> = {
   [`${ADMIN_HOME}/content`]: "Content Management",
   [`${ADMIN_HOME}/sessions`]: "Sessions",
   [`${ADMIN_HOME}/applications`]: "Applications",
+  [`${ADMIN_HOME}/paid-applicants`]: "Paid Applicant",
   [`${ADMIN_HOME}/documents`]: "Documents",
   [`${ADMIN_HOME}/reports`]: "Reports",
   [`${ADMIN_HOME}/activity-log`]: "Activity Log",

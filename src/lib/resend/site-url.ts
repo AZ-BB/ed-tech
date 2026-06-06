@@ -33,3 +33,8 @@ export async function buildRecommendationSubmitUrl(token: string): Promise<strin
 export async function buildStudentDashboardUrl(): Promise<string> {
   return `${await getPublicSiteBaseUrl()}/student`;
 }
+
+export async function buildApplicationPaymentUrl(token: string): Promise<string> {
+  const trimmed = token.trim();
+  return `${await getPublicSiteBaseUrl()}/application-support/pay/${encodeURIComponent(trimmed)}`;
+}

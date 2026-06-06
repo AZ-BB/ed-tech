@@ -4,6 +4,7 @@ import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
+import { ONBOARDING_DEPOSIT_AED } from "@/lib/application-support-payment";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
   recordStudentPlatformCompletionOnce,
@@ -17,9 +18,6 @@ import {
 import type { Database } from "@/database.types";
 
 const APPLICATION_DOCUMENTS_BUCKET = "application-documents";
-
-/** Matches application_support vf.html — onboarding deposit, not full package. */
-const ONBOARDING_DEPOSIT_AED = 200;
 
 async function requireStudentActor(): Promise<
   { studentId: string; schoolId: string } | { error: string }
