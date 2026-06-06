@@ -135,9 +135,9 @@ export function AdminApplicationViewClient({
 
   const { application, plan, handler, student, school, documents, payments } = payload;
 
-  const pendingPayment = payments.find((payment) => payment.status === "pending");
+  const hasPaidPayment = payments.some((payment) => payment.status === "paid");
   const canSendPaymentRequest =
-    Boolean(pendingPayment) &&
+    !hasPaidPayment &&
     application.studentEmail.trim() !== "" &&
     application.studentEmail !== "—";
 
@@ -453,7 +453,7 @@ export function AdminApplicationViewClient({
 
         <SchoolStudentPanel
           head="Payments"
-          sub="Onboarding deposit and payment status"
+          sub="Send a payment request to collect the onboarding deposit"
           actions={
             canSendPaymentRequest ? (
               <button
@@ -474,7 +474,8 @@ export function AdminApplicationViewClient({
           ) : null}
           {payments.length === 0 ? (
             <p className="text-[13px] text-[var(--text-light)]">
-              No payment records for this application.
+              No payment request has been sent yet. Use Send Payment Request to email
+              the student a secure checkout link.
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-[var(--border-light)]">

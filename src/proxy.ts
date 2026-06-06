@@ -51,8 +51,18 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Auth/marketing pages anyone can open without logging in (prefix match).
-  const publicAuthRoutes = [
+  // Open to everyone (guest or signed-in) — e.g. payment links, webhooks, token flows.
+  const publicOpenRoutes = [
+    "/application-support",
+    "/api/webhooks",
+    "/recommendation",
+  ]
+  const isPublicOpenRoute = publicOpenRoutes.some((route) =>
+    pathname.startsWith(route),
+  )
+
+  // Marketing/auth pages guests may visit; signed-in users are redirected to their dashboard.
+  const publicGuestOnlyRoutes = [
     "/login",
     "/signup",
     "/auth/callback",
@@ -66,14 +76,14 @@ export async function proxy(request: NextRequest) {
     "/for-schools",
     "/for-advisors",
     "/blog",
-    "/recommendation",
   ]
-  const isPublicAuthRoute = publicAuthRoutes.some((route) =>
-    pathname.startsWith(route)
+  const isPublicGuestOnlyRoute = publicGuestOnlyRoutes.some((route) =>
+    pathname.startsWith(route),
   )
 
   // Landing is public for guests; do not use pathname.startsWith("/") — that matches every path.
-  const isPublicForGuests = pathname === '/' || isPublicAuthRoute
+  const isPublicForGuests =
+    pathname === "/" || isPublicOpenRoute || isPublicGuestOnlyRoute
 
   // OAuth callback route needs special handling - always allow it through
   const isCallbackRoute = pathname.startsWith('/auth/callback')
@@ -91,10 +101,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(authedHome, request.url))
   }
 
-  // If user is authenticated and trying to access auth pages, redirect to home
-  // BUT allow the callback route to complete its processing
-  // (Exclude "/": logged-in users without a role still use the marketing landing.)
-  if (user && isPublicAuthRoute && !isCallbackRoute) {
+  // Signed-in users on login/signup/marketing → dashboard (not payment/token links).
+  // Allow the OAuth callback route to complete its processing.
+  if (user && isPublicGuestOnlyRoute && !isCallbackRoute) {
     const dest = authedHome ?? "/"
     return NextResponse.redirect(new URL(dest, request.url))
   }

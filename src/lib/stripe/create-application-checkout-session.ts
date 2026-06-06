@@ -30,7 +30,7 @@ export async function createApplicationCheckoutSession(
   }
 
   const baseUrl = await getPublicSiteBaseUrl();
-  const successUrl = `${baseUrl}/application-support/payment/success?application_id=${input.applicationId}`;
+  const successUrl = `${baseUrl}/application-support/payment/success?application_id=${input.applicationId}&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${baseUrl}/application-support/payment/cancel?application_id=${input.applicationId}`;
 
   try {
