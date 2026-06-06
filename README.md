@@ -29,6 +29,32 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Calendly webhook (advisor session `booked_at`)
+
+When a student picks a time in Calendly after confirming an advisor session, Calendly sends `invitee.created` to the app, which sets `advisor_sessions.booked_at` and `status = confirmed`.
+
+### Environment
+
+```bash
+# Signing key from Calendly webhook subscription (server-only, not NEXT_PUBLIC_)
+CALENDLY_WEBHOOK_SIGNING_KEY=your_signing_key_here
+
+# Optional — shared Calendly event URL (default: admin-univeera/30min)
+NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL=https://calendly.com/admin-univeera/30min
+```
+
+### Calendly dashboard setup (one-time)
+
+1. In Calendly: **Integrations → Webhooks** (or API → Webhook subscriptions).
+2. Create a subscription:
+   - **URL**: `https://<your-production-domain>/api/webhooks/calendly`
+   - **Events**: `invitee.created` only
+   - **Scope**: organization (matches the shared 30min event type)
+3. Copy the **signing key** into `CALENDLY_WEBHOOK_SIGNING_KEY` on Vercel (and `.env.local` for local dev).
+4. Local testing: expose the dev server with ngrok or Cloudflare Tunnel to `http://localhost:3000/api/webhooks/calendly`.
+
+Advisor bookings pass `utm_content=advisor_session:<id>` in the embed URL so the webhook can match the row. Application-support Calendly flows without that prefix are ignored.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

@@ -173,7 +173,7 @@ export async function fetchAdminApplicationDetail(
       created_at,
       updated_at,
       applications_plans ( name, description, price, universities_count ),
-      admins:assigned_to ( id, first_name, last_name, email ),
+      handlers:assigned_to ( id, first_name, last_name, email, phone ),
       schools (
         id,
         name,
@@ -220,7 +220,7 @@ export async function fetchAdminApplicationDetail(
   ]);
 
   const plan = firstEmbed(data.applications_plans);
-  const handlerEmbed = firstEmbed(data.admins);
+  const handlerEmbed = firstEmbed(data.handlers);
   const schoolEmbed = firstEmbed(data.schools);
   const studentEmbed = firstEmbed(data.student_profiles);
 
@@ -313,7 +313,7 @@ export async function fetchAdminApplicationDetail(
           name:
             personName(handlerEmbed.first_name, handlerEmbed.last_name) ||
             handlerEmbed.email?.trim() ||
-            "Admin",
+            "Handler",
           email: handlerEmbed.email?.trim() || "—",
         }
       : null,

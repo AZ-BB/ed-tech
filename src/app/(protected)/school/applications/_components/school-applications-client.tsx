@@ -2,10 +2,13 @@
 
 import type { SchoolApplicationTableRow } from "@/app/(protected)/school/applications/_lib/fetch-school-applications-page";
 import {
-  DB_APPLICATION_STATUS_DISPLAY,
   SCHOOL_APPLICATION_FILTER_LABEL,
   SCHOOL_APPLICATION_FILTER_STATUSES,
 } from "@/app/(protected)/school/applications/_lib/application-support-status-labels";
+import {
+  UNIVERSITY_DECISION_LABEL,
+  UNIVERSITY_STATUS_LABEL,
+} from "@/app/(protected)/student/my-applications/_lib/my-applications-university-labels";
 import type { DestinationSelectItem } from "@/lib/school-portal-destination-options";
 import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { Pagination } from "@/components/pagination";
@@ -30,18 +33,19 @@ function formatSubmitted(iso: string | null) {
   }
 }
 
-function statusPillClass(dbStatus: string): string {
-  if (dbStatus === "submitted") {
+function statusPillClass(status: string): string {
+  if (status === "submitted") {
     return "bg-[rgba(45,106,79,0.12)] text-[var(--green-dark)]";
   }
-  if (dbStatus === "blocked") {
+  if (status === "withdrawn") {
     return "bg-[rgba(231,76,60,0.12)] text-[#8c2d22]";
   }
-  if (dbStatus === "in_progress") {
+  if (
+    status === "preparing_application" ||
+    status === "interview_invited" ||
+    status === "shortlisted"
+  ) {
     return "bg-[rgba(212,162,42,0.14)] text-[#7a5d10]";
-  }
-  if (dbStatus === "new" || dbStatus === "assigned") {
-    return "bg-[#ECEAE5] text-[var(--text-mid)]";
   }
   return "bg-[#ECEAE5] text-[var(--text-mid)]";
 }
@@ -97,8 +101,8 @@ export function SchoolApplicationsClient({
             </span>
           </h2>
           <p className="mt-1 text-[12px] text-[var(--text-light)]">
-            Application support packages from students at your school — one row
-            per university they listed on their application.
+            My Applications shortlist from students at your school — one row per
+            university they are tracking.
           </p>
         </div>
 
@@ -214,14 +218,17 @@ export function SchoolApplicationsClient({
                     colSpan={7}
                   >
                     {!filterActive && totalRows === 0
-                      ? "No application support submissions yet for your school."
+                      ? "No My Applications shortlist entries yet for your school."
                       : "No applications match your filters."}
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => {
                   const statusLabel =
-                    DB_APPLICATION_STATUS_DISPLAY[r.status] ?? r.status;
+                    UNIVERSITY_STATUS_LABEL[r.status] ?? r.status;
+                  const decisionLabel = r.decision
+                    ? (UNIVERSITY_DECISION_LABEL[r.decision] ?? r.decision)
+                    : "—";
                   const studentName =
                     `${r.firstName} ${r.lastName}`.trim() || r.email;
                   return (
@@ -273,8 +280,8 @@ export function SchoolApplicationsClient({
                           {statusLabel}
                         </span>
                       </td>
-                      <td className="px-5 py-3 align-middle">
-                        <span className="text-[var(--text-hint)]">—</span>
+                      <td className="px-5 py-3 align-middle text-[12.5px] text-[var(--text-mid)]">
+                        {decisionLabel}
                       </td>
                     </tr>
                   );

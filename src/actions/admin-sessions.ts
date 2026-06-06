@@ -6,6 +6,15 @@ import {
 } from "@/app/(protected)/admin/sessions/_data/sessions-tabs-data";
 import { isValidAlpha2Code } from "@/lib/countries";
 import type { Database } from "@/database.types";
+import { isResendConfigured } from "@/lib/resend/config";
+import {
+  resolveProviderName,
+  resolveStudentEmailForSession,
+  resolveStudentNameForEmail,
+  sendSessionCancelledStudentEmail,
+  type SessionCancelledKind,
+} from "@/lib/resend/session-cancelled-student-email";
+import { buildStudentDashboardUrl } from "@/lib/resend/site-url";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -150,6 +159,35 @@ async function refundSessionCredit(
   }
 
   return { ok: true };
+}
+
+async function notifyStudentSessionCancelled(input: {
+  sessionKind: SessionCancelledKind;
+  studentEmail: string | null;
+  studentName: string;
+  providerName: string;
+  sessionDetail: string | null;
+}): Promise<void> {
+  if (!isResendConfigured() || !input.studentEmail) {
+    return;
+  }
+
+  const dashboardUrl = await buildStudentDashboardUrl();
+  const result = await sendSessionCancelledStudentEmail({
+    to: input.studentEmail,
+    studentName: input.studentName,
+    sessionKind: input.sessionKind,
+    providerName: input.providerName,
+    sessionDetail: input.sessionDetail,
+    dashboardUrl,
+  });
+
+  if ("error" in result) {
+    console.error(
+      `[notifyStudentSessionCancelled] ${input.sessionKind}`,
+      result.error,
+    );
+  }
 }
 
 async function assertAdminAccess() {
@@ -471,7 +509,18 @@ export async function cancelAdminAdvisorSession(
   const secret = await createSupabaseSecretClient();
   const { data: existing, error: fetchErr } = await secret
     .from("advisor_sessions")
-    .select("id, status, student_id")
+    .select(
+      `
+      id,
+      status,
+      student_id,
+      student_email,
+      student_name,
+      booked_at,
+      advisors:advisor_id ( first_name, last_name ),
+      student_profiles ( first_name, last_name, email, school_id )
+    `,
+    )
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -487,19 +536,17 @@ export async function cancelAdminAdvisorSession(
     return { ok: false, error: "Session has no linked student." };
   }
 
-  const { data: studentRow, error: studentErr } = await secret
-    .from("student_profiles")
-    .select("school_id")
-    .eq("id", existing.student_id)
-    .maybeSingle();
+  const studentProfile = Array.isArray(existing.student_profiles)
+    ? (existing.student_profiles[0] ?? null)
+    : existing.student_profiles;
 
-  if (studentErr || !studentRow?.school_id) {
+  if (!studentProfile?.school_id) {
     return { ok: false, error: "Could not verify student school for credit refund." };
   }
 
   const refund = await refundSessionCredit(secret, {
     studentId: existing.student_id,
-    schoolId: studentRow.school_id,
+    schoolId: studentProfile.school_id,
     creditType: "advisor",
     sessionId,
   });
@@ -514,6 +561,20 @@ export async function cancelAdminAdvisorSession(
     console.error("[cancelAdminAdvisorSession]", updateErr);
     return { ok: false, error: "Could not cancel session." };
   }
+
+  await notifyStudentSessionCancelled({
+    sessionKind: "advisor",
+    studentEmail: resolveStudentEmailForSession(
+      existing.student_email,
+      existing.student_profiles,
+    ),
+    studentName: resolveStudentNameForEmail(
+      existing.student_name,
+      existing.student_profiles,
+    ),
+    providerName: resolveProviderName(existing.advisors, "your advisor"),
+    sessionDetail: existing.booked_at,
+  });
 
   revalidateSessionPaths("advisor", sessionId);
   return { ok: true };
@@ -533,7 +594,18 @@ export async function cancelAdminAmbassadorSession(
   const secret = await createSupabaseSecretClient();
   const { data: existing, error: fetchErr } = await secret
     .from("ambassador_session_requests")
-    .select("id, status, student_id")
+    .select(
+      `
+      id,
+      status,
+      student_id,
+      student_email,
+      student_name,
+      pref_time_1,
+      ambassadors:ambassador_id ( first_name, last_name ),
+      student_profiles ( first_name, last_name, email, school_id )
+    `,
+    )
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -549,19 +621,17 @@ export async function cancelAdminAmbassadorSession(
     return { ok: false, error: "Session has no linked student." };
   }
 
-  const { data: studentRow, error: studentErr } = await secret
-    .from("student_profiles")
-    .select("school_id")
-    .eq("id", existing.student_id)
-    .maybeSingle();
+  const studentProfile = Array.isArray(existing.student_profiles)
+    ? (existing.student_profiles[0] ?? null)
+    : existing.student_profiles;
 
-  if (studentErr || !studentRow?.school_id) {
+  if (!studentProfile?.school_id) {
     return { ok: false, error: "Could not verify student school for credit refund." };
   }
 
   const refund = await refundSessionCredit(secret, {
     studentId: existing.student_id,
-    schoolId: studentRow.school_id,
+    schoolId: studentProfile.school_id,
     creditType: "ambassador",
     sessionId,
   });
@@ -576,6 +646,20 @@ export async function cancelAdminAmbassadorSession(
     console.error("[cancelAdminAmbassadorSession]", updateErr);
     return { ok: false, error: "Could not cancel session." };
   }
+
+  await notifyStudentSessionCancelled({
+    sessionKind: "ambassador",
+    studentEmail: resolveStudentEmailForSession(
+      existing.student_email,
+      existing.student_profiles,
+    ),
+    studentName: resolveStudentNameForEmail(
+      existing.student_name,
+      existing.student_profiles,
+    ),
+    providerName: resolveProviderName(existing.ambassadors, "your ambassador"),
+    sessionDetail: existing.pref_time_1,
+  });
 
   revalidateSessionPaths("ambassador", sessionId);
   return { ok: true };

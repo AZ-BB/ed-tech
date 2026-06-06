@@ -46,7 +46,9 @@ export default async function AdminApplicationDetailPage({
       limit: activityLogsLimit,
       client: secret,
     }),
-    fetchAdminHandlerOptions(),
+    fetchAdminHandlerOptions({
+      includeHandlerId: payload.handler?.id ?? null,
+    }),
   ]);
 
   return (

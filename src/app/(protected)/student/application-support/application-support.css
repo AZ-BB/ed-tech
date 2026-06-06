@@ -4,17 +4,20 @@
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
+  /* Extend behind the shell header so green + top-right orb reach the page top */
+  margin-top: calc(-1 * (1.5rem + 4.25rem + 1.25rem));
+  padding-top: calc(5rem + 1.5rem + 4.25rem + 1.25rem);
 }
 
 #application-support-scope .as-hero::before {
   content: "";
   position: absolute;
-  top: -150px;
-  right: -100px;
-  width: 500px;
-  height: 500px;
+  top: -200px;
+  right: -150px;
+  width: 600px;
+  height: 600px;
   border-radius: 50%;
-  background: rgba(45, 106, 79, 0.05);
+  background: rgba(45, 106, 79, 0.06);
   pointer-events: none;
 }
 
@@ -703,6 +706,10 @@
 }
 
 @media (max-width: 768px) {
+  #application-support-scope .as-hero {
+    padding-top: calc(3.75rem + 1.5rem + 4.25rem + 1.25rem);
+  }
+
   #application-support-scope .as-hero-inner {
     grid-template-columns: 1fr;
     gap: 36px;

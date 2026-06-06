@@ -108,7 +108,7 @@ type AppExportRaw = {
   created_at: string | null;
   updated_at: string | null;
   applications_plans: PlanEmbed;
-  admins: PersonEmbed;
+  handlers: PersonEmbed;
   schools: SchoolEmbed;
   student_profiles: StudentEmbed;
 };
@@ -163,7 +163,7 @@ function statusLabel(status: string | null | undefined): string {
 
 function mapApplicationExportRow(row: AppExportRaw): AdminApplicationExportRow {
   const profile = firstEmbed(row.student_profiles);
-  const handler = firstEmbed(row.admins);
+  const handler = firstEmbed(row.handlers);
   const school = firstEmbed(row.schools);
   const plan = firstEmbed(row.applications_plans);
 
@@ -254,7 +254,7 @@ const APPLICATION_EXPORT_SELECT = `
   created_at,
   updated_at,
   applications_plans ( name, price, universities_count ),
-  admins:assigned_to ( first_name, last_name, email ),
+  handlers:assigned_to ( first_name, last_name, email ),
   schools ( id, name, code, country_code ),
   student_profiles ( first_name, last_name, email, phone, grade )
 `;

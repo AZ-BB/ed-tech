@@ -117,6 +117,39 @@ export type Database = {
         }
         Relationships: []
       }
+      handlers: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       advisor_sessions: {
         Row: {
           advisor_id: string
@@ -881,7 +914,7 @@ export type Database = {
             foreignKeyName: "applications_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
-            referencedRelation: "admins"
+            referencedRelation: "handlers"
             referencedColumns: ["id"]
           },
           {

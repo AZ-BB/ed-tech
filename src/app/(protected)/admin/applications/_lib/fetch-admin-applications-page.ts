@@ -37,7 +37,7 @@ type AppRowRaw = {
     | { name: string; universities_count: number }
     | { name: string; universities_count: number }[]
     | null;
-  admins: PersonEmbed;
+  handlers: PersonEmbed;
   schools: { name: string } | { name: string }[] | null;
   student_profiles:
     | ({ first_name: string; last_name: string; email?: string | null })
@@ -128,7 +128,7 @@ function mapApplicationRow(row: AppRowRaw): AdminApplicationTableRow {
     schoolName: resolveSchoolName(row),
     packageLabel: resolvePackageLabel(row),
     universitiesLabel: resolveUniversitiesLabel(row),
-    handlerName: personNameFromEmbed(row.admins),
+    handlerName: personNameFromEmbed(row.handlers),
     status: row.status?.trim() || "new",
   };
 }
@@ -153,7 +153,7 @@ export async function fetchAdminApplicationsPage(
       preferences_universities,
       school_name,
       applications_plans ( name, universities_count ),
-      admins:assigned_to ( first_name, last_name ),
+      handlers:assigned_to ( first_name, last_name ),
       schools ( name ),
       student_profiles ( first_name, last_name, email )
     `,

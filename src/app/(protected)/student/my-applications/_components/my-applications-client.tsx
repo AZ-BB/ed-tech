@@ -181,6 +181,40 @@ function isTaskDueThisWeek(dueDate: string | null, completed: boolean) {
   return dueD >= start && dueD <= end;
 }
 
+type EssayFormState = {
+  title: string;
+  essay_type: string;
+  for_application: string;
+  essay_prompt: string;
+  limit_note: string;
+  deadline: string;
+  instructions_note: string;
+};
+
+function defaultEssayForm(): EssayFormState {
+  return {
+    title: "",
+    essay_type: ESSAY_TYPE_OPTIONS[0] as string,
+    for_application: "",
+    essay_prompt: "",
+    limit_note: "",
+    deadline: "",
+    instructions_note: "",
+  };
+}
+
+function essayToForm(essay: EssayWithComments): EssayFormState {
+  return {
+    title: essay.title ?? "",
+    essay_type: essay.essay_type ?? (ESSAY_TYPE_OPTIONS[0] as string),
+    for_application: essay.for_application ?? "",
+    essay_prompt: essay.essay_prompt ?? "",
+    limit_note: essay.limit_note ?? "",
+    deadline: essay.deadline ? essay.deadline.slice(0, 10) : "",
+    instructions_note: essay.instructions_note ?? "",
+  };
+}
+
 function formatRelativeTime(iso: string | null | undefined) {
   if (!iso) return "";
   try {
@@ -373,15 +407,12 @@ export function MyApplicationsClient({
     application_method: "",
     application_deadline: "",
   });
-  const [essayForm, setEssayForm] = useState({
-    title: "",
-    essay_type: ESSAY_TYPE_OPTIONS[0] as string,
-    for_application: "",
-    essay_prompt: "",
-    limit_note: "",
-    deadline: "",
-    instructions_note: "",
-  });
+  const [essayForm, setEssayForm] = useState<EssayFormState>(defaultEssayForm);
+  const [essayEditingId, setEssayEditingId] = useState<string | null>(null);
+  const [essayDeleteTarget, setEssayDeleteTarget] =
+    useState<EssayWithComments | null>(null);
+  const [deletingEssay, setDeletingEssay] = useState(false);
+  const [savingEssay, setSavingEssay] = useState(false);
   const [recForm, setRecForm] = useState({
     teacher_name: "",
     teacher_subject: "",
@@ -539,10 +570,12 @@ export function MyApplicationsClient({
         : "bg-[#ECEAE5] text-[var(--text-mid)] border-[var(--border)]";
   }
 
-  const studentEssayBtnRow = (primary?: boolean) =>
-    primary
-      ? `${btnSmClass(true)} flex-1 justify-center`
-      : `${btnSmClass(false)} flex-1 justify-center`;
+  const studentEssayBtnRow = (primary?: boolean, danger?: boolean) =>
+    danger
+      ? `${btnSmClass(false)} flex-1 justify-center border-[rgba(231,76,60,0.35)] text-[#8c2d22] hover:bg-[rgba(231,76,60,0.08)]`
+      : primary
+        ? `${btnSmClass(true)} flex-1 justify-center`
+        : `${btnSmClass(false)} flex-1 justify-center`;
 
   const buildApplicationProfileRow = useCallback(() => {
     return {
@@ -974,7 +1007,25 @@ export function MyApplicationsClient({
     showToast("Document row removed");
   };
 
-  const addEssay = async () => {
+  const closeEssayModal = () => {
+    setEssayModal(false);
+    setEssayEditingId(null);
+    setEssayForm(defaultEssayForm());
+  };
+
+  const openEssayModalForAdd = () => {
+    setEssayEditingId(null);
+    setEssayForm(defaultEssayForm());
+    setEssayModal(true);
+  };
+
+  const openEssayModalForEdit = (essay: EssayWithComments) => {
+    setEssayEditingId(essay.id);
+    setEssayForm(essayToForm(essay));
+    setEssayModal(true);
+  };
+
+  const saveEssay = async () => {
     if (
       !essayForm.title.trim() ||
       !essayForm.for_application.trim() ||
@@ -983,26 +1034,20 @@ export function MyApplicationsClient({
       showToast("Title, university, and essay type are required");
       return;
     }
-    const { data, error } = await supabase
-      .from("student_my_application_essays")
-      .insert({
-        student_id: initial.studentId,
-        title: essayForm.title.trim(),
-        essay_type: essayForm.essay_type.trim(),
-        for_application: essayForm.for_application.trim(),
-        essay_prompt: essayForm.essay_prompt.trim() || null,
-        limit_note: essayForm.limit_note.trim() || null,
-        deadline: essayForm.deadline.trim()
-          ? essayForm.deadline.trim().slice(0, 10)
-          : null,
-        instructions_note: essayForm.instructions_note.trim() || null,
-        requirement_note: null,
-        status: "not_started",
-        body: "",
-        version: 1,
-      })
-      .select(
-        `
+    setSavingEssay(true);
+    const payload = {
+      title: essayForm.title.trim(),
+      essay_type: essayForm.essay_type.trim(),
+      for_application: essayForm.for_application.trim(),
+      essay_prompt: essayForm.essay_prompt.trim() || null,
+      limit_note: essayForm.limit_note.trim() || null,
+      deadline: essayForm.deadline.trim()
+        ? essayForm.deadline.trim().slice(0, 10)
+        : null,
+      instructions_note: essayForm.instructions_note.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+    const selectQuery = `
         *,
         student_my_application_essay_comments (
           id,
@@ -1012,25 +1057,77 @@ export function MyApplicationsClient({
           body,
           created_at
         )
-      `,
-      )
+      `;
+    if (essayEditingId) {
+      const { data, error } = await supabase
+        .from("student_my_application_essays")
+        .update(payload)
+        .eq("id", essayEditingId)
+        .eq("student_id", initial.studentId)
+        .select(selectQuery)
+        .single();
+      setSavingEssay(false);
+      if (error || !data) {
+        showToast(error?.message ?? "Could not update essay");
+        return;
+      }
+      setEssays((prev) =>
+        prev.map((x) =>
+          x.id === essayEditingId ? (data as EssayWithComments) : x,
+        ),
+      );
+      closeEssayModal();
+      showToast("Essay updated");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("student_my_application_essays")
+      .insert({
+        student_id: initial.studentId,
+        ...payload,
+        requirement_note: null,
+        status: "not_started",
+        body: "",
+        version: 1,
+      })
+      .select(selectQuery)
       .single();
+    setSavingEssay(false);
     if (error || !data) {
       showToast(error?.message ?? "Could not create");
       return;
     }
     setEssays((prev) => [data as EssayWithComments, ...prev]);
-    setEssayModal(false);
-    setEssayForm({
-      title: "",
-      essay_type: ESSAY_TYPE_OPTIONS[0] as string,
-      for_application: "",
-      essay_prompt: "",
-      limit_note: "",
-      deadline: "",
-      instructions_note: "",
-    });
+    closeEssayModal();
     showToast("Essay created");
+  };
+
+  const deleteEssay = async (essay: EssayWithComments) => {
+    setDeletingEssay(true);
+    const storagePath = essay.file_storage_path?.trim();
+    const { error } = await supabase
+      .from("student_my_application_essays")
+      .delete()
+      .eq("id", essay.id)
+      .eq("student_id", initial.studentId);
+    if (error) {
+      setDeletingEssay(false);
+      showToast(error.message ?? "Could not delete essay");
+      return;
+    }
+    if (storagePath) {
+      const { error: rmErr } = await supabase.storage
+        .from("student-my-applications")
+        .remove([storagePath]);
+      if (rmErr) {
+        console.error("[deleteEssay] storage remove", rmErr);
+      }
+    }
+    setEssays((prev) => prev.filter((x) => x.id !== essay.id));
+    if (essayDetailId === essay.id) setEssayDetailId(null);
+    setEssayDeleteTarget(null);
+    setDeletingEssay(false);
+    showToast("Essay deleted");
   };
 
   const updateEssayStatus = async (
@@ -2056,7 +2153,7 @@ export function MyApplicationsClient({
                 <button
                   type="button"
                   className={btnSmClass(true)}
-                  onClick={() => setEssayModal(true)}
+                  onClick={openEssayModalForAdd}
                 >
                   <svg
                     width="14"
@@ -2170,6 +2267,20 @@ export function MyApplicationsClient({
                         ))}
                       </select>
                       <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          className={studentEssayBtnRow(false)}
+                          onClick={() => openEssayModalForEdit(e)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className={studentEssayBtnRow(false, true)}
+                          onClick={() => setEssayDeleteTarget(e)}
+                        >
+                          Delete
+                        </button>
                         <button
                           type="button"
                           className={studentEssayBtnRow(false)}
@@ -2708,10 +2819,49 @@ export function MyApplicationsClient({
         </ModalVeil>
       ) : null}
 
+      {essayDeleteTarget ? (
+        <ModalVeil
+          title="Delete essay"
+          onClose={() => {
+            if (!deletingEssay) setEssayDeleteTarget(null);
+          }}
+        >
+          <div className="flex flex-col gap-5">
+            <p className="text-[13.5px] leading-relaxed text-[var(--text)]">
+              Delete{" "}
+              <strong className="font-semibold">{essayDeleteTarget.title}</strong>
+              ? This removes the essay entry
+              {essayDeleteTarget.file_name ? ", its uploaded file," : ""} and any
+              counselor comments. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-[8px] border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] disabled:opacity-50"
+                onClick={() => setEssayDeleteTarget(null)}
+                disabled={deletingEssay}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-[8px] border border-[#c0392b] bg-[#c0392b] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[#a93226] disabled:opacity-50"
+                onClick={() => void deleteEssay(essayDeleteTarget)}
+                disabled={deletingEssay}
+              >
+                {deletingEssay ? "Deleting…" : "Delete essay"}
+              </button>
+            </div>
+          </div>
+        </ModalVeil>
+      ) : null}
+
       {essayModal ? (
         <ModalVeil
-          onClose={() => setEssayModal(false)}
-          title="Add essay requirement"
+          onClose={closeEssayModal}
+          title={
+            essayEditingId ? "Edit essay" : "Add essay requirement"
+          }
         >
           <div className="flex flex-col gap-3.5">
             <div>
@@ -2823,16 +2973,22 @@ export function MyApplicationsClient({
             <button
               type="button"
               className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold"
-              onClick={() => setEssayModal(false)}
+              onClick={closeEssayModal}
+              disabled={savingEssay}
             >
               Cancel
             </button>
             <button
               type="button"
-              className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
-              onClick={() => void addEssay()}
+              className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)] disabled:opacity-50"
+              onClick={() => void saveEssay()}
+              disabled={savingEssay}
             >
-              Save essay
+              {savingEssay
+                ? "Saving…"
+                : essayEditingId
+                  ? "Save changes"
+                  : "Save essay"}
             </button>
           </div>
         </ModalVeil>

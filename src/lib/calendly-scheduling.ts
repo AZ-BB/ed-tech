@@ -3,6 +3,11 @@ export const CALENDLY_SCHEDULING_BASE_URL =
   process.env.NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL?.trim() ||
   "https://calendly.com/admin-univeera/30min";
 
+/** UTM content value linking a Calendly booking back to an advisor session row. */
+export function advisorSessionUtmContent(sessionId: number): string {
+  return `advisor_session:${sessionId}`;
+}
+
 /** Build Calendly scheduling page URL with prefill + optional custom field `a1` (context). */
 export function buildCalendlySchedulingPageUrl(opts: {
   name: string;
@@ -10,6 +15,8 @@ export function buildCalendlySchedulingPageUrl(opts: {
   ctxParts: string[];
   /** Defaults to {@link CALENDLY_SCHEDULING_BASE_URL}. */
   base?: string;
+  /** Forwarded in webhook payload.tracking.utm_content (e.g. advisor_session:123). */
+  utmContent?: string;
 }): string {
   let b = (opts.base ?? CALENDLY_SCHEDULING_BASE_URL).trim();
   if (!/^https?:\/\//i.test(b)) b = `https://${b}`;
@@ -24,6 +31,9 @@ export function buildCalendlySchedulingPageUrl(opts: {
   if (opts.email) u.searchParams.set("email", opts.email);
   if (opts.ctxParts.length) {
     u.searchParams.set("a1", opts.ctxParts.join(" | "));
+  }
+  if (opts.utmContent?.trim()) {
+    u.searchParams.set("utm_content", opts.utmContent.trim());
   }
   return u.toString();
 }
