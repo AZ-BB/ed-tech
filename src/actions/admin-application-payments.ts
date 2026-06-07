@@ -209,11 +209,7 @@ export async function sendApplicationPaymentRequest(
 
   const remainingBalance = Math.max(0, Math.round((planPrice - totalPaid) * 100) / 100);
 
-  if (remainingBalance <= 0) {
-    return { ok: false, error: "This application has already been fully paid." };
-  }
-
-  if (amountAed > remainingBalance) {
+  if (remainingBalance > 0 && amountAed > remainingBalance) {
     return {
       ok: false,
       error: `Amount cannot exceed the remaining balance of ${remainingBalance.toLocaleString()} AED.`,

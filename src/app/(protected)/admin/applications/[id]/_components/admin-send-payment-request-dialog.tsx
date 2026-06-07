@@ -48,8 +48,9 @@ export function AdminSendPaymentRequestDialog({
   if (!open) return null;
 
   function handleFillFullPrice() {
-    if (remainingBalance <= 0) return;
-    setAmount(String(remainingBalance));
+    const fillAmount = remainingBalance > 0 ? remainingBalance : planPrice;
+    if (fillAmount <= 0) return;
+    setAmount(String(fillAmount));
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -63,7 +64,7 @@ export function AdminSendPaymentRequestDialog({
   const amountValid =
     Number.isFinite(parsedAmount) &&
     parsedAmount > 0 &&
-    parsedAmount <= remainingBalance;
+    (remainingBalance <= 0 || parsedAmount <= remainingBalance);
 
   return (
     <div
@@ -125,27 +126,33 @@ export function AdminSendPaymentRequestDialog({
                 id="payment-request-amount"
                 type="number"
                 min={1}
-                max={remainingBalance}
+                max={remainingBalance > 0 ? remainingBalance : undefined}
                 step="0.01"
                 required
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="Enter amount"
                 className={inputClassName}
-                disabled={isSubmitting || remainingBalance <= 0}
+                disabled={isSubmitting}
               />
               <button
                 type="button"
                 onClick={handleFillFullPrice}
-                disabled={isSubmitting || remainingBalance <= 0}
+                disabled={isSubmitting || (remainingBalance <= 0 && planPrice <= 0)}
                 className="shrink-0 cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[11.5px] font-semibold text-[#4a4a4a] transition-colors hover:border-[#40916C] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {totalPaid > 0 ? "Fill remaining" : "Full price"}
+                {remainingBalance > 0
+                  ? totalPaid > 0
+                    ? "Fill remaining"
+                    : "Full price"
+                  : "Full price"}
               </button>
             </div>
             {amount.trim() !== "" && !amountValid ? (
               <p className="mt-1.5 text-[12px] text-[#E74C3C]">
-                Enter an amount between 1 and {remainingBalance.toLocaleString()} AED.
+                {remainingBalance > 0
+                  ? `Enter an amount between 1 and ${remainingBalance.toLocaleString()} AED.`
+                  : "Enter a valid amount greater than 0."}
               </p>
             ) : null}
           </div>
