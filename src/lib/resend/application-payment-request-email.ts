@@ -1,6 +1,5 @@
 import "server-only";
 
-import { ONBOARDING_DEPOSIT_AED } from "@/lib/application-support-payment";
 import { sendResendEmail } from "@/lib/resend/send-email";
 
 export type SendApplicationPaymentRequestEmailInput = {
@@ -9,6 +8,7 @@ export type SendApplicationPaymentRequestEmailInput = {
   applicationId: number;
   packageLabel: string;
   payUrl: string;
+  amountAed: number;
 };
 
 function escapeHtml(value: string): string {
@@ -26,7 +26,7 @@ function buildApplicationPaymentRequestHtml(
   const applicationId = escapeHtml(String(input.applicationId));
   const packageLabel = escapeHtml(input.packageLabel || "Application support");
   const payUrl = escapeHtml(input.payUrl);
-  const amount = ONBOARDING_DEPOSIT_AED.toLocaleString();
+  const amount = input.amountAed.toLocaleString();
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -39,7 +39,7 @@ function buildApplicationPaymentRequestHtml(
           <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#2d6a4f;">Univeera</p>
           <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#1a2e22;">Application support payment</h1>
           <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#3d4f44;">Hi ${studentName},</p>
-          <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#3d4f44;">Please complete your <strong>${amount} AED</strong> onboarding deposit to continue your application support request.</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#3d4f44;">Please complete your <strong>${amount} AED</strong> payment to continue your application support request.</p>
           <p style="margin:0 0 8px;font-size:14px;color:#5c6b62;">Application:</p>
           <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#1a2e22;">#${applicationId}</p>
           <p style="margin:0 0 8px;font-size:14px;color:#5c6b62;">Package:</p>
@@ -59,13 +59,13 @@ function buildApplicationPaymentRequestHtml(
 function buildApplicationPaymentRequestText(
   input: SendApplicationPaymentRequestEmailInput,
 ): string {
-  const amount = ONBOARDING_DEPOSIT_AED.toLocaleString();
+  const amount = input.amountAed.toLocaleString();
 
   return `Application support payment
 
 Hi ${input.studentName},
 
-Please complete your ${amount} AED onboarding deposit to continue your application support request.
+Please complete your ${amount} AED payment to continue your application support request.
 
 Application: #${input.applicationId}
 Package: ${input.packageLabel || "Application support"}
@@ -79,11 +79,11 @@ This link is private. Do not share it publicly.
 export async function sendApplicationPaymentRequestEmail(
   input: SendApplicationPaymentRequestEmailInput,
 ) {
-  const amount = ONBOARDING_DEPOSIT_AED.toLocaleString();
+  const amount = input.amountAed.toLocaleString();
 
   return sendResendEmail({
     to: input.to,
-    subject: `Complete your ${amount} AED application support deposit`,
+    subject: `Complete your ${amount} AED application support payment`,
     html: buildApplicationPaymentRequestHtml(input),
     text: buildApplicationPaymentRequestText(input),
     tags: [{ name: "category", value: "application_payment_request" }],

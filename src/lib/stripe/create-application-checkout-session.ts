@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  ONBOARDING_DEPOSIT_AED,
-  ONBOARDING_DEPOSIT_FILS,
-} from "@/lib/application-support-payment";
+import { aedToFils } from "@/lib/application-support-payment";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
 import { getStripeClient } from "@/lib/stripe/config";
 
@@ -12,6 +9,7 @@ export type CreateApplicationCheckoutSessionInput = {
   applicationId: number;
   customerEmail: string;
   packageLabel: string;
+  amountAed: number;
 };
 
 export type CreateApplicationCheckoutSessionResult =
@@ -33,6 +31,9 @@ export async function createApplicationCheckoutSession(
   const successUrl = `${baseUrl}/application-support/payment/success?application_id=${input.applicationId}&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${baseUrl}/application-support/payment/cancel?application_id=${input.applicationId}`;
 
+  const amountFils = aedToFils(input.amountAed);
+  const amountLabel = input.amountAed.toLocaleString();
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -43,10 +44,10 @@ export async function createApplicationCheckoutSession(
           quantity: 1,
           price_data: {
             currency: "aed",
-            unit_amount: ONBOARDING_DEPOSIT_FILS,
+            unit_amount: amountFils,
             product_data: {
-              name: "Application Support Deposit",
-              description: `${ONBOARDING_DEPOSIT_AED} AED onboarding deposit${input.packageLabel ? ` — ${input.packageLabel}` : ""}`,
+              name: "Application Support Payment",
+              description: `${amountLabel} AED application support payment${input.packageLabel ? ` — ${input.packageLabel}` : ""}`,
             },
           },
         },
