@@ -61,10 +61,7 @@ export function AdminSendPaymentRequestDialog({
   }
 
   const parsedAmount = Number.parseFloat(amount.trim());
-  const amountValid =
-    Number.isFinite(parsedAmount) &&
-    parsedAmount > 0 &&
-    (remainingBalance <= 0 || parsedAmount <= remainingBalance);
+  const amountValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
 
   return (
     <div
@@ -126,7 +123,6 @@ export function AdminSendPaymentRequestDialog({
                 id="payment-request-amount"
                 type="number"
                 min={1}
-                max={remainingBalance > 0 ? remainingBalance : undefined}
                 step="0.01"
                 required
                 value={amount}
@@ -150,9 +146,7 @@ export function AdminSendPaymentRequestDialog({
             </div>
             {amount.trim() !== "" && !amountValid ? (
               <p className="mt-1.5 text-[12px] text-[#E74C3C]">
-                {remainingBalance > 0
-                  ? `Enter an amount between 1 and ${remainingBalance.toLocaleString()} AED.`
-                  : "Enter a valid amount greater than 0."}
+                Enter a valid amount greater than 0.
               </p>
             ) : null}
           </div>
