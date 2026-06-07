@@ -62,6 +62,7 @@ export async function resolveApplicationPaymentCheckout(
       id,
       application_id,
       status,
+      amount,
       applications!inner (
         id,
         student_name,
@@ -118,6 +119,7 @@ export async function resolveApplicationPaymentCheckout(
     applicationId: app.id,
     customerEmail,
     packageLabel: resolvePackageLabel(app),
+    amountAed: payment.amount,
   });
 
   if (!checkout.ok) {

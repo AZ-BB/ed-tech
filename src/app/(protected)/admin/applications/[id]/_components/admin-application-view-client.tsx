@@ -24,6 +24,7 @@ import { useEffect, useMemo, useState, useTransition, type ReactNode } from "rea
 
 import type { AdminApplicationDetailPayload } from "../_lib/fetch-admin-application-detail";
 import type { AdminApplicationDetailTab } from "../_lib/parse-admin-application-detail-search-params";
+import { AdminSendPaymentRequestDialog } from "./admin-send-payment-request-dialog";
 
 const SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
@@ -131,13 +132,24 @@ export function AdminApplicationViewClient({
   const [paymentRequestMessage, setPaymentRequestMessage] = useState<string | null>(
     null,
   );
+  const [paymentRequestOpen, setPaymentRequestOpen] = useState(false);
+  const [paymentRequestError, setPaymentRequestError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const { application, plan, handler, student, school, documents, payments } = payload;
 
-  const hasPaidPayment = payments.some((payment) => payment.status === "paid");
+  const planPrice = plan?.price ?? 0;
+  const totalPaid = useMemo(
+    () =>
+      payments
+        .filter((payment) => payment.status === "paid")
+        .reduce((sum, payment) => sum + payment.amount, 0),
+    [payments],
+  );
+  const remainingBalance = Math.max(0, planPrice - totalPaid);
   const canSendPaymentRequest =
-    !hasPaidPayment &&
+    remainingBalance > 0 &&
+    planPrice > 0 &&
     application.studentEmail.trim() !== "" &&
     application.studentEmail !== "—";
 
@@ -187,16 +199,27 @@ export function AdminApplicationViewClient({
     { lab: "Updated", val: formatDateTime(application.updatedAt) },
   ];
 
-  function handleSendPaymentRequest() {
+  function handleOpenPaymentRequest() {
     setActionError(null);
     setPaymentRequestMessage(null);
+    setPaymentRequestError(null);
+    setPaymentRequestOpen(true);
+  }
+
+  function handleSendPaymentRequest(amountAed: number) {
+    setActionError(null);
+    setPaymentRequestMessage(null);
+    setPaymentRequestError(null);
     startTransition(async () => {
-      const result = await sendApplicationPaymentRequest(application.id);
+      const result = await sendApplicationPaymentRequest(application.id, amountAed);
       if (!result.ok) {
-        setActionError(result.error);
+        setPaymentRequestError(result.error);
         return;
       }
-      setPaymentRequestMessage(`Payment request sent to ${result.email}.`);
+      setPaymentRequestOpen(false);
+      setPaymentRequestMessage(
+        `Payment request for ${amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
       router.refresh();
     });
   }
@@ -453,16 +476,16 @@ export function AdminApplicationViewClient({
 
         <SchoolStudentPanel
           head="Payments"
-          sub="Send a payment request to collect the onboarding deposit"
+          sub="Send a payment request to collect application support fees"
           actions={
             canSendPaymentRequest ? (
               <button
                 type="button"
                 disabled={isPending}
-                onClick={handleSendPaymentRequest}
+                onClick={handleOpenPaymentRequest}
                 className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isPending ? "Sending…" : "Send Payment Request"}
+                Send Payment Request
               </button>
             ) : undefined
           }
@@ -754,6 +777,19 @@ export function AdminApplicationViewClient({
           </div>
         </div>
       ) : null}
+
+      <AdminSendPaymentRequestDialog
+        open={paymentRequestOpen}
+        onClose={() => {
+          if (!isPending) setPaymentRequestOpen(false);
+        }}
+        onSubmit={handleSendPaymentRequest}
+        isSubmitting={isPending}
+        error={paymentRequestError}
+        planPrice={planPrice}
+        totalPaid={totalPaid}
+        studentEmail={application.studentEmail}
+      />
     </div>
   );
 }

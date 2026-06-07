@@ -4,7 +4,6 @@ import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
-import { ONBOARDING_DEPOSIT_AED } from "@/lib/application-support-payment";
 import { isResendConfigured } from "@/lib/resend/config";
 import { sendApplicationPaymentRequestEmail } from "@/lib/resend/application-payment-request-email";
 import { buildApplicationPaymentUrl } from "@/lib/resend/site-url";
@@ -63,6 +62,12 @@ function parseApplicationId(raw: number): number | null {
   return Math.trunc(raw);
 }
 
+function parseAmountAed(raw: number): number | null {
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+  const rounded = Math.round(raw * 100) / 100;
+  return rounded;
+}
+
 function firstEmbed<T>(embed: T | T[] | null | undefined): T | null {
   if (!embed) return null;
   return Array.isArray(embed) ? (embed[0] ?? null) : embed;
@@ -81,6 +86,17 @@ function resolvePackageLabel(
     return `${count} ${count === 1 ? "university" : "universities"}`;
   }
   return row.name?.trim() || "Application support";
+}
+
+function resolvePlanPrice(
+  plan:
+    | { price: number }
+    | { price: number }[]
+    | null,
+): number {
+  const row = firstEmbed(plan);
+  if (!row || !Number.isFinite(row.price) || row.price <= 0) return 0;
+  return row.price;
 }
 
 function resolveStudentName(
@@ -111,6 +127,7 @@ function revalidateApplicationPaths(applicationId: number) {
 
 export async function sendApplicationPaymentRequest(
   applicationIdRaw: number,
+  amountAedRaw: number,
 ): Promise<AdminPaymentActionResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -118,6 +135,11 @@ export async function sendApplicationPaymentRequest(
   const applicationId = parseApplicationId(applicationIdRaw);
   if (applicationId == null) {
     return { ok: false, error: "Invalid application." };
+  }
+
+  const amountAed = parseAmountAed(amountAedRaw);
+  if (amountAed == null) {
+    return { ok: false, error: "Enter a valid payment amount." };
   }
 
   if (!isStripeConfigured()) {
@@ -144,7 +166,7 @@ export async function sendApplicationPaymentRequest(
       student_id,
       student_name,
       student_email,
-      applications_plans ( name, universities_count ),
+      applications_plans ( name, universities_count, price ),
       student_profiles ( first_name, last_name, email )
     `,
     )
@@ -154,6 +176,11 @@ export async function sendApplicationPaymentRequest(
   if (appErr || !application) {
     console.error("[sendApplicationPaymentRequest] application", appErr);
     return { ok: false, error: "Application not found." };
+  }
+
+  const planPrice = resolvePlanPrice(application.applications_plans);
+  if (planPrice <= 0) {
+    return { ok: false, error: "This application has no package price configured." };
   }
 
   const profile = firstEmbed(application.student_profiles);
@@ -167,7 +194,7 @@ export async function sendApplicationPaymentRequest(
 
   const { data: existingPayments, error: payErr } = await secret
     .from("payments")
-    .select("id, status")
+    .select("id, status, amount")
     .eq("application_id", applicationId)
     .order("created_at", { ascending: false });
 
@@ -176,11 +203,21 @@ export async function sendApplicationPaymentRequest(
     return { ok: false, error: "Could not load payment records." };
   }
 
-  const paidPayment = (existingPayments ?? []).find(
-    (row) => row.status === "paid",
-  );
-  if (paidPayment) {
-    return { ok: false, error: "This application has already been paid." };
+  const totalPaid = (existingPayments ?? [])
+    .filter((row) => row.status === "paid")
+    .reduce((sum, row) => sum + (row.amount ?? 0), 0);
+
+  const remainingBalance = Math.max(0, Math.round((planPrice - totalPaid) * 100) / 100);
+
+  if (remainingBalance <= 0) {
+    return { ok: false, error: "This application has already been fully paid." };
+  }
+
+  if (amountAed > remainingBalance) {
+    return {
+      ok: false,
+      error: `Amount cannot exceed the remaining balance of ${remainingBalance.toLocaleString()} AED.`,
+    };
   }
 
   const reusablePayment = (existingPayments ?? []).find(
@@ -197,7 +234,7 @@ export async function sendApplicationPaymentRequest(
         status: "pending",
         payment_request_token: token,
         payment_request_sent_at: now,
-        amount: ONBOARDING_DEPOSIT_AED,
+        amount: amountAed,
         paid_at: null,
         stripe_checkout_session_id: null,
         updated_at: now,
@@ -212,7 +249,7 @@ export async function sendApplicationPaymentRequest(
     const { error: insertErr } = await secret.from("payments").insert({
       student_id: application.student_id,
       application_id: applicationId,
-      amount: ONBOARDING_DEPOSIT_AED,
+      amount: amountAed,
       status: "pending",
       payment_request_token: token,
       payment_request_sent_at: now,
@@ -234,6 +271,7 @@ export async function sendApplicationPaymentRequest(
     applicationId,
     packageLabel,
     payUrl,
+    amountAed,
   });
 
   if ("error" in emailResult) {
@@ -244,7 +282,7 @@ export async function sendApplicationPaymentRequest(
     entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
     entity_id: applicationActivityEntityId(applicationId),
     action: "payment_request_sent",
-    message: `${access.actorName} sent a payment request to ${studentEmail} for application #${applicationId}.`,
+    message: `${access.actorName} sent a ${amountAed.toLocaleString()} AED payment request to ${studentEmail} for application #${applicationId}.`,
     created_by_type: "admin",
     admin_id: access.userId,
     school_admin_id: null,
