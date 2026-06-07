@@ -147,11 +147,8 @@ export function AdminApplicationViewClient({
     [payments],
   );
   const remainingBalance = Math.max(0, planPrice - totalPaid);
-  const canSendPaymentRequest =
-    remainingBalance > 0 &&
-    planPrice > 0 &&
-    application.studentEmail.trim() !== "" &&
-    application.studentEmail !== "—";
+  const hasStudentEmail =
+    application.studentEmail.trim() !== "" && application.studentEmail !== "—";
 
   useEffect(() => {
     setStatus(payload.application.status);
@@ -478,16 +475,14 @@ export function AdminApplicationViewClient({
           head="Payments"
           sub="Send a payment request to collect application support fees"
           actions={
-            canSendPaymentRequest ? (
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleOpenPaymentRequest}
-                className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Send Payment Request
-              </button>
-            ) : undefined
+            <button
+              type="button"
+              disabled={isPending || !hasStudentEmail}
+              onClick={handleOpenPaymentRequest}
+              className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Send Payment Request
+            </button>
           }
         >
           {paymentRequestMessage ? (
