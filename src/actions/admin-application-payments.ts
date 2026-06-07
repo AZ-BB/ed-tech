@@ -203,19 +203,6 @@ export async function sendApplicationPaymentRequest(
     return { ok: false, error: "Could not load payment records." };
   }
 
-  const totalPaid = (existingPayments ?? [])
-    .filter((row) => row.status === "paid")
-    .reduce((sum, row) => sum + (row.amount ?? 0), 0);
-
-  const remainingBalance = Math.max(0, Math.round((planPrice - totalPaid) * 100) / 100);
-
-  if (remainingBalance > 0 && amountAed > remainingBalance) {
-    return {
-      ok: false,
-      error: `Amount cannot exceed the remaining balance of ${remainingBalance.toLocaleString()} AED.`,
-    };
-  }
-
   const reusablePayment = (existingPayments ?? []).find(
     (row) => row.status === "pending" || row.status === "failed",
   );
