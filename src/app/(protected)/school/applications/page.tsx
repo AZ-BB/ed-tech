@@ -1,4 +1,8 @@
 import { buildFullDestinationSelectItems } from "@/lib/school-portal-destination-options";
+import {
+  parseSchoolPortalView,
+  resolveTeacherFilterFromView,
+} from "@/lib/school-portal-view";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import { SchoolApplicationsClient } from "./_components/school-applications-client";
@@ -23,8 +27,14 @@ export default async function SchoolApplicationsPage({
   const country = typeof sp.country === "string" ? sp.country : "";
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 12)));
+  const view = parseSchoolPortalView(sp.view);
 
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const teacherFilter = resolveTeacherFilterFromView(view, user?.id);
+
   const { data: countries } = await supabase
     .from("countries")
     .select("name")
@@ -40,6 +50,7 @@ export default async function SchoolApplicationsPage({
     country,
     page,
     limit,
+    teacherFilter,
   });
 
   return (
@@ -53,6 +64,7 @@ export default async function SchoolApplicationsPage({
       status={status}
       country={country}
       destinationItems={destinationItems}
+      view={view}
     />
   );
 }

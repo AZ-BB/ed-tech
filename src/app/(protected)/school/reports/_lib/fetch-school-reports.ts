@@ -1,5 +1,7 @@
 import type { Database } from "@/database.types";
+import { applyStudentTeacherFilter } from "@/lib/fetch-school-teacher-options";
 import { parseSchoolStudentsNeedingFollowUp } from "@/lib/school-student-risk";
+import type { StudentTeacherFilterValue } from "@/lib/student-teacher-assignment";
 import { fetchStudentAvatarUrlMap } from "@/lib/student-avatar-url-map";
 import {
   getStudentApplicationProfileCompletion,
@@ -391,7 +393,10 @@ function rollupShortlist(
   return summaries;
 }
 
-export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null> {
+export async function fetchSchoolReports(options?: {
+  teacherFilter?: StudentTeacherFilterValue;
+}): Promise<SchoolReportsPayload | null> {
+  const teacherFilter = options?.teacherFilter ?? "";
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -418,32 +423,32 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
     .maybeSingle();
   schoolName = schoolRow?.name?.trim() || "School";
 
-  const [totalStudentsRes, shortlistRpcRes, profilesRes, appsSubmittedRes] =
-    await Promise.all([
+  const teacherRpcId = teacherFilter || null;
+
+  const [totalStudentsRes, shortlistRpcRes, profilesRes] = await Promise.all([
+    applyStudentTeacherFilter(
       supabase
         .from("student_profiles")
         .select("id", { count: "exact", head: true })
         .eq("school_id", schoolId),
-      supabase.rpc("school_dashboard_shortlist_top_stats", {
-        p_top_n: REPORTS_SHORTLIST_TOP_N,
-      }),
+      teacherFilter,
+    ),
+    supabase.rpc("school_dashboard_shortlist_top_stats", {
+      p_top_n: REPORTS_SHORTLIST_TOP_N,
+      p_teacher_id: teacherRpcId,
+    }),
+    applyStudentTeacherFilter(
       supabase
         .from("student_profiles")
-        .select("id, first_name, last_name, avatar_url, grade, updated_at, created_at")
+        .select(
+          "id, first_name, last_name, avatar_url, grade, updated_at, created_at",
+        )
         .eq("school_id", schoolId)
         .order("last_name", { ascending: true })
         .order("first_name", { ascending: true }),
-      supabase
-        .from("applications")
-        .select("*", { count: "exact", head: true })
-        .eq("school_id", schoolId)
-        .eq(
-          "status",
-          "submitted" satisfies Database["public"]["Enums"]["application_status"],
-        )
-        .gte("submitted_at", monthStartIso)
-        .lt("submitted_at", monthEndExclusiveIso),
-    ]);
+      teacherFilter,
+    ),
+  ]);
 
   if (shortlistRpcRes.error) {
     console.error(
@@ -461,6 +466,27 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
   }
   const schoolStudentIds = profiles.map((p) => p.id);
   const schoolStudentSet = new Set(schoolStudentIds);
+
+  let appsSubmittedRes: { count: number | null; error: { message: string } | null };
+  if (teacherFilter && schoolStudentIds.length === 0) {
+    appsSubmittedRes = { count: 0, error: null };
+  } else {
+    let appsQuery = supabase
+      .from("applications")
+      .select("*", { count: "exact", head: true })
+      .eq("school_id", schoolId)
+      .eq(
+        "status",
+        "submitted" satisfies Database["public"]["Enums"]["application_status"],
+      )
+      .gte("submitted_at", monthStartIso)
+      .lt("submitted_at", monthEndExclusiveIso);
+    if (teacherFilter && schoolStudentIds.length > 0) {
+      appsQuery = appsQuery.in("student_id", schoolStudentIds);
+    }
+    const res = await appsQuery;
+    appsSubmittedRes = { count: res.count, error: res.error };
+  }
 
   const activeMonth = new Set<string>();
   const actReal = await collectStudentIdsActiveFromActivities(
@@ -523,6 +549,7 @@ export async function fetchSchoolReports(): Promise<SchoolReportsPayload | null>
     supabase.rpc("school_students_needing_follow_up", {
       p_limit: 0,
       p_school_id: schoolId,
+      p_teacher_id: teacherRpcId,
     }),
     schoolStudentIds.length
       ? supabase

@@ -1,6 +1,10 @@
 import { buildFullDestinationSelectItems } from "@/lib/school-portal-destination-options";
 import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
 import {
+  parseSchoolPortalView,
+  resolveTeacherFilterFromView,
+} from "@/lib/school-portal-view";
+import {
   resolveSchoolStudentsTeacherFilter,
   schoolStudentsTeacherSelectValue,
 } from "@/lib/student-teacher-assignment";
@@ -28,6 +32,7 @@ export default async function SchoolStudentsPage({
   const dest = typeof sp.dest === "string" ? sp.dest : "";
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 12)));
+  const view = parseSchoolPortalView(sp.view);
 
   const supabase = await createSupabaseServerClient();
 
@@ -36,8 +41,12 @@ export default async function SchoolStudentsPage({
   } = await supabase.auth.getUser();
 
   const currentTeacherId = user?.id ?? null;
-
-  const teacher = resolveSchoolStudentsTeacherFilter(sp.teacher);
+  const teacherFilterFromView = resolveTeacherFilterFromView(
+    view,
+    currentTeacherId,
+  );
+  const teacherFromUrl = resolveSchoolStudentsTeacherFilter(sp.teacher);
+  const teacher = teacherFilterFromView || teacherFromUrl;
   const teacherSelectValue = schoolStudentsTeacherSelectValue(
     teacher,
     currentTeacherId,
@@ -87,6 +96,7 @@ export default async function SchoolStudentsPage({
       currentTeacherId={currentTeacherId}
       teacherOptions={teacherOptions}
       destinationItems={destinationItems}
+      view={view}
     />
   );
 }

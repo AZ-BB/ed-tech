@@ -20,6 +20,10 @@ import {
 import { Pagination } from "@/components/pagination";
 import type { DestinationSelectItem } from "@/lib/school-portal-destination-options";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
+import {
+  SCHOOL_VIEW_MY,
+  type SchoolPortalView,
+} from "@/lib/school-portal-view";
 import type { GeneralResponse } from "@/utils/response";
 import { useRouter } from "next/navigation";
 import {
@@ -181,6 +185,7 @@ export function SchoolStudentsClient({
   currentTeacherId,
   teacherOptions,
   destinationItems,
+  view = "all_view",
 }: {
   rows: SchoolStudentTableRow[];
   totalRows: number;
@@ -195,6 +200,7 @@ export function SchoolStudentsClient({
   currentTeacherId: string | null;
   teacherOptions: SchoolTeacherOption[];
   destinationItems: DestinationSelectItem[];
+  view?: SchoolPortalView;
 }) {
   const router = useRouter();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -500,6 +506,9 @@ export function SchoolStudentsClient({
           <input type="hidden" name="page" value="1" />
           {studentQ.trim() ? (
             <input type="hidden" name="studentQ" value={studentQ} />
+          ) : null}
+          {view === SCHOOL_VIEW_MY ? (
+            <input type="hidden" name="view" value={SCHOOL_VIEW_MY} />
           ) : null}
           <div className="relative min-w-[200px] max-w-[340px] flex-1">
             <svg

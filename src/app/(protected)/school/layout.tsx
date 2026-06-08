@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+
 import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
-import { redirect } from "next/navigation";
 
 import { SchoolPortalShell } from "./_components/school-portal-shell";
 
@@ -103,13 +105,15 @@ export default async function SchoolLayout({
   );
 
   return (
-    <SchoolPortalShell
-      schoolName={schoolName}
-      displayName={displayName}
-      avatarInitials={avatarInitials}
-      avatarUrl={avatarUrl}
-    >
-      {children}
-    </SchoolPortalShell>
+    <Suspense fallback={null}>
+      <SchoolPortalShell
+        schoolName={schoolName}
+        displayName={displayName}
+        avatarInitials={avatarInitials}
+        avatarUrl={avatarUrl}
+      >
+        {children}
+      </SchoolPortalShell>
+    </Suspense>
   );
 }

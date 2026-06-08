@@ -6,10 +6,15 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-  buildNavHrefWithStudentQ,
-  SchoolNavSearch,
-} from "./school-nav-search";
+  buildSchoolNavHref,
+  parseSchoolPortalView,
+  type SchoolPortalView,
+  writeStoredSchoolPortalView,
+} from "@/lib/school-portal-view";
+
+import { SchoolNavSearch } from "./school-nav-search";
 import { SchoolNotificationsButton } from "./school-notifications-button";
+import { SchoolPortalViewToggle } from "./school-portal-view-toggle";
 
 const fontSans =
   '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
@@ -241,105 +246,6 @@ function navLinkActive(pathname: string, href: string): boolean {
   return n === h || n.startsWith(`${h}/`);
 }
 
-function SchoolSidebarNav({
-  pathname,
-  closeSidebar,
-}: {
-  pathname: string | null;
-  closeSidebar: () => void;
-}) {
-  const urlStudentQ = useSearchParams().get("studentQ") ?? "";
-  const studentQ =
-    urlStudentQ.trim() ||
-    (typeof window !== "undefined"
-      ? (() => {
-          try {
-            return sessionStorage.getItem("school-portal-studentQ") ?? "";
-          } catch {
-            return "";
-          }
-        })()
-      : "");
-
-  return (
-    <>
-      {navSections.map((sec) => (
-        <div key={sec.title} className={sec.className}>
-          <div className="px-[22px] pb-[6px] pt-[10px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[rgba(255,255,255,0.4)] first:pt-0">
-            {sec.title}
-          </div>
-          <nav className="flex flex-col gap-px px-[10px]">
-            {sec.links.map((link) => {
-              const active = pathname
-                ? navLinkActive(pathname, link.href)
-                : false;
-              return (
-                <Link
-                  key={link.href}
-                  href={buildNavHrefWithStudentQ(link.href, studentQ)}
-                  prefetch={false}
-                  onClick={closeSidebar}
-                  className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
-                    active
-                      ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
-                      : ""
-                  }`}
-                >
-                  {link.icon}
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      ))}
-    </>
-  );
-}
-
-function SchoolSidebarNavFallback({
-  pathname,
-  closeSidebar,
-}: {
-  pathname: string | null;
-  closeSidebar: () => void;
-}) {
-  return (
-    <>
-      {navSections.map((sec) => (
-        <div key={sec.title} className={sec.className}>
-          <div className="px-[22px] pb-[6px] pt-[10px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[rgba(255,255,255,0.4)] first:pt-0">
-            {sec.title}
-          </div>
-          <nav className="flex flex-col gap-px px-[10px]">
-            {sec.links.map((link) => {
-              const active = pathname
-                ? navLinkActive(pathname, link.href)
-                : false;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  prefetch={false}
-                  onClick={closeSidebar}
-                  className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
-                    active
-                      ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
-                      : ""
-                  }`}
-                >
-                  {link.icon}
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      ))}
-    </>
-  );
-}
-
 export function SchoolPortalShell({
   schoolName,
   displayName,
@@ -349,22 +255,29 @@ export function SchoolPortalShell({
   children,
 }: SchoolPortalShellProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [sidebarStudentQ, setSidebarStudentQ] = useState("");
+  const sidebarView: SchoolPortalView = parseSchoolPortalView(
+    searchParams.get("view") ?? undefined,
+  );
   const title = useMemo(() => pageTitle(pathname ?? SCHOOL_HOME), [pathname]);
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const fromUrl =
-      new URLSearchParams(window.location.search).get("studentQ")?.trim() ?? "";
+    writeStoredSchoolPortalView(sidebarView);
+  }, [sidebarView]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("studentQ")?.trim() ?? "";
     if (fromUrl) {
       setSidebarStudentQ(fromUrl);
       return;
     }
+    if (typeof window === "undefined") return;
     try {
       setSidebarStudentQ(
         sessionStorage.getItem("school-portal-studentQ")?.trim() ?? "",
@@ -372,7 +285,7 @@ export function SchoolPortalShell({
     } catch {
       setSidebarStudentQ("");
     }
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -440,7 +353,10 @@ export function SchoolPortalShell({
                   return (
                     <Link
                       key={link.href}
-                      href={buildNavHrefWithStudentQ(link.href, sidebarStudentQ)}
+                      href={buildSchoolNavHref(link.href, {
+                        studentQ: sidebarStudentQ,
+                        view: sidebarView,
+                      })}
                       prefetch={false}
                       onClick={closeSidebar}
                       className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
@@ -531,6 +447,9 @@ export function SchoolPortalShell({
           </div>
 
           <div className="flex shrink-0 items-center gap-[10px]">
+            <Suspense fallback={null}>
+              <SchoolPortalViewToggle />
+            </Suspense>
             <Suspense fallback={null}>
               <SchoolNavSearch />
             </Suspense>

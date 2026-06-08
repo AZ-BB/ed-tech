@@ -6,6 +6,7 @@ import {
   orIlikeClause,
 } from "@/app/(protected)/school/_lib/student-search";
 import { RECOMMENDATION_STATUSES } from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
+import type { StudentTeacherFilterValue } from "@/lib/student-teacher-assignment";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 type RecommendationStatus = (typeof RECOMMENDATION_STATUSES)[number];
@@ -37,6 +38,7 @@ export type SchoolDocumentsPageFilters = {
   status: string;
   page: number;
   limit: number;
+  teacherFilter?: StudentTeacherFilterValue;
 };
 
 type StudentProfileEmbed = {
@@ -80,6 +82,7 @@ type SharedFilterContext = {
   docStatus: "" | "missing" | "uploaded";
   navbarStudentIds: string[] | null;
   searchStudentIds: string[];
+  teacherFilter: StudentTeacherFilterValue;
 };
 
 const CHECKLIST_DATA_SELECT = `
@@ -214,6 +217,7 @@ async function buildSharedFilterContext(
   const qTrim = filters.q.trim();
   const studentQTrim = filters.studentQ.trim();
   const docStatus = normalizeDocStatus(filters.status);
+  const teacherFilter = filters.teacherFilter ?? "";
 
   let navbarStudentIds: string[] | null = null;
   if (studentQTrim) {
@@ -221,6 +225,7 @@ async function buildSharedFilterContext(
       supabase,
       schoolId,
       studentQTrim,
+      teacherFilter || undefined,
     );
     if (navbarStudentIds.length === 0) {
       return null;
@@ -228,7 +233,12 @@ async function buildSharedFilterContext(
   }
 
   const searchStudentIds = qTrim
-    ? await fetchSchoolStudentIdsByQuery(supabase, schoolId, qTrim)
+    ? await fetchSchoolStudentIdsByQuery(
+        supabase,
+        schoolId,
+        qTrim,
+        teacherFilter || undefined,
+      )
     : [];
 
   return {
@@ -239,6 +249,7 @@ async function buildSharedFilterContext(
     docStatus,
     navbarStudentIds,
     searchStudentIds,
+    teacherFilter,
   };
 }
 
@@ -280,7 +291,7 @@ export async function fetchSchoolDocumentsPage(
 
   let checklistCountQuery = ctx.supabase
     .from("student_my_application_documents")
-    .select("id, student_profiles!inner(school_id)", {
+    .select("id, student_profiles!inner(school_id, teacher_id)", {
       count: "exact",
       head: true,
     })
@@ -293,7 +304,7 @@ export async function fetchSchoolDocumentsPage(
 
   let recommendationCountQuery = ctx.supabase
     .from("student_my_application_recommendations")
-    .select("id, student_profiles!inner(school_id)", {
+    .select("id, student_profiles!inner(school_id, teacher_id)", {
       count: "exact",
       head: true,
     })
@@ -303,6 +314,25 @@ export async function fetchSchoolDocumentsPage(
     .from("student_my_application_recommendations")
     .select(RECOMMENDATION_DATA_SELECT)
     .eq("student_profiles.school_id", ctx.schoolId);
+
+  if (ctx.teacherFilter) {
+    checklistCountQuery = checklistCountQuery.eq(
+      "student_profiles.teacher_id",
+      ctx.teacherFilter,
+    );
+    checklistDataQuery = checklistDataQuery.eq(
+      "student_profiles.teacher_id",
+      ctx.teacherFilter,
+    );
+    recommendationCountQuery = recommendationCountQuery.eq(
+      "student_profiles.teacher_id",
+      ctx.teacherFilter,
+    );
+    recommendationDataQuery = recommendationDataQuery.eq(
+      "student_profiles.teacher_id",
+      ctx.teacherFilter,
+    );
+  }
 
   const scopedChecklistCount = applyStudentScope(
     checklistCountQuery,

@@ -1,3 +1,9 @@
+import {
+  parseSchoolPortalView,
+  resolveTeacherFilterFromView,
+} from "@/lib/school-portal-view";
+import { createSupabaseServerClient } from "@/utils/supabase-server";
+
 import { SchoolTasksClient } from "./_components/school-tasks-client";
 import {
   fetchSchoolStudentPickerOptions,
@@ -24,10 +30,26 @@ export default async function SchoolTasksPage({
   const status = typeof sp.status === "string" ? sp.status : "";
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 12)));
+  const view = parseSchoolPortalView(sp.view);
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const teacherFilter = resolveTeacherFilterFromView(view, user?.id);
 
   const [{ rows, totalRows }, studentOptions] = await Promise.all([
-    fetchSchoolTasksPage({ q, studentQ, when, priority, status, page, limit }),
-    fetchSchoolStudentPickerOptions(),
+    fetchSchoolTasksPage({
+      q,
+      studentQ,
+      when,
+      priority,
+      status,
+      page,
+      limit,
+      teacherFilter,
+    }),
+    fetchSchoolStudentPickerOptions({ teacherFilter }),
   ]);
 
   return (
@@ -42,6 +64,7 @@ export default async function SchoolTasksPage({
       priority={priority}
       status={status}
       studentOptions={studentOptions}
+      view={view}
     />
   );
 }

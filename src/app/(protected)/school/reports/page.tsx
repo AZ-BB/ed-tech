@@ -1,8 +1,27 @@
+import {
+  parseSchoolPortalView,
+  resolveTeacherFilterFromView,
+} from "@/lib/school-portal-view";
+import { createSupabaseServerClient } from "@/utils/supabase-server";
+
 import { SchoolReportsClient } from "./_components/school-reports-client";
 import { fetchSchoolReports } from "./_lib/fetch-school-reports";
 
-export default async function SchoolReportsPage() {
-  const data = await fetchSchoolReports();
+export default async function SchoolReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const view = parseSchoolPortalView(sp.view);
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const teacherFilter = resolveTeacherFilterFromView(view, user?.id);
+
+  const data = await fetchSchoolReports({ teacherFilter });
 
   if (!data) {
     return (

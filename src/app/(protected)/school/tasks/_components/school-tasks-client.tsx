@@ -11,6 +11,10 @@ import {
 } from "@/actions/school-tasks";
 import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { Pagination } from "@/components/pagination";
+import {
+  SCHOOL_VIEW_MY,
+  type SchoolPortalView,
+} from "@/lib/school-portal-view";
 import type { GeneralResponse } from "@/utils/response";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
@@ -168,6 +172,7 @@ export type SchoolTasksClientProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
   };
+  view?: SchoolPortalView;
 };
 
 export function SchoolTasksClient({
@@ -185,6 +190,7 @@ export function SchoolTasksClient({
   scopedStudentId,
   scopedStudentAssignLabel,
   newTaskModal: controlledNewTaskModal,
+  view = "all_view",
 }: SchoolTasksClientProps) {
   const router = useRouter();
   const [internalNewOpen, setInternalNewOpen] = useState(false);
@@ -361,6 +367,9 @@ export function SchoolTasksClient({
             <input type="hidden" name="limit" value={String(limit)} />
             {studentQ.trim() ? (
               <input type="hidden" name="studentQ" value={studentQ} />
+            ) : null}
+            {view === SCHOOL_VIEW_MY ? (
+              <input type="hidden" name="view" value={SCHOOL_VIEW_MY} />
             ) : null}
             <div className="relative min-w-[180px] flex-1 basis-[200px]">
               <svg

@@ -2718,7 +2718,7 @@ export type Database = {
         Returns: boolean
       }
       school_dashboard_shortlist_top_stats: {
-        Args: { p_top_n?: number }
+        Args: { p_top_n?: number; p_teacher_id?: string | null }
         Returns: Json
       }
       school_student_follow_up_issue: {
@@ -2738,7 +2738,11 @@ export type Database = {
         Returns: number
       }
       school_students_needing_follow_up: {
-        Args: { p_limit?: number; p_school_id?: string }
+        Args: {
+          p_limit?: number
+          p_school_id?: string
+          p_teacher_id?: string | null
+        }
         Returns: Json
       }
       student_application_profile_completion_pct: {

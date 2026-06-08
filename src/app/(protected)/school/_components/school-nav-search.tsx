@@ -1,19 +1,16 @@
 "use client";
 
+import {
+  isSchoolSearchablePath,
+  SCHOOL_SEARCHABLE_PATHS,
+} from "@/lib/school-portal-view";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+export { buildNavHrefWithStudentQ, SCHOOL_SEARCHABLE_PATHS } from "@/lib/school-portal-view";
+
 const fontSans =
   '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
-
-export const SCHOOL_SEARCHABLE_PATHS = [
-  "/school/students",
-  "/school/applications",
-  "/school/tasks",
-  "/school/documents",
-] as const;
-
-const SEARCHABLE_PATHS = new Set<string>(SCHOOL_SEARCHABLE_PATHS);
 
 const STUDENT_Q_STORAGE_KEY = "school-portal-studentQ";
 
@@ -41,21 +38,6 @@ function normalizePath(pathname: string) {
   return pathname.replace(/\/$/, "") || "/";
 }
 
-function isSearchablePath(pathname: string) {
-  return SEARCHABLE_PATHS.has(normalizePath(pathname));
-}
-
-/** Carry navbar student filter when navigating between list pages via the sidebar. */
-export function buildNavHrefWithStudentQ(href: string, studentQ: string): string {
-  const path = normalizePath(href);
-  const trimmed = studentQ.trim();
-  if (!trimmed || !SEARCHABLE_PATHS.has(path)) return href;
-  const params = new URLSearchParams();
-  params.set("studentQ", trimmed);
-  params.set("page", "1");
-  return `${path}?${params.toString()}`;
-}
-
 export function SchoolNavSearch() {
   const pathname = usePathname();
   const router = useRouter();
@@ -66,7 +48,7 @@ export function SchoolNavSearch() {
 
   const urlStudentQ = searchParams.get("studentQ") ?? "";
   const [value, setValue] = useState(urlStudentQ);
-  const searchable = isSearchablePath(pathname);
+  const searchable = isSchoolSearchablePath(pathname ?? "");
 
   useEffect(() => {
     pathnameRef.current = pathname;
@@ -78,7 +60,7 @@ export function SchoolNavSearch() {
 
   /** Re-apply navbar student filter after sidebar navigation drops query params. */
   useEffect(() => {
-    if (!isSearchablePath(pathname)) return;
+    if (!isSchoolSearchablePath(pathname ?? "")) return;
     if (urlStudentQ.trim()) {
       writeStoredStudentQ(urlStudentQ);
       return;
@@ -91,7 +73,7 @@ export function SchoolNavSearch() {
     params.set("studentQ", stored);
     params.set("page", "1");
     const qs = params.toString();
-    router.replace(`${normalizePath(pathname)}?${qs}`, { scroll: false });
+    router.replace(`${normalizePath(pathname ?? "")}?${qs}`, { scroll: false });
     queueMicrotask(() => {
       restoringRef.current = false;
     });
@@ -99,7 +81,7 @@ export function SchoolNavSearch() {
 
   const applySearch = useCallback(
     (next: string) => {
-      if (!isSearchablePath(pathnameRef.current)) return;
+      if (!isSchoolSearchablePath(pathnameRef.current ?? "")) return;
 
       const params = new URLSearchParams(searchParams.toString());
       const trimmed = next.trim();
@@ -113,7 +95,7 @@ export function SchoolNavSearch() {
 
       const qs = params.toString();
       router.replace(
-        qs ? `${pathnameRef.current}?${qs}` : pathnameRef.current,
+        qs ? `${pathnameRef.current}?${qs}` : pathnameRef.current ?? "",
         { scroll: false },
       );
     },
