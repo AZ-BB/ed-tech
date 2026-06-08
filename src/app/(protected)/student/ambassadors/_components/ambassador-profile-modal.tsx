@@ -269,8 +269,6 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
         <div className="px-7 pb-7 pt-1 text-center">
           <Link
             href={`/student/ambassadors/${ambassador.id}/book`}
-            target="_blank"
-            rel="noopener noreferrer"
             className="inline-flex w-full max-w-[320px] items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3.5 text-[14px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white sm:w-auto"
             onClick={onClose}
           >

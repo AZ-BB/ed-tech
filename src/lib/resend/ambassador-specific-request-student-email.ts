@@ -14,15 +14,30 @@ export type AmbassadorProfileForStudentEmail = {
   helps: string[];
 };
 
+export type ExternalAmbassadorProfileForStudentEmail = {
+  fullName: string;
+  email: string | null;
+  linkedin: string | null;
+  overview: string;
+};
+
 export type SendAmbassadorSpecificRequestStudentEmailInput = {
   to: string;
   studentName: string;
   targetUniversity: string;
   preferredMajor: string | null;
   additionalNotes: string | null;
-  ambassador: AmbassadorProfileForStudentEmail;
-  catalogUrl: string;
-};
+} & (
+  | {
+      kind: "catalog";
+      ambassador: AmbassadorProfileForStudentEmail;
+      catalogUrl: string;
+    }
+  | {
+      kind: "external";
+      ambassador: ExternalAmbassadorProfileForStudentEmail;
+    }
+);
 
 function escapeHtml(value: string): string {
   return value
@@ -51,17 +66,15 @@ export function jsonToStringList(value: Json | null): string[] {
   return [];
 }
 
-function buildStudentConfirmationHtml(
-  input: SendAmbassadorSpecificRequestStudentEmailInput,
+function buildCatalogAmbassadorProfileHtml(
+  ambassador: AmbassadorProfileForStudentEmail,
 ): string {
-  const studentName = escapeHtml(input.studentName);
   const ambassadorName = escapeHtml(
-    `${input.ambassador.firstName} ${input.ambassador.lastName}`.trim(),
+    `${ambassador.firstName} ${ambassador.lastName}`.trim(),
   );
-  const catalogUrl = escapeHtml(input.catalogUrl);
   const helps =
-    input.ambassador.helps.length > 0
-      ? input.ambassador.helps
+    ambassador.helps.length > 0
+      ? ambassador.helps
       : ["Campus life and culture", "Application experience", "Scholarships and housing"];
 
   const helpsHtml = helps
@@ -71,6 +84,67 @@ function buildStudentConfirmationHtml(
         `<li style="margin:0 0 6px;font-size:13px;line-height:1.4;color:#3d4f44;">${escapeHtml(item)}</li>`,
     )
     .join("");
+
+  return `<div style="margin:0 0 20px;padding:16px;background:#f0f7f2;border-radius:8px;">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#2d6a4f;">${ambassadorName}</p>
+            <p style="margin:0 0 6px;font-size:14px;color:#3d4f44;"><strong>University:</strong> ${escapeHtml(ambassador.university)}</p>
+            <p style="margin:0 0 6px;font-size:14px;color:#3d4f44;"><strong>Major:</strong> ${escapeHtml(displayField(ambassador.major))}</p>
+            <p style="margin:0 0 12px;font-size:14px;color:#3d4f44;"><strong>Destination:</strong> ${escapeHtml(ambassador.destinationLabel)}</p>
+            ${ambassador.about ? `<p style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#3d4f44;">${escapeHtml(ambassador.about)}</p>` : ""}
+            <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#3d4f44;">Can help with</p>
+            <ul style="margin:0;padding-left:18px;">${helpsHtml}</ul>
+          </div>`;
+}
+
+function buildExternalAmbassadorProfileHtml(
+  ambassador: ExternalAmbassadorProfileForStudentEmail,
+): string {
+  const ambassadorName = escapeHtml(ambassador.fullName);
+  const emailBlock = ambassador.email
+    ? `<p style="margin:0 0 6px;font-size:14px;color:#3d4f44;"><strong>Email:</strong> <a href="mailto:${escapeHtml(ambassador.email)}" style="color:#2d6a4f;">${escapeHtml(ambassador.email)}</a></p>`
+    : "";
+  const linkedinBlock = ambassador.linkedin
+    ? `<p style="margin:0 0 12px;font-size:14px;color:#3d4f44;"><strong>LinkedIn:</strong> <a href="${escapeHtml(ambassador.linkedin)}" style="color:#2d6a4f;word-break:break-all;">${escapeHtml(ambassador.linkedin)}</a></p>`
+    : "";
+
+  return `<div style="margin:0 0 20px;padding:16px;background:#f0f7f2;border-radius:8px;">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#2d6a4f;">${ambassadorName}</p>
+            ${emailBlock}
+            ${linkedinBlock}
+            <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#3d4f44;">Overview</p>
+            <p style="margin:0;font-size:13px;line-height:1.5;color:#3d4f44;">${escapeHtml(ambassador.overview)}</p>
+          </div>`;
+}
+
+function buildStudentConfirmationHtml(
+  input: SendAmbassadorSpecificRequestStudentEmailInput,
+): string {
+  const studentName = escapeHtml(input.studentName);
+  const ambassadorName =
+    input.kind === "catalog"
+      ? escapeHtml(
+          `${input.ambassador.firstName} ${input.ambassador.lastName}`.trim(),
+        )
+      : escapeHtml(input.ambassador.fullName);
+
+  const profileBlock =
+    input.kind === "catalog"
+      ? buildCatalogAmbassadorProfileHtml(input.ambassador)
+      : buildExternalAmbassadorProfileHtml(input.ambassador);
+
+  const catalogButtonBlock =
+    input.kind === "catalog"
+      ? `<a href="${escapeHtml(input.catalogUrl)}" style="display:inline-block;padding:12px 24px;background:#2d6a4f;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;border-radius:8px;">View ambassador profile</a>`
+      : "";
+
+  const catalogFooterBlock =
+    input.kind === "catalog"
+      ? `<tr><td style="padding:16px 28px 28px;border-top:1px solid #eee9dc;">
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#7a8a80;">If the button doesn't work, copy this link into your browser:<br><a href="${escapeHtml(input.catalogUrl)}" style="color:#2d6a4f;word-break:break-all;">${escapeHtml(input.catalogUrl)}</a></p>
+        </td></tr>`
+      : `<tr><td style="padding:16px 28px 28px;border-top:1px solid #eee9dc;">
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#7a8a80;">Reply to this email or contact your counselor if you need help reaching your ambassador.</p>
+        </td></tr>`;
 
   const notesBlock = input.additionalNotes?.trim()
     ? `<p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:#3d4f44;"><strong>Your notes:</strong> ${escapeHtml(input.additionalNotes.trim())}</p>`
@@ -92,20 +166,10 @@ function buildStudentConfirmationHtml(
           <p style="margin:0 0 8px;font-size:14px;color:#5c6b62;">Preferred major / area:</p>
           <p style="margin:0 0 16px;font-size:15px;color:#1a2e22;">${escapeHtml(displayField(input.preferredMajor))}</p>
           ${notesBlock}
-          <div style="margin:0 0 20px;padding:16px;background:#f0f7f2;border-radius:8px;">
-            <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#2d6a4f;">${ambassadorName}</p>
-            <p style="margin:0 0 6px;font-size:14px;color:#3d4f44;"><strong>University:</strong> ${escapeHtml(input.ambassador.university)}</p>
-            <p style="margin:0 0 6px;font-size:14px;color:#3d4f44;"><strong>Major:</strong> ${escapeHtml(displayField(input.ambassador.major))}</p>
-            <p style="margin:0 0 12px;font-size:14px;color:#3d4f44;"><strong>Destination:</strong> ${escapeHtml(input.ambassador.destinationLabel)}</p>
-            ${input.ambassador.about ? `<p style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#3d4f44;">${escapeHtml(input.ambassador.about)}</p>` : ""}
-            <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#3d4f44;">Can help with</p>
-            <ul style="margin:0;padding-left:18px;">${helpsHtml}</ul>
-          </div>
-          <a href="${catalogUrl}" style="display:inline-block;padding:12px 24px;background:#2d6a4f;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;border-radius:8px;">View ambassador profile</a>
+          ${profileBlock}
+          ${catalogButtonBlock}
         </td></tr>
-        <tr><td style="padding:16px 28px 28px;border-top:1px solid #eee9dc;">
-          <p style="margin:0;font-size:12px;line-height:1.5;color:#7a8a80;">If the button doesn't work, copy this link into your browser:<br><a href="${catalogUrl}" style="color:#2d6a4f;word-break:break-all;">${catalogUrl}</a></p>
-        </td></tr>
+        ${catalogFooterBlock}
       </table>
     </td></tr>
   </table>
@@ -116,6 +180,25 @@ function buildStudentConfirmationHtml(
 function buildStudentConfirmationText(
   input: SendAmbassadorSpecificRequestStudentEmailInput,
 ): string {
+  const notesLine = input.additionalNotes?.trim()
+    ? `Your notes: ${input.additionalNotes.trim()}\n\n`
+    : "";
+
+  if (input.kind === "external") {
+    const { ambassador } = input;
+    return `We found an ambassador for you
+
+Hi ${input.studentName}, your ambassador request has been reviewed and we matched you with ${ambassador.fullName}.
+
+You asked about: ${input.targetUniversity}
+Preferred major / area: ${displayField(input.preferredMajor)}
+${notesLine}${ambassador.fullName}
+${ambassador.email ? `Email: ${ambassador.email}\n` : ""}${ambassador.linkedin ? `LinkedIn: ${ambassador.linkedin}\n` : ""}
+Overview:
+${ambassador.overview}
+`;
+  }
+
   const ambassadorName =
     `${input.ambassador.firstName} ${input.ambassador.lastName}`.trim();
   const helps =
@@ -129,7 +212,7 @@ Hi ${input.studentName}, your ambassador request has been reviewed and we matche
 
 You asked about: ${input.targetUniversity}
 Preferred major / area: ${displayField(input.preferredMajor)}
-${input.additionalNotes?.trim() ? `Your notes: ${input.additionalNotes.trim()}\n\n` : ""}${ambassadorName}
+${notesLine}${ambassadorName}
 University: ${input.ambassador.university}
 Major: ${displayField(input.ambassador.major)}
 Destination: ${input.ambassador.destinationLabel}
@@ -139,12 +222,22 @@ View ambassador profile: ${input.catalogUrl}
 `;
 }
 
+function ambassadorEmailSubject(
+  input: SendAmbassadorSpecificRequestStudentEmailInput,
+): string {
+  const name =
+    input.kind === "catalog"
+      ? `${input.ambassador.firstName} ${input.ambassador.lastName}`.trim()
+      : input.ambassador.fullName.trim();
+  return `Your ambassador match: ${name}`;
+}
+
 export async function sendAmbassadorSpecificRequestStudentEmail(
   input: SendAmbassadorSpecificRequestStudentEmailInput,
 ) {
   return sendResendEmail({
     to: input.to,
-    subject: `Your ambassador match: ${input.ambassador.firstName} ${input.ambassador.lastName}`.trim(),
+    subject: ambassadorEmailSubject(input),
     html: buildStudentConfirmationHtml(input),
     text: buildStudentConfirmationText(input),
     tags: [{ name: "category", value: "ambassador_specific_request_student" }],

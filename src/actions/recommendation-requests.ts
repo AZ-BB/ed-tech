@@ -357,6 +357,89 @@ export async function submitRecommendationByToken(
   return { ok: true };
 }
 
+async function resolveRecommendationLetterViewAccess(
+  recommendationId: string,
+  mode: "student" | "staff",
+): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { ok: false, error: "You must be signed in." };
+  }
+
+  const { data: rec, error } = await supabase
+    .from("student_my_application_recommendations")
+    .select("id, student_id, letter_storage_path, status")
+    .eq("id", recommendationId)
+    .maybeSingle();
+
+  if (error || !rec?.letter_storage_path) {
+    return { ok: false, error: "No uploaded letter for this request." };
+  }
+  if (rec.status !== "submitted") {
+    return { ok: false, error: "This letter has not been submitted yet." };
+  }
+
+  if (mode === "student") {
+    if (rec.student_id !== user.id) {
+      return { ok: false, error: "You do not have access to this request." };
+    }
+    return { ok: true, path: rec.letter_storage_path };
+  }
+
+  if (rec.student_id === user.id) {
+    return { ok: true, path: rec.letter_storage_path };
+  }
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (admin) {
+    return { ok: true, path: rec.letter_storage_path };
+  }
+
+  const { data: sap } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!sap?.school_id) {
+    return { ok: false, error: "You do not have access to this request." };
+  }
+
+  const { data: profile } = await supabase
+    .from("student_profiles")
+    .select("school_id")
+    .eq("id", rec.student_id)
+    .maybeSingle();
+  if (profile?.school_id !== sap.school_id) {
+    return { ok: false, error: "You do not have access to this student." };
+  }
+
+  return { ok: true, path: rec.letter_storage_path };
+}
+
+async function signedRecommendationLetterUrl(
+  path: string,
+): Promise<{ url: string } | { error: string }> {
+  const secret = await createSupabaseSecretClient();
+  const { data: signed, error: signErr } = await secret.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(path, 120);
+
+  if (signErr || !signed?.signedUrl) {
+    console.error(signErr);
+    return { error: "Could not open the file. Try again later." };
+  }
+
+  return { url: signed.signedUrl };
+}
+
 export async function getRecommendationLetterViewUrl(
   recommendationId: string,
 ): Promise<{ url: string } | { error: string }> {
@@ -365,32 +448,21 @@ export async function getRecommendationLetterViewUrl(
     return { error: auth.message };
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data: rec, error } = await supabase
-    .from("student_my_application_recommendations")
-    .select("id, student_id, letter_storage_path, status")
-    .eq("id", recommendationId)
-    .maybeSingle();
+  const access = await resolveRecommendationLetterViewAccess(
+    recommendationId,
+    "student",
+  );
+  if (!access.ok) return { error: access.error };
+  return signedRecommendationLetterUrl(access.path);
+}
 
-  if (error || !rec?.letter_storage_path) {
-    return { error: "No uploaded letter for this request." };
-  }
-  if (rec.student_id !== auth.studentId) {
-    return { error: "You do not have access to this request." };
-  }
-  if (rec.status !== "submitted") {
-    return { error: "This letter has not been submitted yet." };
-  }
-
-  const secret = await createSupabaseSecretClient();
-  const { data: signed, error: signErr } = await secret.storage
-    .from(STORAGE_BUCKET)
-    .createSignedUrl(rec.letter_storage_path, 120);
-
-  if (signErr || !signed?.signedUrl) {
-    console.error(signErr);
-    return { error: "Could not open the file. Try again later." };
-  }
-
-  return { url: signed.signedUrl };
+export async function getSchoolRecommendationLetterViewUrl(
+  recommendationId: string,
+): Promise<{ url: string } | { error: string }> {
+  const access = await resolveRecommendationLetterViewAccess(
+    recommendationId,
+    "staff",
+  );
+  if (!access.ok) return { error: access.error };
+  return signedRecommendationLetterUrl(access.path);
 }

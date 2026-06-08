@@ -2,13 +2,16 @@ import Link from "next/link";
 
 import { AboutNav } from "@/app/about/about-nav";
 
+const STATIC_ASSETS_BASE =
+  "https://cqtqhrvyakjiafaxpijd.supabase.co/storage/v1/object/public/static";
+
 const ADVISORS = [
-  { id: 1, name: "James T." },
-  { id: 2, name: "Ahmed M." },
-  { id: 3, name: "Rana J." },
-  { id: 4, name: "Nadia H." },
-  { id: 5, name: "Sarah K." },
-  { id: 6, name: "Omar B." },
+  { id: 1, name: "James T.", image: `${STATIC_ASSETS_BASE}/james.png` },
+  { id: 2, name: "Ahmed M.", image: `${STATIC_ASSETS_BASE}/ahmed.png` },
+  { id: 3, name: "Rana J.", image: `${STATIC_ASSETS_BASE}/rana.png` },
+  { id: 4, name: "Nadia H.", image: `${STATIC_ASSETS_BASE}/nadia.png` },
+  { id: 5, name: "Sarah K.", image: `${STATIC_ASSETS_BASE}/sarah.png` },
+  { id: 6, name: "Omar B.", image: `${STATIC_ASSETS_BASE}/omar.png` },
 ] as const;
 
 const COUNTRIES = [
@@ -153,7 +156,11 @@ export default function AboutPage() {
             {ADVISORS.map((advisor) => (
               <div key={advisor.id} className="advisor-card">
                 <div className="advisor-avatar-wrap">
-                  <div className={`advisor-avatar av-${advisor.id}`} />
+                  <img
+                    src={advisor.image}
+                    alt={advisor.name}
+                    className="advisor-avatar"
+                  />
                 </div>
                 <div className="advisor-name">{advisor.name}</div>
               </div>

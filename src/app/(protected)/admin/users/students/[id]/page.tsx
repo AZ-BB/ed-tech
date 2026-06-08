@@ -181,6 +181,8 @@ export default async function AdminStudentDetailPage({
 
     essays,
 
+    recommendations,
+
   } = payload;
 
 
@@ -212,6 +214,8 @@ export default async function AdminStudentDetailPage({
       documents={documents}
 
       essays={essays}
+
+      recommendations={recommendations}
 
       initialTab={initialTab}
 

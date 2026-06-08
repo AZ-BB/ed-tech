@@ -34,6 +34,7 @@ import { SchoolStudentActivityLogsTab } from "./school-student-activity-logs-tab
 import { AdminStudentDocumentsTab } from "@/app/(protected)/admin/users/students/[id]/_components/admin-student-documents-tab";
 import { SchoolStudentDocumentsTab } from "./school-student-documents-tab";
 import { SchoolStudentEssaysTab } from "./school-student-essays-tab";
+import { SchoolStudentRecommendationsTab } from "./school-student-recommendations-tab";
 import { SchoolStudentCreditUsageTab } from "./school-student-credit-usage-tab";
 import { SchoolStudentHistoryTab } from "./school-student-history-tab";
 import type { SchoolStudentHistoryPanelProps } from "./school-student-history-tab";
@@ -49,6 +50,7 @@ type TabId =
   | "activity"
   | "shortlist"
   | "essays"
+  | "recommendations"
   | "docs"
   | "notes"
   | "interactions"
@@ -62,6 +64,7 @@ const TAB_DEFS: { id: TabId; label: string }[] = [
   { id: "activity", label: "Activity" },
   { id: "shortlist", label: "Shortlist" },
   { id: "essays", label: "Essays" },
+  { id: "recommendations", label: "Recommendations" },
   { id: "docs", label: "Documents" },
   { id: "notes", label: "Notes" },
   { id: "interactions", label: "Interactions" },
@@ -95,6 +98,7 @@ export type SchoolStudentViewClientProps = {
   studentInteractions: SchoolStudentDetailPayload["studentInteractions"];
   documents: SchoolStudentDetailPayload["documents"];
   essays: SchoolStudentDetailPayload["essays"];
+  recommendations: SchoolStudentDetailPayload["recommendations"];
   /** From `?tab=tasks` so filter Apply keeps the Tasks tab active after navigation. */
   initialTab?: TabId;
   backHref?: string;
@@ -877,6 +881,7 @@ export function SchoolStudentViewClient({
   studentInteractions,
   documents,
   essays,
+  recommendations,
   initialTab = "snapshot",
   backHref = "/school/students",
   documentsPortal = "school",
@@ -1000,6 +1005,12 @@ export function SchoolStudentViewClient({
   } else if (tab === "essays") {
     tabBody = (
       <SchoolStudentEssaysTab studentId={student.id} initialEssays={essays} />
+    );
+  } else if (tab === "recommendations") {
+    tabBody = (
+      <SchoolStudentRecommendationsTab
+        initialRecommendations={recommendations}
+      />
     );
   } else if (tab === "notes") {
     tabBody = (

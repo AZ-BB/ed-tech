@@ -9,9 +9,15 @@ import {
 
 type Props = {
   totalLogins: number;
+  essaysReviewedCount: number;
+  aiMatchesGeneratedCount: number;
 };
 
-export function StudentDashboardActivityStats({ totalLogins }: Props) {
+export function StudentDashboardActivityStats({
+  totalLogins,
+  essaysReviewedCount,
+  aiMatchesGeneratedCount,
+}: Props) {
   const [counts, setCounts] = useState<StudentDashboardActivityCounts | null>(
     null,
   );
@@ -26,8 +32,6 @@ export function StudentDashboardActivityStats({ totalLogins }: Props) {
           { count: savedUniversitiesCount },
           { count: viewedUniversitiesCount },
           { count: savedScholarshipsCount },
-          { count: essaysReviewedCount },
-          { count: aiMatchesGeneratedCount },
           { count: advisorSessionsBookedCount },
           { count: ambassadorSessionsBookedCount },
         ] = await Promise.all([
@@ -46,14 +50,6 @@ export function StudentDashboardActivityStats({ totalLogins }: Props) {
             .select("id", { count: "exact", head: true })
             .eq("entity_type", "scholarship")
             .eq("type", "save"),
-          supabase
-            .from("ai_usage")
-            .select("id", { count: "exact", head: true })
-            .eq("type", "essay_review"),
-          supabase
-            .from("ai_usage")
-            .select("id", { count: "exact", head: true })
-            .eq("type", "matching"),
           supabase
             .from("advisor_sessions")
             .select("id", { count: "exact", head: true }),
@@ -81,11 +77,11 @@ export function StudentDashboardActivityStats({ totalLogins }: Props) {
             universities_viewed: 0,
             universities_saved: 0,
             scholarships_saved: 0,
-            essays_reviewed: 0,
+            essays_reviewed: essaysReviewedCount,
             advisor_sessions_booked: 0,
             ambassador_sessions_booked: 0,
             total_logins: totalLogins,
-            ai_matches_generated: 0,
+            ai_matches_generated: aiMatchesGeneratedCount,
           });
         }
       }
@@ -94,7 +90,7 @@ export function StudentDashboardActivityStats({ totalLogins }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [totalLogins]);
+  }, [totalLogins, essaysReviewedCount, aiMatchesGeneratedCount]);
 
   return (
     <>

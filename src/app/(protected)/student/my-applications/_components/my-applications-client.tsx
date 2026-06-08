@@ -413,6 +413,7 @@ export function MyApplicationsClient({
     useState<EssayWithComments | null>(null);
   const [deletingEssay, setDeletingEssay] = useState(false);
   const [savingEssay, setSavingEssay] = useState(false);
+  const [sendingRecRequest, setSendingRecRequest] = useState(false);
   const [recForm, setRecForm] = useState({
     teacher_name: "",
     teacher_subject: "",
@@ -1228,29 +1229,36 @@ export function MyApplicationsClient({
   };
 
   const sendRecRequest = async () => {
-    const res = await createRecommendationRequest({
-      teacher_name: recForm.teacher_name,
-      teacher_subject: recForm.teacher_subject || null,
-      teacher_email: recForm.teacher_email,
-      for_application: recForm.for_application,
-      personal_note: recForm.personal_note || null,
-      needed_by: recForm.needed_by,
-    });
-    if ("error" in res) {
-      showToast(res.error);
-      return;
+    if (sendingRecRequest) return;
+
+    setSendingRecRequest(true);
+    try {
+      const res = await createRecommendationRequest({
+        teacher_name: recForm.teacher_name,
+        teacher_subject: recForm.teacher_subject || null,
+        teacher_email: recForm.teacher_email,
+        for_application: recForm.for_application,
+        personal_note: recForm.personal_note || null,
+        needed_by: recForm.needed_by,
+      });
+      if ("error" in res) {
+        showToast(res.error);
+        return;
+      }
+      setRecs((prev) => [res.row, ...prev]);
+      setRecModal(false);
+      setRecForm({
+        teacher_name: "",
+        teacher_subject: "",
+        teacher_email: "",
+        for_application: "",
+        personal_note: "",
+        needed_by: "",
+      });
+      showToast(`Request sent to ${res.row.teacher_name}`);
+    } finally {
+      setSendingRecRequest(false);
     }
-    setRecs((prev) => [res.row, ...prev]);
-    setRecModal(false);
-    setRecForm({
-      teacher_name: "",
-      teacher_subject: "",
-      teacher_email: "",
-      for_application: "",
-      personal_note: "",
-      needed_by: "",
-    });
-    showToast(`Request sent to ${res.row.teacher_name}`);
   };
 
   const resendRecRequest = async (recommendationId: string, teacherName: string) => {
@@ -3222,15 +3230,17 @@ export function MyApplicationsClient({
               type="button"
               className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold"
               onClick={() => setRecModal(false)}
+              disabled={sendingRecRequest}
             >
               Cancel
             </button>
             <button
               type="button"
-              className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
+              className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)] disabled:opacity-50"
               onClick={() => void sendRecRequest()}
+              disabled={sendingRecRequest}
             >
-              Send request
+              {sendingRecRequest ? "Sending…" : "Send request"}
             </button>
           </div>
         </ModalVeil>

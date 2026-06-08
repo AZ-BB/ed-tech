@@ -1,20 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { submitContactForm } from "@/actions/contact";
+import { useRef, useState, useTransition } from "react";
 
 export function ContactForm() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [toastOpen, setToastOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+      const result = await submitContactForm(formData);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      formRef.current?.reset();
+      setToastOpen(true);
+      window.setTimeout(() => setToastOpen(false), 3200);
+    });
+  }
 
   return (
     <>
-      <form
-        className="form-card"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setToastOpen(true);
-          window.setTimeout(() => setToastOpen(false), 3200);
-        }}
-      >
+      <form ref={formRef} className="form-card" onSubmit={handleSubmit}>
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <div className="form-row">
           <div className="form-field">
             <label htmlFor="contact-name">Full name</label>
@@ -25,6 +45,7 @@ export function ContactForm() {
               autoComplete="name"
               placeholder="Enter your full name"
               required
+              disabled={isPending}
             />
           </div>
           <div className="form-field">
@@ -36,6 +57,7 @@ export function ContactForm() {
               autoComplete="email"
               placeholder="Enter your email"
               required
+              disabled={isPending}
             />
           </div>
         </div>
@@ -48,6 +70,7 @@ export function ContactForm() {
             name="subject"
             type="text"
             placeholder="What is this about?"
+            disabled={isPending}
           />
         </div>
         <div className="form-field">
@@ -57,9 +80,10 @@ export function ContactForm() {
             name="message"
             placeholder="Tell us how we can help..."
             required
+            disabled={isPending}
           />
         </div>
-        <button type="submit" className="btn-submit">
+        <button type="submit" className="btn-submit" disabled={isPending}>
           <svg
             width="16"
             height="16"
@@ -72,7 +96,7 @@ export function ContactForm() {
             <path d="M22 2L11 13" />
             <path d="M22 2l-7 20-4-9-9-4 20-7z" />
           </svg>
-          Send message
+          {isPending ? "Sending…" : "Send message"}
         </button>
       </form>
 

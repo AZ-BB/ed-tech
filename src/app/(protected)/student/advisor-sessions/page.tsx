@@ -40,6 +40,7 @@ export default async function AdvisorSessionsPage() {
         id,
         first_name,
         last_name,
+        avatar_url,
         title,
         experience_years,
         languages,

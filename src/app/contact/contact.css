@@ -139,6 +139,17 @@
   margin-bottom: 28px;
 }
 
+.contact-route .form-error {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .contact-route .form-field label {
   font-size: 13px;
   font-weight: 600;

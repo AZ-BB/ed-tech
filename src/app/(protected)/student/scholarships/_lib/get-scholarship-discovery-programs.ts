@@ -480,6 +480,13 @@ export async function getScholarshipDiscoveryPageData(
     totalPages: otherLoaded.totalPages,
   };
 
+  const resolvedTab: ScholarshipDiscoveryTab =
+    query.tab === "government" &&
+    government.totalMatching === 0 &&
+    other.totalMatching > 0
+      ? "other"
+      : query.tab;
+
   if (totalCatalog === 0) {
     return {
       tab: query.tab,
@@ -516,12 +523,12 @@ export async function getScholarshipDiscoveryPageData(
   }
 
   return {
-    tab: query.tab,
+    tab: resolvedTab,
     government,
     other,
     totalCatalog,
     pageSize: SCHOLARSHIP_PAGE_SIZE,
-    filters,
+    filters: { ...filters, tab: resolvedTab },
     detailId: query.detail,
     detailScholarship,
     ...activityIds,

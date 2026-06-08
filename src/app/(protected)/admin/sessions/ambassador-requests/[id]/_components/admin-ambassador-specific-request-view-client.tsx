@@ -163,31 +163,58 @@ export function AdminAmbassadorSpecificRequestViewClient({
             head="Assigned ambassador"
             sub="Confirmed match sent to the student"
           >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <DetailLink
-                href={request.assignedAmbassador.href}
-                label={request.assignedAmbassador.fullName}
-                sub={request.assignedAmbassador.email}
-              />
-              <SnapItem
-                label="University"
-                value={request.assignedAmbassador.university}
-              />
-              <SnapItem
-                label="Major"
-                value={request.assignedAmbassador.major ?? "—"}
-              />
-              <SnapItem
-                label="Destination"
-                value={request.assignedAmbassador.destinationLabel}
-              />
-              <SnapItem
-                label="Catalog status"
-                value={
-                  request.assignedAmbassador.isActive ? "Active" : "Inactive"
-                }
-              />
-            </div>
+            {request.assignedAmbassador.kind === "catalog" ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <DetailLink
+                  href={request.assignedAmbassador.href}
+                  label={request.assignedAmbassador.fullName}
+                  sub={request.assignedAmbassador.email}
+                />
+                <SnapItem
+                  label="University"
+                  value={request.assignedAmbassador.university}
+                />
+                <SnapItem
+                  label="Major"
+                  value={request.assignedAmbassador.major ?? "—"}
+                />
+                <SnapItem
+                  label="Destination"
+                  value={request.assignedAmbassador.destinationLabel}
+                />
+                <SnapItem
+                  label="Catalog status"
+                  value={
+                    request.assignedAmbassador.isActive ? "Active" : "Inactive"
+                  }
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <SnapItem
+                  label="Full name"
+                  value={request.assignedAmbassador.fullName}
+                />
+                <SnapItem
+                  label="Source"
+                  value="External (not in catalog)"
+                />
+                <SnapItem
+                  label="Email"
+                  value={request.assignedAmbassador.email ?? "—"}
+                />
+                <SnapItem
+                  label="LinkedIn"
+                  value={request.assignedAmbassador.linkedin ?? "—"}
+                />
+                <div className="sm:col-span-2">
+                  <SnapItem
+                    label="Overview"
+                    value={request.assignedAmbassador.overview}
+                  />
+                </div>
+              </div>
+            )}
           </SchoolStudentPanel>
         ) : null}
 

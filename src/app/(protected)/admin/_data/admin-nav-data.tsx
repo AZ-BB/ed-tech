@@ -214,6 +214,19 @@ export const adminNavSections: readonly AdminNavSection[] = [
         ),
       },
       {
+        href: `${ADMIN_HOME}/contact-us`,
+        label: "Contact Us",
+        icon: (
+          <NavSvg
+            paths={
+              <>
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </>
+            }
+          />
+        ),
+      },
+      {
         href: `${ADMIN_HOME}/settings`,
         label: "Settings",
         icon: (
@@ -243,6 +256,7 @@ export const ADMIN_PAGE_TITLE_BY_PATH: Record<string, string> = {
   [`${ADMIN_HOME}/reports`]: "Reports",
   [`${ADMIN_HOME}/activity-log`]: "Activity Log",
   [`${ADMIN_HOME}/communications`]: "Communications",
+  [`${ADMIN_HOME}/contact-us`]: "Contact Us",
   [`${ADMIN_HOME}/settings`]: "Settings",
   [`${ADMIN_HOME}/universities/import`]: "Import Universities",
 };

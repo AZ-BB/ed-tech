@@ -411,10 +411,14 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
               <div>
                 <div className="mb-3.5 flex gap-3.5">
                   <div
-                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full text-base font-bold"
+                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-bold"
                     style={{ background: pal.bg, color: pal.fg }}
                   >
-                    {ini}
+                    {a.avatarUrl ? (
+                      <img src={a.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      ini
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[15px] font-semibold text-[var(--text)]">
@@ -490,8 +494,6 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                   </button>
                   <Link
                     href={`/student/advisor-sessions/${a.id}/book`}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -502,7 +504,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                   </Link>
                 </div>
                 <p className="mt-2.5 text-center text-[10.5px] text-[var(--text-hint)]">
-                  Opens booking in a new tab — your details are saved to your advisor session request.
+                  Your details are saved to your advisor session request.
                 </p>
               </div>
             </div>
@@ -564,10 +566,14 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                 <>
                   <div className="flex gap-4 px-7 pb-5 pt-7">
                     <div
-                      className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full text-xl font-bold"
+                      className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full text-xl font-bold"
                       style={{ background: pal.bg, color: pal.fg }}
                     >
-                      {ini}
+                      {detail.avatarUrl ? (
+                        <img src={detail.avatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        ini
+                      )}
                     </div>
                     <div className="min-w-0 flex-1 pr-8">
                       <div className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">
@@ -651,8 +657,6 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                     <div className="text-center">
                       <Link
                         href={`/student/advisor-sessions/${detail.id}/book`}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3 text-[13px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
                         onClick={() => setDetail(null)}
                       >
@@ -662,7 +666,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                         </svg>
                       </Link>
                       <p className="mt-2 text-[10.5px] text-[var(--text-hint)]">
-                        Opens in a new tab to complete your advisor session request.
+                        Complete your advisor session request on the next page.
                       </p>
                     </div>
                   </div>

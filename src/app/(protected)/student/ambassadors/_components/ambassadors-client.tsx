@@ -394,8 +394,6 @@ export function AmbassadorsClient({
                   </span>
                   <Link
                     href={`/student/ambassadors/${a.id}/book`}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="inline-flex items-center rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
                     onClick={(e) => e.stopPropagation()}
                   >

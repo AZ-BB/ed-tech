@@ -24,6 +24,8 @@ export default async function StudentPage() {
     { data: newsItems },
     { data: studentProgress },
     { count: openTaskCount },
+    { count: essaysReviewedCount },
+    { count: aiMatchesGeneratedCount },
   ] = await Promise.all([
     supabase
       .from("acitivity_logs")
@@ -50,6 +52,16 @@ export default async function StudentPage() {
       .select("id", { count: "exact", head: true })
       .eq("student_id", auth.studentId)
       .eq("completed", false),
+    secret
+      .from("ai_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("student_id", auth.studentId)
+      .eq("type", "essay_review"),
+    secret
+      .from("ai_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("student_id", auth.studentId)
+      .eq("type", "matching"),
   ]);
 
   const platformStats = getPlatformCompletionStats(
@@ -92,6 +104,8 @@ export default async function StudentPage() {
       newsItems={dashboardNewsItems}
       activityLogItems={activityLogItems}
       openTaskCount={openTaskCount ?? 0}
+      essaysReviewedCount={essaysReviewedCount ?? 0}
+      aiMatchesGeneratedCount={aiMatchesGeneratedCount ?? 0}
     />
   );
 }

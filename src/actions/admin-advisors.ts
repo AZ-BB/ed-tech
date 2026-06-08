@@ -400,6 +400,7 @@ export async function updateAdminAdvisorProfile(
     return { ok: false, error: "Advisor not found." };
   }
 
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const phoneRaw = String(formData.get("phone") ?? "").trim();
@@ -424,19 +425,19 @@ export async function updateAdminAdvisorProfile(
     .map((value) => String(value).trim().toUpperCase())
     .filter(Boolean);
 
-  if (!firstName || !lastName) {
-    return { ok: false, error: "First name and last name are required." };
+  if (!email || !EMAIL_RE.test(email)) {
+    return { ok: false, error: "Enter a valid email address." };
   }
 
-  if (!nationalityCountryCode) {
-    return { ok: false, error: "Select a nationality country." };
+  if (!firstName || !lastName) {
+    return { ok: false, error: "First name and last name are required." };
   }
 
   const service = await createSupabaseSecretClient();
 
   const { data: existing, error: fetchError } = await service
     .from("advisors")
-    .select("id")
+    .select("id, email, nationality_country_code")
     .eq("id", id)
     .maybeSingle();
 
@@ -445,14 +446,33 @@ export async function updateAdminAdvisorProfile(
     return { ok: false, error: "Advisor not found." };
   }
 
-  const { data: nationalityCountry } = await service
-    .from("countries")
-    .select("id")
-    .eq("id", nationalityCountryCode)
-    .maybeSingle();
+  if (email !== existing.email) {
+    const { data: emailConflict } = await service
+      .from("advisors")
+      .select("id")
+      .eq("email", email)
+      .neq("id", id)
+      .maybeSingle();
 
-  if (!nationalityCountry) {
-    return { ok: false, error: "Select a valid nationality country." };
+    if (emailConflict) {
+      return { ok: false, error: "This email belongs to a different advisor." };
+    }
+  }
+
+  let resolvedNationalityCountryCode = existing.nationality_country_code;
+
+  if (nationalityCountryCode) {
+    const { data: nationalityCountry } = await service
+      .from("countries")
+      .select("id")
+      .eq("id", nationalityCountryCode)
+      .maybeSingle();
+
+    if (!nationalityCountry) {
+      return { ok: false, error: "Select a valid nationality country." };
+    }
+
+    resolvedNationalityCountryCode = nationalityCountryCode;
   }
 
   if (specializationCountryCodes.length > 0) {
@@ -475,12 +495,13 @@ export async function updateAdminAdvisorProfile(
   const { error: updateError } = await service
     .from("advisors")
     .update({
+      email,
       first_name: firstName,
       last_name: lastName,
       phone,
       title: title || null,
       languages: languages || null,
-      nationality_country_code: nationalityCountryCode,
+      nationality_country_code: resolvedNationalityCountryCode,
       experience_years: experienceYears,
       description: description || null,
       best_for: bestFor || null,
@@ -495,6 +516,9 @@ export async function updateAdminAdvisorProfile(
 
   if (updateError) {
     console.error("[updateAdminAdvisorProfile] update", updateError);
+    if (updateError.code === "23505") {
+      return { ok: false, error: "This email belongs to a different advisor." };
+    }
     return { ok: false, error: updateError.message || "Could not update advisor." };
   }
 

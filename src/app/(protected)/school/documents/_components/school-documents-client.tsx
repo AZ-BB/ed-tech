@@ -1,6 +1,7 @@
 "use client";
 
 import type { SchoolDocumentTableRow } from "@/app/(protected)/school/documents/_lib/fetch-school-documents";
+import { getSchoolRecommendationLetterViewUrl } from "@/actions/recommendation-requests";
 import {
   getSchoolMyApplicationDocumentViewUrl,
   sendSchoolDocumentReminder,
@@ -15,9 +16,75 @@ const filterSelectClass =
 const SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22 fill=%22none%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236a6a6a%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E")';
 
+const REC_STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  drafting: "Drafting",
+  submitted: "Submitted",
+};
+
 function normalizeStatusSelect(raw: string): string {
   if (raw === "missing" || raw === "uploaded") return raw;
   return "";
+}
+
+function checklistStatusPill(isUploaded: boolean) {
+  if (isUploaded) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(52,152,219,0.12)] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#1d4d70]">
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#3498DB]"
+          aria-hidden
+        />
+        Uploaded
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(231,76,60,0.12)] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#8c2d22]">
+      <span
+        className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#E74C3C]"
+        aria-hidden
+      />
+      Missing
+    </span>
+  );
+}
+
+function recommendationStatusTone(
+  status: string,
+): "green" | "amber" | "red" {
+  if (status === "submitted") return "green";
+  if (status === "drafting") return "amber";
+  return "red";
+}
+
+function recommendationStatusPill(status: string) {
+  const tone = recommendationStatusTone(status);
+  const pillClass =
+    tone === "green"
+      ? "bg-[rgba(82,183,135,0.13)] text-[#1b4332]"
+      : tone === "amber"
+        ? "bg-[rgba(212,162,42,0.14)] text-[#7a5d10]"
+        : "bg-[#FCEBEB] text-[var(--red)]";
+  const dotClass =
+    tone === "green"
+      ? "bg-[var(--green-bright)]"
+      : tone === "amber"
+        ? "bg-[#d4a22a]"
+        : "bg-[var(--red)]";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${pillClass}`}
+    >
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`} />
+      {REC_STATUS_LABEL[status] ?? status}
+    </span>
+  );
+}
+
+function rowKey(row: SchoolDocumentTableRow): string {
+  return `${row.rowKind}-${row.documentId}`;
 }
 
 export function SchoolDocumentsClient({
@@ -56,7 +123,7 @@ export function SchoolDocumentsClient({
     return () => document.removeEventListener("keydown", onKey);
   }, [remindRow, remindSending]);
 
-  async function handleView(documentId: string) {
+  async function handleViewChecklist(documentId: string) {
     setOpeningId(documentId);
     try {
       const res = await getSchoolMyApplicationDocumentViewUrl(documentId);
@@ -70,7 +137,22 @@ export function SchoolDocumentsClient({
     }
   }
 
+  async function handleViewRecommendation(recommendationId: string) {
+    setOpeningId(recommendationId);
+    try {
+      const res = await getSchoolRecommendationLetterViewUrl(recommendationId);
+      if ("error" in res) {
+        window.alert(res.error);
+        return;
+      }
+      window.open(res.url, "_blank", "noopener,noreferrer");
+    } finally {
+      setOpeningId(null);
+    }
+  }
+
   function openRemindModal(row: SchoolDocumentTableRow) {
+    if (row.rowKind !== "checklist") return;
     setRemindError(null);
     setRemindRow(row);
   }
@@ -118,8 +200,9 @@ export function SchoolDocumentsClient({
             </span>
           </h2>
           <p className="mt-1 text-[12px] text-[var(--text-light)]">
-            Track every uploaded, missing, and pending document across students
-            at your school (from each student&apos;s My Applications checklist).
+            Track checklist documents and recommendation letter requests across
+            students at your school (from each student&apos;s My Applications
+            workspace).
           </p>
         </div>
 
@@ -154,7 +237,7 @@ export function SchoolDocumentsClient({
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="Search student or document"
+              placeholder="Search student, document, or teacher"
               className="w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white py-2 pl-8 pr-3 font-[family-name:var(--font-dm-sans)] text-[12.5px] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)]"
             />
           </div>
@@ -188,6 +271,9 @@ export function SchoolDocumentsClient({
                   Document
                 </th>
                 <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+                  Sent to
+                </th>
+                <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   Status
                 </th>
                 <th className="whitespace-nowrap bg-[#faf9f4] px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
@@ -203,17 +289,17 @@ export function SchoolDocumentsClient({
                 <tr>
                   <td
                     className="px-5 py-10 text-center text-[13px] text-[var(--text-light)]"
-                    colSpan={5}
+                    colSpan={6}
                   >
                     {!filterActive && totalRows === 0
-                      ? "No checklist documents yet. Students will appear here after they open My Applications (which creates their document slots)."
+                      ? "No documents or recommendation requests yet. Students will appear here after they open My Applications."
                       : "No documents match your filters."}
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => (
                   <tr
-                    key={r.documentId}
+                    key={rowKey(r)}
                     className="border-b border-[var(--border-light)] transition-colors last:border-b-0 hover:bg-[#faf9f4]"
                   >
                     <td className="py-3 pl-5 pr-3 align-middle">
@@ -244,35 +330,56 @@ export function SchoolDocumentsClient({
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 align-middle">
-                      {r.isUploaded ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(52,152,219,0.12)] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#1d4d70]">
-                          <span
-                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#3498DB]"
-                            aria-hidden
-                          />
-                          Uploaded
-                        </span>
+                    <td className="max-w-[200px] px-4 py-3 align-middle">
+                      {r.rowKind === "recommendation" ? (
+                        <div className="min-w-0">
+                          <div className="font-semibold text-[var(--text)]">
+                            {r.sentToName}
+                          </div>
+                          {r.sentToEmail ? (
+                            <div className="truncate text-[11.5px] text-[var(--text-hint)]">
+                              {r.sentToEmail}
+                            </div>
+                          ) : null}
+                        </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(231,76,60,0.12)] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#8c2d22]">
-                          <span
-                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#E74C3C]"
-                            aria-hidden
-                          />
-                          Missing
+                        <span className="text-[12px] text-[var(--text-hint)]">
+                          —
                         </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 align-middle">
+                      {r.rowKind === "recommendation" ? (
+                        recommendationStatusPill(
+                          r.recommendationStatus ?? "pending",
+                        )
+                      ) : (
+                        checklistStatusPill(r.isUploaded)
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 align-middle text-[12px] text-[var(--text-mid)]">
                       {r.updatedLabel}
                     </td>
                     <td className="px-5 py-3 align-middle">
-                      {r.isUploaded ? (
+                      {r.rowKind === "recommendation" ? (
+                        r.recommendationStatus === "submitted" ? (
+                          <button
+                            type="button"
+                            className="inline-flex cursor-pointer items-center rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:cursor-wait disabled:opacity-60"
+                            disabled={openingId === r.documentId}
+                            onClick={() =>
+                              void handleViewRecommendation(r.documentId)
+                            }
+                          >
+                            {openingId === r.documentId ? "Opening…" : "View"}
+                          </button>
+                        ) : null
+                      ) : r.isUploaded ? (
                         <button
                           type="button"
                           className="inline-flex cursor-pointer items-center rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:cursor-wait disabled:opacity-60"
                           disabled={openingId === r.documentId}
-                          onClick={() => handleView(r.documentId)}
+                          onClick={() => void handleViewChecklist(r.documentId)}
                         >
                           {openingId === r.documentId ? "Opening…" : "View"}
                         </button>

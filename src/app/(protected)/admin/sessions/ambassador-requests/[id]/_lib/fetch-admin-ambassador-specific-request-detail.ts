@@ -48,16 +48,25 @@ function personName(first: string | null | undefined, last: string | null | unde
   return [first?.trim(), last?.trim()].filter(Boolean).join(" ").trim() || "—";
 }
 
-export type AdminAmbassadorSpecificRequestAssignedAmbassador = {
-  id: string;
-  fullName: string;
-  email: string;
-  university: string;
-  major: string | null;
-  destinationLabel: string;
-  isActive: boolean;
-  href: string;
-};
+export type AdminAmbassadorSpecificRequestAssignedAmbassador =
+  | {
+      kind: "catalog";
+      id: string;
+      fullName: string;
+      email: string;
+      university: string;
+      major: string | null;
+      destinationLabel: string;
+      isActive: boolean;
+      href: string;
+    }
+  | {
+      kind: "external";
+      fullName: string;
+      email: string | null;
+      linkedin: string | null;
+      overview: string;
+    };
 
 export type AdminAmbassadorSpecificRequestDetail = {
   id: number;
@@ -147,6 +156,7 @@ function mapAssignedAmbassador(
     uniEmbed?.name?.trim() || row.university_name?.trim() || "—";
 
   return {
+    kind: "catalog",
     id: row.id,
     fullName: personName(row.first_name, row.last_name),
     email: row.email?.trim() || "—",
@@ -158,6 +168,25 @@ function mapAssignedAmbassador(
       : "—",
     isActive: row.is_active,
     href: `/admin/users/ambassadors/${row.id}`,
+  };
+}
+
+function mapExternalAmbassador(row: {
+  external_ambassador_full_name: string | null;
+  external_ambassador_email: string | null;
+  external_ambassador_linkedin: string | null;
+  external_ambassador_overview: string | null;
+}): AdminAmbassadorSpecificRequestAssignedAmbassador | null {
+  const fullName = row.external_ambassador_full_name?.trim();
+  const overview = row.external_ambassador_overview?.trim();
+  if (!fullName || !overview) return null;
+
+  return {
+    kind: "external",
+    fullName,
+    email: row.external_ambassador_email?.trim() || null,
+    linkedin: row.external_ambassador_linkedin?.trim() || null,
+    overview,
   };
 }
 
@@ -192,6 +221,10 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
       id,
       status,
       assigned_ambassador_id,
+      external_ambassador_full_name,
+      external_ambassador_email,
+      external_ambassador_linkedin,
+      external_ambassador_overview,
       student_name,
       student_email,
       student_phone,
@@ -236,6 +269,10 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
     id: number;
     status: string;
     assigned_ambassador_id: string | null;
+    external_ambassador_full_name: string | null;
+    external_ambassador_email: string | null;
+    external_ambassador_linkedin: string | null;
+    external_ambassador_overview: string | null;
     ambassadors: AmbassadorEmbed;
     student_name: string;
     student_email: string;
@@ -247,6 +284,10 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
     updated_at: string | null;
     student_profiles: StudentEmbed;
   };
+
+  const assignedAmbassador =
+    mapAssignedAmbassador(row.ambassadors) ??
+    mapExternalAmbassador(row);
 
   return {
     request: {
@@ -260,7 +301,7 @@ export async function fetchAdminAmbassadorSpecificRequestDetail(
       additionalNotes: row.additional_notes?.trim() || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      assignedAmbassador: mapAssignedAmbassador(row.ambassadors),
+      assignedAmbassador,
     },
     student: mapStudent(row.student_profiles),
     school: mapSchool(row.student_profiles),

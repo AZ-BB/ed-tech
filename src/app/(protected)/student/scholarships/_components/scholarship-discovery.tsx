@@ -94,6 +94,14 @@ export function ScholarshipDiscovery({
     [pathname, router, searchParams],
   );
 
+  useEffect(() => {
+    const urlTabRaw = searchParams.get("tab")?.trim().toLowerCase();
+    const urlIsOther = urlTabRaw === "other" || urlTabRaw === "o";
+    if (pageData.tab === "other" && !urlIsOther) {
+      navigate({ tab: "other" }, false);
+    }
+  }, [pageData.tab, searchParams, navigate]);
+
   const onNationalityChange = (v: string) => {
     setOptimisticFilters((prev) => ({ ...prev, nat: v === "any" ? "any" : v }));
     navigate({ nat: v === "any" ? undefined : v }, true);
