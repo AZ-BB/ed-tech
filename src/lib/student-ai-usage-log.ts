@@ -124,7 +124,13 @@ export async function logStudentAiUsageAndActivity(opts: {
     outputs: opts.outputs,
   });
   if (usageErr) {
-    console.error("[ai_usage] insert failed:", usageErr);
+    console.error("[ai_usage] insert failed:", {
+      message: usageErr.message,
+      code: usageErr.code,
+      details: usageErr.details,
+      studentId: opts.studentId,
+      type: opts.type,
+    });
   }
 
   const { error: logErr } = await secret.from("acitivity_logs").insert({
@@ -138,6 +144,12 @@ export async function logStudentAiUsageAndActivity(opts: {
     school_admin_id: null,
   });
   if (logErr) {
-    console.error("[acitivity_logs] insert failed:", logErr);
+    console.error("[acitivity_logs] insert failed:", {
+      message: logErr.message,
+      code: logErr.code,
+      details: logErr.details,
+      studentId: opts.studentId,
+      type: opts.type,
+    });
   }
 }

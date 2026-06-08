@@ -311,7 +311,7 @@ Rules:
         admissionFit: m.admissionFit,
       })),
     };
-    void logStudentAiUsageAndActivity({
+    await logStudentAiUsageAndActivity({
       studentId,
       type: "matching",
       model,
@@ -326,13 +326,12 @@ Rules:
       },
     });
 
-    createSupabaseServerClient().then((supabase) =>
-      recordStudentPlatformCompletionOnce(
-        supabase,
-        studentId,
-        STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_ai_matching,
-      ).catch(() => {}),
-    );
+    const supabase = await createSupabaseServerClient();
+    await recordStudentPlatformCompletionOnce(
+      supabase,
+      studentId,
+      STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_ai_matching,
+    ).catch(() => {});
 
     return NextResponse.json(matches);
   } catch (error) {

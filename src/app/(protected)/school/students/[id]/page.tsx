@@ -103,6 +103,7 @@ export default async function SchoolStudentDetailPage({
       studentInteractions={payload.studentInteractions}
       documents={payload.documents}
       essays={payload.essays}
+      recommendations={payload.recommendations}
       initialTab={initialTab}
       historyPanel={historyPanel}
       creditUsagePanel={creditUsagePanel}

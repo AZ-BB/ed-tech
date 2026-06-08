@@ -15,6 +15,18 @@ import { revalidatePath } from "next/cache";
 
 type AdminActionResult = { ok: true } | { ok: false; error: string };
 
+export type ConfirmAmbassadorSpecificRequestInput =
+  | { mode: "catalog"; ambassadorId: string }
+  | {
+      mode: "other";
+      fullName: string;
+      email?: string | null;
+      linkedin?: string | null;
+      overview: string;
+    };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 type AdminAccessResult =
   | { ok: false; error: string }
   | { ok: true; adminId: string };
@@ -81,6 +93,10 @@ async function rollbackAmbassadorSpecificRequestConfirmation(
     .update({
       status: "pending",
       assigned_ambassador_id: null,
+      external_ambassador_full_name: null,
+      external_ambassador_email: null,
+      external_ambassador_linkedin: null,
+      external_ambassador_overview: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", requestId);
@@ -93,9 +109,23 @@ async function rollbackAmbassadorSpecificRequestConfirmation(
   }
 }
 
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export async function confirmAmbassadorSpecificRequest(
   requestId: number,
-  ambassadorId: string,
+  input: ConfirmAmbassadorSpecificRequestInput,
 ): Promise<AdminActionResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -103,11 +133,6 @@ export async function confirmAmbassadorSpecificRequest(
   const id = Number(requestId);
   if (!Number.isFinite(id) || id < 1) {
     return { ok: false, error: "Invalid request." };
-  }
-
-  const ambassador = ambassadorId.trim();
-  if (!UUID_RE.test(ambassador)) {
-    return { ok: false, error: "Select a valid ambassador." };
   }
 
   if (!isResendConfigured()) {
@@ -136,6 +161,94 @@ export async function confirmAmbassadorSpecificRequest(
     return { ok: false, error: "Only pending requests can be confirmed." };
   }
 
+  const now = new Date().toISOString();
+
+  if (input.mode === "other") {
+    const fullName = input.fullName.trim();
+    const email = normalizeOptionalText(input.email);
+    const linkedin = normalizeOptionalText(input.linkedin);
+    const overview = input.overview.trim();
+
+    if (!fullName) {
+      return { ok: false, error: "Full name is required." };
+    }
+    if (!overview) {
+      return { ok: false, error: "Overview is required." };
+    }
+    if (email && !EMAIL_RE.test(email)) {
+      return { ok: false, error: "Enter a valid email address." };
+    }
+    if (linkedin && !isValidHttpUrl(linkedin)) {
+      return { ok: false, error: "Enter a valid LinkedIn URL." };
+    }
+
+    const { error: updateError } = await secret
+      .from("ambassador_specific_requests")
+      .update({
+        assigned_ambassador_id: null,
+        external_ambassador_full_name: fullName,
+        external_ambassador_email: email,
+        external_ambassador_linkedin: linkedin,
+        external_ambassador_overview: overview,
+        status: "confirmed",
+        updated_at: now,
+      })
+      .eq("id", id)
+      .eq("status", "pending");
+
+    if (updateError) {
+      console.error("[confirmAmbassadorSpecificRequest] update other", updateError);
+      return { ok: false, error: "Could not confirm this request." };
+    }
+
+    const emailResult = await sendAmbassadorSpecificRequestStudentEmail({
+      to: request.student_email,
+      studentName: request.student_name,
+      targetUniversity: request.target_university,
+      preferredMajor: request.preferred_major,
+      additionalNotes: request.additional_notes,
+      kind: "external",
+      ambassador: {
+        fullName,
+        email,
+        linkedin,
+        overview,
+      },
+    });
+
+    if ("error" in emailResult) {
+      await rollbackAmbassadorSpecificRequestConfirmation(secret, id);
+      return {
+        ok: false,
+        error: emailResult.error || "Could not send confirmation email to the student.",
+      };
+    }
+
+    const { error: logError } = await secret.from("acitivity_logs").insert({
+      entitiy_type: "ambassador_specific_requests",
+      entity_id: String(id),
+      action: "ambassador_specific_request_confirmed",
+      message: `Admin confirmed ambassador request #${id} with external ambassador ${fullName}.`,
+      created_by_type: "admin",
+      student_id: null,
+      admin_id: access.adminId,
+      school_admin_id: null,
+    });
+    if (logError) {
+      console.error("[confirmAmbassadorSpecificRequest] activity log", logError);
+    }
+
+    revalidatePath("/admin/sessions/ambassador-requests");
+    revalidatePath(`/admin/sessions/ambassador-requests/${id}`);
+
+    return { ok: true };
+  }
+
+  const ambassador = input.ambassadorId.trim();
+  if (!UUID_RE.test(ambassador)) {
+    return { ok: false, error: "Select a valid ambassador." };
+  }
+
   const { data: ambassadorRow, error: ambassadorError } = await secret
     .from("ambassadors")
     .select(
@@ -158,11 +271,14 @@ export async function confirmAmbassadorSpecificRequest(
     return { ok: false, error: "Ambassador not found." };
   }
 
-  const now = new Date().toISOString();
   const { error: updateError } = await secret
     .from("ambassador_specific_requests")
     .update({
       assigned_ambassador_id: ambassador,
+      external_ambassador_full_name: null,
+      external_ambassador_email: null,
+      external_ambassador_linkedin: null,
+      external_ambassador_overview: null,
       status: "confirmed",
       updated_at: now,
     })
@@ -184,6 +300,7 @@ export async function confirmAmbassadorSpecificRequest(
     targetUniversity: request.target_university,
     preferredMajor: request.preferred_major,
     additionalNotes: request.additional_notes,
+    kind: "catalog",
     ambassador: ambassadorProfile,
     catalogUrl,
   });

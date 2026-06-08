@@ -342,7 +342,7 @@ Rules:
       ? `Completed AI essay review (${wc} words, score ${feedback._stats.score}/100).`
       : `AI essay review could not treat submission as an essay: ${(feedback.invalid_reason ?? "unspecified").slice(0, 240)}`;
 
-    void logStudentAiUsageAndActivity({
+    await logStudentAiUsageAndActivity({
       studentId,
       type: "essay_review",
       model,
@@ -357,13 +357,12 @@ Rules:
       },
     });
 
-    createSupabaseServerClient().then((supabase) =>
-      recordStudentPlatformCompletionOnce(
-        supabase,
-        studentId,
-        STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_essay_review,
-      ).catch(() => {}),
-    );
+    const supabase = await createSupabaseServerClient();
+    await recordStudentPlatformCompletionOnce(
+      supabase,
+      studentId,
+      STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_essay_review,
+    ).catch(() => {});
 
     return NextResponse.json(feedback);
   } catch (error) {

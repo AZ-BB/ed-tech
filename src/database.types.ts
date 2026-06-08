@@ -117,39 +117,6 @@ export type Database = {
         }
         Relationships: []
       }
-      handlers: {
-        Row: {
-          created_at: string | null
-          email: string
-          first_name: string
-          id: string
-          is_active: boolean
-          last_name: string
-          phone: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          first_name: string
-          id?: string
-          is_active?: boolean
-          last_name: string
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          first_name?: string
-          id?: string
-          is_active?: boolean
-          last_name?: string
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       advisor_sessions: {
         Row: {
           advisor_id: string
@@ -517,6 +484,10 @@ export type Database = {
           additional_notes: string | null
           assigned_ambassador_id: string | null
           created_at: string | null
+          external_ambassador_email: string | null
+          external_ambassador_full_name: string | null
+          external_ambassador_linkedin: string | null
+          external_ambassador_overview: string | null
           id: number
           preferred_major: string | null
           status: string
@@ -531,6 +502,10 @@ export type Database = {
           additional_notes?: string | null
           assigned_ambassador_id?: string | null
           created_at?: string | null
+          external_ambassador_email?: string | null
+          external_ambassador_full_name?: string | null
+          external_ambassador_linkedin?: string | null
+          external_ambassador_overview?: string | null
           id?: number
           preferred_major?: string | null
           status?: string
@@ -545,6 +520,10 @@ export type Database = {
           additional_notes?: string | null
           assigned_ambassador_id?: string | null
           created_at?: string | null
+          external_ambassador_email?: string | null
+          external_ambassador_full_name?: string | null
+          external_ambassador_linkedin?: string | null
+          external_ambassador_overview?: string | null
           id?: number
           preferred_major?: string | null
           status?: string
@@ -976,6 +955,36 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: Database["public"]["Enums"]["contact_submission_status"]
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: Database["public"]["Enums"]["contact_submission_status"]
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: Database["public"]["Enums"]["contact_submission_status"]
+          subject?: string | null
+        }
+        Relationships: []
+      }
       countries: {
         Row: {
           created_at: string | null
@@ -993,6 +1002,39 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      handlers: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          phone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -2417,7 +2459,6 @@ export type Database = {
           documents: Json | null
           email: string | null
           estimated_living_cost_per_year: number | null
-          living_display: string | null
           id: string
           ielts_min_score: number | null
           intakes: string | null
@@ -2426,6 +2467,7 @@ export type Database = {
           is_priority: boolean
           is_public: boolean
           is_scholarship_available: boolean
+          living_display: string | null
           logo_url: string | null
           method: string | null
           name: string
@@ -2458,7 +2500,6 @@ export type Database = {
           documents?: Json | null
           email?: string | null
           estimated_living_cost_per_year?: number | null
-          living_display?: string | null
           id?: string
           ielts_min_score?: number | null
           intakes?: string | null
@@ -2467,6 +2508,7 @@ export type Database = {
           is_priority?: boolean
           is_public?: boolean
           is_scholarship_available?: boolean
+          living_display?: string | null
           logo_url?: string | null
           method?: string | null
           name: string
@@ -2499,7 +2541,6 @@ export type Database = {
           documents?: Json | null
           email?: string | null
           estimated_living_cost_per_year?: number | null
-          living_display?: string | null
           id?: string
           ielts_min_score?: number | null
           intakes?: string | null
@@ -2508,6 +2549,7 @@ export type Database = {
           is_priority?: boolean
           is_public?: boolean
           is_scholarship_available?: boolean
+          living_display?: string | null
           logo_url?: string | null
           method?: string | null
           name?: string
@@ -2644,6 +2686,10 @@ export type Database = {
         Returns: undefined
       }
       current_school_admin_school_id: { Args: never; Returns: string }
+      process_university_import_meta_batch: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
       renew_school_subscription: {
         Args: { p_school_id: string }
         Returns: undefined
@@ -2710,6 +2756,10 @@ export type Database = {
         }
         Returns: number
       }
+      sync_university_programs_from_meta: {
+        Args: { p_meta: Json; p_university_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       activity_log_entity_type: "student" | "school_admin" | "admin"
@@ -2750,6 +2800,7 @@ export type Database = {
         | "in_progress"
         | "blocked"
         | "submitted"
+      contact_submission_status: "new" | "read" | "archived"
       gender: "male" | "female"
       news_tag: "visa" | "deadline" | "update"
       payment_status: "pending" | "paid" | "failed"
@@ -2947,6 +2998,7 @@ export const Constants = {
         "blocked",
         "submitted",
       ],
+      contact_submission_status: ["new", "read", "archived"],
       gender: ["male", "female"],
       news_tag: ["visa", "deadline", "update"],
       payment_status: ["pending", "paid", "failed"],

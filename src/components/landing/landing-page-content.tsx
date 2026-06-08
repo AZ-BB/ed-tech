@@ -16,8 +16,8 @@ export function LandingPageContent() {
             </h1>
             <p className="hero-sub fade-up d3">
               Discover, prepare, and apply to universities — all in one platform
-              designed to guide you from your first search to your acceptance
-              letter.
+              designed to guide students and teachers from first search to
+              acceptance letter.
             </p>
             <div className="hero-ctas fade-up d4">
               <a href="/signup" style={{ textDecoration: "none" }}>

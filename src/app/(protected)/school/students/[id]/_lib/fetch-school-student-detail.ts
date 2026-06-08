@@ -127,6 +127,8 @@ export type SchoolStudentDetailPayload = {
   documents: Database["public"]["Tables"]["student_my_application_documents"]["Row"][];
   /** Application essays (`student_my_application_essays`) with counselor comments. */
   essays: EssayWithComments[];
+  /** Recommendation letter requests (`student_my_application_recommendations`). */
+  recommendations: Database["public"]["Tables"]["student_my_application_recommendations"]["Row"][];
 };
 
 function stageFromProfilePercent(pct: number): string {
@@ -226,6 +228,7 @@ export async function fetchSchoolStudentDetail(
     notesRes,
     interactionsRes,
     essaysRes,
+    recommendationsRes,
     documents,
     followUpStatusRes,
   ] = await Promise.all([
@@ -363,6 +366,11 @@ export async function fetchSchoolStudentDetail(
       )
       .eq("student_id", studentId)
       .order("updated_at", { ascending: false }),
+    supabase
+      .from("student_my_application_recommendations")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("requested_at", { ascending: false }),
     ensureStudentApplicationDocuments(secret, studentId),
     supabase.rpc("school_student_follow_up_status", {
       p_student_id: studentId,
@@ -409,6 +417,12 @@ export async function fetchSchoolStudentDetail(
     console.error(
       "[fetchSchoolStudentDetail] student_my_application_essays:",
       essaysRes.error.message,
+    );
+  }
+  if (recommendationsRes.error) {
+    console.error(
+      "[fetchSchoolStudentDetail] student_my_application_recommendations:",
+      recommendationsRes.error.message,
     );
   }
 
@@ -611,5 +625,6 @@ export async function fetchSchoolStudentDetail(
     studentInteractions,
     documents,
     essays,
+    recommendations: recommendationsRes.data ?? [],
   };
 }

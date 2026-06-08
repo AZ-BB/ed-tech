@@ -84,6 +84,8 @@ type StudentDashboardProps = {
   newsItems: DashboardNewsItem[];
   activityLogItems: DashboardActivityLogItem[];
   openTaskCount: number;
+  essaysReviewedCount: number;
+  aiMatchesGeneratedCount: number;
 };
 
 export function StudentDashboard({
@@ -96,6 +98,8 @@ export function StudentDashboard({
   newsItems,
   activityLogItems,
   openTaskCount,
+  essaysReviewedCount,
+  aiMatchesGeneratedCount,
 }: StudentDashboardProps) {
   return (
     <div className="text-[var(--text)]">
@@ -300,7 +304,11 @@ export function StudentDashboard({
         </div>
       </div>
 
-      <StudentDashboardActivityStats totalLogins={totalLogins} />
+      <StudentDashboardActivityStats
+        totalLogins={totalLogins}
+        essaysReviewedCount={essaysReviewedCount}
+        aiMatchesGeneratedCount={aiMatchesGeneratedCount}
+      />
 
       <StudentDashboardCollections />
 

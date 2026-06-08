@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s · Univeera",
   },
   description:
-    "Discover, prepare, and apply to universities — all in one platform designed to guide you from your first search to your acceptance letter.",
+    "Discover, prepare, and apply to universities — all in one platform designed to guide students and teachers from first search to acceptance letter.",
 };
 
 export default function RootLayout({

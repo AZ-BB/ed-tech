@@ -181,10 +181,11 @@ export function AdminEditAdvisorDialog({
               </label>
               <input
                 id="edit-advisor-email"
+                name="email"
                 type="email"
-                readOnly
-                value={defaults.email}
-                className={`${inputClassName} cursor-not-allowed bg-[#faf9f4] text-[#7a7a7a]`}
+                required
+                defaultValue={defaults.email}
+                className={inputClassName}
               />
             </div>
             <div>
@@ -204,12 +205,11 @@ export function AdminEditAdvisorDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="edit-advisor-nationality" className={labelClassName}>
-                Nationality country
+                Nationality country <span className="font-normal text-[#a0a0a0]">(optional)</span>
               </label>
               <select
                 id="edit-advisor-nationality"
                 name="nationalityCountryCode"
-                required
                 disabled={isLoadingOptions || isSubmitting}
                 defaultValue={defaults.nationalityCountryCode}
                 className={`${inputClassName} cursor-pointer disabled:opacity-60`}

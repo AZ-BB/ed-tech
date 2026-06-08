@@ -5,6 +5,7 @@ export type AdvisorCatalogAdvisor = {
   id: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   title: string | null;
   experienceYears: number | null;
   languages: string | null;
@@ -37,6 +38,7 @@ export type AdvisorQueryRow = {
   id: string;
   first_name: string;
   last_name: string;
+  avatar_url: string | null;
   title: string | null;
   experience_years: number | null;
   languages: string | null;
@@ -88,6 +90,7 @@ export function mapAdvisorRows(rows: AdvisorQueryRow[]): AdvisorCatalogAdvisor[]
       id: r.id,
       firstName: r.first_name,
       lastName: r.last_name,
+      avatarUrl: r.avatar_url?.trim() || null,
       title: r.title,
       experienceYears: r.experience_years,
       languages: r.languages,

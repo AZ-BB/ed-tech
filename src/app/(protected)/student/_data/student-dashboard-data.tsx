@@ -214,7 +214,7 @@ export const quickActions: QuickAction[] = [
   },
   {
     name: "Ambassadors",
-    desc: "Talk to students who've been there",
+    desc: "Connect with past & current students",
     href: "/student/ambassadors",
     iconWrap: "bg-[var(--green-bg)]",
     iconStroke: "#2D6A4F",
