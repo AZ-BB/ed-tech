@@ -1,3 +1,9 @@
+import {
+  parseSchoolPortalView,
+  resolveTeacherFilterFromView,
+} from "@/lib/school-portal-view";
+import { createSupabaseServerClient } from "@/utils/supabase-server";
+
 import { SchoolDocumentsClient } from "./_components/school-documents-client";
 import { fetchSchoolDocumentsPage } from "./_lib/fetch-school-documents";
 
@@ -19,6 +25,13 @@ export default async function SchoolDocumentsPage({
   const status = typeof sp.status === "string" ? sp.status : "";
   const page = Math.max(1, parseIntParam(sp.page, 1));
   const limit = Math.min(50, Math.max(5, parseIntParam(sp.limit, 12)));
+  const view = parseSchoolPortalView(sp.view);
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const teacherFilter = resolveTeacherFilterFromView(view, user?.id);
 
   const { rows, totalRows } = await fetchSchoolDocumentsPage({
     q,
@@ -26,6 +39,7 @@ export default async function SchoolDocumentsPage({
     status,
     page,
     limit,
+    teacherFilter,
   });
 
   return (
@@ -37,6 +51,7 @@ export default async function SchoolDocumentsPage({
       q={q}
       studentQ={studentQ}
       status={status}
+      view={view}
     />
   );
 }

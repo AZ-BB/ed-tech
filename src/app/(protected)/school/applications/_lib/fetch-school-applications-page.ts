@@ -3,6 +3,7 @@ import {
   fetchSchoolStudentIdsByQuery,
   orIlikeClause,
 } from "@/app/(protected)/school/_lib/student-search";
+import type { StudentTeacherFilterValue } from "@/lib/student-teacher-assignment";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import { schoolApplicationFilterToShortlistStatus } from "./application-support-status-labels";
@@ -40,6 +41,7 @@ export type SchoolApplicationsPageFilters = {
   country: string;
   page: number;
   limit: number;
+  teacherFilter?: StudentTeacherFilterValue;
 };
 
 type ShortlistQueryRow = {
@@ -119,11 +121,16 @@ export async function fetchSchoolApplicationsPage(
     )
     .eq("student_profiles.school_id", schoolId);
 
+  if (filters.teacherFilter) {
+    q = q.eq("student_profiles.teacher_id", filters.teacherFilter);
+  }
+
   if (studentQTrim) {
     const navbarStudentIds = await fetchSchoolStudentIdsByQuery(
       supabase,
       schoolId,
       studentQTrim,
+      filters.teacherFilter || undefined,
     );
     if (navbarStudentIds.length === 0) {
       return { rows: [], totalRows: 0 };
@@ -136,6 +143,7 @@ export async function fetchSchoolApplicationsPage(
       supabase,
       schoolId,
       qTrim,
+      filters.teacherFilter || undefined,
     );
     const shortlistFieldPatterns = orIlikeClause(
       ["university_name", "country", "major_program"],

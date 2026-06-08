@@ -1,4 +1,5 @@
 import type { createSupabaseServerClient } from "@/utils/supabase-server";
+import { applyStudentTeacherFilter } from "@/lib/fetch-school-teacher-options";
 
 type SchoolSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -76,14 +77,16 @@ export async function fetchSchoolStudentIdsByQuery(
   supabase: SchoolSupabase,
   schoolId: string,
   text: string,
+  teacherId?: string,
 ): Promise<string[]> {
-  return fetchStudentIdsByQuery(supabase, text, schoolId);
+  return fetchStudentIdsByQuery(supabase, text, schoolId, teacherId);
 }
 
 export async function fetchStudentIdsByQuery(
   supabase: SchoolSupabase,
   text: string,
   schoolId?: string,
+  teacherId?: string,
 ): Promise<string[]> {
   const trimmed = text.trim();
   if (!trimmed) return [];
@@ -100,12 +103,14 @@ export async function fetchStudentIdsByQuery(
       .ilike("first_name", `%${first}%`)
       .ilike("last_name", `%${last}%`);
     byFirstLast = applySchoolScope(byFirstLast, schoolId);
+    byFirstLast = applyStudentTeacherFilter(byFirstLast, teacherId?.trim() ?? "");
 
     let byAnyField = supabase
       .from("student_profiles")
       .select("id")
       .or(orIlikeClause(["first_name", "last_name", "email"], trimmed));
     byAnyField = applySchoolScope(byAnyField, schoolId);
+    byAnyField = applyStudentTeacherFilter(byAnyField, teacherId?.trim() ?? "");
 
     const [firstLastRes, anyFieldRes] = await Promise.all([
       byFirstLast,
@@ -130,6 +135,7 @@ export async function fetchStudentIdsByQuery(
     .select("id")
     .or(orIlikeClause(["first_name", "last_name", "email"], trimmed));
   query = applySchoolScope(query, schoolId);
+  query = applyStudentTeacherFilter(query, teacherId?.trim() ?? "");
 
   const { data, error } = await query;
 

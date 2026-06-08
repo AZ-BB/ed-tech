@@ -8,6 +8,10 @@ import {
 } from "@/actions/school-documents";
 import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { Pagination } from "@/components/pagination";
+import {
+  SCHOOL_VIEW_MY,
+  type SchoolPortalView,
+} from "@/lib/school-portal-view";
 import { useEffect, useState } from "react";
 
 const filterSelectClass =
@@ -95,6 +99,7 @@ export function SchoolDocumentsClient({
   q,
   studentQ,
   status,
+  view = "all_view",
 }: {
   rows: SchoolDocumentTableRow[];
   totalRows: number;
@@ -103,6 +108,7 @@ export function SchoolDocumentsClient({
   q: string;
   studentQ: string;
   status: string;
+  view?: SchoolPortalView;
 }) {
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [remindRow, setRemindRow] = useState<SchoolDocumentTableRow | null>(
@@ -215,6 +221,9 @@ export function SchoolDocumentsClient({
           <input type="hidden" name="limit" value={String(limit)} />
           {studentQ.trim() ? (
             <input type="hidden" name="studentQ" value={studentQ} />
+          ) : null}
+          {view === SCHOOL_VIEW_MY ? (
+            <input type="hidden" name="view" value={SCHOOL_VIEW_MY} />
           ) : null}
           <div className="relative min-w-[200px] flex-1 basis-[220px]">
             <svg

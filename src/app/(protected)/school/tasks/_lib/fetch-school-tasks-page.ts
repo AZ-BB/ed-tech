@@ -5,7 +5,9 @@ import {
   fetchSchoolStudentIdsByQuery,
   ilikePattern,
 } from "@/app/(protected)/school/_lib/student-search";
+import { applyStudentTeacherFilter } from "@/lib/fetch-school-teacher-options";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
+import type { StudentTeacherFilterValue } from "@/lib/student-teacher-assignment";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type SchoolTaskTableRow = {
@@ -65,6 +67,7 @@ export type SchoolTasksPageFilters = {
   limit: number;
   /** When set, only tasks for this student (must belong to admin's school). */
   studentId?: string;
+  teacherFilter?: StudentTeacherFilterValue;
 };
 
 function normalizePriority(raw: string): "" | "high" | "medium" | "low" {
@@ -101,9 +104,9 @@ type TaskQueryRow = {
   };
 };
 
-export async function fetchSchoolStudentPickerOptions(): Promise<
-  SchoolStudentPickerOption[]
-> {
+export async function fetchSchoolStudentPickerOptions(options?: {
+  teacherFilter?: StudentTeacherFilterValue;
+}): Promise<SchoolStudentPickerOption[]> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -119,10 +122,15 @@ export async function fetchSchoolStudentPickerOptions(): Promise<
   const schoolId = sap?.school_id;
   if (!schoolId) return [];
 
-  const { data: rows, error } = await supabase
-    .from("student_profiles")
-    .select("id, first_name, last_name, email, grade")
-    .eq("school_id", schoolId);
+  const query = applyStudentTeacherFilter(
+    supabase
+      .from("student_profiles")
+      .select("id, first_name, last_name, email, grade")
+      .eq("school_id", schoolId),
+    options?.teacherFilter ?? "",
+  );
+
+  const { data: rows, error } = await query;
 
   if (error || !rows) {
     if (error) console.error(error);
@@ -220,6 +228,10 @@ export async function fetchSchoolTasksPage(
     )
     .eq("student_profiles.school_id", schoolId);
 
+  if (filters.teacherFilter) {
+    q = q.eq("student_profiles.teacher_id", filters.teacherFilter);
+  }
+
   if (filters.studentId?.trim()) {
     q = q.eq("student_id", filters.studentId.trim());
   }
@@ -229,6 +241,7 @@ export async function fetchSchoolTasksPage(
       supabase,
       schoolId,
       studentQTrim,
+      filters.teacherFilter || undefined,
     );
     if (navbarStudentIds.length === 0) {
       return { rows: [], totalRows: 0 };
@@ -242,6 +255,7 @@ export async function fetchSchoolTasksPage(
       supabase,
       schoolId,
       qTrim,
+      filters.teacherFilter || undefined,
     );
     q = q.or(
       buildOrWithStudentIds(

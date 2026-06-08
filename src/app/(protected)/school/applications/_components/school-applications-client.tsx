@@ -10,6 +10,10 @@ import {
   UNIVERSITY_STATUS_LABEL,
 } from "@/app/(protected)/student/my-applications/_lib/my-applications-university-labels";
 import type { DestinationSelectItem } from "@/lib/school-portal-destination-options";
+import {
+  SCHOOL_VIEW_MY,
+  type SchoolPortalView,
+} from "@/lib/school-portal-view";
 import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { Pagination } from "@/components/pagination";
 import Link from "next/link";
@@ -60,6 +64,7 @@ export function SchoolApplicationsClient({
   status,
   country,
   destinationItems,
+  view = "all_view",
 }: {
   rows: SchoolApplicationTableRow[];
   totalRows: number;
@@ -70,6 +75,7 @@ export function SchoolApplicationsClient({
   status: string;
   country: string;
   destinationItems: DestinationSelectItem[];
+  view?: SchoolPortalView;
 }) {
   const filterActive =
     q.trim().length > 0 ||
@@ -115,6 +121,9 @@ export function SchoolApplicationsClient({
           <input type="hidden" name="limit" value={String(limit)} />
           {studentQ.trim() ? (
             <input type="hidden" name="studentQ" value={studentQ} />
+          ) : null}
+          {view === SCHOOL_VIEW_MY ? (
+            <input type="hidden" name="view" value={SCHOOL_VIEW_MY} />
           ) : null}
           <div className="relative min-w-[180px] flex-1 basis-[200px]">
             <svg

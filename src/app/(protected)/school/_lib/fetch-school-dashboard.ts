@@ -1,4 +1,6 @@
+import { applyStudentTeacherFilter } from "@/lib/fetch-school-teacher-options";
 import { parseSchoolStudentsNeedingFollowUp } from "@/lib/school-student-risk";
+import type { StudentTeacherFilterValue } from "@/lib/student-teacher-assignment";
 import { fetchStudentAvatarUrlMap } from "@/lib/student-avatar-url-map";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
@@ -77,8 +79,9 @@ type OfferHighlightQueryRow = {
 async function fetchSchoolOfferHighlights(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   schoolId: string,
+  teacherFilter: StudentTeacherFilterValue,
 ): Promise<SchoolDashboardOfferHighlight[]> {
-  const { data, error } = await supabase
+  let q = supabase
     .from("student_shortlist_universities")
     .select(
       `
@@ -93,12 +96,19 @@ async function fetchSchoolOfferHighlights(
         last_name,
         grade,
         avatar_url,
-        school_id
+        school_id,
+        teacher_id
       )
     `,
     )
     .eq("student_profiles.school_id", schoolId)
-    .eq("decision", "offer_received")
+    .eq("decision", "offer_received");
+
+  if (teacherFilter) {
+    q = q.eq("student_profiles.teacher_id", teacherFilter);
+  }
+
+  const { data, error } = await q
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(DASHBOARD_OFFER_HIGHLIGHTS_LIMIT);
@@ -156,7 +166,10 @@ async function paginateStudentIds(
   return set;
 }
 
-export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
+export async function fetchSchoolDashboard(options?: {
+  teacherFilter?: StudentTeacherFilterValue;
+}): Promise<SchoolDashboardPayload> {
+  const teacherFilter = options?.teacherFilter ?? "";
   const empty: SchoolDashboardPayload = {
     totalStudents: 0,
     seatsAvailable: null,
@@ -190,6 +203,8 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
   const schoolId = sap?.school_id;
   if (!schoolId) return empty;
 
+  const teacherRpcId = teacherFilter || null;
+
   const [
     totalStudentsRes,
     inviteCountRes,
@@ -200,10 +215,13 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
     followUpRes,
     offerHighlights,
   ] = await Promise.all([
-    supabase
-      .from("student_profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("school_id", schoolId),
+    applyStudentTeacherFilter(
+      supabase
+        .from("student_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("school_id", schoolId),
+      teacherFilter,
+    ),
     supabase
       .from("school_students")
       .select("id", { count: "exact", head: true })
@@ -219,16 +237,21 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
       .select("*", { count: "exact", head: true }),
     supabase.rpc("school_dashboard_shortlist_top_stats", {
       p_top_n: DASHBOARD_SHORTLIST_TOP_N,
+      p_teacher_id: teacherRpcId,
     }),
-    supabase
-      .from("student_profiles")
-      .select("id, first_name, last_name, grade, updated_at, created_at")
-      .eq("school_id", schoolId),
+    applyStudentTeacherFilter(
+      supabase
+        .from("student_profiles")
+        .select("id, first_name, last_name, grade, updated_at, created_at")
+        .eq("school_id", schoolId),
+      teacherFilter,
+    ),
     supabase.rpc("school_students_needing_follow_up", {
       p_limit: DASHBOARD_FOLLOW_UP_LIMIT,
       p_school_id: schoolId,
+      p_teacher_id: teacherRpcId,
     }),
-    fetchSchoolOfferHighlights(supabase, schoolId),
+    fetchSchoolOfferHighlights(supabase, schoolId, teacherFilter),
   ]);
 
   if (totalStudentsRes.error) {
@@ -353,9 +376,15 @@ export async function fetchSchoolDashboard(): Promise<SchoolDashboardPayload> {
   const { shortlistedUniversities, topPopularUniversities } = shortlistStats;
 
   const studentsUsingAppSupport = new Set<string>();
-  for (const id of supportAdvisorIds) studentsUsingAppSupport.add(id);
-  for (const id of supportAmbassadorIds) studentsUsingAppSupport.add(id);
-  for (const id of supportEssayIds) studentsUsingAppSupport.add(id);
+  for (const id of supportAdvisorIds) {
+    if (schoolStudentSet.has(id)) studentsUsingAppSupport.add(id);
+  }
+  for (const id of supportAmbassadorIds) {
+    if (schoolStudentSet.has(id)) studentsUsingAppSupport.add(id);
+  }
+  for (const id of supportEssayIds) {
+    if (schoolStudentSet.has(id)) studentsUsingAppSupport.add(id);
+  }
 
   return {
     totalStudents,
