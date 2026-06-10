@@ -1,11 +1,11 @@
 "use server";
 
 import type { Database } from "@/database.types";
+import { sendPasswordResetLinkViaResend } from "@/lib/password-reset-email";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 type AdminRole = Database["public"]["Enums"]["admin_role"];
@@ -62,16 +62,6 @@ async function assertAdminAccess() {
 
 function displayNameFromParts(first: string, last: string): string {
   return [first.trim(), last.trim()].filter(Boolean).join(" ").trim() || "Admin";
-}
-
-async function resolveSiteUrl(): Promise<string> {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${proto}://${host}`;
-  return "http://localhost:3000";
 }
 
 export async function updateAdminAdminProfile(
@@ -161,31 +151,19 @@ export async function resetAdminAdminPassword(
   }
 
   const email = admin.email.trim().toLowerCase();
-  const siteUrl = await resolveSiteUrl();
-  const redirectTo = `${siteUrl}/auth/reset-password`;
-
-  const { data, error } = await secret.auth.admin.generateLink({
-    type: "recovery",
-    email,
-    options: { redirectTo },
+  const emailResult = await sendPasswordResetLinkViaResend(email, {
+    firstName: admin.first_name,
   });
 
-  if (error) {
-    console.error("[resetAdminAdminPassword] generateLink", error);
-    return { ok: false, error: error.message || "Could not generate reset link." };
+  if ("error" in emailResult) {
+    return { ok: false, error: emailResult.error };
   }
 
-  const link = data.properties?.action_link ?? data.properties?.hashed_token;
   const adminName = displayNameFromParts(admin.first_name, admin.last_name);
-  console.log(
-    `[resetAdminAdminPassword] recovery link for ${adminName} (${email}):`,
-    link,
-  );
 
   return {
     ok: true,
-    message:
-      "Password reset link generated and logged to the server console (email integration pending).",
+    message: `Password reset email sent to ${adminName} (${email}).`,
   };
 }
 

@@ -2,7 +2,7 @@
 
 import type { Database } from "@/database.types";
 import { isResendConfigured } from "@/lib/resend/config";
-import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
+import { sendPasswordResetLinkViaResend } from "@/lib/password-reset-email";
 import { sendStaffCredentialsEmailOrRollback } from "@/lib/staff-credentials-email";
 import {
   createSupabaseSecretClient,
@@ -168,8 +168,6 @@ export async function createAdminTeacher(formData: FormData): Promise<CreateAdmi
     firstName,
     email,
     password,
-    accountLabel: "school counselor",
-    schoolName: school.name ?? null,
   });
 
   if ("error" in emailResult) {
@@ -257,31 +255,19 @@ export async function resetAdminTeacherPassword(
   }
 
   const email = teacher.email.trim().toLowerCase();
-  const siteUrl = await getPublicSiteBaseUrl();
-  const redirectTo = `${siteUrl}/auth/reset-password`;
-
-  const { data, error } = await secret.auth.admin.generateLink({
-    type: "recovery",
-    email,
-    options: { redirectTo },
+  const emailResult = await sendPasswordResetLinkViaResend(email, {
+    firstName: teacher.first_name,
   });
 
-  if (error) {
-    console.error("[resetAdminTeacherPassword] generateLink", error);
-    return { ok: false, error: error.message || "Could not generate reset link." };
+  if ("error" in emailResult) {
+    return { ok: false, error: emailResult.error };
   }
 
-  const link = data.properties?.action_link ?? data.properties?.hashed_token;
   const teacherName = displayNameFromParts(teacher.first_name, teacher.last_name);
-  console.log(
-    `[resetAdminTeacherPassword] recovery link for ${teacherName} (${email}):`,
-    link,
-  );
 
   return {
     ok: true,
-    message:
-      "Password reset link generated and logged to the server console (email integration pending).",
+    message: `Password reset email sent to ${teacherName} (${email}).`,
   };
 }
 

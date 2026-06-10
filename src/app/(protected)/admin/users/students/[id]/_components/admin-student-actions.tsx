@@ -65,7 +65,7 @@ export function AdminStudentActions({
 
   function handleResetPassword() {
     runAction(
-      `Generate a password reset link for ${studentName}? The link will be logged to the server console (email not sent yet).`,
+      `Send a password reset email to ${studentName}?`,
       () => resetAdminStudentPassword(studentId),
     );
   }

@@ -218,7 +218,6 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminUs
     firstName,
     email,
     password,
-    accountLabel: "platform admin",
   });
 
   if ("error" in emailResult) {

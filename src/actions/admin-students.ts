@@ -1,6 +1,7 @@
 "use server";
 
 import { importStudentsFromRecords } from "@/lib/admin-student-import";
+import { sendPasswordResetLinkViaResend } from "@/lib/password-reset-email";
 import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
 import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
 import { parseStudentTeacherAssignParam } from "@/lib/student-teacher-assignment";
@@ -11,7 +12,6 @@ import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 type CreateAdminStudentResult = { ok: true } | { ok: false; error: string };
@@ -401,16 +401,6 @@ export async function updateAdminStudentProfile(
   return { ok: true };
 }
 
-async function resolveSiteUrl(): Promise<string> {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${proto}://${host}`;
-  return "http://localhost:3000";
-}
-
 export async function resetAdminStudentPassword(
   studentId: string,
 ): Promise<AdminStudentActionResultWithMessage> {
@@ -435,31 +425,19 @@ export async function resetAdminStudentPassword(
   }
 
   const email = student.email.trim().toLowerCase();
-  const siteUrl = await resolveSiteUrl();
-  const redirectTo = `${siteUrl}/auth/reset-password`;
-
-  const { data, error } = await secret.auth.admin.generateLink({
-    type: "recovery",
-    email,
-    options: { redirectTo },
+  const emailResult = await sendPasswordResetLinkViaResend(email, {
+    firstName: student.first_name,
   });
 
-  if (error) {
-    console.error("[resetAdminStudentPassword] generateLink", error);
-    return { ok: false, error: error.message || "Could not generate reset link." };
+  if ("error" in emailResult) {
+    return { ok: false, error: emailResult.error };
   }
 
-  const link = data.properties?.action_link ?? data.properties?.hashed_token;
   const studentName = displayNameFromParts(student.first_name, student.last_name);
-  console.log(
-    `[resetAdminStudentPassword] recovery link for ${studentName} (${email}):`,
-    link,
-  );
 
   return {
     ok: true,
-    message:
-      "Password reset link generated and logged to the server console (email integration pending).",
+    message: `Password reset email sent to ${studentName} (${email}).`,
   };
 }
 

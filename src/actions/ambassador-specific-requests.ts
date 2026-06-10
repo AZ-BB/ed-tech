@@ -121,6 +121,7 @@ export async function createAmbassadorSpecificRequest(
   const notifyResult = await notifySuperAdminsOfAmbassadorSpecificRequest({
     supabase: secret,
     requestId: inserted.id,
+    studentId: actor.studentId,
     form: {
       studentName,
       studentEmail,

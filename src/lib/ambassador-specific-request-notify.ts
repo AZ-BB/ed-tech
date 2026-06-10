@@ -11,6 +11,13 @@ import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type SupabaseSecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
+function schoolNameFromEmbed(schools: unknown): string {
+  const row = Array.isArray(schools) ? (schools[0] ?? null) : schools;
+  if (!row || typeof row !== "object") return "";
+  const name = (row as { name?: string | null }).name?.trim();
+  return name ?? "";
+}
+
 async function fetchSuperAdminEmails(
   supabase: SupabaseSecretClient,
 ): Promise<string[]> {
@@ -33,10 +40,33 @@ async function fetchSuperAdminEmails(
   return [...emails];
 }
 
+async function resolveStudentSchoolName(
+  supabase: SupabaseSecretClient,
+  studentId: string,
+): Promise<string> {
+  const { data: profile, error } = await supabase
+    .from("student_profiles")
+    .select("schools ( name )")
+    .eq("id", studentId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[ambassador-specific-request-notify] student school", error);
+    return "—";
+  }
+
+  const schoolName = schoolNameFromEmbed(profile?.schools);
+  return schoolName || "—";
+}
+
 export async function notifySuperAdminsOfAmbassadorSpecificRequest(opts: {
   supabase: SupabaseSecretClient;
   requestId: number;
-  form: AmbassadorSpecificRequestFormData;
+  studentId: string;
+  form: Omit<
+    AmbassadorSpecificRequestFormData,
+    "schoolName" | "requestedAmbassadorName"
+  >;
 }): Promise<{ ok: true } | { error: string }> {
   if (!isResendConfigured()) {
     return {
@@ -53,13 +83,19 @@ export async function notifySuperAdminsOfAmbassadorSpecificRequest(opts: {
     return { ok: true };
   }
 
-  const baseUrl = await getPublicSiteBaseUrl();
+  const [baseUrl, schoolName] = await Promise.all([
+    getPublicSiteBaseUrl(),
+    resolveStudentSchoolName(opts.supabase, opts.studentId),
+  ]);
   const adminRequestUrl = `${baseUrl}${getAdminAmbassadorSpecificRequestHref(opts.requestId)}`;
 
   const result = await sendAmbassadorSpecificRequestAdminEmail({
     to: recipients,
-    requestId: opts.requestId,
-    form: opts.form,
+    form: {
+      ...opts.form,
+      schoolName,
+      requestedAmbassadorName: "—",
+    },
     adminRequestUrl,
   });
 

@@ -123,6 +123,7 @@ export async function importStudentsFromRecords(
     rowNumber: number;
     email: string;
     grade: string | null;
+    firstName: string | null;
     error?: string;
     skip?: boolean;
   }[] = [];
@@ -132,6 +133,8 @@ export async function importStudentsFromRecords(
     const rowNumber = index + 2;
     const emailRaw = cell(row, "email");
     const gradeRaw = cell(row, "grade");
+    const firstNameRaw =
+      cell(row, "first_name") || cell(row, "firstName") || cell(row, "first name");
 
     if (!emailRaw) {
       summary.failed += 1;
@@ -167,7 +170,12 @@ export async function importStudentsFromRecords(
       continue;
     }
 
-    parsedRows.push({ rowNumber, email, grade });
+    parsedRows.push({
+      rowNumber,
+      email,
+      grade,
+      firstName: firstNameRaw || null,
+    });
   }
 
   const { enrolledEmails, schoolInviteEmails } = await loadExistingEmailsForSchool(
@@ -236,6 +244,7 @@ export async function importStudentsFromRecords(
         inviter,
         schoolCode,
         schoolName,
+        studentFirstName: row.firstName,
       });
 
       if ("error" in emailResult) {

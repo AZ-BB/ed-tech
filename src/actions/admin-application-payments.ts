@@ -99,15 +99,17 @@ function resolvePlanPrice(
   return row.price;
 }
 
-function resolveStudentName(
+function resolveStudentFirstName(
   application: { student_name: string | null },
   profile: { first_name: string; last_name: string } | null,
 ): string {
-  if (profile) {
-    const name = [profile.first_name, profile.last_name].filter(Boolean).join(" ").trim();
-    if (name) return name;
-  }
-  return application.student_name?.trim() || "Student";
+  const fromProfile = profile?.first_name?.trim();
+  if (fromProfile) return fromProfile;
+
+  const fromApplication = application.student_name?.trim().split(/\s+/)[0];
+  if (fromApplication) return fromApplication;
+
+  return "there";
 }
 
 function resolveStudentEmail(
@@ -245,12 +247,12 @@ export async function sendApplicationPaymentRequest(
   }
 
   const payUrl = await buildApplicationPaymentUrl(token);
-  const studentName = resolveStudentName(application, profile);
+  const studentFirstName = resolveStudentFirstName(application, profile);
   const packageLabel = resolvePackageLabel(application.applications_plans);
 
   const emailResult = await sendApplicationPaymentRequestEmail({
     to: studentEmail,
-    studentName,
+    studentFirstName,
     applicationId,
     packageLabel,
     payUrl,

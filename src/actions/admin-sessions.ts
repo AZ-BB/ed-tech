@@ -10,7 +10,7 @@ import { isResendConfigured } from "@/lib/resend/config";
 import {
   resolveProviderName,
   resolveStudentEmailForSession,
-  resolveStudentNameForEmail,
+  resolveStudentFirstNameForEmail,
   sendSessionCancelledStudentEmail,
   type SessionCancelledKind,
 } from "@/lib/resend/session-cancelled-student-email";
@@ -164,9 +164,9 @@ async function refundSessionCredit(
 async function notifyStudentSessionCancelled(input: {
   sessionKind: SessionCancelledKind;
   studentEmail: string | null;
-  studentName: string;
+  studentFirstName: string;
   providerName: string;
-  sessionDetail: string | null;
+  sessionDateTime: string | null;
 }): Promise<void> {
   if (!isResendConfigured() || !input.studentEmail) {
     return;
@@ -175,10 +175,10 @@ async function notifyStudentSessionCancelled(input: {
   const dashboardUrl = await buildStudentDashboardUrl();
   const result = await sendSessionCancelledStudentEmail({
     to: input.studentEmail,
-    studentName: input.studentName,
+    studentFirstName: input.studentFirstName,
     sessionKind: input.sessionKind,
     providerName: input.providerName,
-    sessionDetail: input.sessionDetail,
+    sessionDateTime: input.sessionDateTime,
     dashboardUrl,
   });
 
@@ -568,12 +568,12 @@ export async function cancelAdminAdvisorSession(
       existing.student_email,
       existing.student_profiles,
     ),
-    studentName: resolveStudentNameForEmail(
+    studentFirstName: resolveStudentFirstNameForEmail(
       existing.student_name,
       existing.student_profiles,
     ),
     providerName: resolveProviderName(existing.advisors, "your advisor"),
-    sessionDetail: existing.booked_at,
+    sessionDateTime: existing.booked_at,
   });
 
   revalidateSessionPaths("advisor", sessionId);
@@ -653,12 +653,12 @@ export async function cancelAdminAmbassadorSession(
       existing.student_email,
       existing.student_profiles,
     ),
-    studentName: resolveStudentNameForEmail(
+    studentFirstName: resolveStudentFirstNameForEmail(
       existing.student_name,
       existing.student_profiles,
     ),
     providerName: resolveProviderName(existing.ambassadors, "your ambassador"),
-    sessionDetail: existing.pref_time_1,
+    sessionDateTime: existing.pref_time_1,
   });
 
   revalidateSessionPaths("ambassador", sessionId);
