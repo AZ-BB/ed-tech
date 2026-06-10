@@ -12,10 +12,10 @@
           <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#3d4f44;">We received a request to reset the password for your Univeera account.</p>
           <p style="margin:0 0 12px;font-size:15px;line-height:1.5;color:#3d4f44;">You can reset your password using the secure link below:</p>
           <p style="margin:0 0 8px;font-size:14px;color:#5c6b62;">Reset password link:</p>
-          <p style="margin:0 0 20px;font-size:14px;line-height:1.5;"><a href="{{ .ConfirmationURL }}" style="color:#2d6a4f;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.5;"><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=%2Fauth%2Freset-password" style="color:#2d6a4f;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=%2Fauth%2Freset-password</a></p>
           <p style="margin:0 0 20px;font-size:14px;line-height:1.5;color:#3d4f44;">If you did not request this, you can safely ignore this email. Your account will remain secure.</p>
           <p style="margin:0 0 24px;font-size:14px;line-height:1.5;color:#3d4f44;">For your safety, this link may expire after a short period. If that happens, you can request a new password reset from the login page.</p>
-          <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 24px;background:#2d6a4f;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;border-radius:8px;">Reset password</a>
+          <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=%2Fauth%2Freset-password" style="display:inline-block;padding:12px 24px;background:#2d6a4f;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;border-radius:8px;">Reset password</a>
         </td></tr>
         <tr><td style="padding:16px 28px 28px;border-top:1px solid #eee9dc;">
           <p style="margin:0 0 4px;font-size:14px;line-height:1.5;color:#3d4f44;">Warm regards,</p>
