@@ -2,7 +2,7 @@
 
 import type { Database } from "@/database.types";
 import { isResendConfigured } from "@/lib/resend/config";
-import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
+import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
 import { sendStaffCredentialsEmailOrRollback } from "@/lib/staff-credentials-email";
 import {
   createSupabaseSecretClient,
@@ -255,8 +255,7 @@ export async function resetAdminTeacherPassword(
   }
 
   const email = teacher.email.trim().toLowerCase();
-  const siteUrl = await getPublicSiteBaseUrl();
-  const redirectTo = `${siteUrl}/auth/reset-password`;
+  const redirectTo = await buildPasswordResetRedirectUrl();
 
   const { data, error } = await secret.auth.admin.generateLink({
     type: "recovery",

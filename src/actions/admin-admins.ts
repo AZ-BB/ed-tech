@@ -1,11 +1,11 @@
 "use server";
 
 import type { Database } from "@/database.types";
+import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 type AdminRole = Database["public"]["Enums"]["admin_role"];
@@ -62,16 +62,6 @@ async function assertAdminAccess() {
 
 function displayNameFromParts(first: string, last: string): string {
   return [first.trim(), last.trim()].filter(Boolean).join(" ").trim() || "Admin";
-}
-
-async function resolveSiteUrl(): Promise<string> {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${proto}://${host}`;
-  return "http://localhost:3000";
 }
 
 export async function updateAdminAdminProfile(
@@ -161,8 +151,7 @@ export async function resetAdminAdminPassword(
   }
 
   const email = admin.email.trim().toLowerCase();
-  const siteUrl = await resolveSiteUrl();
-  const redirectTo = `${siteUrl}/auth/reset-password`;
+  const redirectTo = await buildPasswordResetRedirectUrl();
 
   const { data, error } = await secret.auth.admin.generateLink({
     type: "recovery",

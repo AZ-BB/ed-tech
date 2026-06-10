@@ -25,6 +25,13 @@ export async function buildLoginPageUrl(): Promise<string> {
   return `${await getPublicSiteBaseUrl()}/login`;
 }
 
+/** Supabase password recovery redirect — must be listed in Supabase Auth redirect URLs. */
+export async function buildPasswordResetRedirectUrl(): Promise<string> {
+  const base = await getPublicSiteBaseUrl();
+  const next = encodeURIComponent("/auth/reset-password");
+  return `${base}/auth/confirm?next=${next}`;
+}
+
 export async function buildRecommendationSubmitUrl(token: string): Promise<string> {
   const trimmed = token.trim();
   return `${await getPublicSiteBaseUrl()}/recommendation/${encodeURIComponent(trimmed)}`;
