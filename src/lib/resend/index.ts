@@ -13,6 +13,7 @@ export {
   buildApplicationPaymentUrl,
   buildLoginPageUrl,
   buildRecommendationSubmitUrl,
+  buildPasswordResetVerifyUrl,
   buildResetPasswordPageUrl,
   buildSignupPageUrl,
   getPublicSiteBaseUrl,

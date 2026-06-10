@@ -2,7 +2,10 @@ import "server-only";
 
 import { isResendConfigured } from "@/lib/resend/config";
 import { sendPasswordResetEmail } from "@/lib/resend/password-reset-email";
-import { buildResetPasswordPageUrl } from "@/lib/resend/site-url";
+import {
+  buildPasswordResetVerifyUrl,
+  buildResetPasswordPageUrl,
+} from "@/lib/resend/site-url";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type SupabaseSecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
@@ -81,15 +84,18 @@ export async function sendPasswordResetLinkViaResend(
   }
 
   const supabase = await createSupabaseSecretClient();
-  const redirectTo = await buildResetPasswordPageUrl();
+  const resetPageUrl = await buildResetPasswordPageUrl();
 
   const { data, error } = await supabase.auth.admin.generateLink({
     type: "recovery",
     email,
-    options: { redirectTo },
+    options: { redirectTo: resetPageUrl },
   });
 
-  if (error || !data?.properties?.action_link) {
+  const hashedToken = data?.properties?.hashed_token?.trim();
+  const actionLink = data?.properties?.action_link?.trim();
+
+  if (error || (!hashedToken && !actionLink)) {
     if (options?.silentIfMissing) {
       return { ok: true };
     }
@@ -100,7 +106,9 @@ export async function sendPasswordResetLinkViaResend(
     };
   }
 
-  const resetUrl = data.properties.action_link.trim();
+  const resetUrl = hashedToken
+    ? buildPasswordResetVerifyUrl(resetPageUrl, hashedToken)
+    : actionLink!;
   const explicitFirstName = options?.firstName?.trim();
   const firstName =
     explicitFirstName ||
