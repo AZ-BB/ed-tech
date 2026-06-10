@@ -51,15 +51,20 @@ export async function buildResetPasswordPageUrl(): Promise<string> {
   return `${await getPublicSiteBaseUrl()}/auth/reset-password`;
 }
 
+/** Landing page for recovery links — verification runs only after the user clicks Continue. */
+export async function buildPasswordResetConfirmUrl(): Promise<string> {
+  return `${await getPublicSiteBaseUrl()}/auth/confirm`;
+}
+
 export function buildPasswordResetVerifyUrl(
-  resetPageUrl: string,
+  confirmPageUrl: string,
   hashedToken: string,
 ): string {
   const params = new URLSearchParams({
     token_hash: hashedToken,
     type: "recovery",
   });
-  return `${resetPageUrl}?${params.toString()}`;
+  return `${confirmPageUrl}?${params.toString()}`;
 }
 
 export async function buildRecommendationSubmitUrl(token: string): Promise<string> {
