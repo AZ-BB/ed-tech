@@ -40,6 +40,8 @@ function ResetPasswordContent() {
   const establishSession = useCallback(async () => {
     const supabase = createSupabaseBrowserClient();
     const code = searchParams.get("code");
+    const tokenHash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
 
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -51,6 +53,29 @@ function ResetPasswordContent() {
         return;
       }
       router.replace("/auth/reset-password");
+    } else if (tokenHash && type) {
+      const { error } = await supabase.auth.verifyOtp({
+        type: type as "recovery",
+        token_hash: tokenHash,
+      });
+      if (error) {
+        setLoadError(
+          "This reset link is invalid or has expired. Please request a new one.",
+        );
+        setReady(true);
+        return;
+      }
+      router.replace("/auth/reset-password");
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      setHasSession(true);
+      setReady(true);
+      return;
     }
 
     const {
