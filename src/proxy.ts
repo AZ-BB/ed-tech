@@ -87,7 +87,6 @@ export async function proxy(request: NextRequest) {
 
   // OAuth callback route needs special handling - always allow it through
   const isCallbackRoute = pathname.startsWith('/auth/callback')
-  const isResetPasswordRoute = pathname.startsWith('/auth/reset-password')
 
   // If user is not authenticated and trying to access a protected route
   if (!user && !isPublicForGuests) {
@@ -104,7 +103,7 @@ export async function proxy(request: NextRequest) {
 
   // Signed-in users on login/signup/marketing → dashboard (not payment/token links).
   // Allow the OAuth callback route to complete its processing.
-  if (user && isPublicGuestOnlyRoute && !isCallbackRoute && !isResetPasswordRoute) {
+  if (user && isPublicGuestOnlyRoute && !isCallbackRoute) {
     const dest = authedHome ?? "/"
     return NextResponse.redirect(new URL(dest, request.url))
   }

@@ -13,15 +13,9 @@ export {
   buildApplicationPaymentUrl,
   buildLoginPageUrl,
   buildRecommendationSubmitUrl,
-  buildPasswordResetVerifyUrl,
-  buildResetPasswordPageUrl,
   buildSignupPageUrl,
   getPublicSiteBaseUrl,
 } from "@/lib/resend/site-url";
-export {
-  sendPasswordResetEmail,
-  type SendPasswordResetEmailInput,
-} from "@/lib/resend/password-reset-email";
 export {
   sendApplicationPaymentRequestEmail,
   type SendApplicationPaymentRequestEmailInput,
