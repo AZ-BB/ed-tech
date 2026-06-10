@@ -50,37 +50,9 @@ export function ResetPasswordForm() {
     });
 
     async function establishRecoverySession() {
-      const callbackError = searchParams.get("error");
-      if (callbackError === "auth_callback") {
+      const linkError = searchParams.get("error");
+      if (linkError === "auth_callback" || linkError === "invalid_link") {
         markFailed();
-        return;
-      }
-
-      const tokenHash = searchParams.get("token_hash");
-      const type = searchParams.get("type");
-      const code = searchParams.get("code");
-
-      if (code) {
-        const { error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
-          markFailed();
-          return;
-        }
-        markReady();
-        return;
-      }
-
-      if (tokenHash && type === "recovery") {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: "recovery",
-        });
-        if (verifyError) {
-          markFailed();
-          return;
-        }
-        markReady();
         return;
       }
 
@@ -102,7 +74,7 @@ export function ResetPasswordForm() {
         } else {
           markFailed();
         }
-      }, 2500);
+      }, 4000);
     }
 
     void establishRecoverySession();

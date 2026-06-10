@@ -3,8 +3,8 @@ import "server-only";
 import { isResendConfigured } from "@/lib/resend/config";
 import { sendPasswordResetEmail } from "@/lib/resend/password-reset-email";
 import {
+  buildPasswordResetConfirmUrl,
   buildPasswordResetVerifyUrl,
-  buildResetPasswordPageUrl,
 } from "@/lib/resend/site-url";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -84,12 +84,12 @@ export async function sendPasswordResetLinkViaResend(
   }
 
   const supabase = await createSupabaseSecretClient();
-  const resetPageUrl = await buildResetPasswordPageUrl();
+  const confirmPageUrl = await buildPasswordResetConfirmUrl();
 
   const { data, error } = await supabase.auth.admin.generateLink({
     type: "recovery",
     email,
-    options: { redirectTo: resetPageUrl },
+    options: { redirectTo: confirmPageUrl },
   });
 
   const hashedToken = data?.properties?.hashed_token?.trim();
@@ -107,7 +107,7 @@ export async function sendPasswordResetLinkViaResend(
   }
 
   const resetUrl = hashedToken
-    ? buildPasswordResetVerifyUrl(resetPageUrl, hashedToken)
+    ? buildPasswordResetVerifyUrl(confirmPageUrl, hashedToken)
     : actionLink!;
   const explicitFirstName = options?.firstName?.trim();
   const firstName =
