@@ -17,8 +17,6 @@ export async function sendStaffCredentialsEmailOrRollback(opts: {
   firstName: string;
   email: string;
   password: string;
-  accountLabel: string;
-  schoolName?: string | null;
 }): Promise<{ ok: true } | { error: string }> {
   if (!isResendConfigured()) {
     await rollbackStaffAccount(opts.supabase, opts.userId, opts.profileTable);
@@ -35,8 +33,6 @@ export async function sendStaffCredentialsEmailOrRollback(opts: {
     email: opts.email,
     password: opts.password,
     loginUrl,
-    accountLabel: opts.accountLabel,
-    schoolName: opts.schoolName,
   });
 
   if ("error" in result) {

@@ -25,6 +25,10 @@ export async function buildLoginPageUrl(): Promise<string> {
   return `${await getPublicSiteBaseUrl()}/login`;
 }
 
+export async function buildResetPasswordPageUrl(): Promise<string> {
+  return `${await getPublicSiteBaseUrl()}/auth/reset-password`;
+}
+
 export async function buildRecommendationSubmitUrl(token: string): Promise<string> {
   const trimmed = token.trim();
   return `${await getPublicSiteBaseUrl()}/recommendation/${encodeURIComponent(trimmed)}`;

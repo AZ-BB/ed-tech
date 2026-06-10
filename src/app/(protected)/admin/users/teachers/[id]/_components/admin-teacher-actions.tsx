@@ -82,7 +82,7 @@ export function AdminTeacherActions({
         disabled={isPending}
         onClick={() =>
           runAction(
-            `Generate a password reset link for ${teacherName}? The link will be logged to the server console (email not sent yet).`,
+            `Send a password reset email to ${teacherName}?`,
             () => resetAdminTeacherPassword(teacherId),
           )
         }

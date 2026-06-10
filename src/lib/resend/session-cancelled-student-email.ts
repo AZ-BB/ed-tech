@@ -7,10 +7,10 @@ export type SessionCancelledKind = "advisor" | "ambassador";
 
 export type SendSessionCancelledStudentEmailInput = {
   to: string;
-  studentName: string;
+  studentFirstName: string;
   sessionKind: SessionCancelledKind;
   providerName: string;
-  sessionDetail?: string | null;
+  sessionDateTime?: string | null;
   dashboardUrl: string;
 };
 
@@ -30,22 +30,25 @@ export function formatSessionDateTime(value: string | null | undefined): string 
   return trimmed;
 }
 
-function sessionKindLabel(kind: SessionCancelledKind): string {
+function sessionTypeLabel(kind: SessionCancelledKind): string {
+  return kind === "advisor" ? "advisor" : "ambassador";
+}
+
+function sessionSubjectLabel(kind: SessionCancelledKind): string {
   return kind === "advisor" ? "advisor session" : "ambassador session";
 }
 
 function buildSessionCancelledHtml(
   input: SendSessionCancelledStudentEmailInput,
 ): string {
-  const studentName = escapeHtml(input.studentName);
+  const studentFirstName = escapeHtml(input.studentFirstName);
   const providerName = escapeHtml(input.providerName);
-  const sessionLabel = escapeHtml(sessionKindLabel(input.sessionKind));
+  const sessionType = escapeHtml(sessionTypeLabel(input.sessionKind));
+  const sessionDateTime = escapeHtml(
+    formatSessionDateTime(input.sessionDateTime),
+  );
   const dashboardUrl = escapeHtml(input.dashboardUrl);
-
-  const detailBlock = input.sessionDetail?.trim()
-    ? `<p style="margin:0 0 8px;font-size:14px;color:#5c6b62;">Scheduled for:</p>
-          <p style="margin:0 0 20px;font-size:15px;font-weight:600;color:#1a2e22;">${escapeHtml(formatSessionDateTime(input.sessionDetail))}</p>`
-    : "";
+  const subjectLabel = escapeHtml(sessionSubjectLabel(input.sessionKind));
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -56,16 +59,19 @@ function buildSessionCancelledHtml(
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;border:1px solid #e5e2d8;overflow:hidden;">
         <tr><td style="padding:28px 28px 8px;">
           <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#2d6a4f;">Univeera</p>
-          <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#1a2e22;">Your session was cancelled</h1>
-          <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#3d4f44;">Hi ${studentName}, your ${sessionLabel} with <strong>${providerName}</strong> has been cancelled by our team.</p>
-          ${detailBlock}
-          <div style="margin:0 0 20px;padding:16px;background:#f0f7f2;border-radius:8px;">
-            <p style="margin:0;font-size:14px;line-height:1.5;color:#3d4f44;">Your session credit has been refunded and is available again in your account. You can use it to book another session whenever you are ready.</p>
-          </div>
+          <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#1a2e22;">Your ${subjectLabel} was cancelled</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#3d4f44;">Hi ${studentFirstName},</p>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#3d4f44;">We wanted to let you know that your ${sessionType} session with <strong>${providerName}</strong> has been cancelled.</p>
+          <p style="margin:0 0 8px;font-size:14px;color:#5c6b62;">Session date and time:</p>
+          <p style="margin:0 0 20px;font-size:16px;font-weight:600;color:#1a2e22;">${sessionDateTime}</p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.5;color:#3d4f44;">Your session credit has been returned to your Univeera account, so you can book another session from your dashboard whenever you are ready.</p>
+          <p style="margin:0 0 24px;font-size:14px;line-height:1.5;color:#3d4f44;">We are sorry for the inconvenience. These things can happen, and we will make sure you still get the support you need.</p>
           <a href="${dashboardUrl}" style="display:inline-block;padding:12px 24px;background:#2d6a4f;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;border-radius:8px;">Go to your dashboard</a>
         </td></tr>
         <tr><td style="padding:16px 28px 28px;border-top:1px solid #eee9dc;">
-          <p style="margin:0;font-size:12px;line-height:1.5;color:#7a8a80;">If the button doesn't work, copy this link into your browser:<br><a href="${dashboardUrl}" style="color:#2d6a4f;word-break:break-all;">${dashboardUrl}</a></p>
+          <p style="margin:0 0 12px;font-size:12px;line-height:1.5;color:#7a8a80;">If the button doesn't work, copy this link into your browser:<br><a href="${dashboardUrl}" style="color:#2d6a4f;word-break:break-all;">${dashboardUrl}</a></p>
+          <p style="margin:0 0 4px;font-size:14px;line-height:1.5;color:#3d4f44;">Warm regards,</p>
+          <p style="margin:0;font-size:14px;line-height:1.5;color:#3d4f44;">The Univeera Team</p>
         </td></tr>
       </table>
     </td></tr>
@@ -77,36 +83,44 @@ function buildSessionCancelledHtml(
 function buildSessionCancelledText(
   input: SendSessionCancelledStudentEmailInput,
 ): string {
-  const sessionLabel = sessionKindLabel(input.sessionKind);
-  const detailLine = input.sessionDetail?.trim()
-    ? `Scheduled for: ${formatSessionDateTime(input.sessionDetail)}\n\n`
-    : "";
+  const sessionType = sessionTypeLabel(input.sessionKind);
+  const sessionDateTime = formatSessionDateTime(input.sessionDateTime);
+  const subjectLabel = sessionSubjectLabel(input.sessionKind);
 
-  return `Your session was cancelled
+  return `Your ${subjectLabel} was cancelled
 
-Hi ${input.studentName}, your ${sessionLabel} with ${input.providerName} has been cancelled by our team.
+Hi ${input.studentFirstName},
 
-${detailLine}Your session credit has been refunded and is available again in your account. You can use it to book another session whenever you are ready.
+We wanted to let you know that your ${sessionType} session with ${input.providerName} has been cancelled.
+
+Session date and time: ${sessionDateTime}
+
+Your session credit has been returned to your Univeera account, so you can book another session from your dashboard whenever you are ready.
+
+We are sorry for the inconvenience. These things can happen, and we will make sure you still get the support you need.
 
 Go to your dashboard: ${input.dashboardUrl}
+
+Warm regards,
+The Univeera Team
 `;
 }
 
 export async function sendSessionCancelledStudentEmail(
   input: SendSessionCancelledStudentEmailInput,
 ) {
-  const sessionLabel = sessionKindLabel(input.sessionKind);
+  const subjectLabel = sessionSubjectLabel(input.sessionKind);
 
   return sendResendEmail({
     to: input.to,
-    subject: `Your ${sessionLabel} was cancelled`,
+    subject: `Your ${subjectLabel} was cancelled`,
     html: buildSessionCancelledHtml(input),
     text: buildSessionCancelledText(input),
     tags: [{ name: "category", value: "session_cancelled_student" }],
   });
 }
 
-export function resolveStudentNameForEmail(
+export function resolveStudentFirstNameForEmail(
   sessionName: string | null | undefined,
   profile:
     | { first_name: string | null; last_name: string | null }
@@ -114,18 +128,14 @@ export function resolveStudentNameForEmail(
     | null
     | undefined,
 ): string {
-  const fromSession = sessionName?.trim();
+  const row = Array.isArray(profile) ? (profile[0] ?? null) : profile;
+  const fromProfile = row?.first_name?.trim();
+  if (fromProfile) return fromProfile;
+
+  const fromSession = sessionName?.trim().split(/\s+/)[0];
   if (fromSession) return fromSession;
 
-  const row = Array.isArray(profile) ? (profile[0] ?? null) : profile;
-  if (!row) return "there";
-
-  const fullName = [row.first_name?.trim(), row.last_name?.trim()]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-
-  return fullName || "there";
+  return "there";
 }
 
 export function resolveProviderName(

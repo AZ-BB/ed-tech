@@ -83,7 +83,7 @@ export function AdminPlatformAdminActions({
         disabled={isPending}
         onClick={() =>
           runAction(
-            `Generate a password reset link for ${adminName}? The link will be logged to the server console (email not sent yet).`,
+            `Send a password reset email to ${adminName}?`,
             () => resetAdminAdminPassword(adminId),
           )
         }

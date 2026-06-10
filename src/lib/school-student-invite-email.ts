@@ -1,6 +1,5 @@
 import "server-only";
 
-import { formatSchoolTeacherLabel } from "@/lib/student-teacher-assignment";
 import { isResendConfigured } from "@/lib/resend/config";
 import { buildSignupPageUrl } from "@/lib/resend/site-url";
 import { sendStudentSchoolInviteEmail } from "@/lib/resend/student-school-invite-email";
@@ -12,36 +11,18 @@ export type SchoolStudentInviteInviter =
   | { kind: "platform" }
   | { kind: "school_admin"; userId: string };
 
-const PLATFORM_INVITER_NAME = "Univeera";
+function resolveStudentFirstName(
+  studentEmail: string,
+  explicit?: string | null,
+): string {
+  const trimmed = explicit?.trim();
+  if (trimmed) return trimmed;
 
-async function resolveInvitedByName(
-  supabase: SupabaseSecretClient,
-  inviter: SchoolStudentInviteInviter,
-): Promise<string> {
-  if (inviter.kind === "platform") {
-    return PLATFORM_INVITER_NAME;
-  }
+  const local = studentEmail.split("@")[0]?.trim() ?? "";
+  const segment = local.split(/[._+-]/)[0]?.trim() ?? "";
+  if (!segment) return "there";
 
-  const { data: profile, error } = await supabase
-    .from("school_admin_profiles")
-    .select("first_name, last_name, email")
-    .eq("id", inviter.userId)
-    .maybeSingle();
-
-  if (error) {
-    console.error("[school-student-invite-email] school_admin_profiles", error);
-    return "Your school counselor";
-  }
-
-  if (!profile) {
-    return "Your school counselor";
-  }
-
-  return formatSchoolTeacherLabel(
-    profile.first_name?.trim() ?? "",
-    profile.last_name?.trim() ?? "",
-    profile.email?.trim() ?? "",
-  );
+  return segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase();
 }
 
 async function rollbackSchoolStudentInvite(
@@ -66,6 +47,7 @@ export async function sendInviteEmailAfterSchoolStudentCreated(opts: {
   inviter: SchoolStudentInviteInviter;
   schoolCode?: string;
   schoolName?: string | null;
+  studentFirstName?: string | null;
 }): Promise<{ ok: true } | { error: string }> {
   if (!isResendConfigured()) {
     await rollbackSchoolStudentInvite(opts.supabase, opts.schoolStudentId);
@@ -76,9 +58,9 @@ export async function sendInviteEmailAfterSchoolStudentCreated(opts: {
   }
 
   let schoolCode = opts.schoolCode?.trim();
-  let schoolName = opts.schoolName ?? null;
+  let schoolName = opts.schoolName?.trim() ?? "";
 
-  if (!schoolCode) {
+  if (!schoolCode || !schoolName) {
     const { data: school, error: schoolError } = await opts.supabase
       .from("schools")
       .select("code, name")
@@ -91,19 +73,27 @@ export async function sendInviteEmailAfterSchoolStudentCreated(opts: {
     }
 
     schoolCode = school.code.trim();
-    schoolName = school.name?.trim() ?? null;
+    if (!schoolName) {
+      schoolName = school.name?.trim() ?? "";
+    }
   }
 
-  const invitedByName = await resolveInvitedByName(opts.supabase, opts.inviter);
+  if (!schoolName) {
+    schoolName = "Your school";
+  }
+
   const signupUrl = await buildSignupPageUrl();
+  const studentFirstName = resolveStudentFirstName(
+    opts.studentEmail,
+    opts.studentFirstName,
+  );
 
   const result = await sendStudentSchoolInviteEmail({
     to: opts.studentEmail,
-    studentEmail: opts.studentEmail,
-    schoolCode,
-    invitedByName,
-    signupUrl,
+    studentFirstName,
     schoolName,
+    schoolCode,
+    signupUrl,
   });
 
   if ("error" in result) {

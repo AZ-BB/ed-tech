@@ -3,6 +3,7 @@
 import { fetchAmbassadorsForAdminPicker } from "@/app/(protected)/admin/sessions/ambassador-requests/_lib/fetch-admin-ambassadors-picker";
 import {
   mapAmbassadorRowForStudentEmail,
+  resolveStudentFirstNameFromRequestName,
   sendAmbassadorSpecificRequestStudentEmail,
 } from "@/lib/resend/ambassador-specific-request-student-email";
 import { isResendConfigured } from "@/lib/resend/config";
@@ -203,10 +204,7 @@ export async function confirmAmbassadorSpecificRequest(
 
     const emailResult = await sendAmbassadorSpecificRequestStudentEmail({
       to: request.student_email,
-      studentName: request.student_name,
-      targetUniversity: request.target_university,
-      preferredMajor: request.preferred_major,
-      additionalNotes: request.additional_notes,
+      studentFirstName: resolveStudentFirstNameFromRequestName(request.student_name),
       kind: "external",
       ambassador: {
         fullName,
@@ -296,10 +294,7 @@ export async function confirmAmbassadorSpecificRequest(
 
   const emailResult = await sendAmbassadorSpecificRequestStudentEmail({
     to: request.student_email,
-    studentName: request.student_name,
-    targetUniversity: request.target_university,
-    preferredMajor: request.preferred_major,
-    additionalNotes: request.additional_notes,
+    studentFirstName: resolveStudentFirstNameFromRequestName(request.student_name),
     kind: "catalog",
     ambassador: ambassadorProfile,
     catalogUrl,
