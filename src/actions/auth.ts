@@ -3,8 +3,8 @@
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { GeneralResponse } from "@/utils/response";
-import { sendPasswordResetLinkViaResend } from "@/lib/password-reset-email";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { DEACTIVATED_LOGIN_MESSAGE } from "@/lib/student-ai-usage-log";
@@ -157,14 +157,23 @@ export async function requestPasswordReset(
         };
     }
 
-    const result = await sendPasswordResetLinkViaResend(email, {
-        silentIfMissing: true,
+    const supabase = await createSupabaseServerClient();
+    const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    let siteUrl = fromEnv;
+    if (!siteUrl) {
+        const h = await headers();
+        const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+        const proto = h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+        siteUrl = `${proto}://${host}`;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/auth/reset-password`,
     });
 
-    if ("error" in result) {
+    if (error) {
         return {
             data: false,
-            error: result.error,
+            error: error.message,
         };
     }
 

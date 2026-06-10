@@ -1,0 +1,16 @@
+Password reset email
+
+{{ if .Data.firstName }}Hi {{ .Data.firstName }},{{ else }}Hi there,{{ end }}
+
+We received a request to reset the password for your Univeera account.
+
+You can reset your password using the secure link below:
+
+Reset password link: {{ .ConfirmationURL }}
+
+If you did not request this, you can safely ignore this email. Your account will remain secure.
+
+For your safety, this link may expire after a short period. If that happens, you can request a new password reset from the login page.
+
+Warm regards,
+The Univeera Team
