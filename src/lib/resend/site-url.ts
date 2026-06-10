@@ -2,13 +2,35 @@ import "server-only";
 
 import { headers } from "next/headers";
 
+function normalizeOrigin(value: string | undefined): string | null {
+  const trimmed = value?.trim().replace(/\/$/, "");
+  return trimmed || null;
+}
+
+function siteUrlFromEnv(): string | null {
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.SITE_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeOrigin(candidate);
+    if (normalized) return normalized;
+  }
+
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  if (vercelUrl) {
+    return `https://${vercelUrl.replace(/\/$/, "")}`;
+  }
+
+  return null;
+}
+
 /** Absolute site origin for links in transactional email. */
 export async function getPublicSiteBaseUrl(): Promise<string> {
-  const fromSite = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (fromSite) return fromSite;
-
-  const fromApp = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
-  if (fromApp) return fromApp;
+  const fromEnv = siteUrlFromEnv();
+  if (fromEnv) return fromEnv;
 
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
@@ -27,6 +49,17 @@ export async function buildLoginPageUrl(): Promise<string> {
 
 export async function buildResetPasswordPageUrl(): Promise<string> {
   return `${await getPublicSiteBaseUrl()}/auth/reset-password`;
+}
+
+export function buildPasswordResetVerifyUrl(
+  resetPageUrl: string,
+  hashedToken: string,
+): string {
+  const params = new URLSearchParams({
+    token_hash: hashedToken,
+    type: "recovery",
+  });
+  return `${resetPageUrl}?${params.toString()}`;
 }
 
 export async function buildRecommendationSubmitUrl(token: string): Promise<string> {
