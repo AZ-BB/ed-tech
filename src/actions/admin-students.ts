@@ -1,6 +1,7 @@
 "use server";
 
 import { importStudentsFromRecords } from "@/lib/admin-student-import";
+import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
 import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
 import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
 import { parseStudentTeacherAssignParam } from "@/lib/student-teacher-assignment";
@@ -11,7 +12,6 @@ import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 type CreateAdminStudentResult = { ok: true } | { ok: false; error: string };
@@ -401,16 +401,6 @@ export async function updateAdminStudentProfile(
   return { ok: true };
 }
 
-async function resolveSiteUrl(): Promise<string> {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${proto}://${host}`;
-  return "http://localhost:3000";
-}
-
 export async function resetAdminStudentPassword(
   studentId: string,
 ): Promise<AdminStudentActionResultWithMessage> {
@@ -435,8 +425,7 @@ export async function resetAdminStudentPassword(
   }
 
   const email = student.email.trim().toLowerCase();
-  const siteUrl = await resolveSiteUrl();
-  const redirectTo = `${siteUrl}/auth/reset-password`;
+  const redirectTo = await buildPasswordResetRedirectUrl();
 
   const { data, error } = await secret.auth.admin.generateLink({
     type: "recovery",
