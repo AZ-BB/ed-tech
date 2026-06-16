@@ -6,20 +6,28 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { AdminAdvisorDetailPayload } from "../_lib/fetch-admin-advisor-detail";
+import type { AdminAdvisorApplicationsPanelProps } from "../_lib/fetch-advisor-applications-page";
 import type { AdminAdvisorSessionsPanelProps } from "../_lib/fetch-advisor-sessions-page";
+import type { AdminAdvisorPayoutsTabProps } from "./admin-advisor-payouts-tab";
 import { AdminAdvisorActions } from "./admin-advisor-actions";
+import { AdminAdvisorApplicationsTab } from "./admin-advisor-applications-tab";
+import { AdminAdvisorPayoutsTab } from "./admin-advisor-payouts-tab";
 import { AdminAdvisorSessionsTab } from "./admin-advisor-sessions-tab";
 
-type TabId = "overview" | "sessions";
+type TabId = "overview" | "sessions" | "applications" | "payouts";
 
 const TAB_DEFS: { id: TabId; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "sessions", label: "Sessions" },
+  { id: "applications", label: "Applications" },
+  { id: "payouts", label: "Payouts" },
 ];
 
 export type AdminAdvisorViewClientProps = {
   advisor: AdminAdvisorDetailPayload["advisor"];
   sessionsPanel: AdminAdvisorSessionsPanelProps;
+  applicationsPanel: AdminAdvisorApplicationsPanelProps;
+  payoutsPanel: AdminAdvisorPayoutsTabProps;
   initialTab?: TabId;
 };
 
@@ -46,6 +54,8 @@ function SnapItem({ label, value }: { label: string; value: string }) {
 export function AdminAdvisorViewClient({
   advisor,
   sessionsPanel,
+  applicationsPanel,
+  payoutsPanel,
   initialTab = "overview",
 }: AdminAdvisorViewClientProps) {
   const router = useRouter();
@@ -57,18 +67,17 @@ export function AdminAdvisorViewClient({
     const next = new URLSearchParams(searchParams.toString());
     const currentTab = next.get("tab");
 
-    if (tab === "sessions") {
-      if (currentTab === "sessions") return;
-      next.set("tab", "sessions");
-      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-      return;
-    }
-
-    if (currentTab === "sessions") {
+    if (tab === "overview") {
+      if (!currentTab) return;
       next.delete("tab");
       const q = next.toString();
       router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+      return;
     }
+
+    if (currentTab === tab) return;
+    next.set("tab", tab);
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   }, [tab, pathname, router, searchParams]);
 
   const ini = useMemo(
@@ -91,8 +100,10 @@ export function AdminAdvisorViewClient({
     { lab: "Nationality", val: advisor.nationalityName },
     { lab: "Specializations", val: advisor.specializationsLabel },
     { lab: "Tags", val: advisor.tagsLabel },
+    { lab: "Payout %", val: `${advisor.payoutPercentage}%` },
     { lab: "Status", val: advisor.isActive ? "Active" : "Inactive" },
     { lab: "Joined", val: advisor.joinedLabel },
+    { lab: "Last logged in", val: advisor.lastLoggedInLabel },
     { lab: "Last session", val: advisor.lastSessionLabel },
   ];
 
@@ -116,11 +127,16 @@ export function AdminAdvisorViewClient({
           <SnapItem label="Nationality" value={advisor.nationalityName} />
           <SnapItem label="Specializations" value={advisor.specializationsLabel} />
           <SnapItem label="Tags" value={advisor.tagsLabel} />
+          <SnapItem label="Payout percentage" value={`${advisor.payoutPercentage}%`} />
         </div>
       </SchoolStudentPanel>
     );
-  } else {
+  } else if (tab === "sessions") {
     tabBody = <AdminAdvisorSessionsTab {...sessionsPanel} />;
+  } else if (tab === "applications") {
+    tabBody = <AdminAdvisorApplicationsTab {...applicationsPanel} />;
+  } else {
+    tabBody = <AdminAdvisorPayoutsTab {...payoutsPanel} />;
   }
 
   return (
@@ -179,6 +195,8 @@ export function AdminAdvisorViewClient({
             <AdminAdvisorActions
               advisorId={advisor.id}
               advisorName={fullName || advisor.email || "Advisor"}
+              advisorEmail={advisor.email}
+              loginCredentialsSent={advisor.loginCredentialsSent}
               isActive={advisor.isActive}
               editDefaults={{
                 firstName: advisor.firstName,
@@ -200,6 +218,7 @@ export function AdminAdvisorViewClient({
                 tags: advisor.tags,
                 avatarUrl: advisor.avatarUrl,
                 isActive: advisor.isActive,
+                payoutPercentage: String(advisor.payoutPercentage),
               }}
             />
           </div>

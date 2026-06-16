@@ -10,7 +10,7 @@ type ApplicationStatus = Database["public"]["Enums"]["application_status"];
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   new: "New",
-  assigned: "Assigned",
+  scheduled: "Scheduled",
   in_progress: "In Progress",
   blocked: "Blocked",
   submitted: "Submitted",
@@ -18,7 +18,7 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
 
 const ACTIVE_STATUSES: ApplicationStatus[] = [
   "new",
-  "assigned",
+  "scheduled",
   "in_progress",
   "blocked",
 ];
@@ -33,7 +33,7 @@ export async function fetchAdminReportApplicationsProgress(
   let appsQuery = supabase
     .from("applications")
     .select(
-      "id, status, created_at, school_name, student_id, assigned_to, student_profiles(first_name, last_name), handlers:assigned_to(first_name, last_name)",
+      "id, status, created_at, school_name, student_id, assigned_to, student_profiles(first_name, last_name), advisors:assigned_to(first_name, last_name)",
     )
     .gte("created_at", bounds.startIso)
     .lt("created_at", bounds.endExclusiveIso)
@@ -107,12 +107,12 @@ export async function fetchAdminReportApplicationsProgress(
     const student = Array.isArray(row.student_profiles)
       ? row.student_profiles[0]
       : row.student_profiles;
-    const handler = Array.isArray(row.handlers) ? row.handlers[0] : row.handlers;
+    const advisor = Array.isArray(row.advisors) ? row.advisors[0] : row.advisors;
     const first = student?.first_name?.trim() ?? "";
     const last = student?.last_name?.trim() ?? "";
     const studentName = [first, last].filter(Boolean).join(" ") || "Student";
-    const handlerName = handler
-      ? [handler.first_name, handler.last_name]
+    const advisorName = advisor
+      ? [advisor.first_name, advisor.last_name]
           .map((s) => s?.trim())
           .filter(Boolean)
           .join(" ")
@@ -124,7 +124,7 @@ export async function fetchAdminReportApplicationsProgress(
       schoolName: row.school_name?.trim() || "—",
       status,
       statusLabel: STATUS_LABELS[status] ?? status,
-      handlerName,
+      advisorName,
       createdAt: row.created_at
         ? new Date(row.created_at).toLocaleDateString("en", {
             month: "short",

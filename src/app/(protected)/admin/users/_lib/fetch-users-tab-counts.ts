@@ -8,8 +8,7 @@ async function countTable(
     | "school_admin_profiles"
     | "advisors"
     | "ambassadors"
-    | "admins"
-    | "handlers",
+    | "admins",
 ) {
   const supabase = await createSupabaseSecretClient();
   const { count, error } = await supabase
@@ -25,13 +24,12 @@ async function countTable(
 }
 
 export async function fetchUsersTabCounts(): Promise<UsersTabCounts> {
-  const [students, teachers, advisors, ambassadors, admins, handlers] = await Promise.all([
+  const [students, teachers, advisors, ambassadors, admins] = await Promise.all([
     countTable("student_profiles"),
     countTable("school_admin_profiles"),
     countTable("advisors"),
     countTable("ambassadors"),
     countTable("admins"),
-    countTable("handlers"),
   ]);
 
   const all = students + teachers + advisors + ambassadors + admins;
@@ -43,6 +41,5 @@ export async function fetchUsersTabCounts(): Promise<UsersTabCounts> {
     advisors,
     ambassadors,
     admins,
-    handlers,
   };
 }

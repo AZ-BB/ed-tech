@@ -25,7 +25,6 @@ import {
   AdminUserCreateDialogs,
   useAdminUserCreateDialogs,
 } from "./admin-user-create-dialogs";
-import { UsersAddHandlerDialog } from "./users-add-handler-dialog";
 import { AdminControl } from "../../_components/admin-control";
 import { UsersCsvImportDialog } from "./users-csv-import-dialog";
 import { UsersStudentImportDialog } from "./users-student-import-dialog";
@@ -37,7 +36,6 @@ const HEADER_ACTION_PERMISSION: Partial<Record<string, AdminPermission>> = {
   "add-advisor": "edit_advisors",
   "add-ambassador": "edit_ambassadors",
   "add-admin": "edit_admins",
-  "add-handler": "edit_applications",
 };
 
 const TAB_EDIT_PERMISSION: Partial<Record<UsersTabId, AdminPermission>> = {
@@ -152,7 +150,6 @@ export function UsersHeaderActions() {
   const [isExportPending, startExportTransition] = useTransition();
   const [importOpen, setImportOpen] = useState(false);
   const [studentImportOpen, setStudentImportOpen] = useState(false);
-  const [addHandlerOpen, setAddHandlerOpen] = useState(false);
   const { openRole, openDialog, closeDialog } = useAdminUserCreateDialogs();
 
   if (!isAdminUsersPath(pathname)) return null;
@@ -270,9 +267,6 @@ export function UsersHeaderActions() {
       return;
     }
 
-    if (actionId === "add-handler") {
-      setAddHandlerOpen(true);
-    }
   }
 
   return (
@@ -328,8 +322,6 @@ export function UsersHeaderActions() {
       ) : null}
 
       <AdminUserCreateDialogs openRole={openRole} onClose={closeDialog} />
-
-      <UsersAddHandlerDialog open={addHandlerOpen} onClose={() => setAddHandlerOpen(false)} />
     </>
   );
 }

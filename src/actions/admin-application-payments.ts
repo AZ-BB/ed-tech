@@ -222,6 +222,8 @@ export async function sendApplicationPaymentRequest(
         amount: amountAed,
         paid_at: null,
         stripe_checkout_session_id: null,
+        requested_by_type: "admin",
+        requested_by_advisor_id: null,
         updated_at: now,
       })
       .eq("id", reusablePayment.id);
@@ -238,6 +240,8 @@ export async function sendApplicationPaymentRequest(
       status: "pending",
       payment_request_token: token,
       payment_request_sent_at: now,
+      requested_by_type: "admin",
+      requested_by_advisor_id: null,
     });
 
     if (insertErr) {

@@ -33,6 +33,7 @@ export type AdminEditAdvisorDialogProps = {
     tags: string;
     avatarUrl: string | null;
     isActive: boolean;
+    payoutPercentage: string;
   };
   onClose: () => void;
 };
@@ -224,19 +225,35 @@ export function AdminEditAdvisorDialog({
                 ))}
               </select>
             </div>
-            <div>
-              <label htmlFor="edit-advisor-experience-years" className={labelClassName}>
-                Experience (years)
-              </label>
-              <input
-                id="edit-advisor-experience-years"
-                name="experienceYears"
-                type="number"
-                min={0}
-                max={80}
-                defaultValue={defaults.experienceYears}
-                className={inputClassName}
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="edit-advisor-experience-years" className={labelClassName}>
+                  Experience (years)
+                </label>
+                <input
+                  id="edit-advisor-experience-years"
+                  name="experienceYears"
+                  type="number"
+                  min={0}
+                  max={80}
+                  defaultValue={defaults.experienceYears}
+                  className={inputClassName}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-advisor-payout-percentage" className={labelClassName}>
+                  Payout percentage
+                </label>
+                <input
+                  id="edit-advisor-payout-percentage"
+                  name="payoutPercentage"
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={defaults.payoutPercentage}
+                  className={inputClassName}
+                />
+              </div>
             </div>
           </div>
 

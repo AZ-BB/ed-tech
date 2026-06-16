@@ -1,6 +1,6 @@
 import { fetchAdminApplicationsPage } from "../_lib/fetch-admin-applications-page";
 import { fetchAdminApplicationsStats } from "../_lib/fetch-admin-applications-stats";
-import { fetchAdminHandlerOptions } from "../_lib/fetch-admin-handler-options";
+import { fetchAdminApplicationAdvisorOptions } from "../_lib/fetch-admin-application-advisor-options";
 import { parseAdminApplicationsSearchParams } from "../_lib/parse-admin-applications-search-params";
 import { fetchAdminSchoolOptions } from "@/app/(protected)/admin/users/_lib/fetch-admin-school-options";
 import { AdminApplicationsStatsGrid } from "./admin-applications-stats-grid";
@@ -14,10 +14,10 @@ export async function AdminApplicationsTableLoader({
   const sp = await searchParams;
   const filters = parseAdminApplicationsSearchParams(sp);
 
-  const [stats, { rows, totalRows }, handlerOptions, schoolOptions] = await Promise.all([
+  const [stats, { rows, totalRows }, advisorOptions, schoolOptions] = await Promise.all([
     fetchAdminApplicationsStats(),
     fetchAdminApplicationsPage(filters),
-    fetchAdminHandlerOptions(),
+    fetchAdminApplicationAdvisorOptions(),
     fetchAdminSchoolOptions(),
   ]);
 
@@ -33,7 +33,7 @@ export async function AdminApplicationsTableLoader({
         status={filters.status}
         assignedTo={filters.assignedTo}
         schoolId={filters.schoolId}
-        handlerOptions={handlerOptions}
+        advisorOptions={advisorOptions}
         schoolOptions={schoolOptions}
       />
     </>

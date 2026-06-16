@@ -4,6 +4,8 @@ import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
+import { applyApplicationPaymentCompletionEffects } from "@/lib/application-payment-completion";
+import { createAdvisorPayoutForPayment } from "@/lib/advisor-payouts/create-advisor-payout-for-payment";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export async function markApplicationPaymentPaid(
@@ -25,6 +27,11 @@ export async function markApplicationPaymentPaid(
   }
 
   if (payment.status === "paid") {
+    await applyApplicationPaymentCompletionEffects(
+      secret,
+      payment.application_id,
+      now,
+    );
     return { ok: true };
   }
 
@@ -57,6 +64,11 @@ export async function markApplicationPaymentPaid(
       .maybeSingle();
 
     if (current?.status === "paid") {
+      await applyApplicationPaymentCompletionEffects(
+        secret,
+        payment.application_id,
+        now,
+      );
       return { ok: true };
     }
 
@@ -82,6 +94,14 @@ export async function markApplicationPaymentPaid(
   if (logErr) {
     console.error("[markApplicationPaymentPaid] activity log", logErr);
   }
+
+  await applyApplicationPaymentCompletionEffects(
+    secret,
+    payment.application_id,
+    now,
+  );
+
+  await createAdvisorPayoutForPayment(paymentId);
 
   return { ok: true };
 }

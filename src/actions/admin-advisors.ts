@@ -1,10 +1,18 @@
 "use server";
 
 import { parseMultilineStringList, personDuplicateKey } from "@/lib/admin-csv-utils";
+import { assertAdminPermission } from "@/lib/assert-admin-permission";
 import {
   replaceAdvisorSpecializations,
   replaceAdvisorTags,
 } from "@/lib/advisor-csv-import";
+import { isResendConfigured } from "@/lib/resend/config";
+import { sendStaffCredentialsEmail } from "@/lib/resend/staff-credentials-email";
+import { buildLoginPageUrl } from "@/lib/resend/site-url";
+import {
+  findAuthUserByEmail,
+  isAdvisorLoginProvisioned,
+} from "@/lib/auth-user-lookup";
 import {
   isAllowedImageFile,
   publicStorageObjectUrl,
@@ -21,6 +29,14 @@ import { revalidatePath } from "next/cache";
 const ADVISOR_AVATARS_BUCKET = "advisor-avatars";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const MIN_PASSWORD_LENGTH = 8;
+
+type AuthUserMetadata = { type?: string; firstName?: string; lastName?: string };
+
+function authAccountTypeConflictMessage(existingType: string | undefined): string | null {
+  if (!existingType || existingType === "advisor") return null;
+  return "This email belongs to another account type and cannot be used for advisor login.";
+}
 
 export type AdminCountryOption = {
   id: string;
@@ -88,6 +104,14 @@ function parseOptionalInt(raw: string): number | null {
   if (!trimmed) return null;
   const value = Number.parseInt(trimmed.replace(/,/g, ""), 10);
   return Number.isFinite(value) ? value : null;
+}
+
+function parsePayoutPercentage(raw: FormDataEntryValue | null): number | null {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return 0;
+  const value = Number.parseInt(trimmed.replace(/,/g, ""), 10);
+  if (!Number.isFinite(value) || value < 0 || value > 100) return null;
+  return value;
 }
 
 function parseCommaList(raw: string): string[] {
@@ -176,6 +200,11 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
     return { ok: false, error: "Nationality country is required." };
   }
 
+  const payoutPercentage = parsePayoutPercentage(formData.get("payoutPercentage"));
+  if (payoutPercentage == null) {
+    return { ok: false, error: "Payout percentage must be between 0 and 100." };
+  }
+
   const service = await createSupabaseSecretClient();
 
   const { data: existingAdvisor } = await service
@@ -240,6 +269,7 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
     about: about || null,
     questions: toJsonArray(parseMultilineStringList(questionsRaw)),
     is_active: formData.get("isActive") === "on",
+    payout_percentage: payoutPercentage,
   };
 
   const { data: inserted, error: insertError } = await service
@@ -419,6 +449,10 @@ export async function updateAdminAdvisorProfile(
     .trim()
     .toUpperCase();
   const experienceYears = parseOptionalInt(String(formData.get("experienceYears") ?? ""));
+  const payoutPercentage = parsePayoutPercentage(formData.get("payoutPercentage"));
+  if (payoutPercentage == null) {
+    return { ok: false, error: "Payout percentage must be between 0 and 100." };
+  }
 
   const specializationCountryCodes = formData
     .getAll("specializationCountryCodes")
@@ -510,6 +544,7 @@ export async function updateAdminAdvisorProfile(
       about: about || null,
       questions: toJsonArray(parseMultilineStringList(questionsRaw)),
       is_active: parseCheckbox(formData.get("isActive")),
+      payout_percentage: payoutPercentage,
       updated_at: now,
     })
     .eq("id", id);
@@ -546,6 +581,217 @@ export async function updateAdminAdvisorProfile(
   revalidatePath("/admin/users");
   revalidatePath("/admin/users/advisors");
   revalidatePath(`/admin/users/advisors/${id}`);
+  return { ok: true };
+}
+
+export async function sendAdvisorLoginCredentials(
+  advisorId: string,
+  formData: FormData,
+): Promise<AdvisorActionResult> {
+  const access = await assertAdminPermission("edit_advisors");
+  if (!access.ok) return access;
+
+  const id = advisorId.trim();
+  if (!id) {
+    return { ok: false, error: "Advisor not found." };
+  }
+
+  const password = String(formData.get("password") ?? "");
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, error: "Password must be at least 8 characters." };
+  }
+
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL before sending credentials.",
+    };
+  }
+
+  const service = await createSupabaseSecretClient();
+  const { data: advisor, error: fetchError } = await service
+    .from("advisors")
+    .select("id, email, first_name, last_name")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError || !advisor?.email) {
+    console.error("[sendAdvisorLoginCredentials] fetch", fetchError);
+    return { ok: false, error: "Advisor not found." };
+  }
+
+  const email = advisor.email.trim().toLowerCase();
+  const firstName = advisor.first_name.trim();
+  const lastName = advisor.last_name.trim();
+  const userMetadata = { firstName, lastName, type: "advisor" as const };
+
+  if (await isAdvisorLoginProvisioned(service, email)) {
+    return {
+      ok: false,
+      error: "Login credentials have already been sent. Use Resend new Credentials instead.",
+    };
+  }
+
+  const existingLookup = await findAuthUserByEmail(service, email);
+  if (existingLookup.error) {
+    return { ok: false, error: existingLookup.error };
+  }
+
+  const existingUser = existingLookup.user;
+  if (existingUser) {
+    const existingMeta = existingUser.user_metadata as AuthUserMetadata | undefined;
+    const conflict = authAccountTypeConflictMessage(existingMeta?.type);
+    if (conflict) {
+      return { ok: false, error: conflict };
+    }
+
+    const { error: updateError } = await service.auth.admin.updateUserById(existingUser.id, {
+      password,
+      email_confirm: true,
+      user_metadata: userMetadata,
+    });
+
+    if (updateError) {
+      console.error("[sendAdvisorLoginCredentials] updateUserById", updateError);
+      return { ok: false, error: updateError.message || "Could not update advisor login." };
+    }
+  } else {
+    const { error: createError } = await service.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: userMetadata,
+    });
+
+    if (createError) {
+      console.error("[sendAdvisorLoginCredentials] createUser", createError);
+      return { ok: false, error: createError.message || "Could not create advisor login." };
+    }
+  }
+
+  const loginUrl = await buildLoginPageUrl();
+  const emailResult = await sendStaffCredentialsEmail({
+    to: email,
+    firstName,
+    email,
+    password,
+    loginUrl,
+  });
+
+  if ("error" in emailResult) {
+    return {
+      ok: false,
+      error: emailResult.error || "Credentials email could not be sent.",
+    };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/users/advisors");
+  revalidatePath(`/admin/users/advisors/${id}`);
+
+  return { ok: true };
+}
+
+export async function resendAdvisorLoginCredentials(
+  advisorId: string,
+  formData: FormData,
+): Promise<AdvisorActionResult> {
+  const access = await assertAdminPermission("edit_advisors");
+  if (!access.ok) return access;
+
+  const id = advisorId.trim();
+  if (!id) {
+    return { ok: false, error: "Advisor not found." };
+  }
+
+  const password = String(formData.get("password") ?? "");
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, error: "Password must be at least 8 characters." };
+  }
+
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL before sending credentials.",
+    };
+  }
+
+  const service = await createSupabaseSecretClient();
+  const { data: advisor, error: fetchError } = await service
+    .from("advisors")
+    .select("id, email, first_name, last_name")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError || !advisor?.email) {
+    console.error("[resendAdvisorLoginCredentials] fetch", fetchError);
+    return { ok: false, error: "Advisor not found." };
+  }
+
+  const email = advisor.email.trim().toLowerCase();
+  const firstName = advisor.first_name.trim();
+  const lastName = advisor.last_name.trim();
+  const userMetadata = { firstName, lastName, type: "advisor" as const };
+
+  if (!(await isAdvisorLoginProvisioned(service, email))) {
+    return {
+      ok: false,
+      error: "No login account exists yet. Use Send Login Credentials first.",
+    };
+  }
+
+  const existingLookup = await findAuthUserByEmail(service, email);
+  if (existingLookup.error) {
+    return { ok: false, error: existingLookup.error };
+  }
+
+  const existingUser = existingLookup.user;
+  if (!existingUser) {
+    return {
+      ok: false,
+      error: "Advisor login account could not be found. Use Send Login Credentials instead.",
+    };
+  }
+
+  const existingMeta = existingUser.user_metadata as AuthUserMetadata | undefined;
+  const conflict = authAccountTypeConflictMessage(existingMeta?.type);
+  if (conflict) {
+    return { ok: false, error: conflict };
+  }
+
+  const { error: updateError } = await service.auth.admin.updateUserById(existingUser.id, {
+    password,
+    email_confirm: true,
+    user_metadata: userMetadata,
+  });
+
+  if (updateError) {
+    console.error("[resendAdvisorLoginCredentials] updateUserById", updateError);
+    return { ok: false, error: updateError.message || "Could not reset advisor password." };
+  }
+
+  const loginUrl = await buildLoginPageUrl();
+  const emailResult = await sendStaffCredentialsEmail({
+    to: email,
+    firstName,
+    email,
+    password,
+    loginUrl,
+  });
+
+  if ("error" in emailResult) {
+    return {
+      ok: false,
+      error: emailResult.error || "Credentials email could not be sent.",
+    };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/users/advisors");
+  revalidatePath(`/admin/users/advisors/${id}`);
+
   return { ok: true };
 }
 

@@ -11,6 +11,8 @@ function authedHomePath(type: unknown): string | null {
       return "/school"
     case "admin":
       return "/admin"
+    case "advisor":
+      return "/advisor"
     default:
       return null
   }

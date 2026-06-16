@@ -169,12 +169,12 @@ function buildApplicationsProgressPdf(
     autoTable(doc, {
       startY: y,
       margin: { left: MARGIN_MM, right: MARGIN_MM },
-      head: [["Student", "School", "Status", "Handler", "Created"]],
+      head: [["Student", "School", "Status", "Advisor", "Created"]],
       body: data.recentApplications.map((r) => [
         r.studentName,
         r.schoolName,
         r.statusLabel,
-        r.handlerName,
+        r.advisorName,
         r.createdAt,
       ]),
       ...COMPACT_TABLE,

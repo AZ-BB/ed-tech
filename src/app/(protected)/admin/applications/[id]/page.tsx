@@ -6,7 +6,7 @@ import { AdminApplicationViewClient } from "./_components/admin-application-view
 import { fetchAdminApplicationDetail } from "./_lib/fetch-admin-application-detail";
 import { fetchApplicationActivityLogsPanel } from "./_lib/fetch-application-activity-logs-page";
 import { parseAdminApplicationDetailTab } from "./_lib/parse-admin-application-detail-search-params";
-import { fetchAdminHandlerOptions } from "../_lib/fetch-admin-handler-options";
+import { fetchAdminApplicationAdvisorOptions } from "../_lib/fetch-admin-application-advisor-options";
 
 function parseIntParam(raw: string | string[] | undefined, fallback: number) {
   const s =
@@ -40,14 +40,14 @@ export default async function AdminApplicationDetailPage({
   const initialTab = parseAdminApplicationDetailTab(sp.tab);
 
   const secret = await createSupabaseSecretClient();
-  const [activityLogsPanel, handlerOptions] = await Promise.all([
+  const [activityLogsPanel, advisorOptions] = await Promise.all([
     fetchApplicationActivityLogsPanel(payload.application.id, {
       page: activityLogsPage,
       limit: activityLogsLimit,
       client: secret,
     }),
-    fetchAdminHandlerOptions({
-      includeHandlerId: payload.handler?.id ?? null,
+    fetchAdminApplicationAdvisorOptions({
+      includeAdvisorId: payload.advisor?.id ?? null,
     }),
   ]);
 
@@ -55,7 +55,7 @@ export default async function AdminApplicationDetailPage({
     <AdminApplicationViewClient
       payload={payload}
       activityLogsPanel={activityLogsPanel}
-      handlerOptions={handlerOptions}
+      advisorOptions={advisorOptions}
       initialTab={initialTab}
     />
   );

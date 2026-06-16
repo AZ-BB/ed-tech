@@ -451,7 +451,7 @@ async function fetchAdminRows(
   });
 }
 
-type AdminUsersListTabId = Exclude<UsersTabId, "all" | "handlers">;
+type AdminUsersListTabId = Exclude<UsersTabId, "all">;
 
 async function fetchPaginatedSingleTab(
   supabase: AdminSupabase,
@@ -680,10 +680,6 @@ export async function fetchAdminUsersPage(
 
   if (tabId === "all") {
     return fetchAllTab(supabase, effectiveFilters);
-  }
-
-  if (tabId === "handlers") {
-    return { rows: [], totalRows: 0 };
   }
 
   return fetchPaginatedSingleTab(supabase, tabId, effectiveFilters);

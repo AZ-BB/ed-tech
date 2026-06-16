@@ -1,7 +1,13 @@
 export const ADMIN_APPLICATION_DETAIL_TABS = [
   "intake",
+  "package",
+  "universities",
   "profile",
   "documents",
+  "payments",
+  "payouts",
+  "calls",
+  "tasks",
   "notes",
   "activity",
 ] as const;

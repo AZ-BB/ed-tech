@@ -8,11 +8,17 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { AdminEditAdvisorDialog } from "./admin-edit-advisor-dialog";
+import {
+  AdminSendAdvisorCredentialsDialog,
+  type AdvisorCredentialsDialogMode,
+} from "./admin-send-advisor-credentials-dialog";
 import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
 
 export type AdminAdvisorActionsProps = {
   advisorId: string;
   advisorName: string;
+  advisorEmail: string;
+  loginCredentialsSent: boolean;
   isActive: boolean;
   editDefaults: {
     firstName: string;
@@ -33,6 +39,7 @@ export type AdminAdvisorActionsProps = {
     tags: string;
     avatarUrl: string | null;
     isActive: boolean;
+    payoutPercentage: string;
   };
 };
 
@@ -42,11 +49,16 @@ const actionBtnClass =
 export function AdminAdvisorActions({
   advisorId,
   advisorName,
+  advisorEmail,
+  loginCredentialsSent,
   isActive,
   editDefaults,
 }: AdminAdvisorActionsProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
+  const [credentialsMode, setCredentialsMode] = useState<AdvisorCredentialsDialogMode | null>(
+    null,
+  );
   const [statusError, setStatusError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -85,6 +97,30 @@ export function AdminAdvisorActions({
           Edit
         </button>
       </AdminControl>
+      {advisorEmail && !loginCredentialsSent ? (
+        <AdminControl permission="edit_advisors">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => setCredentialsMode("send")}
+            className={`${actionBtnClass} border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]`}
+          >
+            Send Login Credentials
+          </button>
+        </AdminControl>
+      ) : null}
+      {advisorEmail && loginCredentialsSent ? (
+        <AdminControl permission="edit_advisors">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => setCredentialsMode("resend")}
+            className={`${actionBtnClass} border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]`}
+          >
+            Resend new Credentials
+          </button>
+        </AdminControl>
+      ) : null}
       {isActive ? (
         <AdminControl permission="edit_advisors">
           <button
@@ -133,6 +169,17 @@ export function AdminAdvisorActions({
           onClose={() => setEditOpen(false)}
         />
       </AdminControl>
+      {advisorEmail && credentialsMode ? (
+        <AdminControl permission="edit_advisors">
+          <AdminSendAdvisorCredentialsDialog
+            open={credentialsMode !== null}
+            mode={credentialsMode}
+            advisorId={advisorId}
+            advisorEmail={advisorEmail}
+            onClose={() => setCredentialsMode(null)}
+          />
+        </AdminControl>
+      ) : null}
     </>
   );
 }

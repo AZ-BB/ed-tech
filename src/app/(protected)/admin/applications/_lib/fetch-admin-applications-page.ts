@@ -2,7 +2,7 @@ import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import type { Database } from "@/database.types";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
-import { ADMIN_APPLICATIONS_UNASSIGNED_FILTER } from "./fetch-admin-handler-options";
+import { ADMIN_APPLICATIONS_UNASSIGNED_FILTER } from "./fetch-admin-application-advisor-options";
 import type { AdminApplicationsPageFilters } from "./parse-admin-applications-search-params";
 
 export type AdminApplicationTableRow = {
@@ -13,7 +13,7 @@ export type AdminApplicationTableRow = {
   schoolName: string;
   packageLabel: string;
   universitiesLabel: string;
-  handlerName: string | null;
+  advisorName: string | null;
   status: string;
 };
 
@@ -37,7 +37,7 @@ type AppRowRaw = {
     | { name: string; universities_count: number }
     | { name: string; universities_count: number }[]
     | null;
-  handlers: PersonEmbed;
+  advisors: PersonEmbed;
   schools: { name: string } | { name: string }[] | null;
   student_profiles:
     | ({ first_name: string; last_name: string; email?: string | null })
@@ -128,7 +128,7 @@ function mapApplicationRow(row: AppRowRaw): AdminApplicationTableRow {
     schoolName: resolveSchoolName(row),
     packageLabel: resolvePackageLabel(row),
     universitiesLabel: resolveUniversitiesLabel(row),
-    handlerName: personNameFromEmbed(row.handlers),
+    advisorName: personNameFromEmbed(row.advisors),
     status: row.status?.trim() || "new",
   };
 }
@@ -153,7 +153,7 @@ export async function fetchAdminApplicationsPage(
       preferences_universities,
       school_name,
       applications_plans ( name, universities_count ),
-      handlers:assigned_to ( first_name, last_name ),
+      advisors:assigned_to ( first_name, last_name ),
       schools ( name ),
       student_profiles ( first_name, last_name, email )
     `,
