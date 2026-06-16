@@ -59,7 +59,7 @@ export type ApplicationProgressRow = {
   schoolName: string;
   status: string;
   statusLabel: string;
-  handlerName: string;
+  advisorName: string;
   createdAt: string;
 };
 

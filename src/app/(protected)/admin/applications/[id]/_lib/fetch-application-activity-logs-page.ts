@@ -3,9 +3,11 @@ import {
   formatActivityLogMessageForAdmin,
   type StudentActivityLogItem,
 } from "@/lib/student-activity-logs";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
-type DbClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
+type DbClient =
+  | Awaited<ReturnType<typeof createSupabaseSecretClient>>
+  | Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 function personNameFromEmbed(
   embed:

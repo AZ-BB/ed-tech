@@ -4,6 +4,9 @@ import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
+import { INTAKE_DOC_SLOT_BY_LEGACY_TYPE } from "@/lib/application-checklist-defaults";
+import { APPLICATION_DOCUMENTS_BUCKET } from "@/lib/application-checklist-constants";
+import { ensureApplicationChecklistDocuments } from "@/lib/ensure-application-checklist-documents";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
   recordStudentPlatformCompletionOnce,
@@ -15,8 +18,6 @@ import {
 } from "@/lib/platform-settings";
 
 import type { Database } from "@/database.types";
-
-const APPLICATION_DOCUMENTS_BUCKET = "application-documents";
 
 async function requireStudentActor(): Promise<
   { studentId: string; schoolId: string } | { error: string }
@@ -220,6 +221,8 @@ export async function submitApplicationSupport(
 
   const applicationId = appRow.id;
 
+  await ensureApplicationChecklistDocuments(secret, applicationId);
+
   type DocKey =
     | "transcript"
     | "english_test_result"
@@ -234,6 +237,7 @@ export async function submitApplicationSupport(
   ];
 
   async function uploadDoc(type: DocKey, file: File) {
+    const slotKey = INTAKE_DOC_SLOT_BY_LEGACY_TYPE[type];
     const buf = Buffer.from(await file.arrayBuffer());
     const safe = sanitizeFilename(file.name);
     const path = `${studentId}/${applicationId}/${type}_${safe}`;
@@ -249,17 +253,22 @@ export async function submitApplicationSupport(
 
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
     const url = `${base}/storage/v1/object/${APPLICATION_DOCUMENTS_BUCKET}/${path}`;
+    const now = new Date().toISOString();
 
-    const { error: docErr } = await secret.from("application_documents").insert({
-      application_id: applicationId,
-      type,
-      url,
-      file_name: file.name,
-      file_size: file.size,
-      file_type: contentType,
-      recommender_name: null,
-      recommender_email: null,
-    });
+    const { error: docErr } = await secret
+      .from("application_checklist_documents")
+      .update({
+        url,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: contentType,
+        status: "under_review",
+        uploaded_at: now,
+        updated_at: now,
+      })
+      .eq("application_id", applicationId)
+      .eq("slot_key", slotKey);
+
     if (docErr) {
       console.error(docErr);
       throw new Error(`Could not record document ${type}`);

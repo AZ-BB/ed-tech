@@ -6,8 +6,7 @@ export type UsersTabId =
   | "teachers"
   | "advisors"
   | "ambassadors"
-  | "admins"
-  | "handlers";
+  | "admins";
 
 export type UsersTabCounts = Record<UsersTabId, number>;
 
@@ -35,7 +34,6 @@ export const usersTabs: readonly UsersTab[] = [
     href: `${ADMIN_USERS_HOME}/ambassadors`,
   },
   { id: "admins", label: "Admins", href: `${ADMIN_USERS_HOME}/admins` },
-  { id: "handlers", label: "Handlers", href: `${ADMIN_USERS_HOME}/handlers` },
 ];
 
 function normalizePath(pathname: string) {
@@ -166,15 +164,6 @@ export function getUsersHeaderActions(tabId: UsersTabId): UsersHeaderAction[] {
         {
           id: "add-admin",
           label: "Add Admin",
-          variant: "primary",
-          icon: "add",
-        },
-      ];
-    case "handlers":
-      return [
-        {
-          id: "add-handler",
-          label: "Add Handler",
           variant: "primary",
           icon: "add",
         },

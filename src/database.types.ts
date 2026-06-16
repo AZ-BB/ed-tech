@@ -229,6 +229,67 @@ export type Database = {
           },
         ]
       }
+      advisor_payouts: {
+        Row: {
+          advisor_id: string
+          amount: number
+          application_id: number
+          created_at: string
+          id: number
+          paid_at: string | null
+          payment_id: number
+          percentage: number
+          status: Database["public"]["Enums"]["payout_status"]
+          updated_at: string
+        }
+        Insert: {
+          advisor_id: string
+          amount: number
+          application_id: number
+          created_at?: string
+          id?: number
+          paid_at?: string | null
+          payment_id: number
+          percentage: number
+          status?: Database["public"]["Enums"]["payout_status"]
+          updated_at?: string
+        }
+        Update: {
+          advisor_id?: string
+          amount?: number
+          application_id?: number
+          created_at?: string
+          id?: number
+          paid_at?: string | null
+          payment_id?: number
+          percentage?: number
+          status?: Database["public"]["Enums"]["payout_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_payouts_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_payouts_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_payouts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advisor_tags: {
         Row: {
           created_at: string | null
@@ -304,6 +365,7 @@ export type Database = {
           languages: string | null
           last_name: string
           nationality_country_code: string
+          payout_percentage: number
           phone: string | null
           questions: Json | null
           session_coverage: Json | null
@@ -325,6 +387,7 @@ export type Database = {
           languages?: string | null
           last_name: string
           nationality_country_code: string
+          payout_percentage?: number
           phone?: string | null
           questions?: Json | null
           session_coverage?: Json | null
@@ -346,6 +409,7 @@ export type Database = {
           languages?: string | null
           last_name?: string
           nationality_country_code?: string
+          payout_percentage?: number
           phone?: string | null
           questions?: Json | null
           session_coverage?: Json | null
@@ -726,52 +790,386 @@ export type Database = {
         }
         Relationships: []
       }
-      application_documents: {
+      application_checklist_documents: {
         Row: {
           application_id: number
-          created_at: string | null
-          file_name: string
-          file_size: number
-          file_type: string
-          id: number
-          recommender_email: string | null
-          recommender_name: string | null
-          type: Database["public"]["Enums"]["application_document_type"]
-          updated_at: string | null
-          url: string
+          created_at: string
+          display_name: string
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          requested_at: string | null
+          reviewed_at: string | null
+          slot_key: string
+          sort_order: number
+          status: string
+          updated_at: string
+          uploaded_at: string | null
+          url: string | null
         }
         Insert: {
           application_id: number
-          created_at?: string | null
-          file_name: string
-          file_size: number
-          file_type: string
-          id?: number
-          recommender_email?: string | null
-          recommender_name?: string | null
-          type: Database["public"]["Enums"]["application_document_type"]
-          updated_at?: string | null
-          url: string
+          created_at?: string
+          display_name: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          slot_key: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          uploaded_at?: string | null
+          url?: string | null
         }
         Update: {
           application_id?: number
-          created_at?: string | null
-          file_name?: string
-          file_size?: number
-          file_type?: string
-          id?: number
-          recommender_email?: string | null
-          recommender_name?: string | null
-          type?: Database["public"]["Enums"]["application_document_type"]
-          updated_at?: string | null
-          url?: string
+          created_at?: string
+          display_name?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          slot_key?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          uploaded_at?: string | null
+          url?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "application_documents_application_id_fkey"
+            foreignKeyName: "application_checklist_documents_application_id_fkey"
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_university_document_files: {
+        Row: {
+          checklist_document_id: string | null
+          created_at: string
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          requirement_id: string
+          source_type: string
+          updated_at: string
+          uploaded_at: string | null
+          url: string | null
+        }
+        Insert: {
+          checklist_document_id?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          requirement_id: string
+          source_type: string
+          updated_at?: string
+          uploaded_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          checklist_document_id?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          requirement_id?: string
+          source_type?: string
+          updated_at?: string
+          uploaded_at?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_university_document_files_checklist_document_id_fkey"
+            columns: ["checklist_document_id"]
+            isOneToOne: false
+            referencedRelation: "application_checklist_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_university_document_files_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: true
+            referencedRelation: "application_university_document_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_university_document_requirements: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["university_doc_requirement_status"]
+          university_target_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["university_doc_requirement_status"]
+          university_target_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["university_doc_requirement_status"]
+          university_target_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_university_document_requirements_university_target_id_fkey"
+            columns: ["university_target_id"]
+            isOneToOne: false
+            referencedRelation: "application_university_targets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_university_targets: {
+        Row: {
+          application_id: number
+          country_code: string | null
+          created_at: string
+          deadline: string | null
+          decision: Database["public"]["Enums"]["university_target_decision"]
+          id: string
+          notes: string | null
+          portal_url: string | null
+          program: string | null
+          sort_order: number
+          status: Database["public"]["Enums"]["university_target_status"]
+          university_id: string | null
+          university_name: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: number
+          country_code?: string | null
+          created_at?: string
+          deadline?: string | null
+          decision?: Database["public"]["Enums"]["university_target_decision"]
+          id?: string
+          notes?: string | null
+          portal_url?: string | null
+          program?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["university_target_status"]
+          university_id?: string | null
+          university_name: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: number
+          country_code?: string | null
+          created_at?: string
+          deadline?: string | null
+          decision?: Database["public"]["Enums"]["university_target_decision"]
+          id?: string
+          notes?: string | null
+          portal_url?: string | null
+          program?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["university_target_status"]
+          university_id?: string | null
+          university_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_university_targets_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_university_targets_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_university_targets_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_internal_notes: {
+        Row: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          content: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          application_id?: number
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_internal_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_calls: {
+        Row: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          call_date: string
+          call_type: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          outcome: string | null
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          call_date: string
+          call_type: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          outcome?: string | null
+          status: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          application_id?: number
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          call_date?: string
+          call_type?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          outcome?: string | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_calls_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_tasks: {
+        Row: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          completed: boolean
+          created_at: string
+          due_date: string | null
+          id: string
+          priority: string
+          source_call_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: string
+          source_call_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: number
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: string
+          source_call_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_tasks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_tasks_source_call_id_fkey"
+            columns: ["source_call_id"]
+            isOneToOne: false
+            referencedRelation: "application_calls"
             referencedColumns: ["id"]
           },
         ]
@@ -780,10 +1178,12 @@ export type Database = {
         Row: {
           act: number | null
           additional_notes: string | null
+          admission_status: Database["public"]["Enums"]["application_admission_status"]
           assigned_at: string | null
           assigned_to: string | null
           awards: string | null
           blocked_at: string | null
+          scheduled_at: string | null
           created_at: string | null
           curriculum:
             | Database["public"]["Enums"]["application_curriculum_type"]
@@ -796,7 +1196,6 @@ export type Database = {
           ielts: number | null
           in_progress_at: string | null
           inteended_fields: string
-          internal_notes: string | null
           open_to_realted_fields: boolean
           plan_id: number
           preferences_universities: Json | null
@@ -813,14 +1212,17 @@ export type Database = {
           submitted_at: string | null
           toefl: number | null
           updated_at: string | null
+          package_data: Json
         }
         Insert: {
           act?: number | null
           additional_notes?: string | null
+          admission_status?: Database["public"]["Enums"]["application_admission_status"]
           assigned_at?: string | null
           assigned_to?: string | null
           awards?: string | null
           blocked_at?: string | null
+          scheduled_at?: string | null
           created_at?: string | null
           curriculum?:
             | Database["public"]["Enums"]["application_curriculum_type"]
@@ -833,7 +1235,6 @@ export type Database = {
           ielts?: number | null
           in_progress_at?: string | null
           inteended_fields: string
-          internal_notes?: string | null
           open_to_realted_fields?: boolean
           plan_id: number
           preferences_universities?: Json | null
@@ -850,14 +1251,17 @@ export type Database = {
           submitted_at?: string | null
           toefl?: number | null
           updated_at?: string | null
+          package_data?: Json
         }
         Update: {
           act?: number | null
           additional_notes?: string | null
+          admission_status?: Database["public"]["Enums"]["application_admission_status"]
           assigned_at?: string | null
           assigned_to?: string | null
           awards?: string | null
           blocked_at?: string | null
+          scheduled_at?: string | null
           created_at?: string | null
           curriculum?:
             | Database["public"]["Enums"]["application_curriculum_type"]
@@ -870,7 +1274,6 @@ export type Database = {
           ielts?: number | null
           in_progress_at?: string | null
           inteended_fields?: string
-          internal_notes?: string | null
           open_to_realted_fields?: boolean
           plan_id?: number
           preferences_universities?: Json | null
@@ -887,13 +1290,14 @@ export type Database = {
           submitted_at?: string | null
           toefl?: number | null
           updated_at?: string | null
+          package_data?: Json
         }
         Relationships: [
           {
             foreignKeyName: "applications_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
-            referencedRelation: "handlers"
+            referencedRelation: "advisors"
             referencedColumns: ["id"]
           },
           {
@@ -1006,39 +1410,6 @@ export type Database = {
         }
         Relationships: []
       }
-      handlers: {
-        Row: {
-          created_at: string | null
-          email: string
-          first_name: string
-          id: string
-          is_active: boolean
-          last_name: string
-          phone: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          first_name: string
-          id?: string
-          is_active?: boolean
-          last_name: string
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          first_name?: string
-          id?: string
-          is_active?: boolean
-          last_name?: string
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       majors: {
         Row: {
           created_at: string | null
@@ -1093,6 +1464,8 @@ export type Database = {
           paid_at: string | null
           payment_request_sent_at: string | null
           payment_request_token: string | null
+          requested_by_advisor_id: string | null
+          requested_by_type: string | null
           status: Database["public"]["Enums"]["payment_status"] | null
           stripe_checkout_session_id: string | null
           student_id: string
@@ -1106,6 +1479,8 @@ export type Database = {
           paid_at?: string | null
           payment_request_sent_at?: string | null
           payment_request_token?: string | null
+          requested_by_advisor_id?: string | null
+          requested_by_type?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_checkout_session_id?: string | null
           student_id: string
@@ -1119,6 +1494,8 @@ export type Database = {
           paid_at?: string | null
           payment_request_sent_at?: string | null
           payment_request_token?: string | null
+          requested_by_advisor_id?: string | null
+          requested_by_type?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_checkout_session_id?: string | null
           student_id?: string
@@ -2780,6 +3157,11 @@ export type Database = {
         | "cancelled"
         | "completed"
         | "rescheduled"
+      application_admission_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "waitlist"
       application_curriculum_type:
         | "ib"
         | "a_level"
@@ -2800,7 +3182,7 @@ export type Database = {
         | "portfolio"
       application_status:
         | "new"
-        | "assigned"
+        | "scheduled"
         | "in_progress"
         | "blocked"
         | "submitted"
@@ -2808,6 +3190,26 @@ export type Database = {
       gender: "male" | "female"
       news_tag: "visa" | "deadline" | "update"
       payment_status: "pending" | "paid" | "failed"
+      payout_status: "pending" | "paid" | "canceled"
+      university_doc_requirement_status:
+        | "not_started"
+        | "in_progress"
+        | "complete"
+        | "not_required"
+      university_target_decision:
+        | "not_submitted"
+        | "awaiting_decision"
+        | "offer_received"
+        | "rejected"
+        | "waitlist"
+      university_target_status:
+        | "shortlisted"
+        | "considering"
+        | "advisor_recommended"
+        | "documents_needed"
+        | "in_progress"
+        | "ready_to_submit"
+        | "submitted"
       scholarship_competition_type: "low" | "medium" | "high" | "very_high"
       scholarship_type:
         | "government"
@@ -2975,6 +3377,12 @@ export const Constants = {
         "completed",
         "rescheduled",
       ],
+      application_admission_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "waitlist",
+      ],
       application_curriculum_type: [
         "ib",
         "a_level",
@@ -2997,7 +3405,7 @@ export const Constants = {
       ],
       application_status: [
         "new",
-        "assigned",
+        "scheduled",
         "in_progress",
         "blocked",
         "submitted",
@@ -3006,6 +3414,29 @@ export const Constants = {
       gender: ["male", "female"],
       news_tag: ["visa", "deadline", "update"],
       payment_status: ["pending", "paid", "failed"],
+      payout_status: ["pending", "paid", "canceled"],
+      university_doc_requirement_status: [
+        "not_started",
+        "in_progress",
+        "complete",
+        "not_required",
+      ],
+      university_target_decision: [
+        "not_submitted",
+        "awaiting_decision",
+        "offer_received",
+        "rejected",
+        "waitlist",
+      ],
+      university_target_status: [
+        "shortlisted",
+        "considering",
+        "advisor_recommended",
+        "documents_needed",
+        "in_progress",
+        "ready_to_submit",
+        "submitted",
+      ],
       scholarship_competition_type: ["low", "medium", "high", "very_high"],
       scholarship_type: [
         "government",

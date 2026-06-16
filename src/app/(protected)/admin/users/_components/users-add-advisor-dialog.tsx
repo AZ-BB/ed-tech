@@ -207,6 +207,20 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
                   className={inputClassName}
                 />
               </div>
+              <div>
+                <label htmlFor="add-advisor-payout-percentage" className={labelClassName}>
+                  Payout percentage
+                </label>
+                <input
+                  id="add-advisor-payout-percentage"
+                  name="payoutPercentage"
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={0}
+                  className={inputClassName}
+                />
+              </div>
             </div>
 
             <CountryMultiSelectAutocomplete

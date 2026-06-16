@@ -20,7 +20,7 @@ export type AdminDashboardKpiListResult = {
 
 const ACTIVE_APPLICATION_STATUSES = [
   "new",
-  "assigned",
+  "scheduled",
   "in_progress",
   "blocked",
 ] as const;

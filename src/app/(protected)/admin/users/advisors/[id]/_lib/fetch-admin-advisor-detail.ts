@@ -1,4 +1,5 @@
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { findAuthUserByEmail } from "@/lib/auth-user-lookup";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -39,7 +40,10 @@ export type AdminAdvisorDetailPayload = {
     tags: string;
     avatarUrl: string | null;
     isActive: boolean;
+    payoutPercentage: number;
+    loginCredentialsSent: boolean;
     joinedLabel: string;
+    lastLoggedInLabel: string;
     lastSessionLabel: string;
     specializationCountryCodes: string[];
   };
@@ -57,6 +61,17 @@ function formatJoined(iso: string | null | undefined): string {
     });
   } catch {
     return "—";
+  }
+}
+
+function formatLastLoggedIn(iso: string | null | undefined): string {
+  if (!iso) return "Never";
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "Never";
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch {
+    return "Never";
   }
 }
 
@@ -125,6 +140,7 @@ export async function fetchAdminAdvisorDetail(
       questions,
       avatar_url,
       is_active,
+      payout_percentage,
       created_at,
       countries!advisors_nationality_country_code_fkey ( name ),
       advisor_tags_joint ( advisor_tags ( text ) ),
@@ -166,6 +182,17 @@ export async function fetchAdminAdvisorDetail(
     ? countriesEmbed[0]?.name?.trim() ?? "—"
     : countriesEmbed?.name?.trim() ?? "—";
 
+  const advisorEmail = row.email?.trim().toLowerCase() ?? "";
+  const authLookup = advisorEmail
+    ? await findAuthUserByEmail(secret, advisorEmail)
+    : { user: null, error: null };
+  const authUser = authLookup.user;
+  const authMeta = authUser?.user_metadata as { type?: string } | undefined;
+  const loginCredentialsSent = authMeta?.type === "advisor";
+  const lastLoggedInLabel = formatLastLoggedIn(
+    loginCredentialsSent ? authUser?.last_sign_in_at : null,
+  );
+
   return {
     advisor: {
       id: row.id,
@@ -189,7 +216,10 @@ export async function fetchAdminAdvisorDetail(
       tags: tags.join(", "),
       avatarUrl: row.avatar_url?.trim() || null,
       isActive: row.is_active,
+      payoutPercentage: row.payout_percentage ?? 0,
+      loginCredentialsSent,
       joinedLabel: formatJoined(row.created_at),
+      lastLoggedInLabel,
       lastSessionLabel: formatLastActive(latestSession?.created_at),
       specializationCountryCodes,
     },

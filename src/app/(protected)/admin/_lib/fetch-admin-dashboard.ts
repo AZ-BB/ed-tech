@@ -326,7 +326,7 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
   if ((appsStats.pendingAssignment ?? 0) > 0) {
     attentionItems.push({
       id: "pending-assignment",
-      text: `${appsStats.pendingAssignment} applications pending handler assignment`,
+      text: `${appsStats.pendingAssignment} applications pending advisor assignment`,
       hint: "Action required",
       href: "/admin/applications",
       tone: "red",

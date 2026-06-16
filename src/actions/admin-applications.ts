@@ -7,6 +7,10 @@ import {
 } from "@/lib/application-activity-log";
 import type { Database } from "@/database.types";
 import {
+  APPLICATION_ADMISSION_STATUS_LABEL,
+  parseApplicationAdmissionStatus,
+} from "@/lib/application-admission-status";
+import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
@@ -19,7 +23,7 @@ const UUID_RE =
 
 const VALID_STATUSES = new Set<string>([
   "new",
-  "assigned",
+  "scheduled",
   "in_progress",
   "blocked",
   "submitted",
@@ -87,8 +91,8 @@ function buildStatusTimestampPatch(
   now: string,
 ): Partial<Database["public"]["Tables"]["applications"]["Update"]> {
   switch (status) {
-    case "assigned":
-      return { assigned_at: now };
+    case "scheduled":
+      return { scheduled_at: now };
     case "in_progress":
       return { in_progress_at: now };
     case "blocked":
@@ -127,6 +131,8 @@ async function insertApplicationActivityLog(input: {
 function revalidateApplicationPaths(applicationId: number) {
   revalidatePath("/admin/applications");
   revalidatePath(`/admin/applications/${applicationId}`);
+  revalidatePath("/advisor/applications");
+  revalidatePath(`/advisor/applications/${applicationId}`);
 }
 
 export async function updateAdminApplicationStatus(
@@ -192,9 +198,9 @@ export async function updateAdminApplicationStatus(
   return { ok: true };
 }
 
-export async function updateAdminApplicationInternalNotes(
+export async function updateAdminApplicationAdmissionStatus(
   applicationIdRaw: string,
-  notesRaw: string,
+  admissionStatusRaw: string,
 ): Promise<AdminApplicationActionResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -204,59 +210,62 @@ export async function updateAdminApplicationInternalNotes(
     return { ok: false, error: "Invalid application." };
   }
 
-  const internalNotes = notesRaw.trim() || null;
+  const admissionStatus = parseApplicationAdmissionStatus(admissionStatusRaw);
+  if (!admissionStatus) {
+    return { ok: false, error: "Select a valid admission status." };
+  }
 
   const secret = await createSupabaseSecretClient();
   const { data: existing, error: fetchErr } = await secret
     .from("applications")
-    .select("id, student_id, internal_notes")
+    .select("id, student_id, admission_status")
     .eq("id", applicationId)
     .maybeSingle();
 
   if (fetchErr || !existing) {
-    console.error("[updateAdminApplicationInternalNotes] fetch", fetchErr);
+    console.error("[updateAdminApplicationAdmissionStatus] fetch", fetchErr);
     return { ok: false, error: "Application not found." };
   }
 
-  const previous = existing.internal_notes?.trim() ?? "";
-  const next = internalNotes ?? "";
-  if (previous === next) {
+  if (existing.admission_status === admissionStatus) {
     return { ok: true };
   }
 
   const now = new Date().toISOString();
   const { error: updateErr } = await secret
     .from("applications")
-    .update({ internal_notes: internalNotes, updated_at: now })
+    .update({
+      admission_status: admissionStatus,
+      updated_at: now,
+    })
     .eq("id", applicationId);
 
   if (updateErr) {
-    console.error("[updateAdminApplicationInternalNotes] update", updateErr);
-    return { ok: false, error: "Could not save internal notes." };
+    console.error("[updateAdminApplicationAdmissionStatus] update", updateErr);
+    return { ok: false, error: "Could not update admission status." };
   }
 
-  const message =
-    next.length === 0
-      ? `${access.actorName} cleared internal notes on application #${applicationId}.`
-      : previous.length === 0
-        ? `${access.actorName} added internal notes on application #${applicationId}.`
-        : `${access.actorName} updated internal notes on application #${applicationId}.`;
+  const fromLabel =
+    APPLICATION_ADMISSION_STATUS_LABEL[
+      (existing.admission_status ?? "pending") as keyof typeof APPLICATION_ADMISSION_STATUS_LABEL
+    ] ?? "Pending";
+  const toLabel = APPLICATION_ADMISSION_STATUS_LABEL[admissionStatus];
 
   await insertApplicationActivityLog({
     applicationId,
     studentId: existing.student_id,
     adminId: access.userId,
-    action: "application_internal_notes_updated",
-    message,
+    action: "application_admission_status_updated",
+    message: `${access.actorName} changed application #${applicationId} admission status from ${fromLabel} to ${toLabel}.`,
   });
 
   revalidateApplicationPaths(applicationId);
   return { ok: true };
 }
 
-export async function assignAdminApplicationHandler(
+export async function addAdminApplicationInternalNote(
   applicationIdRaw: string,
-  handlerIdRaw: string,
+  contentRaw: string,
 ): Promise<AdminApplicationActionResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -266,16 +275,80 @@ export async function assignAdminApplicationHandler(
     return { ok: false, error: "Invalid application." };
   }
 
-  const handlerId = handlerIdRaw.trim();
-  const unassign = handlerId === "" || handlerId === "unassigned";
+  const content = contentRaw.trim();
+  if (!content) {
+    return { ok: false, error: "Note cannot be empty." };
+  }
+  if (content.length > 8000) {
+    return { ok: false, error: "Note is too long (max 8,000 characters)." };
+  }
 
-  if (!unassign && !UUID_RE.test(handlerId)) {
-    return { ok: false, error: "Select a valid handler." };
+  const secret = await createSupabaseSecretClient();
+  const { data: existing, error: fetchErr } = await secret
+    .from("applications")
+    .select("id, student_id")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    console.error("[addAdminApplicationInternalNote] fetch", fetchErr);
+    return { ok: false, error: "Application not found." };
+  }
+
+  const now = new Date().toISOString();
+  const { error: insertErr } = await secret.from("application_internal_notes").insert({
+    application_id: applicationId,
+    author_user_id: access.userId,
+    author_role: "admin",
+    author_name: access.actorName,
+    content,
+    created_at: now,
+  });
+
+  if (insertErr) {
+    console.error("[addAdminApplicationInternalNote] insert", insertErr);
+    return { ok: false, error: "Could not save note." };
+  }
+
+  await secret
+    .from("applications")
+    .update({ updated_at: now })
+    .eq("id", applicationId);
+
+  await insertApplicationActivityLog({
+    applicationId,
+    studentId: existing.student_id,
+    adminId: access.userId,
+    action: "application_internal_note_added",
+    message: `${access.actorName} added an internal note on application #${applicationId}.`,
+  });
+
+  revalidateApplicationPaths(applicationId);
+  return { ok: true };
+}
+
+export async function assignAdminApplicationAdvisor(
+  applicationIdRaw: string,
+  advisorIdRaw: string,
+): Promise<AdminApplicationActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const applicationId = parseApplicationId(applicationIdRaw);
+  if (applicationId == null) {
+    return { ok: false, error: "Invalid application." };
+  }
+
+  const advisorId = advisorIdRaw.trim();
+  const unassign = advisorId === "" || advisorId === "unassigned";
+
+  if (!unassign && !UUID_RE.test(advisorId)) {
+    return { ok: false, error: "Select a valid advisor." };
   }
 
   const secret = await createSupabaseSecretClient();
 
-  const [{ data: existing, error: fetchErr }, { data: handler }] = await Promise.all([
+  const [{ data: existing, error: fetchErr }, { data: advisor }] = await Promise.all([
     secret
       .from("applications")
       .select("id, student_id, assigned_to")
@@ -284,27 +357,27 @@ export async function assignAdminApplicationHandler(
     unassign
       ? Promise.resolve({ data: null, error: null })
       : secret
-          .from("handlers")
+          .from("advisors")
           .select("id, first_name, last_name, is_active")
-          .eq("id", handlerId)
+          .eq("id", advisorId)
           .maybeSingle(),
   ]);
 
   if (fetchErr || !existing) {
-    console.error("[assignAdminApplicationHandler] fetch", fetchErr);
+    console.error("[assignAdminApplicationAdvisor] fetch", fetchErr);
     return { ok: false, error: "Application not found." };
   }
 
   if (!unassign) {
-    if (!handler) {
-      return { ok: false, error: "Handler not found." };
+    if (!advisor) {
+      return { ok: false, error: "Advisor not found." };
     }
-    if (handler.is_active === false) {
-      return { ok: false, error: "That handler is inactive." };
+    if (advisor.is_active === false) {
+      return { ok: false, error: "That advisor is inactive." };
     }
   }
 
-  const nextAssignedTo = unassign ? null : handlerId;
+  const nextAssignedTo = unassign ? null : advisorId;
   if (existing.assigned_to === nextAssignedTo) {
     return { ok: true };
   }
@@ -320,23 +393,23 @@ export async function assignAdminApplicationHandler(
     .eq("id", applicationId);
 
   if (updateErr) {
-    console.error("[assignAdminApplicationHandler] update", updateErr);
-    return { ok: false, error: "Could not assign handler." };
+    console.error("[assignAdminApplicationAdvisor] update", updateErr);
+    return { ok: false, error: "Could not assign advisor." };
   }
 
-  const handlerName = handler
-    ? [handler.first_name, handler.last_name].filter(Boolean).join(" ").trim() || "Handler"
+  const advisorName = advisor
+    ? [advisor.first_name, advisor.last_name].filter(Boolean).join(" ").trim() || "Advisor"
     : null;
 
   const message = unassign
-    ? `${access.actorName} unassigned the handler on application #${applicationId}.`
-    : `${access.actorName} assigned ${handlerName} as handler on application #${applicationId}.`;
+    ? `${access.actorName} unassigned the advisor on application #${applicationId}.`
+    : `${access.actorName} assigned ${advisorName} as advisor on application #${applicationId}.`;
 
   await insertApplicationActivityLog({
     applicationId,
     studentId: existing.student_id,
     adminId: access.userId,
-    action: unassign ? "application_handler_unassigned" : "application_handler_assigned",
+    action: unassign ? "application_advisor_unassigned" : "application_advisor_assigned",
     message,
   });
 

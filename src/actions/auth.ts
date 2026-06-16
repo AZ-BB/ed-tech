@@ -118,6 +118,30 @@ export async function login(
                 error: DEACTIVATED_LOGIN_MESSAGE,
             };
         }
+    } else if (user?.id && meta?.type === "advisor") {
+        const secret = await createSupabaseSecretClient();
+        const loginEmail = user.email?.trim().toLowerCase() ?? email.trim().toLowerCase();
+        const { data: advisorProfile } = await secret
+            .from("advisors")
+            .select("is_active")
+            .ilike("email", loginEmail)
+            .maybeSingle();
+
+        if (!advisorProfile) {
+            await supabase.auth.signOut();
+            return {
+                data: null,
+                error: "No advisor profile found for this account.",
+            };
+        }
+
+        if (advisorProfile.is_active === false) {
+            await supabase.auth.signOut();
+            return {
+                data: null,
+                error: DEACTIVATED_LOGIN_MESSAGE,
+            };
+        }
     } else {
         const { data: studentProfile } = await supabase
             .from("student_profiles")

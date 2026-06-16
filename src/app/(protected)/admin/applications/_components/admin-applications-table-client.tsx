@@ -6,8 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import type { AdminApplicationTableRow } from "../_lib/fetch-admin-applications-page";
 import {
   ADMIN_APPLICATIONS_UNASSIGNED_FILTER,
-  type AdminHandlerOption,
-} from "../_lib/fetch-admin-handler-options";
+  type AdminApplicationAdvisorOption,
+} from "../_lib/fetch-admin-application-advisor-options";
 import {
   ADMIN_APPLICATION_STATUS_FILTER_OPTIONS,
   ADMIN_APPLICATION_STATUS_LABEL,
@@ -40,8 +40,8 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function HandlerCell({ handlerName }: { handlerName: string | null }) {
-  if (!handlerName) {
+function AdvisorCell({ advisorName }: { advisorName: string | null }) {
+  if (!advisorName) {
     return (
       <span className="inline-flex rounded-full bg-[#FCEBEB] px-2.5 py-0.5 text-[10px] font-semibold text-[#E74C3C]">
         Unassigned
@@ -49,7 +49,7 @@ function HandlerCell({ handlerName }: { handlerName: string | null }) {
     );
   }
 
-  return <span className="text-[13px] text-[#4a4a4a]">{handlerName}</span>;
+  return <span className="text-[13px] text-[#4a4a4a]">{advisorName}</span>;
 }
 
 export type AdminApplicationsTableClientProps = {
@@ -61,7 +61,7 @@ export type AdminApplicationsTableClientProps = {
   status: AdminApplicationStatusFilter;
   assignedTo: AdminApplicationsAssignedToFilter;
   schoolId: string;
-  handlerOptions: AdminHandlerOption[];
+  advisorOptions: AdminApplicationAdvisorOption[];
   schoolOptions: AdminSchoolOption[];
 };
 
@@ -74,7 +74,7 @@ export function AdminApplicationsTableClient({
   status,
   assignedTo,
   schoolId,
-  handlerOptions,
+  advisorOptions,
   schoolOptions,
 }: AdminApplicationsTableClientProps) {
   const pathname = usePathname() ?? "";
@@ -143,14 +143,14 @@ export function AdminApplicationsTableClient({
 
           <select
             name="assignedTo"
-            aria-label="Filter by assigned handler"
+            aria-label="Filter by assigned advisor"
             className={filterSelectClass}
             style={{ backgroundImage: SELECT_CHEVRON }}
             defaultValue={assignedTo}
           >
-            <option value="">All handlers</option>
+            <option value="">All advisors</option>
             <option value={ADMIN_APPLICATIONS_UNASSIGNED_FILTER}>Unassigned</option>
-            {handlerOptions.map((option) => (
+            {advisorOptions.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.label}
               </option>
@@ -188,7 +188,7 @@ export function AdminApplicationsTableClient({
                 "Student",
                 "Package",
                 "Universities",
-                "Handler",
+                "Advisor",
                 "Status",
                 "Deadline",
               ].map((heading) => (
@@ -253,7 +253,7 @@ export function AdminApplicationsTableClient({
                       {row.universitiesLabel}
                     </td>
                     <td className={`${cellBorder} px-4 py-3`}>
-                      <HandlerCell handlerName={row.handlerName} />
+                      <AdvisorCell advisorName={row.advisorName} />
                     </td>
                     <td className={`${cellBorder} px-4 py-3`}>
                       <StatusBadge status={row.status} />

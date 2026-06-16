@@ -6,7 +6,7 @@ export type ApplicationStatus =
 export const ADMIN_APPLICATION_STATUS_FILTER_OPTIONS = [
   { value: "", label: "All Status" },
   { value: "new", label: "New" },
-  { value: "assigned", label: "Assigned" },
+  { value: "scheduled", label: "Scheduled" },
   { value: "in_progress", label: "In Progress" },
   { value: "submitted", label: "Submitted" },
   { value: "blocked", label: "Blocked" },
@@ -25,7 +25,7 @@ const VALID_STATUSES = new Set<string>(
 export const ADMIN_APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> =
   {
     new: "New",
-    assigned: "Assigned",
+    scheduled: "Scheduled",
     in_progress: "In Progress",
     submitted: "Submitted",
     blocked: "Blocked",
@@ -35,8 +35,8 @@ export function adminApplicationStatusPillClass(status: string): string {
   switch (status) {
     case "new":
       return "bg-[#FFF3E0] text-[#E67E22]";
-    case "assigned":
-      return "bg-[#f0f0f0] text-[#6a6a6a]";
+    case "scheduled":
+      return "bg-[#EDE7F6] text-[#5E35B1]";
     case "in_progress":
       return "bg-[#E3F2FD] text-[#3498DB]";
     case "submitted":
@@ -53,6 +53,8 @@ export function parseAdminApplicationStatusParam(
 ): AdminApplicationStatusFilter {
   const value =
     typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
-  if (!value || !VALID_STATUSES.has(value)) return "";
+  if (!value) return "";
+  if (value === "assigned") return "scheduled";
+  if (!VALID_STATUSES.has(value)) return "";
   return value as AdminApplicationStatusFilter;
 }

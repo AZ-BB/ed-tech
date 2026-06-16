@@ -11,6 +11,7 @@ export type AdminApplicationExportRow = {
   createdAt: string;
   updatedAt: string;
   submittedAt: string;
+  scheduledAt: string;
   assignedAt: string;
   inProgressAt: string;
   blockedAt: string;
@@ -23,8 +24,8 @@ export type AdminApplicationExportRow = {
   schoolName: string;
   schoolCode: string;
   schoolCountry: string;
-  handlerName: string;
-  handlerEmail: string;
+  advisorName: string;
+  advisorEmail: string;
   planName: string;
   planPrice: string;
   planUniversitiesCount: string;
@@ -102,13 +103,14 @@ type AppExportRaw = {
   awards: string | null;
   status: string | null;
   submitted_at: string | null;
+  scheduled_at: string | null;
   assigned_at: string | null;
   in_progress_at: string | null;
   blocked_at: string | null;
   created_at: string | null;
   updated_at: string | null;
   applications_plans: PlanEmbed;
-  handlers: PersonEmbed;
+  advisors: PersonEmbed;
   schools: SchoolEmbed;
   student_profiles: StudentEmbed;
 };
@@ -163,7 +165,7 @@ function statusLabel(status: string | null | undefined): string {
 
 function mapApplicationExportRow(row: AppExportRaw): AdminApplicationExportRow {
   const profile = firstEmbed(row.student_profiles);
-  const handler = firstEmbed(row.handlers);
+  const advisor = firstEmbed(row.advisors);
   const school = firstEmbed(row.schools);
   const plan = firstEmbed(row.applications_plans);
 
@@ -179,7 +181,7 @@ function mapApplicationExportRow(row: AppExportRaw): AdminApplicationExportRow {
     ? getCountryNameByAlpha2(school.country_code) ?? school.country_code
     : "";
 
-  const handlerName = personName(handler?.first_name, handler?.last_name);
+  const advisorName = personName(advisor?.first_name, advisor?.last_name);
 
   return {
     id: String(row.id),
@@ -187,6 +189,7 @@ function mapApplicationExportRow(row: AppExportRaw): AdminApplicationExportRow {
     createdAt: formatDateTime(row.created_at),
     updatedAt: formatDateTime(row.updated_at),
     submittedAt: formatDateTime(row.submitted_at),
+    scheduledAt: formatDateTime(row.scheduled_at),
     assignedAt: formatDateTime(row.assigned_at),
     inProgressAt: formatDateTime(row.in_progress_at),
     blockedAt: formatDateTime(row.blocked_at),
@@ -199,8 +202,8 @@ function mapApplicationExportRow(row: AppExportRaw): AdminApplicationExportRow {
     schoolName,
     schoolCode: school?.code?.trim() ?? "",
     schoolCountry,
-    handlerName,
-    handlerEmail: handler?.email?.trim() ?? "",
+    advisorName,
+    advisorEmail: advisor?.email?.trim() ?? "",
     planName: plan?.name?.trim() ?? "",
     planPrice: plan != null ? formatNumber(plan.price) : "",
     planUniversitiesCount:
@@ -248,13 +251,14 @@ const APPLICATION_EXPORT_SELECT = `
   awards,
   status,
   submitted_at,
+  scheduled_at,
   assigned_at,
   in_progress_at,
   blocked_at,
   created_at,
   updated_at,
   applications_plans ( name, price, universities_count ),
-  handlers:assigned_to ( first_name, last_name, email ),
+  advisors:assigned_to ( first_name, last_name, email ),
   schools ( id, name, code, country_code ),
   student_profiles ( first_name, last_name, email, phone, grade )
 `;
