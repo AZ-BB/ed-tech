@@ -423,7 +423,7 @@ export async function fetchSchoolReports(options?: {
     .maybeSingle();
   schoolName = schoolRow?.name?.trim() || "School";
 
-  const teacherRpcId = teacherFilter || null;
+  const teacherRpcId = teacherFilter || undefined;
 
   const [totalStudentsRes, shortlistRpcRes, profilesRes] = await Promise.all([
     applyStudentTeacherFilter(
