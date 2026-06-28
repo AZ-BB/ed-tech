@@ -6,7 +6,24 @@ import type {
   AdvisorPayoutTableRow,
 } from "@/lib/advisor-payouts/types";
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
-import { createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  fetchActiveApplicationPlans,
+  hydrateApplicationsPlansEmbeds,
+} from "@/lib/applications-plans";
+import type { ApplicationPlanCatalogRow } from "@/lib/applications-plans";
+import { resolvePaymentFromEmailDisplay } from "@/lib/resend/application-payment-request-email";
+import {
+  mapApplicationToPaymentRequestOption,
+  type PaymentRequestApplicationRowInput,
+} from "@/lib/payment-request-application-option";
+import {
+  expireOverduePendingPayments,
+  resolvePaymentDisplayStatus,
+} from "@/lib/payment-request-utils";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
 
 type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -18,9 +35,24 @@ export type AdvisorPaymentRequestRow = {
   studentEmail: string;
   amount: number;
   status: string;
+  dueDate: string | null;
   sentAt: string | null;
   paidAt: string | null;
   createdAt: string | null;
+};
+
+export type AdvisorPaymentRequestApplicationOption = {
+  applicationId: number;
+  planId: number;
+  studentName: string;
+  studentFirstName: string;
+  studentEmail: string;
+  planPrice: number;
+  universitiesTotal: number;
+  totalPaid: number;
+  totalPaymentsAed: number;
+  hasPendingPaymentRequest: boolean;
+  label: string;
 };
 
 export type AdvisorPaymentsTab = "requests" | "payouts";
@@ -32,6 +64,11 @@ export type { AdvisorPayoutStatusFilter };
 export type AdvisorPaymentsPanelProps = {
   tab: AdvisorPaymentsTab;
   payoutPercentage: number;
+  advisorName: string;
+  advisorEmail: string;
+  fromEmailDisplay: string;
+  availablePlans: ApplicationPlanCatalogRow[];
+  paymentRequestApplications: AdvisorPaymentRequestApplicationOption[];
   paymentRequests: {
     rows: AdvisorPaymentRequestRow[];
     totalRows: number;
@@ -83,6 +120,7 @@ type PaymentRequestRowRaw = {
   id: number;
   amount: number;
   status: string | null;
+  due_date: string | null;
   created_at: string | null;
   paid_at: string | null;
   payment_request_sent_at: string | null;
@@ -108,10 +146,14 @@ type PaymentRequestRowRaw = {
       }[];
 };
 
-function mapPaymentRequestRow(row: PaymentRequestRowRaw): AdvisorPaymentRequestRow {
+function mapPaymentRequestRow(
+  row: PaymentRequestRowRaw,
+): AdvisorPaymentRequestRow {
   const application = firstEmbed(row.applications);
   const profile = application ? firstEmbed(application.student_profiles) : null;
-  const profileName = profile ? personName(profile.first_name, profile.last_name) : "";
+  const profileName = profile
+    ? personName(profile.first_name, profile.last_name)
+    : "";
   const studentName =
     profileName || application?.student_name?.trim() || "Student";
   const studentEmail =
@@ -124,7 +166,11 @@ function mapPaymentRequestRow(row: PaymentRequestRowRaw): AdvisorPaymentRequestR
     studentInitials: studentInitials(studentName),
     studentEmail,
     amount: row.amount,
-    status: row.status?.trim() || "pending",
+    status: resolvePaymentDisplayStatus({
+      status: row.status,
+      due_date: row.due_date,
+    }),
+    dueDate: row.due_date,
     sentAt: row.payment_request_sent_at,
     paidAt: row.paid_at,
     createdAt: row.created_at,
@@ -240,7 +286,10 @@ async function fetchAdvisorPaymentRequestsPage(
   const { page, limit, search, status } = options;
   const { from, to } = paginationRange(page, limit);
 
-  const assignedApplicationIds = await fetchAssignedApplicationIds(client, advisorId);
+  const assignedApplicationIds = await fetchAssignedApplicationIds(
+    client,
+    advisorId,
+  );
   if (assignedApplicationIds.length === 0) {
     return { rows: [], totalRows: 0 };
   }
@@ -256,7 +305,10 @@ async function fetchAdvisorPaymentRequestsPage(
       .or(`student_name.ilike.%${e}%,student_email.ilike.%${e}%`);
 
     if (appsErr) {
-      console.error("[fetchAdvisorPaymentRequestsPage] application search", appsErr);
+      console.error(
+        "[fetchAdvisorPaymentRequestsPage] application search",
+        appsErr,
+      );
       return { rows: [], totalRows: 0 };
     }
 
@@ -274,6 +326,7 @@ async function fetchAdvisorPaymentRequestsPage(
       id,
       amount,
       status,
+      due_date,
       created_at,
       paid_at,
       payment_request_sent_at,
@@ -331,6 +384,43 @@ async function fetchAdvisorPayoutPercentage(
   return data?.payout_percentage ?? 0;
 }
 
+type PaymentRequestApplicationRowRaw = PaymentRequestApplicationRowInput;
+
+async function fetchAdvisorPaymentRequestApplicationOptions(
+  client: DbClient,
+  advisorId: string,
+): Promise<AdvisorPaymentRequestApplicationOption[]> {
+  const { data, error } = await client
+    .from("applications")
+    .select(
+      `
+      id,
+      plan_id,
+      student_name,
+      student_email,
+      package_data,
+      updated_at,
+      applications_plans!applications_plan_id_fkey ( name, price, universities_count ),
+      student_profiles ( first_name, last_name, email ),
+      payments ( status, amount, due_date, payment_request_sent_at, payment_request_token )
+    `,
+    )
+    .eq("assigned_to", advisorId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("[fetchAdvisorPaymentRequestApplicationOptions]", error);
+    return [];
+  }
+
+  const rows = await hydrateApplicationsPlansEmbeds(
+    client,
+    (data ?? []) as unknown as PaymentRequestApplicationRowRaw[],
+  );
+
+  return rows.map(mapApplicationToPaymentRequestOption);
+}
+
 export async function fetchAdvisorPaymentsPanel(options: {
   tab: AdvisorPaymentsTab;
   paymentRequestsPage: number;
@@ -345,28 +435,59 @@ export async function fetchAdvisorPaymentsPanel(options: {
   const advisorId = await resolveCurrentAdvisorId(supabase);
   if (!advisorId) return null;
 
-  const assignedApplicationIds = await fetchAssignedApplicationIds(supabase, advisorId);
+  await expireOverduePendingPayments(await createSupabaseSecretClient());
 
-  const [paymentRequests, paymentRequestStatusCounts, payouts, payoutPercentage] =
-    await Promise.all([
-      fetchAdvisorPaymentRequestsPage(supabase, advisorId, {
-        page: options.paymentRequestsPage,
-        limit: options.paymentRequestsLimit,
-        search: options.paymentRequestsSearch,
-        status: options.paymentRequestsStatus,
-      }),
-      fetchAdvisorPaymentRequestStatusCounts(supabase, assignedApplicationIds),
-      fetchAdvisorPayoutsPage(supabase, advisorId, {
-        page: options.payoutsPage,
-        pageSize: options.payoutsLimit,
-        status: options.payoutsStatus,
-      }),
-      fetchAdvisorPayoutPercentage(supabase, advisorId),
-    ]);
+  const assignedApplicationIds = await fetchAssignedApplicationIds(
+    supabase,
+    advisorId,
+  );
+
+  const [
+    paymentRequests,
+    paymentRequestStatusCounts,
+    payouts,
+    payoutPercentage,
+    paymentRequestApplications,
+    availablePlans,
+    advisorProfile,
+  ] = await Promise.all([
+    fetchAdvisorPaymentRequestsPage(supabase, advisorId, {
+      page: options.paymentRequestsPage,
+      limit: options.paymentRequestsLimit,
+      search: options.paymentRequestsSearch,
+      status: options.paymentRequestsStatus,
+    }),
+    fetchAdvisorPaymentRequestStatusCounts(supabase, assignedApplicationIds),
+    fetchAdvisorPayoutsPage(supabase, advisorId, {
+      page: options.payoutsPage,
+      pageSize: options.payoutsLimit,
+      status: options.payoutsStatus,
+    }),
+    fetchAdvisorPayoutPercentage(supabase, advisorId),
+    fetchAdvisorPaymentRequestApplicationOptions(supabase, advisorId),
+    fetchActiveApplicationPlans(supabase),
+    supabase
+      .from("advisors")
+      .select("first_name, last_name, email")
+      .eq("id", advisorId)
+      .maybeSingle(),
+  ]);
+
+  const advisorName =
+    [advisorProfile.data?.first_name, advisorProfile.data?.last_name]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Advisor";
+  const advisorEmail = advisorProfile.data?.email?.trim() || "";
 
   return {
     tab: options.tab,
     payoutPercentage,
+    advisorName,
+    advisorEmail,
+    fromEmailDisplay: resolvePaymentFromEmailDisplay(),
+    availablePlans,
+    paymentRequestApplications,
     paymentRequests: {
       ...paymentRequests,
       page: options.paymentRequestsPage,

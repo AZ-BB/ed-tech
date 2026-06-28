@@ -1,11 +1,14 @@
 "use client";
 
+import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
 import type {
   AdvisorPaymentRequestStatusFilter,
   AdvisorPaymentsPanelProps,
   AdvisorPaymentsTab,
   AdvisorPayoutStatusFilter,
 } from "@/app/(protected)/advisor/payments/_lib/fetch-advisor-payments-page";
+import { SendPaymentRequestDialog } from "@/components/application-support/send-payment-request-dialog";
+import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -89,6 +92,11 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
 export function AdvisorPaymentsClient({
   tab: initialTab,
   payoutPercentage,
+  advisorName,
+  advisorEmail,
+  fromEmailDisplay,
+  availablePlans,
+  paymentRequestApplications,
   paymentRequests,
   payouts,
 }: AdvisorPaymentsPanelProps) {
@@ -98,6 +106,9 @@ export function AdvisorPaymentsClient({
   const [tab, setTab] = useState<AdvisorPaymentsTab>(initialTab);
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(paymentRequests.search);
+  const [requestPaymentOpen, setRequestPaymentOpen] = useState(false);
+  const [requestPaymentError, setRequestPaymentError] = useState<string | null>(null);
+  const [requestPaymentMessage, setRequestPaymentMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setTab(initialTab);
@@ -190,6 +201,27 @@ export function AdvisorPaymentsClient({
       ? "1 payment request"
       : `${paymentRequests.totalRows} payment requests`;
 
+  function handleOpenRequestPayment() {
+    setRequestPaymentError(null);
+    setRequestPaymentOpen(true);
+  }
+
+  function handleSendRequestPayment(input: SendPaymentRequestInput) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendAdvisorApplicationPaymentRequest(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setRequestPaymentOpen(false);
+      setRequestPaymentMessage(
+        `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
+      router.refresh();
+    });
+  }
+
   return (
     <div className={isPending ? "opacity-75" : ""} aria-busy={isPending}>
       <div className="mb-4 flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
@@ -238,31 +270,49 @@ export function AdvisorPaymentsClient({
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-light)] px-4 py-3.5">
-            <div className="relative">
-              <svg
-                className="pointer-events-none absolute left-[10px] top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[var(--text-hint)]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="search"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search payment requests..."
-                className="w-[240px] max-w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-[#faf9f4] py-[7px] pl-8 pr-3 text-[12.5px] text-[var(--text)] outline-none transition-colors focus:border-[var(--green-light)] focus:bg-white"
-              />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-light)] px-4 py-3.5">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <svg
+                  className="pointer-events-none absolute left-[10px] top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[var(--text-hint)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="search"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Search payment requests..."
+                  className="w-[240px] max-w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-[#faf9f4] py-[7px] pl-8 pr-3 text-[12.5px] text-[var(--text)] outline-none transition-colors focus:border-[var(--green-light)] focus:bg-white"
+                />
+              </div>
+              <span className="inline-flex rounded-full border border-[var(--border-light)] bg-[#faf9f4] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-mid)]">
+                {requestsCountLabel}
+              </span>
             </div>
-            <span className="inline-flex rounded-full border border-[var(--border-light)] bg-[#faf9f4] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-mid)]">
-              {requestsCountLabel}
-            </span>
+            {paymentRequestApplications.length > 0 ? (
+              <button
+                type="button"
+                onClick={handleOpenRequestPayment}
+                disabled={isPending}
+                className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3.5 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Request payment
+              </button>
+            ) : null}
           </div>
+
+          {requestPaymentMessage ? (
+            <p className="border-b border-[var(--border-light)] px-4 py-3 text-[12px] font-medium text-[var(--green-dark)]">
+              {requestPaymentMessage}
+            </p>
+          ) : null}
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] border-collapse text-[13px]">
@@ -272,6 +322,7 @@ export function AdvisorPaymentsClient({
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Application</th>
                   <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Due date</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Sent on</th>
                   <th className="px-4 py-3">Paid on</th>
@@ -281,7 +332,7 @@ export function AdvisorPaymentsClient({
                 {paymentRequests.rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-4 py-10 text-center text-[var(--text-light)]"
                     >
                       {paymentRequests.search.trim()
@@ -332,6 +383,9 @@ export function AdvisorPaymentsClient({
                         </td>
                         <td className="px-4 py-3 font-semibold text-[var(--text)]">
                           AED {row.amount.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-[var(--text-light)]">
+                          {formatDate(row.dueDate)}
                         </td>
                         <td className="px-4 py-3">
                           <span
@@ -444,7 +498,7 @@ export function AdvisorPaymentsClient({
                     </tr>
                   ) : (
                     payouts.rows.map((row) => {
-                      const detailHref = `/advisor/applications/${row.applicationId}?tab=payments`;
+                      const detailHref = `/advisor/applications/${row.applicationId}?tab=payouts`;
 
                       function openDetail() {
                         router.push(detailHref);
@@ -509,6 +563,21 @@ export function AdvisorPaymentsClient({
           </div>
         </div>
       )}
+
+      <SendPaymentRequestDialog
+        open={requestPaymentOpen}
+        onClose={() => {
+          if (!isPending) setRequestPaymentOpen(false);
+        }}
+        applicationOptions={paymentRequestApplications}
+        availablePlans={availablePlans}
+        senderName={advisorName}
+        senderEmail={advisorEmail}
+        fromEmailDisplay={fromEmailDisplay}
+        onSubmit={handleSendRequestPayment}
+        isSubmitting={isPending}
+        error={requestPaymentError}
+      />
     </div>
   );
 }

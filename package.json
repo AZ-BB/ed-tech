@@ -9,6 +9,7 @@
     "lint": "biome check",
     "test:risk": "node --experimental-strip-types --test src/lib/school-student-risk.test.ts",
     "format": "biome format --write",
+    "db:push": "npx supabase db push",
     "db:gen": "supabase gen types typescript --project-id \"cqtqhrvyakjiafaxpijd\" --schema public > src/database.types.ts",
     "db:seed:scholarships": "node scripts/seed-scholarship-discovery.mjs",
     "db:seed:scholarships:csv": "node scripts/seed-scholarships-from-csv.mjs",

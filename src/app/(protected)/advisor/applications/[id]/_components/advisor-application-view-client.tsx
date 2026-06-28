@@ -12,32 +12,20 @@ import {
 } from "@/actions/advisor-application-tasks";
 import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
 import {
-  addAdvisorApplicationChecklistDocument,
-  approveAdvisorApplicationChecklistDocument,
-  markAdvisorApplicationChecklistNotApplicable,
-  rejectAdvisorApplicationChecklistDocument,
-  requestAdvisorApplicationChecklistDocument,
-  uploadAdvisorApplicationChecklistDocument,
-} from "@/actions/advisor-application-checklist";
-import {
   toggleAdvisorApplicationPackageLifecycle,
   updateAdvisorApplicationPackageStats,
   updateAdvisorApplicationPackageUniversitiesTotal,
 } from "@/actions/advisor-application-package";
 import {
-  clearAdvisorUniversityDocRequirementFile,
   createAdvisorUniversityTarget,
-  linkAdvisorUniversityDocRequirementToChecklist,
   searchAdvisorUniversitiesForApplication,
-  updateAdvisorUniversityDocRequirementStatus,
   updateAdvisorUniversityTarget,
   updateAdvisorUniversityTargetDecision,
   updateAdvisorUniversityTargetStatus,
-  uploadAdvisorUniversityDocRequirement,
 } from "@/actions/advisor-application-university-targets";
 import {
   addAdvisorApplicationInternalNote,
-  updateAdvisorApplicationAdmissionStatus,
+  toggleAdvisorStudentFlag,
   updateAdvisorApplicationStatus,
 } from "@/actions/advisor-applications";
 import {
@@ -46,7 +34,7 @@ import {
   type ApplicationViewConfig,
   type ApplicationDetailTab,
 } from "@/components/application-support/application-view-client";
-import type { ApplicationDetailPayload } from "@/lib/application-detail-mapper";
+import type { AdvisorApplicationDetailPayload } from "../_lib/fetch-advisor-application-detail";
 import type { StudentActivityLogsPanelProps } from "@/lib/student-activity-logs";
 
 const ADVISOR_CONFIG: ApplicationViewConfig = {
@@ -55,23 +43,21 @@ const ADVISOR_CONFIG: ApplicationViewConfig = {
   canAssignAdvisor: false,
   showStudentAdminLink: false,
   showSchoolAdminLink: false,
+  showProfileTab: false,
   notesSub: "Internal notes for this application case",
-  showPayoutSummary: true,
+  activitySub: "Advisor actions recorded for this application case",
+  showPayoutsTab: true,
+  payoutsTabVariant: "advisor",
+  blockPaymentRequestIfPending: true,
+  showHeaderQuickActions: true,
+  documentsPortal: "advisor",
 };
 
 const ADVISOR_ACTIONS: ApplicationViewActions = {
   updateStatus: updateAdvisorApplicationStatus,
-  updateAdmissionStatus: updateAdvisorApplicationAdmissionStatus,
   addInternalNote: addAdvisorApplicationInternalNote,
   sendPaymentRequest: sendAdvisorApplicationPaymentRequest,
-  checklist: {
-    requestDocument: requestAdvisorApplicationChecklistDocument,
-    approveDocument: approveAdvisorApplicationChecklistDocument,
-    rejectDocument: rejectAdvisorApplicationChecklistDocument,
-    markNotApplicable: markAdvisorApplicationChecklistNotApplicable,
-    addDocument: addAdvisorApplicationChecklistDocument,
-    uploadDocument: uploadAdvisorApplicationChecklistDocument,
-  },
+  toggleStudentFlag: toggleAdvisorStudentFlag,
   calls: {
     logCall: logAdvisorApplicationCall,
     updateCall: updateAdvisorApplicationCall,
@@ -93,15 +79,11 @@ const ADVISOR_ACTIONS: ApplicationViewActions = {
     updateTarget: updateAdvisorUniversityTarget,
     updateTargetStatus: updateAdvisorUniversityTargetStatus,
     updateTargetDecision: updateAdvisorUniversityTargetDecision,
-    updateDocRequirementStatus: updateAdvisorUniversityDocRequirementStatus,
-    uploadDocRequirement: uploadAdvisorUniversityDocRequirement,
-    linkDocRequirementToChecklist: linkAdvisorUniversityDocRequirementToChecklist,
-    clearDocRequirementFile: clearAdvisorUniversityDocRequirementFile,
   },
 };
 
 export type AdvisorApplicationViewClientProps = {
-  payload: ApplicationDetailPayload;
+  payload: AdvisorApplicationDetailPayload;
   activityLogsPanel: StudentActivityLogsPanelProps;
   initialTab?: ApplicationDetailTab;
 };
@@ -118,6 +100,8 @@ export function AdvisorApplicationViewClient({
       initialTab={initialTab}
       config={ADVISOR_CONFIG}
       actions={ADVISOR_ACTIONS}
+      applicationPayouts={payload.applicationPayouts}
+      paymentRequestContext={payload.paymentRequestContext}
     />
   );
 }

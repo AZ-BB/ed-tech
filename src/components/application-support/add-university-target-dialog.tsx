@@ -78,25 +78,6 @@ export function AddUniversityTargetDialog({
     setSearchResults([]);
   }
 
-  function updateDocumentName(index: number, value: string) {
-    setForm((prev) => {
-      const next = [...prev.documentNames];
-      next[index] = value;
-      return { ...prev, documentNames: next };
-    });
-  }
-
-  function addDocumentRow() {
-    setForm((prev) => ({ ...prev, documentNames: [...prev.documentNames, ""] }));
-  }
-
-  function removeDocumentRow(index: number) {
-    setForm((prev) => ({
-      ...prev,
-      documentNames: prev.documentNames.filter((_, i) => i !== index),
-    }));
-  }
-
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSubmit(form);
@@ -275,45 +256,6 @@ export function AddUniversityTargetDialog({
             className={`${universityDialogInputClassName} min-h-[80px] resize-y`}
             disabled={isSubmitting}
           />
-        </div>
-
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className={universityDialogLabelClassName}>Documents needed</span>
-            <button
-              type="button"
-              onClick={addDocumentRow}
-              disabled={isSubmitting}
-              className="cursor-pointer text-[12px] font-semibold text-[var(--green-dark)] hover:underline disabled:opacity-60"
-            >
-              + Add document
-            </button>
-          </div>
-          <div className="space-y-2">
-            {form.documentNames.map((name, index) => (
-              <div key={`doc-${index}`} className="flex gap-2">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(event) => updateDocumentName(index, event.target.value)}
-                  placeholder="e.g. Personal statement"
-                  className={universityDialogInputClassName}
-                  disabled={isSubmitting}
-                />
-                {form.documentNames.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => removeDocumentRow(index)}
-                    disabled={isSubmitting}
-                    className="shrink-0 cursor-pointer rounded-[8px] border border-[#e0deda] px-2.5 text-[12px] text-[#7a7a7a] hover:bg-[#f5f4f0] disabled:opacity-60"
-                    aria-label="Remove document"
-                  >
-                    Remove
-                  </button>
-                ) : null}
-              </div>
-            ))}
-          </div>
         </div>
       </form>
     </UniversityTargetDialogShell>

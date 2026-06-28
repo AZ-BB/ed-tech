@@ -32,6 +32,8 @@ const LEGACY_DB_STATUS_TO_FILTER: Record<string, SchoolApplicationFilterStatus> 
     new: "considering",
     assigned: "shortlisted",
     scheduled: "shortlisted",
+    payment_in_progress: "preparing_application",
+    payment_completed: "preparing_application",
     in_progress: "preparing_application",
     submitted: "submitted",
     blocked: "rejected",

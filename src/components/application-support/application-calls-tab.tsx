@@ -52,6 +52,8 @@ type ApplicationCallsTabProps = {
   studentName: string;
   calls: ApplicationCallRow[];
   actions: ApplicationCallsActions;
+  onCreateOpenChange: (open: boolean) => void;
+  isCreatePending: boolean;
 };
 
 const SELECT_CHEVRON =
@@ -77,12 +79,12 @@ export function ApplicationCallsTab({
   studentName,
   calls,
   actions,
+  onCreateOpenChange,
+  isCreatePending,
 }: ApplicationCallsTabProps) {
   const router = useRouter();
-  const [createOpen, setCreateOpen] = useState(false);
   const [editingCall, setEditingCall] = useState<ApplicationCallRow | null>(null);
   const [listError, setListError] = useState<string | null>(null);
-  const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -90,37 +92,6 @@ export function ApplicationCallsTab({
     () => (editingCall ? callToFormData(editingCall) : null),
     [editingCall],
   );
-
-  function handleLogCall(form: LogApplicationCallFormData) {
-    setCreateError(null);
-    const durationMinutes = Number.parseInt(form.durationMinutes.trim(), 10);
-
-    startTransition(async () => {
-      const result = await actions.logCall({
-        applicationId: String(applicationId),
-        callType: form.callType,
-        durationMinutes,
-        callDate: form.callDate,
-        status: form.status,
-        outcome: form.outcome || null,
-        summary: form.summary.trim() || null,
-        createFollowUpTask: form.createFollowUpTask,
-        followUpTaskTitle: form.createFollowUpTask
-          ? form.followUpTaskTitle.trim() || null
-          : null,
-        followUpTaskDueDate: form.createFollowUpTask
-          ? form.followUpTaskDueDate.trim() || null
-          : null,
-      });
-
-      if (!result.ok) {
-        setCreateError(result.error);
-        return;
-      }
-      setCreateOpen(false);
-      router.refresh();
-    });
-  }
 
   function handleEditCall(form: LogApplicationCallFormData) {
     if (!editingCall) return;
@@ -188,10 +159,9 @@ export function ApplicationCallsTab({
         actions={
           <button
             type="button"
-            disabled={isPending}
+            disabled={isPending || isCreatePending}
             onClick={() => {
-              setCreateError(null);
-              setCreateOpen(true);
+              onCreateOpenChange(true);
             }}
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -299,18 +269,6 @@ export function ApplicationCallsTab({
           </div>
         )}
       </SchoolStudentPanel>
-
-      <LogApplicationCallDialog
-        open={createOpen}
-        mode="create"
-        studentName={studentName}
-        onClose={() => {
-          if (!isPending) setCreateOpen(false);
-        }}
-        onSubmit={handleLogCall}
-        isSubmitting={isPending}
-        error={createError}
-      />
 
       <LogApplicationCallDialog
         open={editingCall != null}

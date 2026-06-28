@@ -11,7 +11,7 @@ export type AdvisorPortalApplicationsPanelProps = AdminAdvisorApplicationsPanelP
 
 export async function fetchAdvisorPortalApplicationsPanel(
   status: ReturnType<typeof parseAdvisorApplicationStatusFilter>,
-  options: { page: number; limit: number },
+  options: { page: number; limit: number; search?: string },
 ): Promise<AdvisorPortalApplicationsPanelProps | null> {
   const supabase = await createSupabaseServerClient();
   const advisorId = await resolveCurrentAdvisorId(supabase);
@@ -20,6 +20,7 @@ export async function fetchAdvisorPortalApplicationsPanel(
   return fetchAdvisorApplicationsPanel(advisorId, status, {
     page: options.page,
     limit: options.limit,
+    search: options.search,
     client: supabase,
   });
 }

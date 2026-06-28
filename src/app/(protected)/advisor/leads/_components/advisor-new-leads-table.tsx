@@ -1,9 +1,16 @@
 "use client";
 
+import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
 import type { AdvisorNewLeadsPanelProps } from "@/app/(protected)/advisor/leads/_lib/fetch-advisor-new-leads-page";
-import { adminApplicationStatusPillClass } from "@/app/(protected)/admin/applications/_lib/application-status-labels";
+import { useAdvisorStudentApplicationNavigation } from "@/app/(protected)/advisor/_lib/use-advisor-student-application-navigation";
+import {
+  SendPaymentRequestDialog,
+  type SendPaymentRequestApplicationOption,
+} from "@/components/application-support/send-payment-request-dialog";
+import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
+import { Send } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
@@ -26,12 +33,28 @@ export function AdvisorNewLeadsTable({
   page,
   limit,
   search,
+  availablePlans,
+  advisorName,
+  advisorEmail,
+  fromEmailDisplay,
+  studentApplicationOptions,
 }: AdvisorNewLeadsPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search);
+  const { handleStudentClick, applicationSelectDialog } =
+    useAdvisorStudentApplicationNavigation(studentApplicationOptions);
+  const [requestPaymentOpen, setRequestPaymentOpen] = useState(false);
+  const [selectedPaymentOption, setSelectedPaymentOption] =
+    useState<SendPaymentRequestApplicationOption | null>(null);
+  const [requestPaymentError, setRequestPaymentError] = useState<string | null>(
+    null,
+  );
+  const [requestPaymentMessage, setRequestPaymentMessage] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     setSearchInput(search);
@@ -63,6 +86,31 @@ export function AdvisorNewLeadsTable({
     return () => window.clearTimeout(handle);
   }, [searchInput, search, applySearch]);
 
+  function handleOpenRequestPayment(
+    option: SendPaymentRequestApplicationOption,
+  ) {
+    setRequestPaymentError(null);
+    setSelectedPaymentOption(option);
+    setRequestPaymentOpen(true);
+  }
+
+  function handleSendRequestPayment(input: SendPaymentRequestInput) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendAdvisorApplicationPaymentRequest(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setRequestPaymentOpen(false);
+      setSelectedPaymentOption(null);
+      setRequestPaymentMessage(
+        `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
+      router.refresh();
+    });
+  }
+
   return (
     <div
       className={`overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${isPending ? "opacity-75" : ""}`}
@@ -91,24 +139,29 @@ export function AdvisorNewLeadsTable({
         </div>
       </div>
 
+      {requestPaymentMessage ? (
+        <p className="border-b border-[var(--border-light)] px-4 py-3 text-[12px] font-medium text-[var(--green-dark)]">
+          {requestPaymentMessage}
+        </p>
+      ) : null}
+
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] border-collapse text-[13px]">
+        <table className="w-full min-w-[880px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-              <th className="px-4 py-3">Application</th>
-              <th className="px-4 py-3">Student</th>
-              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Student name</th>
+              <th className="px-4 py-3">Student email</th>
               <th className="px-4 py-3">School</th>
-              <th className="px-4 py-3">Package</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Submitted</th>
+              <th className="px-4 py-3">Date booked</th>
+              <th className="px-4 py-3">Meeting date</th>
+              <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {search.trim()
@@ -118,36 +171,29 @@ export function AdvisorNewLeadsTable({
               </tr>
             ) : (
               rows.map((row) => {
-                const detailHref = `/advisor/applications/${row.id}`;
-
-                function openDetail() {
-                  router.push(detailHref);
-                }
+                const canSendPayment =
+                  !row.paymentRequestOption.hasPendingPaymentRequest &&
+                  row.paymentRequestOption.studentEmail.trim().length > 0;
 
                 return (
                   <tr
                     key={row.id}
-                    className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
-                    onClick={openDetail}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openDetail();
-                      }
-                    }}
-                    tabIndex={0}
-                    role="link"
-                    aria-label={`View application for ${row.studentName}`}
+                    className="border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
                   >
-                    <td className="px-4 py-3 font-medium text-[var(--green-dark)]">
-                      #{row.id}
-                    </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5 text-[var(--text)]">
+                      <div className="flex items-center gap-2.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-bold text-[var(--green-dark)]">
                           {row.studentInitials}
                         </span>
-                        <span className="font-semibold">{row.studentName}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleStudentClick(row.studentId, row.studentName)
+                          }
+                          className="cursor-pointer text-left font-semibold text-[var(--green-dark)] transition-colors hover:text-[var(--green)] hover:underline"
+                        >
+                          {row.studentName}
+                        </button>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[var(--text-light)]">
@@ -156,18 +202,39 @@ export function AdvisorNewLeadsTable({
                     <td className="px-4 py-3 text-[var(--text-mid)]">
                       {row.schoolName}
                     </td>
-                    <td className="px-4 py-3 text-[var(--text)]">
-                      {row.packageLabel}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${adminApplicationStatusPillClass(row.status)}`}
-                      >
-                        {row.statusLabel}
-                      </span>
+                    <td className="px-4 py-3 text-[var(--text-light)]">
+                      {formatWhen(row.dateBooked)}
                     </td>
                     <td className="px-4 py-3 text-[var(--text-light)]">
-                      {formatWhen(row.createdAt)}
+                      {formatWhen(row.meetingDate)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        disabled={isPending || !canSendPayment}
+                        aria-label={
+                          row.paymentRequestOption.hasPendingPaymentRequest
+                            ? "Payment request pending"
+                            : "Send payment request"
+                        }
+                        title={
+                          row.paymentRequestOption.hasPendingPaymentRequest
+                            ? "A payment request is already pending for this application"
+                            : !row.paymentRequestOption.studentEmail.trim()
+                              ? "Student email is required to send a payment request"
+                              : "Send payment request"
+                        }
+                        onClick={() =>
+                          handleOpenRequestPayment(row.paymentRequestOption)
+                        }
+                        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--green-dark)] transition-colors hover:bg-[var(--green-bg)] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Send
+                          className="h-4 w-4"
+                          strokeWidth={2.25}
+                          aria-hidden
+                        />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -187,6 +254,28 @@ export function AdvisorNewLeadsTable({
           limitParam="leadsLimit"
         />
       </div>
+
+      {selectedPaymentOption ? (
+        <SendPaymentRequestDialog
+          open={requestPaymentOpen}
+          onClose={() => {
+            if (!isPending) {
+              setRequestPaymentOpen(false);
+              setSelectedPaymentOption(null);
+            }
+          }}
+          fixedApplication={selectedPaymentOption}
+          availablePlans={availablePlans}
+          senderName={advisorName}
+          senderEmail={advisorEmail}
+          fromEmailDisplay={fromEmailDisplay}
+          onSubmit={handleSendRequestPayment}
+          isSubmitting={isPending}
+          error={requestPaymentError}
+        />
+      ) : null}
+
+      {applicationSelectDialog}
     </div>
   );
 }

@@ -7,6 +7,8 @@ export const ADMIN_APPLICATION_STATUS_FILTER_OPTIONS = [
   { value: "", label: "All Status" },
   { value: "new", label: "New" },
   { value: "scheduled", label: "Scheduled" },
+  { value: "payment_in_progress", label: "Payment in Progress" },
+  { value: "payment_completed", label: "Payment Completed" },
   { value: "in_progress", label: "In Progress" },
   { value: "submitted", label: "Submitted" },
   { value: "blocked", label: "Blocked" },
@@ -26,6 +28,8 @@ export const ADMIN_APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> =
   {
     new: "New",
     scheduled: "Scheduled",
+    payment_in_progress: "Payment in Progress",
+    payment_completed: "Payment Completed",
     in_progress: "In Progress",
     submitted: "Submitted",
     blocked: "Blocked",
@@ -37,6 +41,10 @@ export function adminApplicationStatusPillClass(status: string): string {
       return "bg-[#FFF3E0] text-[#E67E22]";
     case "scheduled":
       return "bg-[#EDE7F6] text-[#5E35B1]";
+    case "payment_in_progress":
+      return "bg-[#FFF8E1] text-[#F57F17]";
+    case "payment_completed":
+      return "bg-[#E0F2F1] text-[#00796B]";
     case "in_progress":
       return "bg-[#E3F2FD] text-[#3498DB]";
     case "submitted":

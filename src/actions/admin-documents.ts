@@ -5,6 +5,7 @@ import {
   SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY,
 } from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
 import { assertAdminPermission } from "@/lib/assert-admin-permission";
+import { deliverStudentDocumentReminder } from "@/lib/send-student-document-reminder";
 import { normalizeChecklistStatus } from "@/lib/student-application-document-status";
 import {
   createSupabaseSecretClient,
@@ -81,17 +82,8 @@ export async function getAdminMyApplicationDocumentViewUrl(
   return getAdminStudentDocumentSignedUrl(secret, documentId);
 }
 
-function isDocumentMissingForReminder(
-  status: string,
-  storagePath: string | null,
-): boolean {
-  if (storagePath) return false;
-  return status !== "submitted";
-}
-
 /**
- * Placeholder for emailing the student via Resend. Validates access and missing-doc state;
- * wire `resend.emails.send` here when ready.
+ * Emails the student a reminder to upload a missing document.
  */
 export async function sendAdminDocumentReminder(
   documentId: string,
@@ -102,7 +94,12 @@ export async function sendAdminDocumentReminder(
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: doc, error: docErr } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const secret = await createSupabaseSecretClient();
+  const { data: doc, error: docErr } = await secret
     .from("student_my_application_documents")
     .select("id, student_id, display_name, status, storage_path")
     .eq("id", documentId)
@@ -112,13 +109,9 @@ export async function sendAdminDocumentReminder(
     return { error: "Document not found." };
   }
 
-  if (!isDocumentMissingForReminder(doc.status, doc.storage_path)) {
-    return { error: "This document is already uploaded." };
-  }
-
-  const { data: profile } = await supabase
+  const { data: profile } = await secret
     .from("student_profiles")
-    .select("email")
+    .select("email, first_name, last_name")
     .eq("id", doc.student_id)
     .maybeSingle();
 
@@ -126,9 +119,28 @@ export async function sendAdminDocumentReminder(
     return { error: "This student has no email on file." };
   }
 
-  // TODO: Resend — e.g. resend.emails.send({ from, to: profile.email, subject, html })
+  let requestedByName = "Univeera Admin";
+  if (user?.id) {
+    const { data: admin } = await secret
+      .from("admins")
+      .select("first_name, last_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    requestedByName =
+      [admin?.first_name, admin?.last_name].filter(Boolean).join(" ").trim() ||
+      requestedByName;
+  }
 
-  return { ok: true };
+  return deliverStudentDocumentReminder({
+    studentEmail: profile.email,
+    studentFirstName: profile.first_name,
+    studentLastName: profile.last_name,
+    documentDisplayName: doc.display_name,
+    documentStatus: doc.status,
+    documentStoragePath: doc.storage_path,
+    requestedByName,
+    requestedByRole: "admin",
+  });
 }
 
 export async function updateAdminStudentDocumentStatus(

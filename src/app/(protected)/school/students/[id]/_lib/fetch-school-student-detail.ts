@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { EssayWithComments } from "@/app/(protected)/student/my-applications/_lib/my-applications-types";
 import type { Database } from "@/database.types";
 import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
+import { fetchStudentPublicApplicationNotes } from "@/lib/application-internal-notes";
 import {
   parseSchoolStudentFollowUpStatus,
   pickLatestActivityIso,
@@ -111,6 +112,15 @@ export type SchoolStudentDetailPayload = {
     content: string;
     createdAt: string;
     authorLabel: string;
+  }[];
+  /** Public application support notes shared by admins/advisors. */
+  advisorNotes: {
+    id: string;
+    content: string;
+    authorName: string;
+    authorRole: "admin" | "advisor";
+    applicationId: number;
+    createdAt: string;
   }[];
   /** Counselor interaction log (`student_counselor_interactions`). */
   studentInteractions: {
@@ -231,6 +241,7 @@ export async function fetchSchoolStudentDetail(
     recommendationsRes,
     documents,
     followUpStatusRes,
+    advisorNotes,
   ] = await Promise.all([
     supabase
       .from("student_activities")
@@ -375,6 +386,7 @@ export async function fetchSchoolStudentDetail(
     supabase.rpc("school_student_follow_up_status", {
       p_student_id: studentId,
     }),
+    fetchStudentPublicApplicationNotes(supabase, studentId),
   ]);
 
   if (latestActErr) {
@@ -622,6 +634,7 @@ export async function fetchSchoolStudentDetail(
     shortlist,
     countries: countriesRes.data ?? [],
     studentNotes,
+    advisorNotes,
     studentInteractions,
     documents,
     essays,

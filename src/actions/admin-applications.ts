@@ -5,11 +5,11 @@ import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
-import type { Database } from "@/database.types";
 import {
-  APPLICATION_ADMISSION_STATUS_LABEL,
-  parseApplicationAdmissionStatus,
-} from "@/lib/application-admission-status";
+  buildApplicationSupportStatusTimestampPatch,
+} from "@/lib/application-support-status-transitions";
+import { parseApplicationNoteVisibility } from "@/lib/application-internal-notes";
+import type { Database } from "@/database.types";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -24,6 +24,8 @@ const UUID_RE =
 const VALID_STATUSES = new Set<string>([
   "new",
   "scheduled",
+  "payment_in_progress",
+  "payment_completed",
   "in_progress",
   "blocked",
   "submitted",
@@ -89,19 +91,8 @@ function statusLabel(status: ApplicationStatus): string {
 function buildStatusTimestampPatch(
   status: ApplicationStatus,
   now: string,
-): Partial<Database["public"]["Tables"]["applications"]["Update"]> {
-  switch (status) {
-    case "scheduled":
-      return { scheduled_at: now };
-    case "in_progress":
-      return { in_progress_at: now };
-    case "blocked":
-      return { blocked_at: now };
-    case "submitted":
-      return { submitted_at: now };
-    default:
-      return {};
-  }
+) {
+  return buildApplicationSupportStatusTimestampPatch(status, now);
 }
 
 async function insertApplicationActivityLog(input: {
@@ -198,74 +189,10 @@ export async function updateAdminApplicationStatus(
   return { ok: true };
 }
 
-export async function updateAdminApplicationAdmissionStatus(
-  applicationIdRaw: string,
-  admissionStatusRaw: string,
-): Promise<AdminApplicationActionResult> {
-  const access = await assertAdminAccess();
-  if (!access.ok) return access;
-
-  const applicationId = parseApplicationId(applicationIdRaw);
-  if (applicationId == null) {
-    return { ok: false, error: "Invalid application." };
-  }
-
-  const admissionStatus = parseApplicationAdmissionStatus(admissionStatusRaw);
-  if (!admissionStatus) {
-    return { ok: false, error: "Select a valid admission status." };
-  }
-
-  const secret = await createSupabaseSecretClient();
-  const { data: existing, error: fetchErr } = await secret
-    .from("applications")
-    .select("id, student_id, admission_status")
-    .eq("id", applicationId)
-    .maybeSingle();
-
-  if (fetchErr || !existing) {
-    console.error("[updateAdminApplicationAdmissionStatus] fetch", fetchErr);
-    return { ok: false, error: "Application not found." };
-  }
-
-  if (existing.admission_status === admissionStatus) {
-    return { ok: true };
-  }
-
-  const now = new Date().toISOString();
-  const { error: updateErr } = await secret
-    .from("applications")
-    .update({
-      admission_status: admissionStatus,
-      updated_at: now,
-    })
-    .eq("id", applicationId);
-
-  if (updateErr) {
-    console.error("[updateAdminApplicationAdmissionStatus] update", updateErr);
-    return { ok: false, error: "Could not update admission status." };
-  }
-
-  const fromLabel =
-    APPLICATION_ADMISSION_STATUS_LABEL[
-      (existing.admission_status ?? "pending") as keyof typeof APPLICATION_ADMISSION_STATUS_LABEL
-    ] ?? "Pending";
-  const toLabel = APPLICATION_ADMISSION_STATUS_LABEL[admissionStatus];
-
-  await insertApplicationActivityLog({
-    applicationId,
-    studentId: existing.student_id,
-    adminId: access.userId,
-    action: "application_admission_status_updated",
-    message: `${access.actorName} changed application #${applicationId} admission status from ${fromLabel} to ${toLabel}.`,
-  });
-
-  revalidateApplicationPaths(applicationId);
-  return { ok: true };
-}
-
 export async function addAdminApplicationInternalNote(
   applicationIdRaw: string,
   contentRaw: string,
+  visibilityRaw?: string,
 ): Promise<AdminApplicationActionResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -283,6 +210,8 @@ export async function addAdminApplicationInternalNote(
     return { ok: false, error: "Note is too long (max 8,000 characters)." };
   }
 
+  const visibility = parseApplicationNoteVisibility(visibilityRaw);
+
   const secret = await createSupabaseSecretClient();
   const { data: existing, error: fetchErr } = await secret
     .from("applications")
@@ -298,10 +227,12 @@ export async function addAdminApplicationInternalNote(
   const now = new Date().toISOString();
   const { error: insertErr } = await secret.from("application_internal_notes").insert({
     application_id: applicationId,
+    student_id: existing.student_id,
     author_user_id: access.userId,
     author_role: "admin",
     author_name: access.actorName,
     content,
+    visibility,
     created_at: now,
   });
 
@@ -315,15 +246,20 @@ export async function addAdminApplicationInternalNote(
     .update({ updated_at: now })
     .eq("id", applicationId);
 
+  const noteKind = visibility === "public" ? "public" : "internal";
   await insertApplicationActivityLog({
     applicationId,
     studentId: existing.student_id,
     adminId: access.userId,
     action: "application_internal_note_added",
-    message: `${access.actorName} added an internal note on application #${applicationId}.`,
+    message: `${access.actorName} added a ${noteKind} note on application #${applicationId}.`,
   });
 
   revalidateApplicationPaths(applicationId);
+  if (visibility === "public") {
+    revalidatePath(`/school/students/${existing.student_id}`);
+    revalidatePath(`/admin/users/students/${existing.student_id}`);
+  }
   return { ok: true };
 }
 

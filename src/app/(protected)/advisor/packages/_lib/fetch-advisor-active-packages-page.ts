@@ -4,6 +4,7 @@ import {
   resolveApplicationUniversitiesTotal,
 } from "@/lib/application-package-data";
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
+import { hydrateApplicationsPlansEmbeds } from "@/lib/applications-plans";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -16,6 +17,7 @@ type PaymentEmbed = {
 
 type ActivePackageRowRaw = {
   id: number;
+  plan_id: number;
   student_name: string | null;
   student_email: string | null;
   status: string | null;
@@ -154,11 +156,12 @@ async function fetchAdvisorActivePackagesPage(
     .select(
       `
       id,
+      plan_id,
       student_name,
       student_email,
       status,
       package_data,
-      applications_plans ( name, price, universities_count ),
+      applications_plans!applications_plan_id_fkey ( name, price, universities_count ),
       student_profiles ( first_name, last_name, email ),
       payments!inner ( amount, status, paid_at )
     `,
@@ -166,7 +169,7 @@ async function fetchAdvisorActivePackagesPage(
     )
     .eq("assigned_to", advisorId)
     .eq("payments.status", "paid")
-    .in("status", ["in_progress", "submitted"])
+    .in("status", ["payment_completed", "in_progress", "submitted"])
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false });
 
@@ -182,9 +185,11 @@ async function fetchAdvisorActivePackagesPage(
     return { rows: [], totalRows: 0 };
   }
 
-  const rows = ((data ?? []) as unknown as ActivePackageRowRaw[]).map(
-    mapActivePackageRow,
+  const hydratedRows = await hydrateApplicationsPlansEmbeds(
+    client,
+    (data ?? []) as unknown as ActivePackageRowRaw[],
   );
+  const rows = hydratedRows.map(mapActivePackageRow);
 
   return { rows, totalRows: count ?? 0 };
 }

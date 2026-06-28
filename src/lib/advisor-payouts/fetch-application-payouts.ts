@@ -42,7 +42,10 @@ type PayoutRowRaw = {
   status: string | null;
   paid_at: string | null;
   created_at: string | null;
-  payments: { amount: number } | { amount: number }[] | null;
+  payments:
+    | { amount: number; paid_at: string | null }
+    | { amount: number; paid_at: string | null }[]
+    | null;
   advisors:
     | { first_name: string; last_name: string; email: string | null }
     | { first_name: string; last_name: string; email: string | null }[]
@@ -63,6 +66,7 @@ function mapApplicationPayoutRow(row: PayoutRowRaw): ApplicationPayoutRow {
     advisorName,
     paymentId: row.payment_id,
     paymentAmount: payment?.amount ?? 0,
+    paymentPaidAt: payment?.paid_at ?? null,
     applicationId: row.application_id,
     percentage: row.percentage,
     amount: row.amount,
@@ -82,7 +86,7 @@ const PAYOUT_SELECT = `
   status,
   paid_at,
   created_at,
-  payments ( amount ),
+  payments ( amount, paid_at ),
   advisors ( first_name, last_name, email )
 `;
 

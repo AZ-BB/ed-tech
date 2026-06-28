@@ -3,7 +3,10 @@
 import { LogoutConfirmDialog } from "@/components/logout-confirm-dialog";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+
+import { AdvisorNavSearch } from "./advisor-nav-search";
+import { AdvisorNotificationsButton } from "./advisor-notifications-button";
 
 const fontSans =
   '"DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"' as const;
@@ -468,6 +471,13 @@ export function AdvisorPortalShell({
                 {pageTitle}
               </h1>
             </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-[10px]">
+            <Suspense fallback={null}>
+              <AdvisorNavSearch />
+            </Suspense>
+            <AdvisorNotificationsButton />
           </div>
         </header>
 

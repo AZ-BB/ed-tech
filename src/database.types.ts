@@ -117,6 +117,67 @@ export type Database = {
         }
         Relationships: []
       }
+      advisor_payouts: {
+        Row: {
+          advisor_id: string
+          amount: number
+          application_id: number
+          created_at: string
+          id: number
+          paid_at: string | null
+          payment_id: number
+          percentage: number
+          status: Database["public"]["Enums"]["payout_status"]
+          updated_at: string
+        }
+        Insert: {
+          advisor_id: string
+          amount: number
+          application_id: number
+          created_at?: string
+          id?: number
+          paid_at?: string | null
+          payment_id: number
+          percentage: number
+          status?: Database["public"]["Enums"]["payout_status"]
+          updated_at?: string
+        }
+        Update: {
+          advisor_id?: string
+          amount?: number
+          application_id?: number
+          created_at?: string
+          id?: number
+          paid_at?: string | null
+          payment_id?: number
+          percentage?: number
+          status?: Database["public"]["Enums"]["payout_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_payouts_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_payouts_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_payouts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advisor_sessions: {
         Row: {
           advisor_id: string
@@ -229,67 +290,6 @@ export type Database = {
           },
         ]
       }
-      advisor_payouts: {
-        Row: {
-          advisor_id: string
-          amount: number
-          application_id: number
-          created_at: string
-          id: number
-          paid_at: string | null
-          payment_id: number
-          percentage: number
-          status: Database["public"]["Enums"]["payout_status"]
-          updated_at: string
-        }
-        Insert: {
-          advisor_id: string
-          amount: number
-          application_id: number
-          created_at?: string
-          id?: number
-          paid_at?: string | null
-          payment_id: number
-          percentage: number
-          status?: Database["public"]["Enums"]["payout_status"]
-          updated_at?: string
-        }
-        Update: {
-          advisor_id?: string
-          amount?: number
-          application_id?: number
-          created_at?: string
-          id?: number
-          paid_at?: string | null
-          payment_id?: number
-          percentage?: number
-          status?: Database["public"]["Enums"]["payout_status"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "advisor_payouts_advisor_id_fkey"
-            columns: ["advisor_id"]
-            isOneToOne: false
-            referencedRelation: "advisors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "advisor_payouts_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "advisor_payouts_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "payments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       advisor_tags: {
         Row: {
           created_at: string | null
@@ -346,6 +346,103 @@ export type Database = {
             columns: ["tag_id"]
             isOneToOne: false
             referencedRelation: "advisor_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisor_notification_reads: {
+        Row: {
+          advisor_id: string
+          notification_id: string
+          read_at: string
+        }
+        Insert: {
+          advisor_id: string
+          notification_id: string
+          read_at?: string
+        }
+        Update: {
+          advisor_id?: string
+          notification_id?: string
+          read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_notification_reads_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisor_notifications: {
+        Row: {
+          advisor_id: string
+          application_id: number | null
+          body: string | null
+          created_at: string
+          event_type: string
+          id: string
+          link_path: string | null
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+        }
+        Insert: {
+          advisor_id: string
+          application_id?: number | null
+          body?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          link_path?: string | null
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+        }
+        Update: {
+          advisor_id?: string
+          application_id?: number | null
+          body?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          link_path?: string | null
+          source_id?: string
+          source_table?: string
+          student_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_notifications_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_notifications_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_notifications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -790,6 +887,62 @@ export type Database = {
         }
         Relationships: []
       }
+      application_calls: {
+        Row: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          call_date: string
+          call_type: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          outcome: string | null
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          call_date: string
+          call_type: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          outcome?: string | null
+          status: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          application_id?: number
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          call_date?: string
+          call_type?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          outcome?: string | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_calls_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       application_checklist_documents: {
         Row: {
           application_id: number
@@ -852,6 +1005,117 @@ export type Database = {
           },
         ]
       }
+      application_internal_notes: {
+        Row: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          content: string
+          created_at: string
+          id: string
+          student_id: string
+          visibility: string
+        }
+        Insert: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          student_id: string
+          visibility?: string
+        }
+        Update: {
+          application_id?: number
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          student_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_internal_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_internal_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_tasks: {
+        Row: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          completed: boolean
+          created_at: string
+          due_date: string | null
+          id: string
+          priority: string
+          source_call_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: number
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: string
+          source_call_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: number
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: string
+          source_call_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_tasks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_tasks_source_call_id_fkey"
+            columns: ["source_call_id"]
+            isOneToOne: false
+            referencedRelation: "application_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       application_university_document_files: {
         Row: {
           checklist_document_id: string | null
@@ -894,7 +1158,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "application_university_document_files_checklist_document_id_fkey"
+            foreignKeyName: "application_university_document_file_checklist_document_id_fkey"
             columns: ["checklist_document_id"]
             isOneToOne: false
             referencedRelation: "application_checklist_documents"
@@ -939,7 +1203,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "application_university_document_requirements_university_target_id_fkey"
+            foreignKeyName: "application_university_document_requi_university_target_id_fkey"
             columns: ["university_target_id"]
             isOneToOne: false
             referencedRelation: "application_university_targets"
@@ -1020,170 +1284,14 @@ export type Database = {
           },
         ]
       }
-      application_internal_notes: {
-        Row: {
-          application_id: number
-          author_name: string
-          author_role: string
-          author_user_id: string | null
-          content: string
-          created_at: string
-          id: string
-        }
-        Insert: {
-          application_id: number
-          author_name: string
-          author_role: string
-          author_user_id?: string | null
-          content: string
-          created_at?: string
-          id?: string
-        }
-        Update: {
-          application_id?: number
-          author_name?: string
-          author_role?: string
-          author_user_id?: string | null
-          content?: string
-          created_at?: string
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "application_internal_notes_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      application_calls: {
-        Row: {
-          application_id: number
-          author_name: string
-          author_role: string
-          author_user_id: string | null
-          call_date: string
-          call_type: string
-          created_at: string
-          duration_minutes: number
-          id: string
-          outcome: string | null
-          status: string
-          summary: string | null
-          updated_at: string
-        }
-        Insert: {
-          application_id: number
-          author_name: string
-          author_role: string
-          author_user_id?: string | null
-          call_date: string
-          call_type: string
-          created_at?: string
-          duration_minutes: number
-          id?: string
-          outcome?: string | null
-          status: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Update: {
-          application_id?: number
-          author_name?: string
-          author_role?: string
-          author_user_id?: string | null
-          call_date?: string
-          call_type?: string
-          created_at?: string
-          duration_minutes?: number
-          id?: string
-          outcome?: string | null
-          status?: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "application_calls_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      application_tasks: {
-        Row: {
-          application_id: number
-          author_name: string
-          author_role: string
-          author_user_id: string | null
-          completed: boolean
-          created_at: string
-          due_date: string | null
-          id: string
-          priority: string
-          source_call_id: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          application_id: number
-          author_name: string
-          author_role: string
-          author_user_id?: string | null
-          completed?: boolean
-          created_at?: string
-          due_date?: string | null
-          id?: string
-          priority?: string
-          source_call_id?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          application_id?: number
-          author_name?: string
-          author_role?: string
-          author_user_id?: string | null
-          completed?: boolean
-          created_at?: string
-          due_date?: string | null
-          id?: string
-          priority?: string
-          source_call_id?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "application_tasks_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "application_tasks_source_call_id_fkey"
-            columns: ["source_call_id"]
-            isOneToOne: false
-            referencedRelation: "application_calls"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       applications: {
         Row: {
           act: number | null
           additional_notes: string | null
-          admission_status: Database["public"]["Enums"]["application_admission_status"]
           assigned_at: string | null
           assigned_to: string | null
           awards: string | null
           blocked_at: string | null
-          scheduled_at: string | null
           created_at: string | null
           curriculum:
             | Database["public"]["Enums"]["application_curriculum_type"]
@@ -1197,11 +1305,15 @@ export type Database = {
           in_progress_at: string | null
           inteended_fields: string
           open_to_realted_fields: boolean
+          package_data: Json
+          payment_completed_at: string | null
+          payment_in_progress_at: string | null
           plan_id: number
           preferences_universities: Json | null
           preferences_universities_notes: string | null
           preferred_uni_or_countries: string
           sat: number | null
+          scheduled_at: string | null
           school_id: string | null
           school_name: string | null
           status: Database["public"]["Enums"]["application_status"] | null
@@ -1212,17 +1324,14 @@ export type Database = {
           submitted_at: string | null
           toefl: number | null
           updated_at: string | null
-          package_data: Json
         }
         Insert: {
           act?: number | null
           additional_notes?: string | null
-          admission_status?: Database["public"]["Enums"]["application_admission_status"]
           assigned_at?: string | null
           assigned_to?: string | null
           awards?: string | null
           blocked_at?: string | null
-          scheduled_at?: string | null
           created_at?: string | null
           curriculum?:
             | Database["public"]["Enums"]["application_curriculum_type"]
@@ -1236,11 +1345,15 @@ export type Database = {
           in_progress_at?: string | null
           inteended_fields: string
           open_to_realted_fields?: boolean
+          package_data?: Json
+          payment_completed_at?: string | null
+          payment_in_progress_at?: string | null
           plan_id: number
           preferences_universities?: Json | null
           preferences_universities_notes?: string | null
           preferred_uni_or_countries: string
           sat?: number | null
+          scheduled_at?: string | null
           school_id?: string | null
           school_name?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
@@ -1251,17 +1364,14 @@ export type Database = {
           submitted_at?: string | null
           toefl?: number | null
           updated_at?: string | null
-          package_data?: Json
         }
         Update: {
           act?: number | null
           additional_notes?: string | null
-          admission_status?: Database["public"]["Enums"]["application_admission_status"]
           assigned_at?: string | null
           assigned_to?: string | null
           awards?: string | null
           blocked_at?: string | null
-          scheduled_at?: string | null
           created_at?: string | null
           curriculum?:
             | Database["public"]["Enums"]["application_curriculum_type"]
@@ -1275,11 +1385,15 @@ export type Database = {
           in_progress_at?: string | null
           inteended_fields?: string
           open_to_realted_fields?: boolean
+          package_data?: Json
+          payment_completed_at?: string | null
+          payment_in_progress_at?: string | null
           plan_id?: number
           preferences_universities?: Json | null
           preferences_universities_notes?: string | null
           preferred_uni_or_countries?: string
           sat?: number | null
+          scheduled_at?: string | null
           school_id?: string | null
           school_name?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
@@ -1290,7 +1404,6 @@ export type Database = {
           submitted_at?: string | null
           toefl?: number | null
           updated_at?: string | null
-          package_data?: Json
         }
         Relationships: [
           {
@@ -1460,12 +1573,15 @@ export type Database = {
           amount: number
           application_id: number
           created_at: string | null
+          custom_universities_count: number | null
+          due_date: string | null
           id: number
           paid_at: string | null
           payment_request_sent_at: string | null
           payment_request_token: string | null
           requested_by_advisor_id: string | null
           requested_by_type: string | null
+          requested_plan_id: number | null
           status: Database["public"]["Enums"]["payment_status"] | null
           stripe_checkout_session_id: string | null
           student_id: string
@@ -1475,12 +1591,15 @@ export type Database = {
           amount: number
           application_id: number
           created_at?: string | null
+          custom_universities_count?: number | null
+          due_date?: string | null
           id?: number
           paid_at?: string | null
           payment_request_sent_at?: string | null
           payment_request_token?: string | null
           requested_by_advisor_id?: string | null
           requested_by_type?: string | null
+          requested_plan_id?: number | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_checkout_session_id?: string | null
           student_id: string
@@ -1490,12 +1609,15 @@ export type Database = {
           amount?: number
           application_id?: number
           created_at?: string | null
+          custom_universities_count?: number | null
+          due_date?: string | null
           id?: number
           paid_at?: string | null
           payment_request_sent_at?: string | null
           payment_request_token?: string | null
           requested_by_advisor_id?: string | null
           requested_by_type?: string | null
+          requested_plan_id?: number | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_checkout_session_id?: string | null
           student_id?: string
@@ -1507,6 +1629,20 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_requested_by_advisor_id_fkey"
+            columns: ["requested_by_advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_requested_plan_id_fkey"
+            columns: ["requested_plan_id"]
+            isOneToOne: false
+            referencedRelation: "applications_plans"
             referencedColumns: ["id"]
           },
           {
@@ -2636,6 +2772,8 @@ export type Database = {
           created_at: string | null
           email: string
           first_name: string
+          flagged: boolean
+          flagged_by: string | null
           grade: string
           id: string
           is_active: boolean
@@ -2660,6 +2798,8 @@ export type Database = {
           created_at?: string | null
           email: string
           first_name: string
+          flagged?: boolean
+          flagged_by?: string | null
           grade: string
           id: string
           is_active?: boolean
@@ -2684,6 +2824,8 @@ export type Database = {
           created_at?: string | null
           email?: string
           first_name?: string
+          flagged?: boolean
+          flagged_by?: string | null
           grade?: string
           id?: string
           is_active?: boolean
@@ -2702,6 +2844,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "student_profiles_flagged_by_fkey"
+            columns: ["flagged_by"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "student_profiles_nationality_country_code_fkey"
             columns: ["nationality_country_code"]
@@ -3052,6 +3201,38 @@ export type Database = {
         Args: { p_limit?: number; p_school_id?: string }
         Returns: Json
       }
+      advisor_can_read_application: {
+        Args: { p_application_id: number }
+        Returns: boolean
+      }
+      advisor_can_read_school: {
+        Args: { p_school_id: string }
+        Returns: boolean
+      }
+      advisor_can_read_student_profile: {
+        Args: { p_student_id: string }
+        Returns: boolean
+      }
+      advisor_dashboard: {
+        Args: never
+        Returns: Json
+      }
+      advisor_students_table_rows: {
+        Args: never
+        Returns: {
+          deadline_risk_label: string
+          deadline_risk_level: string
+          destinations: Json
+          initial_meeting_date: string
+          latest_updated_at: string
+          management_status: string
+          package_purchased: string
+          school_name: string
+          student_email: string
+          student_id: string
+          student_name: string
+        }[]
+      }
       create_school_admin_notification: {
         Args: {
           p_body?: string
@@ -3062,6 +3243,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      current_advisor_id: { Args: never; Returns: string }
       current_school_admin_school_id: { Args: never; Returns: string }
       process_university_import_meta_batch: {
         Args: { p_limit?: number }
@@ -3095,7 +3277,7 @@ export type Database = {
         Returns: boolean
       }
       school_dashboard_shortlist_top_stats: {
-        Args: { p_top_n?: number; p_teacher_id?: string | null }
+        Args: { p_teacher_id?: string; p_top_n?: number }
         Returns: Json
       }
       school_student_follow_up_issue: {
@@ -3115,11 +3297,7 @@ export type Database = {
         Returns: number
       }
       school_students_needing_follow_up: {
-        Args: {
-          p_limit?: number
-          p_school_id?: string
-          p_teacher_id?: string | null
-        }
+        Args: { p_limit?: number; p_school_id?: string; p_teacher_id?: string }
         Returns: Json
       }
       student_application_profile_completion_pct: {
@@ -3157,11 +3335,6 @@ export type Database = {
         | "cancelled"
         | "completed"
         | "rescheduled"
-      application_admission_status:
-        | "pending"
-        | "accepted"
-        | "rejected"
-        | "waitlist"
       application_curriculum_type:
         | "ib"
         | "a_level"
@@ -3183,6 +3356,8 @@ export type Database = {
       application_status:
         | "new"
         | "scheduled"
+        | "payment_in_progress"
+        | "payment_completed"
         | "in_progress"
         | "blocked"
         | "submitted"
@@ -3191,25 +3366,6 @@ export type Database = {
       news_tag: "visa" | "deadline" | "update"
       payment_status: "pending" | "paid" | "failed"
       payout_status: "pending" | "paid" | "canceled"
-      university_doc_requirement_status:
-        | "not_started"
-        | "in_progress"
-        | "complete"
-        | "not_required"
-      university_target_decision:
-        | "not_submitted"
-        | "awaiting_decision"
-        | "offer_received"
-        | "rejected"
-        | "waitlist"
-      university_target_status:
-        | "shortlisted"
-        | "considering"
-        | "advisor_recommended"
-        | "documents_needed"
-        | "in_progress"
-        | "ready_to_submit"
-        | "submitted"
       scholarship_competition_type: "low" | "medium" | "high" | "very_high"
       scholarship_type:
         | "government"
@@ -3234,6 +3390,25 @@ export type Database = {
       student_status: "high_priority" | "at_risk" | "missing_docs"
       tuition_type: "full" | "partial"
       university_difficulty: "easy" | "medium" | "hard"
+      university_doc_requirement_status:
+        | "not_started"
+        | "in_progress"
+        | "complete"
+        | "not_required"
+      university_target_decision:
+        | "not_submitted"
+        | "awaiting_decision"
+        | "offer_received"
+        | "rejected"
+        | "waitlist"
+      university_target_status:
+        | "shortlisted"
+        | "considering"
+        | "advisor_recommended"
+        | "documents_needed"
+        | "in_progress"
+        | "ready_to_submit"
+        | "submitted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3377,12 +3552,6 @@ export const Constants = {
         "completed",
         "rescheduled",
       ],
-      application_admission_status: [
-        "pending",
-        "accepted",
-        "rejected",
-        "waitlist",
-      ],
       application_curriculum_type: [
         "ib",
         "a_level",
@@ -3406,6 +3575,8 @@ export const Constants = {
       application_status: [
         "new",
         "scheduled",
+        "payment_in_progress",
+        "payment_completed",
         "in_progress",
         "blocked",
         "submitted",
@@ -3415,28 +3586,6 @@ export const Constants = {
       news_tag: ["visa", "deadline", "update"],
       payment_status: ["pending", "paid", "failed"],
       payout_status: ["pending", "paid", "canceled"],
-      university_doc_requirement_status: [
-        "not_started",
-        "in_progress",
-        "complete",
-        "not_required",
-      ],
-      university_target_decision: [
-        "not_submitted",
-        "awaiting_decision",
-        "offer_received",
-        "rejected",
-        "waitlist",
-      ],
-      university_target_status: [
-        "shortlisted",
-        "considering",
-        "advisor_recommended",
-        "documents_needed",
-        "in_progress",
-        "ready_to_submit",
-        "submitted",
-      ],
       scholarship_competition_type: ["low", "medium", "high", "very_high"],
       scholarship_type: [
         "government",
@@ -3464,6 +3613,28 @@ export const Constants = {
       student_status: ["high_priority", "at_risk", "missing_docs"],
       tuition_type: ["full", "partial"],
       university_difficulty: ["easy", "medium", "hard"],
+      university_doc_requirement_status: [
+        "not_started",
+        "in_progress",
+        "complete",
+        "not_required",
+      ],
+      university_target_decision: [
+        "not_submitted",
+        "awaiting_decision",
+        "offer_received",
+        "rejected",
+        "waitlist",
+      ],
+      university_target_status: [
+        "shortlisted",
+        "considering",
+        "advisor_recommended",
+        "documents_needed",
+        "in_progress",
+        "ready_to_submit",
+        "submitted",
+      ],
     },
   },
 } as const

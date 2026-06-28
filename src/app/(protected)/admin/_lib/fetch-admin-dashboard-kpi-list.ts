@@ -21,6 +21,8 @@ export type AdminDashboardKpiListResult = {
 const ACTIVE_APPLICATION_STATUSES = [
   "new",
   "scheduled",
+  "payment_in_progress",
+  "payment_completed",
   "in_progress",
   "blocked",
 ] as const;

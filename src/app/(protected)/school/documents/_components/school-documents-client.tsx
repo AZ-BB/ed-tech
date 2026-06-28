@@ -174,9 +174,7 @@ export function SchoolDocumentsClient({
         return;
       }
       setRemindRow(null);
-      window.alert(
-        "Reminder queued. Email delivery via Resend will be enabled in a future update.",
-      );
+      window.alert("Reminder email sent to the student.");
     } finally {
       setRemindSending(false);
     }

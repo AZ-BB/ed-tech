@@ -4,9 +4,9 @@ import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
-import { INTAKE_DOC_SLOT_BY_LEGACY_TYPE } from "@/lib/application-checklist-defaults";
-import { APPLICATION_DOCUMENTS_BUCKET } from "@/lib/application-checklist-constants";
-import { ensureApplicationChecklistDocuments } from "@/lib/ensure-application-checklist-documents";
+import { STUDENT_MY_APPLICATIONS_BUCKET } from "@/lib/admin-student-document-constants";
+import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
+import { DEFAULT_APPLICATION_PACKAGE_DATA } from "@/lib/application-package-data";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
   recordStudentPlatformCompletionOnce,
@@ -143,7 +143,7 @@ export async function submitApplicationSupport(
 
   const { data: plan, error: planErr } = await secret
     .from("applications_plans")
-    .select("id")
+    .select("id, universities_count")
     .eq("universities_count", payload.planUniversitiesCount)
     .eq("is_active", true)
     .maybeSingle();
@@ -205,6 +205,10 @@ export async function submitApplicationSupport(
     awards: null,
     additional_notes,
     plan_id: plan.id,
+    package_data: {
+      ...DEFAULT_APPLICATION_PACKAGE_DATA,
+      universitiesTotal: plan.universities_count,
+    },
     status: "new",
   };
 
@@ -221,7 +225,17 @@ export async function submitApplicationSupport(
 
   const applicationId = appRow.id;
 
-  await ensureApplicationChecklistDocuments(secret, applicationId);
+  await ensureStudentApplicationDocuments(secret, studentId);
+
+  const INTAKE_DOC_SLOT_BY_TYPE: Record<
+    "transcript" | "english_test_result" | "personal_statement" | "cv",
+    string
+  > = {
+    transcript: "transcript",
+    english_test_result: "english_certificate",
+    cv: "cv_resume",
+    personal_statement: "other",
+  };
 
   type DocKey =
     | "transcript"
@@ -237,36 +251,34 @@ export async function submitApplicationSupport(
   ];
 
   async function uploadDoc(type: DocKey, file: File) {
-    const slotKey = INTAKE_DOC_SLOT_BY_LEGACY_TYPE[type];
+    const slotKey = INTAKE_DOC_SLOT_BY_TYPE[type];
     const buf = Buffer.from(await file.arrayBuffer());
     const safe = sanitizeFilename(file.name);
-    const path = `${studentId}/${applicationId}/${type}_${safe}`;
+    const path = `${studentId}/${slotKey}/${Date.now()}_${safe}`;
     const contentType = resolveContentType(file);
-    const { error: upErr } = await secret.storage.from(APPLICATION_DOCUMENTS_BUCKET).upload(path, buf, {
-      contentType,
-      upsert: true,
-    });
+    const { error: upErr } = await secret.storage
+      .from(STUDENT_MY_APPLICATIONS_BUCKET)
+      .upload(path, buf, {
+        contentType,
+        upsert: true,
+      });
     if (upErr) {
       console.error(upErr);
       throw new Error(`Upload failed for ${type}`);
     }
 
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
-    const url = `${base}/storage/v1/object/${APPLICATION_DOCUMENTS_BUCKET}/${path}`;
     const now = new Date().toISOString();
 
     const { error: docErr } = await secret
-      .from("application_checklist_documents")
+      .from("student_my_application_documents")
       .update({
-        url,
+        storage_path: path,
         file_name: file.name,
-        file_size: file.size,
-        file_type: contentType,
-        status: "under_review",
+        status: "submitted",
         uploaded_at: now,
         updated_at: now,
       })
-      .eq("application_id", applicationId)
+      .eq("student_id", studentId)
       .eq("slot_key", slotKey);
 
     if (docErr) {

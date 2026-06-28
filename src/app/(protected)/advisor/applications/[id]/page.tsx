@@ -45,6 +45,7 @@ export default async function AdvisorApplicationDetailPage({
       page: activityLogsPage,
       limit: activityLogsLimit,
       client: supabase,
+      audience: "advisor",
     },
   );
 

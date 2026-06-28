@@ -114,6 +114,18 @@ export async function fetchAdvisorSessionProfile(): Promise<
   };
 }
 
+export type AdvisorContext =
+  | { advisorId: string; email: string }
+  | { error: string };
+
+export async function requireAdvisorContext(): Promise<AdvisorContext> {
+  const access = await assertAdvisorAccess();
+  if (!access.ok) {
+    return { error: access.error };
+  }
+  return { advisorId: access.advisorId, email: access.email };
+}
+
 export async function assertAdvisorAccess(): Promise<AdvisorAccessResult> {
   const supabase = await createSupabaseServerClient();
   const {

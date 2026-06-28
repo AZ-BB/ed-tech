@@ -2,12 +2,21 @@
 
 import {
   removeAdminStudentDocument,
+  sendAdminDocumentReminder,
   updateAdminPredictedDocumentSlot,
   updateAdminStudentDocumentStatus,
 } from "@/actions/admin-documents";
+import {
+  removeAdvisorStudentDocument,
+  sendAdvisorDocumentReminder,
+  updateAdvisorPredictedDocumentSlot,
+  updateAdvisorStudentDocumentStatus,
+} from "@/actions/advisor-documents";
 import { adminStudentDocumentViewPath } from "@/lib/admin-student-document-view-path";
+import { advisorStudentDocumentViewPath } from "@/lib/advisor-student-document-view-path";
 import { uploadAdminStudentDocumentViaApi } from "@/lib/admin-student-document-upload-client";
-import { getSchoolMyApplicationDocumentViewUrl } from "@/actions/school-documents";
+import { uploadAdvisorStudentDocumentViaApi } from "@/lib/advisor-student-document-upload-client";
+import { getSchoolMyApplicationDocumentViewUrl, sendSchoolDocumentReminder } from "@/actions/school-documents";
 import { updateSchoolPredictedDocumentSlot } from "@/actions/school-students";
 import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
 import {
@@ -21,6 +30,7 @@ import {
   effectiveChecklistStatus,
   normalizeChecklistStatus,
 } from "@/lib/student-application-document-status";
+import { shouldShowDocumentRequestButton } from "@/lib/student-document-reminder";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -71,6 +81,9 @@ const selectSmClass =
 const actionBtnClass =
   "inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:pointer-events-none disabled:opacity-45";
 
+const requestDocBtnClass =
+  "inline-flex shrink-0 cursor-pointer items-center rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-2.5 py-1 font-[family-name:var(--font-dm-sans)] text-[11px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:pointer-events-none disabled:opacity-45";
+
 function formatUpdated(iso: string | null | undefined): string {
   if (!iso) return "";
   try {
@@ -88,14 +101,18 @@ export function SchoolStudentDocumentsTab({
 }: {
   studentId: string;
   initialDocuments: DocRow[];
-  portal?: "school" | "admin";
+  portal?: "school" | "admin" | "advisor";
   /** Required when `portal="admin"` — set from `AdminStudentDocumentsTab`. */
   canEditDocuments?: boolean;
 }) {
   const isAdminPortal = portal === "admin";
-  const canEditDocuments = isAdminPortal
-    ? (canEditDocumentsProp ?? false)
-    : true;
+  const isAdvisorPortal = portal === "advisor";
+  const isManagePortal = isAdminPortal || isAdvisorPortal;
+  const canEditDocuments = isAdvisorPortal
+    ? true
+    : isAdminPortal
+      ? (canEditDocumentsProp ?? false)
+      : true;
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -146,6 +163,12 @@ export function SchoolStudentDocumentsTab({
         showToast(res.error);
         return;
       }
+    } else if (isAdvisorPortal) {
+      const res = await updateAdvisorPredictedDocumentSlot(studentId, predDraft);
+      if ("error" in res) {
+        showToast(res.error);
+        return;
+      }
     } else {
       const res = await updateSchoolPredictedDocumentSlot(studentId, predDraft);
       if ("error" in res) {
@@ -155,12 +178,36 @@ export function SchoolStudentDocumentsTab({
     }
     showToast("Predicted saved.");
     router.refresh();
-  }, [canEditDocuments, isAdminPortal, predDraft, router, showToast, studentId]);
+  }, [
+    canEditDocuments,
+    isAdminPortal,
+    isAdvisorPortal,
+    predDraft,
+    router,
+    showToast,
+    studentId,
+  ]);
 
   const onChecklistStatusChange = async (doc: DocRow, value: string) => {
     const v = normalizeChecklistStatus(value);
     if (isAdminPortal) {
       const res = await updateAdminStudentDocumentStatus(doc.id, v);
+      if (!res.ok) {
+        showToast(res.error);
+        return;
+      }
+      const now = new Date().toISOString();
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === doc.id ? { ...d, status: v, updated_at: now } : d,
+        ),
+      );
+      router.refresh();
+      return;
+    }
+
+    if (isAdvisorPortal) {
+      const res = await updateAdvisorStudentDocumentStatus(doc.id, v);
       if (!res.ok) {
         showToast(res.error);
         return;
@@ -194,7 +241,7 @@ export function SchoolStudentDocumentsTab({
   const openDocument = (doc: DocRow) => {
     if (!doc.storage_path) {
       showToast(
-        isAdminPortal
+        isManagePortal
           ? "No file uploaded yet."
           : "No file yet — the student uploads from My applications.",
       );
@@ -203,6 +250,14 @@ export function SchoolStudentDocumentsTab({
     if (isAdminPortal) {
       window.open(
         adminStudentDocumentViewPath(doc.id),
+        "_blank",
+        "noopener,noreferrer",
+      );
+      return;
+    }
+    if (isAdvisorPortal) {
+      window.open(
+        advisorStudentDocumentViewPath(doc.id),
         "_blank",
         "noopener,noreferrer",
       );
@@ -233,13 +288,33 @@ export function SchoolStudentDocumentsTab({
 
     setBusyDocId(docId);
     try {
-      const res = await uploadAdminStudentDocumentViaApi(docId, file);
+      const res = isAdvisorPortal
+        ? await uploadAdvisorStudentDocumentViaApi(docId, file)
+        : await uploadAdminStudentDocumentViaApi(docId, file);
       if (!res.ok) {
         showToast(res.error);
         return;
       }
       showToast("File uploaded.");
       router.refresh();
+    } finally {
+      setBusyDocId(null);
+    }
+  };
+
+  const onRequestDocument = async (doc: DocRow) => {
+    setBusyDocId(doc.id);
+    try {
+      const res = isAdminPortal
+        ? await sendAdminDocumentReminder(doc.id)
+        : isAdvisorPortal
+          ? await sendAdvisorDocumentReminder(doc.id)
+          : await sendSchoolDocumentReminder(doc.id);
+      if ("error" in res) {
+        showToast(res.error);
+        return;
+      }
+      showToast("Reminder email sent.");
     } finally {
       setBusyDocId(null);
     }
@@ -256,7 +331,9 @@ export function SchoolStudentDocumentsTab({
     }
     setBusyDocId(doc.id);
     try {
-      const res = await removeAdminStudentDocument(doc.id);
+      const res = isAdvisorPortal
+        ? await removeAdvisorStudentDocument(doc.id)
+        : await removeAdminStudentDocument(doc.id);
       if (!res.ok) {
         showToast(res.error);
         return;
@@ -288,7 +365,7 @@ export function SchoolStudentDocumentsTab({
   const predVisual = predHasText ? "approved" : "missing";
   const predIconClass = iconWrapForVisual(predVisual);
 
-  const headerSubtitle = isAdminPortal
+  const headerSubtitle = isManagePortal
     ? canEditDocuments
       ? "Upload files on behalf of the student, change status, or remove uploaded files."
       : "View document checklist and uploaded files."
@@ -299,7 +376,7 @@ export function SchoolStudentDocumentsTab({
       value={predDraft}
       onChange={(e) => setPredDraft(e.target.value)}
       onBlur={() => void savePredictedText()}
-      readOnly={isAdminPortal && !canEditDocuments}
+      readOnly={isManagePortal && !canEditDocuments}
       placeholder="e.g. 40/45 IB or A*A*A"
       className="w-full min-w-[160px] rounded-[8px] border-[1.5px] border-[var(--border)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[12px] outline-none focus:border-[var(--green-light)] sm:w-[200px] disabled:bg-[#f8f8f6]"
     />
@@ -307,7 +384,7 @@ export function SchoolStudentDocumentsTab({
 
   return (
     <div className="mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
-      {isAdminPortal ? (
+      {isManagePortal ? (
         <input
           ref={fileInputRef}
           type="file"
@@ -346,7 +423,7 @@ export function SchoolStudentDocumentsTab({
                 <div className="text-[13px] font-semibold text-[var(--text)]">
                   {predictedDoc.display_name}{" "}
                   <span className="ml-1 inline-flex items-center rounded-[20px] border border-[var(--border)] bg-transparent px-1.5 py-px align-middle text-[10px] font-semibold whitespace-nowrap text-[var(--text-mid)] leading-snug">
-                    {isAdminPortal ? "Text only" : "School-only"}
+                    {isManagePortal ? "Text only" : "School-only"}
                   </span>
                 </div>
                 <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
@@ -355,11 +432,15 @@ export function SchoolStudentDocumentsTab({
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                {isAdminPortal ? (
+                {isManagePortal ? (
                   canEditDocuments ? (
-                    <AdminControl permission="edit_documents">
-                      {predictedInput}
-                    </AdminControl>
+                    isAdminPortal ? (
+                      <AdminControl permission="edit_documents">
+                        {predictedInput}
+                      </AdminControl>
+                    ) : (
+                      predictedInput
+                    )
                   ) : (
                     <span className="min-w-[160px] text-[12px] text-[var(--text)] sm:w-[200px]">
                       {predDraft.trim() || "—"}
@@ -385,6 +466,10 @@ export function SchoolStudentDocumentsTab({
             const iconCls = iconWrapForVisual(visual);
             const hasFile = !!doc.storage_path;
             const isBusy = busyDocId === doc.id;
+            const showRequestButton = shouldShowDocumentRequestButton(
+              doc.status,
+              doc.storage_path,
+            );
             const showSlotDescription =
               !!doc.description?.trim() &&
               !(
@@ -414,7 +499,7 @@ export function SchoolStudentDocumentsTab({
               </select>
             );
 
-            const uploadBtn = isAdminPortal && canEditDocuments ? (
+            const uploadBtn = isManagePortal && canEditDocuments ? (
               <button
                 type="button"
                 title={hasFile ? "Replace file" : "Upload file"}
@@ -437,7 +522,7 @@ export function SchoolStudentDocumentsTab({
             ) : null;
 
             const removeBtn =
-              isAdminPortal && canEditDocuments && hasFile ? (
+              isManagePortal && canEditDocuments && hasFile ? (
                 <button
                   type="button"
                   title="Remove file"
@@ -495,17 +580,35 @@ export function SchoolStudentDocumentsTab({
                     <span className="sd-pill-dot h-1.5 w-1.5 rounded-full" />
                     {label}
                   </span>
-                  {isAdminPortal ? (
+                  {isManagePortal ? (
                     canEditDocuments ? (
-                      <AdminControl permission="edit_documents">
-                        {statusSelect}
-                        {uploadBtn}
-                        {removeBtn}
-                      </AdminControl>
+                      isAdminPortal ? (
+                        <AdminControl permission="edit_documents">
+                          {statusSelect}
+                          {uploadBtn}
+                          {removeBtn}
+                        </AdminControl>
+                      ) : (
+                        <>
+                          {statusSelect}
+                          {uploadBtn}
+                          {removeBtn}
+                        </>
+                      )
                     ) : null
                   ) : (
                     statusSelect
                   )}
+                  {showRequestButton ? (
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => void onRequestDocument(doc)}
+                      className={requestDocBtnClass}
+                    >
+                      Request document
+                    </button>
+                  ) : null}
                   {hasFile ? (
                     <button
                       type="button"

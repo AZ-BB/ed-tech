@@ -10,10 +10,6 @@ export type UniversityDocRequirementStatus =
   Database["public"]["Enums"]["university_doc_requirement_status"];
 
 export const UNIVERSITY_TARGET_STATUS_OPTIONS = [
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "considering", label: "Considering" },
-  { value: "advisor_recommended", label: "Advisor recommended" },
-  { value: "documents_needed", label: "Documents needed" },
   { value: "in_progress", label: "In progress" },
   { value: "ready_to_submit", label: "Ready to submit" },
   { value: "submitted", label: "Submitted" },
@@ -108,12 +104,7 @@ export function universityTargetStatusPillClass(status: string): string {
     case "ready_to_submit":
       return "bg-[rgba(82,183,135,.13)] text-[#1B4332]";
     case "in_progress":
-    case "documents_needed":
       return "bg-[rgba(212,162,42,.14)] text-[#7a5d10]";
-    case "advisor_recommended":
-      return "bg-[rgba(155,89,182,.12)] text-[#5E35B1]";
-    case "considering":
-    case "shortlisted":
     default:
       return "bg-[#ECEAE5] text-[var(--text-mid)]";
   }

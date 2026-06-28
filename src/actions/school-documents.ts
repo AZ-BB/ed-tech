@@ -1,5 +1,7 @@
 "use server";
 
+import { deliverStudentDocumentReminder } from "@/lib/send-student-document-reminder";
+import { isDocumentMissingForReminder } from "@/lib/student-document-reminder";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -60,18 +62,6 @@ export async function getSchoolMyApplicationDocumentViewUrl(
   return { url: signed.signedUrl };
 }
 
-function isDocumentMissingForReminder(
-  status: string,
-  storagePath: string | null,
-): boolean {
-  if (storagePath) return false;
-  return status !== "submitted";
-}
-
-/**
- * Placeholder for emailing the student via Resend. Validates access and missing-doc state;
- * wire `resend.emails.send` here when ready.
- */
 export async function sendSchoolDocumentReminder(
   documentId: string,
 ): Promise<{ ok: true } | { error: string }> {
@@ -110,7 +100,7 @@ export async function sendSchoolDocumentReminder(
 
   const { data: profile } = await supabase
     .from("student_profiles")
-    .select("school_id, email")
+    .select("school_id, email, first_name, last_name")
     .eq("id", doc.student_id)
     .maybeSingle();
 
@@ -122,7 +112,26 @@ export async function sendSchoolDocumentReminder(
     return { error: "This student has no email on file." };
   }
 
-  // TODO: Resend — e.g. resend.emails.send({ from, to: profile.email, subject, html })
+  const { data: schoolAdmin } = await supabase
+    .from("school_admin_profiles")
+    .select("first_name, last_name")
+    .eq("id", user.id)
+    .maybeSingle();
 
-  return { ok: true };
+  const requestedByName =
+    [schoolAdmin?.first_name, schoolAdmin?.last_name]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Your school";
+
+  return deliverStudentDocumentReminder({
+    studentEmail: profile.email,
+    studentFirstName: profile.first_name,
+    studentLastName: profile.last_name,
+    documentDisplayName: doc.display_name,
+    documentStatus: doc.status,
+    documentStoragePath: doc.storage_path,
+    requestedByName,
+    requestedByRole: "school",
+  });
 }

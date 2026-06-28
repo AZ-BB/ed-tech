@@ -11,22 +11,32 @@ import {
   ADMIN_APPLICATION_STATUS_LABEL,
   adminApplicationStatusPillClass,
 } from "@/app/(protected)/admin/applications/_lib/application-status-labels";
-import {
-  APPLICATION_ADMISSION_STATUS_LABEL,
-  APPLICATION_ADMISSION_STATUS_OPTIONS,
-  applicationAdmissionStatusPillClass,
-} from "@/lib/application-admission-status";
 import type { ApplicationDetailPayload } from "@/lib/application-detail-mapper";
+import type { ApplicationNoteVisibility } from "@/lib/application-internal-notes";
+import type { PaymentRequestModalContext } from "@/lib/fetch-payment-request-modal-context";
+import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
+import { hasActivePendingPaymentRequest } from "@/lib/payment-request-utils";
 import type { StudentActivityLogsPanelProps } from "@/lib/student-activity-logs";
+import { parseAdminApplicationDetailTab } from "@/app/(protected)/admin/applications/[id]/_lib/parse-admin-application-detail-search-params";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
-
-import { AdminSendPaymentRequestDialog } from "@/app/(protected)/admin/applications/[id]/_components/admin-send-payment-request-dialog";
 import {
-  ApplicationChecklistDocumentsTab,
-  type ApplicationChecklistActions,
-} from "@/components/application-support/application-checklist-documents-tab";
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
+
+import { SendPaymentRequestDialog } from "@/components/application-support/send-payment-request-dialog";
+import { AddApplicationInternalNoteDialog } from "@/components/application-support/add-application-internal-note-dialog";
+import {
+  LogApplicationCallDialog,
+  type LogApplicationCallFormData,
+} from "@/components/application-support/log-application-call-dialog";
+import { AdminStudentDocumentsTab } from "@/app/(protected)/admin/users/students/[id]/_components/admin-student-documents-tab";
+import { AdvisorStudentDocumentsTab } from "@/app/(protected)/advisor/applications/[id]/_components/advisor-student-documents-tab";
 import {
   ApplicationCallsTab,
   type ApplicationCallsActions,
@@ -44,6 +54,7 @@ import {
   type ApplicationPackageActions,
 } from "@/components/application-support/application-package-tab";
 import { AdminApplicationPayoutsTab } from "@/app/(protected)/admin/applications/[id]/_components/admin-application-payouts-tab";
+import { AdvisorApplicationPayoutsTab } from "@/app/(protected)/advisor/applications/[id]/_components/advisor-application-payouts-tab";
 import { EditApplicationPackageDialog } from "@/components/application-support/edit-application-package-dialog";
 
 import type { ApplicationPayoutRow } from "@/lib/advisor-payouts/types";
@@ -72,21 +83,27 @@ export type ApplicationViewConfig = {
   canAssignAdvisor: boolean;
   showStudentAdminLink: boolean;
   showSchoolAdminLink: boolean;
+  showProfileTab?: boolean;
   notesSub?: string;
+  activitySub?: string;
   showPayoutSummary?: boolean;
   showPayoutsTab?: boolean;
+  payoutsTabVariant?: "admin" | "advisor";
+  blockPaymentRequestIfPending?: boolean;
+  showHeaderQuickActions?: boolean;
+  documentsPortal?: "admin" | "advisor";
 };
 
 export type ApplicationViewActions = {
   updateStatus: (applicationId: string, status: string) => Promise<ActionResult>;
-  updateAdmissionStatus: (
+  addInternalNote: (
     applicationId: string,
-    admissionStatus: string,
+    content: string,
+    visibility?: ApplicationNoteVisibility,
   ) => Promise<ActionResult>;
-  addInternalNote: (applicationId: string, content: string) => Promise<ActionResult>;
-  sendPaymentRequest: (applicationId: number, amountAed: number) => Promise<PaymentActionResult>;
+  sendPaymentRequest: (input: SendPaymentRequestInput) => Promise<PaymentActionResult>;
+  toggleStudentFlag?: (applicationId: string) => Promise<ActionResult>;
   assignAdvisor?: (applicationId: string, advisorId: string) => Promise<ActionResult>;
-  checklist: ApplicationChecklistActions;
   calls: ApplicationCallsActions;
   tasks: ApplicationTasksActions;
   package: ApplicationPackageActions;
@@ -101,6 +118,7 @@ export type ApplicationViewClientProps = {
   advisorOptions?: AdminApplicationAdvisorOption[];
   initialTab?: ApplicationDetailTab;
   applicationPayouts?: ApplicationPayoutRow[];
+  paymentRequestContext?: PaymentRequestModalContext | null;
 };
 
 const SELECT_CHEVRON =
@@ -108,6 +126,12 @@ const SELECT_CHEVRON =
 
 const headerSelectClass =
   "min-w-[140px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat py-[7px] pl-[10px] pr-9 text-[12px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
+
+const headerQuickActionOutlineClass =
+  "inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#e0deda] bg-white px-3 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)] disabled:cursor-not-allowed disabled:opacity-60";
+
+const headerQuickActionPrimaryClass =
+  "inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-[7px] text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
 
 const BASE_TAB_DEFS: { id: ApplicationDetailTab; label: string }[] = [
   { id: "intake", label: "Intake" },
@@ -183,24 +207,35 @@ function payoutStatusClass(status: string): string {
   return "bg-[#FFF3E0] text-[#E67E22]";
 }
 
+function resolveApplicationDetailTab(
+  rawTab: string | null,
+  config: ApplicationViewConfig,
+): ApplicationDetailTab {
+  const parsed = parseAdminApplicationDetailTab(rawTab ?? undefined);
+  if (parsed === "payouts" && !config.showPayoutsTab) return "payments";
+  if (parsed === "profile" && config.showProfileTab === false) return "intake";
+  return parsed;
+}
+
 export function ApplicationViewClient({
   payload,
   activityLogsPanel,
   config,
   actions,
   advisorOptions = [],
-  initialTab = "intake",
   applicationPayouts = [],
+  paymentRequestContext = null,
 }: ApplicationViewClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [tab, setTab] = useState<ApplicationDetailTab>(initialTab);
-  const [status, setStatus] = useState(payload.application.status);
-  const [admissionStatus, setAdmissionStatus] = useState(
-    payload.application.admissionStatus,
+  const [tab, setTab] = useState<ApplicationDetailTab>(() =>
+    resolveApplicationDetailTab(searchParams.get("tab"), config),
   );
+  const [status, setStatus] = useState(payload.application.status);
   const [newNoteContent, setNewNoteContent] = useState("");
+  const [newNoteVisibility, setNewNoteVisibility] =
+    useState<ApplicationNoteVisibility>("internal");
   const [advisorId, setAdvisorId] = useState(payload.advisor?.id ?? "");
   const [advisorName, setAdvisorName] = useState(payload.advisor?.name ?? "Unassigned");
   const [assignOpen, setAssignOpen] = useState(false);
@@ -216,18 +251,27 @@ export function ApplicationViewClient({
   const [paymentRequestError, setPaymentRequestError] = useState<string | null>(null);
   const [editPackageOpen, setEditPackageOpen] = useState(false);
   const [editPackageError, setEditPackageError] = useState<string | null>(null);
+  const [addNoteOpen, setAddNoteOpen] = useState(false);
+  const [addNoteError, setAddNoteError] = useState<string | null>(null);
+  const [logCallOpen, setLogCallOpen] = useState(false);
+  const [logCallError, setLogCallError] = useState<string | null>(null);
+  const [studentFlagged, setStudentFlagged] = useState(payload.student.flagged);
   const [isPending, startTransition] = useTransition();
 
-  const { application, plan, student, school, payments, internalNotes, checklistDocuments, universityTargets, calls, tasks, packageView, payoutSummary } =
+  const { application, plan, student, school, payments, internalNotes, studentDocuments, universityTargets, calls, tasks, packageView, payoutSummary } =
     payload;
 
   const tabDefs = useMemo(() => {
-    if (!config.showPayoutsTab) return BASE_TAB_DEFS;
-    const next = [...BASE_TAB_DEFS];
+    const profileVisible = config.showProfileTab !== false;
+    const base = profileVisible
+      ? BASE_TAB_DEFS
+      : BASE_TAB_DEFS.filter((tabDef) => tabDef.id !== "profile");
+    if (!config.showPayoutsTab) return base;
+    const next = [...base];
     const paymentsIndex = next.findIndex((tabDef) => tabDef.id === "payments");
     next.splice(paymentsIndex + 1, 0, { id: "payouts", label: "Payouts" });
     return next;
-  }, [config.showPayoutsTab]);
+  }, [config.showPayoutsTab, config.showProfileTab]);
 
   const planPrice = plan?.price ?? 0;
   const packageUniversitiesTotal = plan?.universitiesCount ?? packageView.universitiesTotal;
@@ -244,39 +288,40 @@ export function ApplicationViewClient({
   const remainingBalance = Math.max(0, planPrice - totalPaid);
   const hasStudentEmail =
     application.studentEmail.trim() !== "" && application.studentEmail !== "—";
+  const hasPendingPaymentRequest = useMemo(
+    () => hasActivePendingPaymentRequest(payments),
+    [payments],
+  );
+  const paymentRequestBlocked =
+    config.blockPaymentRequestIfPending === true && hasPendingPaymentRequest;
 
   useEffect(() => {
     setStatus(payload.application.status);
-    setAdmissionStatus(payload.application.admissionStatus);
     setAdvisorId(payload.advisor?.id ?? "");
     setAdvisorName(payload.advisor?.name ?? "Unassigned");
     setAssignSelection(payload.advisor?.id ?? ADMIN_APPLICATIONS_UNASSIGNED_FILTER);
+    setStudentFlagged(payload.student.flagged);
   }, [payload]);
 
   useEffect(() => {
-    if (initialTab === "payouts" && !config.showPayoutsTab) {
-      setTab("payments");
-      return;
-    }
-    setTab(initialTab);
-  }, [initialTab, config.showPayoutsTab]);
+    const fromUrl = resolveApplicationDetailTab(searchParams.get("tab"), config);
+    setTab((current) => (current === fromUrl ? current : fromUrl));
+  }, [searchParams, config.showPayoutsTab, config.showProfileTab]);
 
-  useEffect(() => {
-    const next = new URLSearchParams(searchParams.toString());
-    const currentTab = next.get("tab");
-
-    if (tab === "intake") {
-      if (!currentTab || currentTab === "intake") return;
-      next.delete("tab");
-      const q = next.toString();
+  const switchTab = useCallback(
+    (next: ApplicationDetailTab) => {
+      setTab(next);
+      const nextParams = new URLSearchParams(searchParams.toString());
+      if (next === "intake") {
+        nextParams.delete("tab");
+      } else {
+        nextParams.set("tab", next);
+      }
+      const q = nextParams.toString();
       router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-      return;
-    }
-
-    if (currentTab === tab) return;
-    next.set("tab", tab);
-    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-  }, [tab, pathname, router, searchParams]);
+    },
+    [pathname, router, searchParams],
+  );
 
   const ini = useMemo(() => {
     const parts = application.studentName.trim().split(/\s+/);
@@ -290,13 +335,6 @@ export function ApplicationViewClient({
     { lab: "Application #", val: String(application.id) },
     { lab: "Package", val: `${packageUniversitiesTotal} universities` },
     { lab: "Advisor", val: advisorName },
-    {
-      lab: "Admission",
-      val:
-        APPLICATION_ADMISSION_STATUS_LABEL[
-          admissionStatus as keyof typeof APPLICATION_ADMISSION_STATUS_LABEL
-        ] ?? admissionStatus,
-    },
     { lab: "Submitted", val: formatDate(application.submittedAt) },
     { lab: "Created", val: formatDate(application.createdAt) },
     { lab: "Updated", val: formatDateTime(application.updatedAt) },
@@ -331,19 +369,19 @@ export function ApplicationViewClient({
     setPaymentRequestOpen(true);
   }
 
-  function handleSendPaymentRequest(amountAed: number) {
+  function handleSendPaymentRequest(input: SendPaymentRequestInput) {
     setActionError(null);
     setPaymentRequestMessage(null);
     setPaymentRequestError(null);
     startTransition(async () => {
-      const result = await actions.sendPaymentRequest(application.id, amountAed);
+      const result = await actions.sendPaymentRequest(input);
       if (!result.ok) {
         setPaymentRequestError(result.error);
         return;
       }
       setPaymentRequestOpen(false);
       setPaymentRequestMessage(
-        `Payment request for ${amountAed.toLocaleString()} AED sent to ${result.email}.`,
+        `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
       );
       router.refresh();
     });
@@ -366,26 +404,6 @@ export function ApplicationViewClient({
     });
   }
 
-  function handleAdmissionStatusChange(nextAdmissionStatus: string) {
-    setActionError(null);
-    setNoteError(null);
-    const previous = admissionStatus;
-    setAdmissionStatus(nextAdmissionStatus);
-
-    startTransition(async () => {
-      const result = await actions.updateAdmissionStatus(
-        String(application.id),
-        nextAdmissionStatus,
-      );
-      if (!result.ok) {
-        setAdmissionStatus(previous);
-        setActionError(result.error);
-        return;
-      }
-      router.refresh();
-    });
-  }
-
   function handleAddNote() {
     setActionError(null);
     setNoteError(null);
@@ -396,12 +414,92 @@ export function ApplicationViewClient({
     }
 
     startTransition(async () => {
-      const result = await actions.addInternalNote(String(application.id), content);
+      const result = await actions.addInternalNote(
+        String(application.id),
+        content,
+        newNoteVisibility,
+      );
       if (!result.ok) {
         setNoteError(result.error);
         return;
       }
       setNewNoteContent("");
+      setNewNoteVisibility("internal");
+      router.refresh();
+    });
+  }
+
+  function handleAddNoteFromDialog(
+    content: string,
+    visibility: ApplicationNoteVisibility,
+  ) {
+    setActionError(null);
+    setAddNoteError(null);
+    if (!content) {
+      setAddNoteError("Note cannot be empty.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await actions.addInternalNote(
+        String(application.id),
+        content,
+        visibility,
+      );
+      if (!result.ok) {
+        setAddNoteError(result.error);
+        return;
+      }
+      setAddNoteOpen(false);
+      router.refresh();
+    });
+  }
+
+  function handleLogCall(form: LogApplicationCallFormData) {
+    setActionError(null);
+    setLogCallError(null);
+    const durationMinutes = Number.parseInt(form.durationMinutes.trim(), 10);
+
+    startTransition(async () => {
+      const result = await actions.calls.logCall({
+        applicationId: String(application.id),
+        callType: form.callType,
+        durationMinutes,
+        callDate: form.callDate,
+        status: form.status,
+        outcome: form.outcome || null,
+        summary: form.summary.trim() || null,
+        createFollowUpTask: form.createFollowUpTask,
+        followUpTaskTitle: form.createFollowUpTask
+          ? form.followUpTaskTitle.trim() || null
+          : null,
+        followUpTaskDueDate: form.createFollowUpTask
+          ? form.followUpTaskDueDate.trim() || null
+          : null,
+      });
+
+      if (!result.ok) {
+        setLogCallError(result.error);
+        return;
+      }
+      setLogCallOpen(false);
+      router.refresh();
+    });
+  }
+
+  function handleToggleStudentFlag() {
+    if (!actions.toggleStudentFlag) return;
+    setActionError(null);
+    const previous = studentFlagged;
+    setStudentFlagged(!previous);
+
+    startTransition(async () => {
+      const result = await actions.toggleStudentFlag!(String(application.id));
+      if (!result.ok) {
+        setStudentFlagged(previous);
+        setActionError(result.error);
+        return;
+      }
       router.refresh();
     });
   }
@@ -551,7 +649,6 @@ export function ApplicationViewClient({
       <ApplicationUniversityTargetsTab
         applicationId={application.id}
         targets={universityTargets}
-        checklistDocuments={checklistDocuments}
         universitiesTotal={packageUniversitiesTotal}
         actions={actions.universityTargets}
       />
@@ -597,13 +694,18 @@ export function ApplicationViewClient({
       </>
     );
   } else if (tab === "documents") {
-    tabBody = (
-      <ApplicationChecklistDocumentsTab
-        applicationId={application.id}
-        documents={checklistDocuments}
-        actions={actions.checklist}
-      />
-    );
+    tabBody =
+      config.documentsPortal === "advisor" ? (
+        <AdvisorStudentDocumentsTab
+          studentId={student.id}
+          initialDocuments={studentDocuments}
+        />
+      ) : (
+        <AdminStudentDocumentsTab
+          studentId={student.id}
+          initialDocuments={studentDocuments}
+        />
+      );
   } else if (tab === "payments") {
     tabBody = (
       <SchoolStudentPanel
@@ -612,7 +714,7 @@ export function ApplicationViewClient({
         actions={
           <button
             type="button"
-            disabled={isPending || !hasStudentEmail}
+            disabled={isPending || !hasStudentEmail || paymentRequestBlocked}
             onClick={handleOpenPaymentRequest}
             className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -620,12 +722,17 @@ export function ApplicationViewClient({
           </button>
         }
       >
+        {paymentRequestBlocked ? (
+          <p className="mb-3 text-[12px] text-[var(--text-light)]">
+            A payment request is already pending for this application.
+          </p>
+        ) : null}
         {paymentRequestMessage ? (
           <p className="mb-3 text-[12px] font-medium text-[var(--green-dark)]">
             {paymentRequestMessage}
           </p>
         ) : null}
-        {config.showPayoutSummary && payoutSummary ? (
+        {config.showPayoutSummary && !config.showPayoutsTab && payoutSummary ? (
           <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <SnapItem
               label="Payout percentage"
@@ -653,9 +760,15 @@ export function ApplicationViewClient({
                 <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   <th className="px-4 py-3">Amount (AED)</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Payout %</th>
-                  <th className="px-4 py-3">Payout (AED)</th>
-                  <th className="px-4 py-3">Payout status</th>
+                  <th className="px-4 py-3">Due date</th>
+                  <th className="px-4 py-3">Requested at</th>
+                  {!config.showPayoutsTab ? (
+                    <>
+                      <th className="px-4 py-3">Payout %</th>
+                      <th className="px-4 py-3">Payout (AED)</th>
+                      <th className="px-4 py-3">Payout status</th>
+                    </>
+                  ) : null}
                   <th className="px-4 py-3">Paid at</th>
                 </tr>
               </thead>
@@ -675,27 +788,37 @@ export function ApplicationViewClient({
                         {payment.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-mid)]">
-                      {payment.payout ? `${payment.payout.percentage}%` : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-mid)]">
-                      {payment.payout ? payment.payout.amount.toLocaleString() : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {payment.payout ? (
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize ${payoutStatusClass(payment.payout.status)}`}
-                        >
-                          {payment.payout.status}
-                        </span>
-                      ) : (
-                        <span className="text-[var(--text-mid)]">—</span>
-                      )}
+                    <td className="px-4 py-3 whitespace-nowrap text-[var(--text-mid)]">
+                      {formatDate(payment.dueDate)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-[var(--text-mid)]">
-                      {payment.status === "paid" && payment.paidAt
-                        ? formatDateTime(payment.paidAt)
-                        : formatDateTime(payment.createdAt)}
+                      {formatDate(payment.requestedAt ?? payment.createdAt)}
+                    </td>
+                    {!config.showPayoutsTab ? (
+                      <>
+                        <td className="px-4 py-3 text-[var(--text-mid)]">
+                          {payment.payout ? `${payment.payout.percentage}%` : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-[var(--text-mid)]">
+                          {payment.payout ? payment.payout.amount.toLocaleString() : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {payment.payout ? (
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize ${payoutStatusClass(payment.payout.status)}`}
+                            >
+                              {payment.payout.status}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--text-mid)]">—</span>
+                          )}
+                        </td>
+                      </>
+                    ) : null}
+                    <td className="px-4 py-3 whitespace-nowrap text-[var(--text-mid)]">
+                      {formatDate(
+                        payment.status === "paid" ? payment.paidAt : null,
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -706,12 +829,19 @@ export function ApplicationViewClient({
       </SchoolStudentPanel>
     );
   } else if (tab === "payouts" && config.showPayoutsTab) {
-    tabBody = (
-      <AdminApplicationPayoutsTab
-        applicationId={application.id}
-        payouts={applicationPayouts}
-      />
-    );
+    tabBody =
+      config.payoutsTabVariant === "advisor" && payoutSummary ? (
+        <AdvisorApplicationPayoutsTab
+          applicationId={application.id}
+          payouts={applicationPayouts}
+          payoutSummary={payoutSummary}
+        />
+      ) : (
+        <AdminApplicationPayoutsTab
+          applicationId={application.id}
+          payouts={applicationPayouts}
+        />
+      );
   } else if (tab === "calls") {
     tabBody = (
       <ApplicationCallsTab
@@ -719,6 +849,11 @@ export function ApplicationViewClient({
         studentName={student.fullName}
         calls={calls}
         actions={actions.calls}
+        onCreateOpenChange={(open) => {
+          if (open) setLogCallError(null);
+          setLogCallOpen(open);
+        }}
+        isCreatePending={isPending}
       />
     );
   } else if (tab === "tasks") {
@@ -730,10 +865,18 @@ export function ApplicationViewClient({
       />
     );
   } else if (tab === "notes") {
+    const noteVisibilityHint =
+      newNoteVisibility === "public"
+        ? "Also visible to the student's school counselors in the Teacher Portal."
+        : "Visible to platform admins and the assigned advisor only.";
+
     tabBody = (
       <SchoolStudentPanel
-        head="Internal notes"
-        sub={config.notesSub ?? "Staff-only notes for this application case"}
+        head="Application notes"
+        sub={
+          config.notesSub ??
+          "Internal notes are staff-only; public notes are also shared with school counselors."
+        }
       >
         <div className="mb-3.5 flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[rgb(250,249,244)] p-3.5">
           <textarea
@@ -744,7 +887,7 @@ export function ApplicationViewClient({
             }}
             rows={4}
             maxLength={8000}
-            placeholder="Add an internal note… (Cmd+Enter to save)"
+            placeholder="Add a note… (Cmd+Enter to save)"
             disabled={isPending}
             onKeyDown={(event) => {
               if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !isPending) {
@@ -755,9 +898,29 @@ export function ApplicationViewClient({
             className="w-full resize-y rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] disabled:opacity-60"
           />
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] text-[var(--text-hint)]">
-              Visible to platform admins and the assigned advisor only.
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap gap-[5px]">
+                {(["internal", "public"] as const).map((option) => {
+                  const active = newNoteVisibility === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => setNewNoteVisibility(option)}
+                      className={`cursor-pointer rounded-[8px] border px-[9px] py-1 text-[11px] font-medium capitalize transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
+                        active
+                          ? "border-[var(--green-light)] bg-[var(--green-pale)] text-[var(--green-dark)]"
+                          : "border-[var(--border)] bg-white text-[var(--text-mid)]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-[var(--text-hint)]">{noteVisibilityHint}</p>
+            </div>
             <button
               type="button"
               disabled={isPending || !newNoteContent.trim()}
@@ -792,6 +955,10 @@ export function ApplicationViewClient({
                     <span className="inline-flex items-center rounded-[20px] border border-[var(--border)] px-2 py-0.5 text-[10.5px] font-semibold capitalize text-[var(--text-mid)]">
                       {note.authorRole}
                     </span>
+                    {" · "}
+                    <span className="inline-flex items-center rounded-[20px] border border-[var(--border)] px-2 py-0.5 text-[10.5px] font-semibold capitalize text-[var(--text-mid)]">
+                      {note.visibility}
+                    </span>
                   </div>
                   <div className="shrink-0 text-[11.5px] text-[var(--text-hint)]">
                     {formatDateTime(note.createdAt)}
@@ -811,7 +978,10 @@ export function ApplicationViewClient({
       <SchoolStudentActivityLogsTab
         {...activityLogsPanel}
         head="Activity log"
-        sub="All platform events recorded for this application"
+        sub={
+          config.activitySub ??
+          "All platform events recorded for this application"
+        }
       />
     );
   }
@@ -830,28 +1000,92 @@ export function ApplicationViewClient({
         </Link>
 
         <div className="flex flex-wrap items-end justify-end gap-3">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="application-admission-status"
-              className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]"
-            >
-              Admission status
-            </label>
-            <select
-              id="application-admission-status"
-              value={admissionStatus}
-              disabled={isPending}
-              onChange={(event) => handleAdmissionStatusChange(event.target.value)}
-              className={headerSelectClass}
-              style={{ backgroundImage: SELECT_CHEVRON }}
-            >
-              {APPLICATION_ADMISSION_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {config.showHeaderQuickActions ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => {
+                  setAddNoteError(null);
+                  setAddNoteOpen(true);
+                }}
+                className={headerQuickActionOutlineClass}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+                Add Note
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => {
+                  setLogCallError(null);
+                  setLogCallOpen(true);
+                }}
+                className={headerQuickActionOutlineClass}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                Log Call
+              </button>
+              {hasStudentEmail ? (
+                <a
+                  href={`mailto:${application.studentEmail}`}
+                  className={headerQuickActionOutlineClass}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                  Email
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  title="No email on file"
+                  className={headerQuickActionOutlineClass}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                  Email
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={isPending || !actions.toggleStudentFlag}
+                onClick={handleToggleStudentFlag}
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border px-3 py-[7px] text-[12px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  studentFlagged
+                    ? "border-[#f0c4c4] bg-[#FCEBEB] text-[#E74C3C] hover:opacity-90"
+                    : "border-[#e0deda] bg-white text-[#4a4a4a] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                  <line x1="4" x2="4" y1="22" y2="15" />
+                </svg>
+                Flag
+              </button>
+              <button
+                type="button"
+                disabled={isPending || !hasStudentEmail || paymentRequestBlocked}
+                onClick={handleOpenPaymentRequest}
+                className={headerQuickActionPrimaryClass}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
+                  <line x1="22" x2="11" y1="2" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+                Payment Request
+              </button>
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-1">
             <label
@@ -931,13 +1165,6 @@ export function ApplicationViewClient({
                 status as keyof typeof ADMIN_APPLICATION_STATUS_LABEL
               ] ?? status}
             </span>
-            <span
-              className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${applicationAdmissionStatusPillClass(admissionStatus)}`}
-            >
-              {APPLICATION_ADMISSION_STATUS_LABEL[
-                admissionStatus as keyof typeof APPLICATION_ADMISSION_STATUS_LABEL
-              ] ?? admissionStatus}
-            </span>
           </div>
 
           {sidebarRows.map((row) => (
@@ -977,7 +1204,7 @@ export function ApplicationViewClient({
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setTab(t.id)}
+                  onClick={() => switchTab(t.id)}
                   className={`shrink-0 cursor-pointer rounded-[8px] px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
                     active
                       ? "bg-[var(--green)] text-white"
@@ -1063,17 +1290,43 @@ export function ApplicationViewClient({
         </div>
       ) : null}
 
-      <AdminSendPaymentRequestDialog
-        open={paymentRequestOpen}
+      {paymentRequestContext ? (
+        <SendPaymentRequestDialog
+          open={paymentRequestOpen}
+          onClose={() => {
+            if (!isPending) setPaymentRequestOpen(false);
+          }}
+          fixedApplication={paymentRequestContext.fixedApplication}
+          availablePlans={paymentRequestContext.availablePlans}
+          senderName={paymentRequestContext.senderName}
+          senderEmail={paymentRequestContext.senderEmail}
+          fromEmailDisplay={paymentRequestContext.fromEmailDisplay}
+          onSubmit={handleSendPaymentRequest}
+          isSubmitting={isPending}
+          error={paymentRequestError}
+        />
+      ) : null}
+
+      <AddApplicationInternalNoteDialog
+        open={addNoteOpen}
         onClose={() => {
-          if (!isPending) setPaymentRequestOpen(false);
+          if (!isPending) setAddNoteOpen(false);
         }}
-        onSubmit={handleSendPaymentRequest}
+        onSubmit={handleAddNoteFromDialog}
         isSubmitting={isPending}
-        error={paymentRequestError}
-        planPrice={planPrice}
-        totalPaid={totalPaid}
-        studentEmail={application.studentEmail}
+        error={addNoteError}
+      />
+
+      <LogApplicationCallDialog
+        open={logCallOpen}
+        mode="create"
+        studentName={student.fullName}
+        onClose={() => {
+          if (!isPending) setLogCallOpen(false);
+        }}
+        onSubmit={handleLogCall}
+        isSubmitting={isPending}
+        error={logCallError}
       />
 
       <EditApplicationPackageDialog

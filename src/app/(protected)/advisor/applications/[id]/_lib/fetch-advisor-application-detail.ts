@@ -3,8 +3,7 @@ import {
   mapApplicationDetailPayload,
   type ApplicationDetailPayload,
 } from "@/lib/application-detail-mapper";
-import { mapApplicationChecklistDocuments } from "@/lib/application-checklist-mapper";
-import { fetchApplicationChecklistDocuments } from "@/lib/ensure-application-checklist-documents";
+import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
 import { fetchApplicationCalls } from "@/lib/fetch-application-calls";
 import { fetchApplicationInternalNotes } from "@/lib/application-internal-notes";
 import { fetchApplicationTasks } from "@/lib/fetch-application-tasks";
@@ -12,11 +11,18 @@ import { fetchApplicationUniversityTargets } from "@/lib/fetch-application-unive
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
 import {
   fetchApplicationPayoutSummary,
+  fetchApplicationPayouts,
   fetchPayoutsByPaymentIds,
 } from "@/lib/advisor-payouts/fetch-application-payouts";
-import { createSupabaseServerClient } from "@/utils/supabase-server";
+import { hydrateApplicationsPlansEmbeds } from "@/lib/applications-plans";
+import { buildPaymentRequestModalContext } from "@/lib/fetch-payment-request-modal-context";
+import { expireOverduePendingPayments } from "@/lib/payment-request-utils";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
-export type AdvisorApplicationDetailPayload = ApplicationDetailPayload;
+export type AdvisorApplicationDetailPayload = ApplicationDetailPayload & {
+  applicationPayouts: Awaited<ReturnType<typeof fetchApplicationPayouts>>;
+  paymentRequestContext: Awaited<ReturnType<typeof buildPaymentRequestModalContext>> | null;
+};
 
 const ADVISOR_LINKS = {
   studentHref: () => null,
@@ -47,19 +53,51 @@ export async function fetchAdvisorApplicationDetail(
 
   if (!data) return null;
 
-  const [{ data: payments }, internalNotes, checklistRows, calls, tasks, universityTargets] =
-    await Promise.all([
-      supabase
-        .from("payments")
-        .select("id, amount, status, created_at, paid_at, updated_at")
-        .eq("application_id", applicationId)
-        .order("created_at", { ascending: false }),
-      fetchApplicationInternalNotes(supabase, applicationId),
-      fetchApplicationChecklistDocuments(supabase, applicationId),
-      fetchApplicationCalls(supabase, applicationId),
-      fetchApplicationTasks(supabase, applicationId),
-      fetchApplicationUniversityTargets(supabase, applicationId),
-    ]);
+  await expireOverduePendingPayments(await createSupabaseSecretClient(), {
+    applicationId,
+  });
+
+  const [applicationRow] = await hydrateApplicationsPlansEmbeds(supabase, [data]);
+  const hydratedData = applicationRow ?? data;
+
+  const { data: advisorRow } = await supabase
+    .from("advisors")
+    .select("first_name, last_name, email")
+    .eq("id", advisorId)
+    .maybeSingle();
+
+  const advisorName =
+    [advisorRow?.first_name, advisorRow?.last_name].filter(Boolean).join(" ").trim() ||
+    "Advisor";
+  const advisorEmail = advisorRow?.email?.trim() || "";
+
+  const secret = await createSupabaseSecretClient();
+
+  const [
+    { data: payments },
+    internalNotes,
+    studentDocuments,
+    calls,
+    tasks,
+    allApplicationPayouts,
+    universityTargets,
+  ] = await Promise.all([
+    supabase
+      .from("payments")
+      .select("id, amount, status, due_date, created_at, payment_request_sent_at, paid_at, updated_at")
+      .eq("application_id", applicationId)
+      .order("created_at", { ascending: false }),
+    fetchApplicationInternalNotes(supabase, applicationId),
+    ensureStudentApplicationDocuments(secret, data.student_id),
+    fetchApplicationCalls(supabase, applicationId),
+    fetchApplicationTasks(supabase, applicationId),
+    fetchApplicationPayouts(supabase, applicationId),
+    fetchApplicationUniversityTargets(supabase, applicationId),
+  ]);
+
+  const applicationPayouts = allApplicationPayouts.filter(
+    (payout) => payout.advisorId === advisorId,
+  );
 
   const paymentIds = (payments ?? []).map((payment) => payment.id);
   const [payoutByPaymentId, payoutSummary] = await Promise.all([
@@ -67,15 +105,28 @@ export async function fetchAdvisorApplicationDetail(
     fetchApplicationPayoutSummary(supabase, applicationId, advisorId),
   ]);
 
-  return mapApplicationDetailPayload(
-    data,
+  const payload = mapApplicationDetailPayload(
+    hydratedData,
     payments ?? [],
     ADVISOR_LINKS,
     internalNotes,
-    mapApplicationChecklistDocuments(checklistRows),
+    studentDocuments,
     calls,
     tasks,
     { payoutByPaymentId, payoutSummary },
     universityTargets,
   );
+
+  const paymentRequestContext = await buildPaymentRequestModalContext(
+    supabase,
+    hydratedData,
+    payments ?? [],
+    { name: advisorName, email: advisorEmail },
+  );
+
+  return {
+    ...payload,
+    applicationPayouts,
+    paymentRequestContext,
+  };
 }

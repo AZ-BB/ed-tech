@@ -23,7 +23,6 @@ export type UniversityTargetFormState = {
   status: string;
   decision: string;
   notes: string;
-  documentNames: string[];
 };
 
 export function defaultUniversityTargetFormState(): UniversityTargetFormState {
@@ -34,10 +33,9 @@ export function defaultUniversityTargetFormState(): UniversityTargetFormState {
     countryCode: "",
     deadline: "",
     portalUrl: "",
-    status: "advisor_recommended",
+    status: "in_progress",
     decision: "not_submitted",
     notes: "",
-    documentNames: [""],
   };
 }
 
@@ -62,7 +60,6 @@ export function universityTargetToFormState(target: {
     status: target.status,
     decision: target.decision,
     notes: target.notes ?? "",
-    documentNames: [""],
   };
 }
 

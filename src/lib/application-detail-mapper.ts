@@ -1,5 +1,5 @@
 import { getCountryNameByAlpha2 } from "@/lib/countries";
-import type { ApplicationChecklistDocumentRow } from "@/lib/application-checklist-mapper";
+import type { DocRow } from "@/lib/ensure-student-application-documents";
 import type { ApplicationUniversityTargetRow } from "@/lib/application-university-target-mapper";
 import type { ApplicationCallRow } from "@/lib/fetch-application-calls";
 import type { ApplicationInternalNoteRow } from "@/lib/application-internal-notes";
@@ -14,6 +14,7 @@ import type {
   ApplicationPaymentPayout,
   ApplicationPayoutSummary,
 } from "@/lib/advisor-payouts/types";
+import { resolvePaymentDisplayStatus } from "@/lib/payment-request-utils";
 
 export type { ApplicationPaymentPayout };
 
@@ -21,7 +22,9 @@ export type ApplicationPaymentRow = {
   id: number;
   amount: number;
   status: string;
+  dueDate: string | null;
   createdAt: string | null;
+  requestedAt: string | null;
   paidAt: string | null;
   payout: ApplicationPaymentPayout | null;
 };
@@ -30,7 +33,6 @@ export type ApplicationDetailPayload = {
   application: {
     id: number;
     status: string;
-    admissionStatus: string;
     createdAt: string | null;
     updatedAt: string | null;
     submittedAt: string | null;
@@ -83,6 +85,8 @@ export type ApplicationDetailPayload = {
     status: string | null;
     isActive: boolean;
     totalLogins: number | null;
+    flagged: boolean;
+    flaggedBy: string | null;
     href: string | null;
   };
   school: {
@@ -94,7 +98,7 @@ export type ApplicationDetailPayload = {
     contactEmail: string | null;
     href: string | null;
   } | null;
-  checklistDocuments: ApplicationChecklistDocumentRow[];
+  studentDocuments: DocRow[];
   universityTargets: ApplicationUniversityTargetRow[];
   payments: ApplicationPaymentRow[];
   internalNotes: ApplicationInternalNoteRow[];
@@ -129,7 +133,6 @@ export const APPLICATION_DETAIL_SELECT = `
   awards,
   additional_notes,
   status,
-  admission_status,
   assigned_to,
   submitted_at,
   assigned_at,
@@ -138,7 +141,8 @@ export const APPLICATION_DETAIL_SELECT = `
   created_at,
   updated_at,
   package_data,
-  applications_plans ( name, description, price, universities_count ),
+  plan_id,
+  applications_plans!applications_plan_id_fkey ( name, description, price, universities_count ),
   advisors:assigned_to ( id, first_name, last_name, email, phone ),
   schools (
     id,
@@ -158,7 +162,9 @@ export const APPLICATION_DETAIL_SELECT = `
     nationality_country_code,
     status,
     is_active,
-    total_logins
+    total_logins,
+    flagged,
+    flagged_by
   )
 `;
 
@@ -189,7 +195,6 @@ type ApplicationRowRaw = {
   awards: string | null;
   additional_notes: string | null;
   status: string | null;
-  admission_status: string | null;
   assigned_to: string | null;
   submitted_at: string | null;
   assigned_at: string | null;
@@ -198,6 +203,7 @@ type ApplicationRowRaw = {
   created_at: string | null;
   updated_at: string | null;
   package_data: unknown;
+  plan_id: number;
   applications_plans:
     | { name: string; description: string | null; price: number; universities_count: number }
     | { name: string; description: string | null; price: number; universities_count: number }[]
@@ -236,6 +242,8 @@ type ApplicationRowRaw = {
         status: string | null;
         is_active: boolean | null;
         total_logins: number | null;
+        flagged: boolean | null;
+        flagged_by: string | null;
       }
     | {
         id: string;
@@ -248,6 +256,8 @@ type ApplicationRowRaw = {
         status: string | null;
         is_active: boolean | null;
         total_logins: number | null;
+        flagged: boolean | null;
+        flagged_by: string | null;
       }[]
     | null;
 };
@@ -256,7 +266,9 @@ type PaymentRowRaw = {
   id: number;
   amount: number;
   status: string | null;
+  due_date: string | null;
   created_at: string | null;
+  payment_request_sent_at: string | null;
   paid_at: string | null;
   updated_at: string | null;
 };
@@ -301,7 +313,7 @@ export function mapApplicationDetailPayload(
   payments: PaymentRowRaw[],
   links: ApplicationDetailLinkConfig,
   internalNotes: ApplicationInternalNoteRow[] = [],
-  checklistDocuments: ApplicationChecklistDocumentRow[] = [],
+  studentDocuments: DocRow[] = [],
   calls: ApplicationCallRow[] = [],
   tasks: ApplicationTaskRow[] = [],
   options: ApplicationDetailMapOptions = {},
@@ -366,7 +378,6 @@ export function mapApplicationDetailPayload(
     application: {
       id: data.id,
       status: data.status?.trim() || "new",
-      admissionStatus: data.admission_status?.trim() || "pending",
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       submittedAt: data.submitted_at,
@@ -431,16 +442,23 @@ export function mapApplicationDetailPayload(
       status: studentEmbed?.status ?? null,
       isActive: studentEmbed?.is_active ?? true,
       totalLogins: studentEmbed?.total_logins ?? null,
+      flagged: studentEmbed?.flagged ?? false,
+      flaggedBy: studentEmbed?.flagged_by ?? null,
       href: links.studentHref(data.student_id),
     },
     school,
-    checklistDocuments,
+    studentDocuments,
     universityTargets,
     payments: payments.map((payment) => ({
       id: payment.id,
       amount: payment.amount,
-      status: payment.status?.trim() || "pending",
+      status: resolvePaymentDisplayStatus({
+        status: payment.status,
+        due_date: payment.due_date,
+      }),
+      dueDate: payment.due_date,
       createdAt: payment.created_at,
+      requestedAt: payment.payment_request_sent_at,
       paidAt:
         payment.status === "paid"
           ? payment.paid_at ?? payment.updated_at
