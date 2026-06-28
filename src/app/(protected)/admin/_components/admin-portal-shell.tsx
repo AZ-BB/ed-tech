@@ -21,6 +21,7 @@ import {
   isAdminContentPath,
   isAdminScholarshipDetailPath,
   isAdminUniversityDetailPath,
+  isAdminWebinarDetailPath,
 } from "../content/_data/content-tabs-data";
 import { UsersHeaderActions } from "../users/_components/users-header-actions";
 import { SchoolsHeaderActions } from "../schools/_components/admin-schools-header-actions";
@@ -139,12 +140,17 @@ export function AdminPortalShell({
     () => isAdminScholarshipDetailPath(pathname ?? ADMIN_HOME),
     [pathname],
   );
+  const webinarDetailPage = useMemo(
+    () => isAdminWebinarDetailPath(pathname ?? ADMIN_HOME),
+    [pathname],
+  );
   const detailPage =
     userDetailPage ||
     schoolDetailPage ||
     applicationDetailPage ||
     universityDetailPage ||
-    scholarshipDetailPage;
+    scholarshipDetailPage ||
+    webinarDetailPage;
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);

@@ -95,7 +95,6 @@ export type SchoolStudentDetailPayload = {
     essaysReviewed: number;
     advisorSessions: number;
     ambassadorSessions: number;
-    /** No webinar-attendance table in schema yet; keep UI slot at 0. */
     webinarsAttended: number;
     totalLogins: number;
     /** Relative time of latest student_activities vs ai_usage (e.g. “3 days ago”); else profile `updated_at`. */
@@ -229,6 +228,7 @@ export async function fetchSchoolStudentDetail(
     tasksRes,
     advisorSessRes,
     ambRes,
+    webinarRegRes,
     creditRowsRes,
     uniViewedRes,
     uniSavedRes,
@@ -283,6 +283,10 @@ export async function fetchSchoolStudentDetail(
       .eq("student_id", studentId),
     supabase
       .from("ambassador_session_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("student_id", studentId),
+    supabase
+      .from("webinar_registrations")
       .select("id", { count: "exact", head: true })
       .eq("student_id", studentId),
     supabase
@@ -505,7 +509,7 @@ export async function fetchSchoolStudentDetail(
     essaysReviewed: countOr0(essayReviewRes.error, essayReviewRes.count),
     advisorSessions: countOr0(advisorSessRes.error, advisorSessRes.count),
     ambassadorSessions: countOr0(ambRes.error, ambRes.count),
-    webinarsAttended: 0,
+    webinarsAttended: countOr0(webinarRegRes.error, webinarRegRes.count),
     totalLogins:
       typeof profile.total_logins === "number" &&
       Number.isFinite(profile.total_logins)

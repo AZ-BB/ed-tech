@@ -232,6 +232,33 @@ async function countEssayReviewsMonth(
   return total;
 }
 
+async function countWebinarRegistrationsMonth(
+  supabase: SupabaseServer,
+  schoolStudentIds: string[],
+  monthStartIso: string,
+  monthEndExclusiveIso: string,
+): Promise<number> {
+  let total = 0;
+  for (let i = 0; i < schoolStudentIds.length; i += STUDENT_CHUNK) {
+    const chunk = schoolStudentIds.slice(i, i + STUDENT_CHUNK);
+    const { count, error } = await supabase
+      .from("webinar_registrations")
+      .select("*", { count: "exact", head: true })
+      .in("student_id", chunk)
+      .gte("registered_at", monthStartIso)
+      .lt("registered_at", monthEndExclusiveIso);
+    if (error) {
+      console.error(
+        "[fetchSchoolReports] webinar_registrations:",
+        error.message,
+      );
+      continue;
+    }
+    total += count ?? 0;
+  }
+  return total;
+}
+
 async function countShortlistUniversitiesMonthFixed(
   supabase: SupabaseServer,
   schoolStudentSet: Set<string>,
@@ -515,6 +542,7 @@ export async function fetchSchoolReports(options?: {
     advisorSessionsMonth,
     ambassadorSessionsMonth,
     essayReviewsMonth,
+    webinarsMonth,
     universitiesShortlistedMonth,
     appProfByStudent,
     followUpRes,
@@ -534,6 +562,12 @@ export async function fetchSchoolReports(options?: {
       monthEndExclusiveIso,
     ),
     countEssayReviewsMonth(
+      supabase,
+      schoolStudentIds,
+      monthStartIso,
+      monthEndExclusiveIso,
+    ),
+    countWebinarRegistrationsMonth(
       supabase,
       schoolStudentIds,
       monthStartIso,
@@ -663,7 +697,7 @@ export async function fetchSchoolReports(options?: {
     advisorSessionsMonth,
     ambassadorSessionsMonth,
     essayReviewsMonth,
-    webinarsMonth: 0,
+    webinarsMonth,
     universitiesShortlistedMonth,
     attentionStudents,
     outcomes,

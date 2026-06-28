@@ -74,7 +74,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "webinars",
     label: "Webinars",
-    href: "#",
+    href: "/student/webinars",
   },
   { type: "divider" },
   {
