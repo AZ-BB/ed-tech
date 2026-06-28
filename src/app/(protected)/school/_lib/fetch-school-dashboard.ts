@@ -203,7 +203,7 @@ export async function fetchSchoolDashboard(options?: {
   const schoolId = sap?.school_id;
   if (!schoolId) return empty;
 
-  const teacherRpcId = teacherFilter || null;
+  const teacherRpcId = teacherFilter || undefined;
 
   const [
     totalStudentsRes,
