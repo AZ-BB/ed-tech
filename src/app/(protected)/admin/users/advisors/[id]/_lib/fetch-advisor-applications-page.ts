@@ -1,4 +1,6 @@
 import type { Database } from "@/database.types";
+import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
+import { hydrateApplicationsPlansEmbeds } from "@/lib/applications-plans";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import {
@@ -28,6 +30,7 @@ type PreferencesUniversities = unknown;
 
 type AppRowRaw = {
   id: number;
+  plan_id: number;
   student_name: string | null;
   student_email: string | null;
   school_name: string | null;
@@ -65,6 +68,7 @@ export type AdminAdvisorApplicationsPanelProps = {
   limit: number;
   status: AdvisorApplicationStatusFilter;
   statusCounts: Record<AdvisorApplicationStatusFilter, number>;
+  search: string;
 };
 
 function paginationRange(page: number, limit: number) {
@@ -154,6 +158,8 @@ function emptyStatusCounts(): Record<AdvisorApplicationStatusFilter, number> {
     all: 0,
     new: 0,
     scheduled: 0,
+    payment_in_progress: 0,
+    payment_completed: 0,
     in_progress: 0,
     submitted: 0,
     blocked: 0,
@@ -164,6 +170,7 @@ async function countApplications(
   client: DbClient,
   advisorId: string,
   status?: ApplicationStatusEnum,
+  search?: string,
 ): Promise<number> {
   let query = client
     .from("applications")
@@ -172,6 +179,14 @@ async function countApplications(
 
   if (status) {
     query = query.eq("status", status);
+  }
+
+  const searchTrim = search?.trim() ?? "";
+  if (searchTrim) {
+    const e = escapeIlike(searchTrim);
+    query = query.or(
+      `student_name.ilike.%${e}%,student_email.ilike.%${e}%,school_name.ilike.%${e}%`,
+    );
   }
 
   const { count, error } = await query;
@@ -185,20 +200,34 @@ async function countApplications(
 export async function fetchAdvisorApplicationStatusCounts(
   advisorId: string,
   client: DbClient,
+  search?: string,
 ): Promise<Record<AdvisorApplicationStatusFilter, number>> {
-  const [all, newCount, scheduled, inProgress, submitted, blocked] = await Promise.all([
-    countApplications(client, advisorId),
-    countApplications(client, advisorId, "new"),
-    countApplications(client, advisorId, "scheduled"),
-    countApplications(client, advisorId, "in_progress"),
-    countApplications(client, advisorId, "submitted"),
-    countApplications(client, advisorId, "blocked"),
+  const [
+    all,
+    newCount,
+    scheduled,
+    paymentInProgress,
+    paymentCompleted,
+    inProgress,
+    submitted,
+    blocked,
+  ] = await Promise.all([
+    countApplications(client, advisorId, undefined, search),
+    countApplications(client, advisorId, "new", search),
+    countApplications(client, advisorId, "scheduled", search),
+    countApplications(client, advisorId, "payment_in_progress", search),
+    countApplications(client, advisorId, "payment_completed", search),
+    countApplications(client, advisorId, "in_progress", search),
+    countApplications(client, advisorId, "submitted", search),
+    countApplications(client, advisorId, "blocked", search),
   ]);
 
   return {
     all,
     new: newCount,
     scheduled,
+    payment_in_progress: paymentInProgress,
+    payment_completed: paymentCompleted,
     in_progress: inProgress,
     submitted,
     blocked,
@@ -208,9 +237,9 @@ export async function fetchAdvisorApplicationStatusCounts(
 export async function fetchAdvisorApplicationsPage(
   advisorId: string,
   status: AdvisorApplicationStatusFilter,
-  options: { page: number; limit: number; client: DbClient },
+  options: { page: number; limit: number; client: DbClient; search?: string },
 ): Promise<{ rows: AdminAdvisorApplicationRow[]; totalRows: number }> {
-  const { page, limit, client } = options;
+  const { page, limit, client, search } = options;
   const { from, to } = paginationRange(page, limit);
 
   let query = client
@@ -218,6 +247,7 @@ export async function fetchAdvisorApplicationsPage(
     .select(
       `
       id,
+      plan_id,
       student_name,
       student_email,
       school_name,
@@ -225,7 +255,7 @@ export async function fetchAdvisorApplicationsPage(
       assigned_at,
       created_at,
       preferences_universities,
-      applications_plans ( name, universities_count ),
+      applications_plans!applications_plan_id_fkey ( name, universities_count ),
       schools ( name ),
       student_profiles ( first_name, last_name, email )
     `,
@@ -240,6 +270,14 @@ export async function fetchAdvisorApplicationsPage(
     query = query.eq("status", status);
   }
 
+  const searchTrim = search?.trim() ?? "";
+  if (searchTrim) {
+    const e = escapeIlike(searchTrim);
+    query = query.or(
+      `student_name.ilike.%${e}%,student_email.ilike.%${e}%,school_name.ilike.%${e}%`,
+    );
+  }
+
   const { data, count, error } = await query.range(from, to);
 
   if (error) {
@@ -247,18 +285,23 @@ export async function fetchAdvisorApplicationsPage(
     return { rows: [], totalRows: 0 };
   }
 
-  const rows = ((data ?? []) as unknown as AppRowRaw[]).map(mapApplicationRow);
+  const hydratedRows = await hydrateApplicationsPlansEmbeds(
+    client,
+    (data ?? []) as unknown as AppRowRaw[],
+  );
+  const rows = hydratedRows.map(mapApplicationRow);
   return { rows, totalRows: count ?? 0 };
 }
 
 export async function fetchAdvisorApplicationsPanel(
   advisorId: string,
   status: AdvisorApplicationStatusFilter,
-  options: { page: number; limit: number; client: DbClient },
+  options: { page: number; limit: number; client: DbClient; search?: string },
 ): Promise<AdminAdvisorApplicationsPanelProps> {
+  const search = options.search?.trim() ?? "";
   const [pageResult, statusCounts] = await Promise.all([
     fetchAdvisorApplicationsPage(advisorId, status, options),
-    fetchAdvisorApplicationStatusCounts(advisorId, options.client).catch(() =>
+    fetchAdvisorApplicationStatusCounts(advisorId, options.client, search).catch(() =>
       emptyStatusCounts(),
     ),
   ]);
@@ -269,5 +312,6 @@ export async function fetchAdvisorApplicationsPanel(
     limit: options.limit,
     status,
     statusCounts,
+    search,
   };
 }

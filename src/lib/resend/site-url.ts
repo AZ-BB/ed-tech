@@ -37,6 +37,10 @@ export async function buildRecommendationSubmitUrl(token: string): Promise<strin
   return `${await getPublicSiteBaseUrl()}/recommendation/${encodeURIComponent(trimmed)}`;
 }
 
+export async function buildStudentMyApplicationsUrl(): Promise<string> {
+  return `${await getPublicSiteBaseUrl()}/student/my-applications`;
+}
+
 export async function buildStudentDashboardUrl(): Promise<string> {
   return `${await getPublicSiteBaseUrl()}/student`;
 }

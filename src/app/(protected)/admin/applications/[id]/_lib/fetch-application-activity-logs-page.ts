@@ -1,4 +1,8 @@
-import { APPLICATION_ACTIVITY_ENTITY_TYPE } from "@/lib/application-activity-log";
+import {
+  APPLICATION_ACTIVITY_ENTITY_TYPE,
+  ADVISOR_APPLICATION_ACTIVITY_LOG_CREATED_BY_TYPE,
+  type ApplicationActivityLogAudience,
+} from "@/lib/application-activity-log";
 import {
   formatActivityLogMessageForAdmin,
   type StudentActivityLogItem,
@@ -47,14 +51,19 @@ function resolveActorName(
 
 export async function fetchApplicationActivityLogsPage(
   applicationId: number,
-  options: { page: number; limit: number; client?: DbClient },
+  options: {
+    page: number;
+    limit: number;
+    client?: DbClient;
+    audience?: ApplicationActivityLogAudience;
+  },
 ): Promise<{ rows: StudentActivityLogItem[]; totalRows: number }> {
   const client = options.client ?? (await createSupabaseSecretClient());
-  const { page, limit } = options;
+  const { page, limit, audience = "admin" } = options;
   const { from, to } = paginationRange(page, limit);
   const entityId = String(applicationId);
 
-  const { data, count, error } = await client
+  let query = client
     .from("acitivity_logs")
     .select(
       `
@@ -72,7 +81,15 @@ export async function fetchApplicationActivityLogsPage(
       { count: "exact" },
     )
     .eq("entitiy_type", APPLICATION_ACTIVITY_ENTITY_TYPE)
-    .eq("entity_id", entityId)
+    .eq("entity_id", entityId);
+
+  if (audience === "advisor") {
+    query = query
+      .eq("created_by_type", ADVISOR_APPLICATION_ACTIVITY_LOG_CREATED_BY_TYPE)
+      .is("admin_id", null);
+  }
+
+  const { data, count, error } = await query
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -109,7 +126,12 @@ export async function fetchApplicationActivityLogsPage(
 
 export async function fetchApplicationActivityLogsPanel(
   applicationId: number,
-  options: { page: number; limit: number; client?: DbClient },
+  options: {
+    page: number;
+    limit: number;
+    client?: DbClient;
+    audience?: ApplicationActivityLogAudience;
+  },
 ) {
   const result = await fetchApplicationActivityLogsPage(applicationId, options);
   return {

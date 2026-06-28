@@ -20,6 +20,7 @@ export type ApplicationPayoutRow = {
   advisorName: string;
   paymentId: number;
   paymentAmount: number;
+  paymentPaidAt: string | null;
   applicationId: number;
   percentage: number;
   amount: number;

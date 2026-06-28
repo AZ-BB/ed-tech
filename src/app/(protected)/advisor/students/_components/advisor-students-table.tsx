@@ -1,6 +1,7 @@
 "use client";
 
 import type { AdvisorStudentsPanelProps } from "@/app/(protected)/advisor/students/_lib/fetch-advisor-students-page";
+import { useAdvisorStudentApplicationNavigation } from "@/app/(protected)/advisor/_lib/use-advisor-student-application-navigation";
 import {
   ADVISOR_STUDENT_STATUS_LABEL,
   advisorStudentStatusPillClass,
@@ -18,10 +19,9 @@ const STATUS_OPTIONS: {
   label: string;
 }[] = [
   { value: "all", label: "All" },
+  { value: "lead", label: "Lead" },
+  { value: "payment_requested", label: "Payment Requested" },
   { value: "active_package", label: "Active Package" },
-  { value: "active_advisory", label: "Active Advisory" },
-  { value: "awaiting_payment", label: "Awaiting Payment" },
-  { value: "submitted", label: "Submitted" },
 ];
 
 function formatDate(iso: string | null): string {
@@ -50,12 +50,15 @@ export function AdvisorStudentsTable({
   search,
   status,
   statusCounts,
+  studentApplicationOptions,
 }: AdvisorStudentsPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search);
+  const { handleStudentClick, applicationSelectDialog } =
+    useAdvisorStudentApplicationNavigation(studentApplicationOptions);
 
   useEffect(() => {
     setSearchInput(search);
@@ -163,9 +166,8 @@ export function AdvisorStudentsTable({
               <th className="px-4 py-3">Student</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Destinations</th>
-              <th className="px-4 py-3">Stage</th>
-              <th className="px-4 py-3">Last contact</th>
-              <th className="px-4 py-3">Next follow-up</th>
+              <th className="px-4 py-3">Initial meeting</th>
+              <th className="px-4 py-3">Package purchased</th>
               <th className="px-4 py-3">Deadline risk</th>
             </tr>
           </thead>
@@ -173,7 +175,7 @@ export function AdvisorStudentsTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {search.trim()
@@ -183,26 +185,24 @@ export function AdvisorStudentsTable({
               </tr>
             ) : (
               rows.map((row) => {
-                const detailHref = `/advisor/students/${row.studentId}`;
-
-                function openDetail() {
-                  router.push(detailHref);
+                function openApplication() {
+                  handleStudentClick(row.studentId, row.studentName);
                 }
 
                 return (
                   <tr
                     key={row.studentId}
                     className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
-                    onClick={openDetail}
+                    onClick={openApplication}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        openDetail();
+                        openApplication();
                       }
                     }}
                     tabIndex={0}
                     role="link"
-                    aria-label={`View student ${row.studentName}`}
+                    aria-label={`Open application for ${row.studentName}`}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
@@ -243,14 +243,11 @@ export function AdvisorStudentsTable({
                         <span className="text-[var(--text-hint)]">—</span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-[var(--text-light)]">
+                      {formatDate(row.initialMeetingDate)}
+                    </td>
                     <td className="px-4 py-3 text-[var(--text-mid)]">
-                      {row.stage}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-light)]">
-                      {formatDate(row.lastContact)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-light)]">
-                      {formatDate(row.nextFollowUp)}
+                      {row.packagePurchased}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -277,6 +274,8 @@ export function AdvisorStudentsTable({
           limitParam="studentsLimit"
         />
       </div>
+
+      {applicationSelectDialog}
     </div>
   );
 }

@@ -3,26 +3,23 @@ import {
   resolveFirstUncheckedLifecycleLabel,
 } from "@/lib/application-package-data";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { isPaymentRequestSent } from "@/lib/payment-request-utils";
 
 export type AdvisorStudentManagementStatus =
-  | "submitted"
-  | "active_package"
-  | "awaiting_payment"
-  | "active_advisory";
+  | "lead"
+  | "payment_requested"
+  | "active_package";
 
 export const ADVISOR_STUDENT_STATUS_LABEL: Record<
   AdvisorStudentManagementStatus,
   string
 > = {
-  submitted: "Submitted",
+  lead: "Lead",
+  payment_requested: "Payment Requested",
   active_package: "Active Package",
-  awaiting_payment: "Awaiting Payment",
-  active_advisory: "Active Advisory",
 };
 
-export type AdvisorStudentStatusFilter =
-  | "all"
-  | AdvisorStudentManagementStatus;
+export type AdvisorStudentStatusFilter = "all" | AdvisorStudentManagementStatus;
 
 export type AdvisorApplicationSnapshot = {
   id: number;
@@ -39,15 +36,6 @@ export type AdvisorApplicationSnapshot = {
   }[];
 };
 
-function isPaymentRequestSent(payment: {
-  paymentRequestSentAt: string | null;
-  paymentRequestToken: string | null;
-}): boolean {
-  return Boolean(
-    payment.paymentRequestSentAt?.trim() || payment.paymentRequestToken?.trim(),
-  );
-}
-
 function hasPaidPayment(payments: AdvisorApplicationSnapshot["payments"]): boolean {
   return payments.some((payment) => payment.status === "paid");
 }
@@ -61,28 +49,13 @@ function hasSentPaymentRequest(
 export function deriveStudentManagementStatus(
   apps: AdvisorApplicationSnapshot[],
 ): AdvisorStudentManagementStatus {
-  if (apps.some((app) => app.status === "submitted")) {
-    return "submitted";
-  }
-
-  const hasActivePackage = apps.some(
-    (app) =>
-      (app.status === "in_progress" || app.status === "submitted") &&
-      hasPaidPayment(app.payments),
-  );
-  if (hasActivePackage) {
+  if (apps.some((app) => hasPaidPayment(app.payments))) {
     return "active_package";
   }
-
-  const anyPaid = apps.some((app) => hasPaidPayment(app.payments));
-  if (
-    !anyPaid &&
-    apps.some((app) => hasSentPaymentRequest(app.payments))
-  ) {
-    return "awaiting_payment";
+  if (apps.some((app) => hasSentPaymentRequest(app.payments))) {
+    return "payment_requested";
   }
-
-  return "active_advisory";
+  return "lead";
 }
 
 export function resolveLatestApplication<T extends { updatedAt: string | null; id: number }>(
@@ -214,13 +187,11 @@ export function advisorStudentStatusPillClass(
   status: AdvisorStudentManagementStatus,
 ): string {
   switch (status) {
-    case "submitted":
-      return "bg-[#e8f5ee] text-[#2D6A4F]";
     case "active_package":
       return "bg-[var(--green-bg)] text-[var(--green-dark)]";
-    case "awaiting_payment":
+    case "payment_requested":
       return "bg-[#dbeafe] text-[#1e40af]";
-    case "active_advisory":
+    case "lead":
     default:
       return "bg-[#FFF3E0] text-[#E67E22]";
   }
@@ -233,9 +204,8 @@ export function parseAdvisorStudentStatusFilter(
     typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
   if (
     value === "active_package" ||
-    value === "awaiting_payment" ||
-    value === "active_advisory" ||
-    value === "submitted"
+    value === "payment_requested" ||
+    value === "lead"
   ) {
     return value;
   }

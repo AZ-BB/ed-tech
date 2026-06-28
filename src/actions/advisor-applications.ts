@@ -10,9 +10,9 @@ import {
 } from "@/lib/advisor-access";
 import type { Database } from "@/database.types";
 import {
-  APPLICATION_ADMISSION_STATUS_LABEL,
-  parseApplicationAdmissionStatus,
-} from "@/lib/application-admission-status";
+  buildApplicationSupportStatusTimestampPatch,
+} from "@/lib/application-support-status-transitions";
+import { parseApplicationNoteVisibility } from "@/lib/application-internal-notes";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { revalidatePath } from "next/cache";
 
@@ -21,6 +21,8 @@ type ApplicationStatus = Database["public"]["Enums"]["application_status"];
 const VALID_STATUSES = new Set<string>([
   "new",
   "scheduled",
+  "payment_in_progress",
+  "payment_completed",
   "in_progress",
   "blocked",
   "submitted",
@@ -44,19 +46,8 @@ function statusLabel(status: ApplicationStatus): string {
 function buildStatusTimestampPatch(
   status: ApplicationStatus,
   now: string,
-): Partial<Database["public"]["Tables"]["applications"]["Update"]> {
-  switch (status) {
-    case "scheduled":
-      return { scheduled_at: now };
-    case "in_progress":
-      return { in_progress_at: now };
-    case "blocked":
-      return { blocked_at: now };
-    case "submitted":
-      return { submitted_at: now };
-    default:
-      return {};
-  }
+) {
+  return buildApplicationSupportStatusTimestampPatch(status, now);
 }
 
 async function insertApplicationActivityLog(input: {
@@ -159,81 +150,10 @@ export async function updateAdvisorApplicationStatus(
   return { ok: true };
 }
 
-export async function updateAdvisorApplicationAdmissionStatus(
-  applicationIdRaw: string,
-  admissionStatusRaw: string,
-): Promise<AdvisorApplicationActionResult> {
-  const access = await assertAdvisorAccess();
-  if (!access.ok) return access;
-
-  const applicationId = parseApplicationId(applicationIdRaw);
-  if (applicationId == null) {
-    return { ok: false, error: "Invalid application." };
-  }
-
-  const assignment = await assertAdvisorAssignedApplication(
-    access.advisorId,
-    applicationId,
-  );
-  if (!assignment.ok) return assignment;
-
-  const admissionStatus = parseApplicationAdmissionStatus(admissionStatusRaw);
-  if (!admissionStatus) {
-    return { ok: false, error: "Select a valid admission status." };
-  }
-
-  const secret = await createSupabaseSecretClient();
-  const { data: existing, error: fetchErr } = await secret
-    .from("applications")
-    .select("id, student_id, admission_status")
-    .eq("id", applicationId)
-    .eq("assigned_to", access.advisorId)
-    .maybeSingle();
-
-  if (fetchErr || !existing) {
-    console.error("[updateAdvisorApplicationAdmissionStatus] fetch", fetchErr);
-    return { ok: false, error: "Application not found." };
-  }
-
-  if (existing.admission_status === admissionStatus) {
-    return { ok: true };
-  }
-
-  const now = new Date().toISOString();
-  const { error: updateErr } = await secret
-    .from("applications")
-    .update({
-      admission_status: admissionStatus,
-      updated_at: now,
-    })
-    .eq("id", applicationId)
-    .eq("assigned_to", access.advisorId);
-
-  if (updateErr) {
-    console.error("[updateAdvisorApplicationAdmissionStatus] update", updateErr);
-    return { ok: false, error: "Could not update admission status." };
-  }
-
-  const fromLabel =
-    APPLICATION_ADMISSION_STATUS_LABEL[
-      (existing.admission_status ?? "pending") as keyof typeof APPLICATION_ADMISSION_STATUS_LABEL
-    ] ?? "Pending";
-  const toLabel = APPLICATION_ADMISSION_STATUS_LABEL[admissionStatus];
-
-  await insertApplicationActivityLog({
-    applicationId,
-    studentId: existing.student_id,
-    action: "application_admission_status_updated",
-    message: `${access.advisorName} changed application #${applicationId} admission status from ${fromLabel} to ${toLabel}.`,
-  });
-
-  revalidateApplicationPaths(applicationId);
-  return { ok: true };
-}
-
 export async function addAdvisorApplicationInternalNote(
   applicationIdRaw: string,
   contentRaw: string,
+  visibilityRaw?: string,
 ): Promise<AdvisorApplicationActionResult> {
   const access = await assertAdvisorAccess();
   if (!access.ok) return access;
@@ -256,6 +176,8 @@ export async function addAdvisorApplicationInternalNote(
   if (content.length > 8000) {
     return { ok: false, error: "Note is too long (max 8,000 characters)." };
   }
+
+  const visibility = parseApplicationNoteVisibility(visibilityRaw);
 
   const secret = await createSupabaseSecretClient();
   const { data: existing, error: fetchErr } = await secret
@@ -281,10 +203,12 @@ export async function addAdvisorApplicationInternalNote(
   const now = new Date().toISOString();
   const { error: insertErr } = await secret.from("application_internal_notes").insert({
     application_id: applicationId,
+    student_id: existing.student_id,
     author_user_id: user.id,
     author_role: "advisor",
     author_name: access.advisorName,
     content,
+    visibility,
     created_at: now,
   });
 
@@ -299,13 +223,89 @@ export async function addAdvisorApplicationInternalNote(
     .eq("id", applicationId)
     .eq("assigned_to", access.advisorId);
 
+  const noteKind = visibility === "public" ? "public" : "internal";
   await insertApplicationActivityLog({
     applicationId,
     studentId: existing.student_id,
     action: "application_internal_note_added",
-    message: `${access.advisorName} added an internal note on application #${applicationId}.`,
+    message: `${access.advisorName} added a ${noteKind} note on application #${applicationId}.`,
   });
 
   revalidateApplicationPaths(applicationId);
+  if (visibility === "public") {
+    revalidatePath(`/school/students/${existing.student_id}`);
+    revalidatePath(`/admin/users/students/${existing.student_id}`);
+  }
+  return { ok: true };
+}
+
+export async function toggleAdvisorStudentFlag(
+  applicationIdRaw: string,
+): Promise<AdvisorApplicationActionResult> {
+  const access = await assertAdvisorAccess();
+  if (!access.ok) return access;
+
+  const applicationId = parseApplicationId(applicationIdRaw);
+  if (applicationId == null) {
+    return { ok: false, error: "Invalid application." };
+  }
+
+  const assignment = await assertAdvisorAssignedApplication(
+    access.advisorId,
+    applicationId,
+  );
+  if (!assignment.ok) return assignment;
+
+  const secret = await createSupabaseSecretClient();
+  const { data: existing, error: fetchErr } = await secret
+    .from("applications")
+    .select("id, student_id")
+    .eq("id", applicationId)
+    .eq("assigned_to", access.advisorId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    console.error("[toggleAdvisorStudentFlag] fetch application", fetchErr);
+    return { ok: false, error: "Application not found." };
+  }
+
+  const { data: studentRow, error: studentFetchErr } = await secret
+    .from("student_profiles")
+    .select("id, flagged")
+    .eq("id", existing.student_id)
+    .maybeSingle();
+
+  if (studentFetchErr || !studentRow) {
+    console.error("[toggleAdvisorStudentFlag] fetch student", studentFetchErr);
+    return { ok: false, error: "Student not found." };
+  }
+
+  const nextFlagged = !studentRow.flagged;
+  const now = new Date().toISOString();
+  const { error: updateErr } = await secret
+    .from("student_profiles")
+    .update({
+      flagged: nextFlagged,
+      flagged_by: nextFlagged ? access.advisorId : null,
+      updated_at: now,
+    })
+    .eq("id", existing.student_id);
+
+  if (updateErr) {
+    console.error("[toggleAdvisorStudentFlag] update", updateErr);
+    return { ok: false, error: "Could not update student flag." };
+  }
+
+  await insertApplicationActivityLog({
+    applicationId,
+    studentId: existing.student_id,
+    action: nextFlagged ? "student_flagged" : "student_unflagged",
+    message: nextFlagged
+      ? `${access.advisorName} flagged the student for follow-up on application #${applicationId}.`
+      : `${access.advisorName} removed the follow-up flag on application #${applicationId}.`,
+  });
+
+  revalidateApplicationPaths(applicationId);
+  revalidatePath("/advisor/students");
   return { ok: true };
 }

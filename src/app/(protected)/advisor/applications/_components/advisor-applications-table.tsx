@@ -10,7 +10,6 @@ import {
   type AdvisorApplicationStatusFilter,
 } from "@/app/(protected)/admin/users/advisors/[id]/_lib/fetch-advisor-applications-page";
 import { Pagination } from "@/components/pagination";
-import { SchoolStudentPanel } from "@/app/(protected)/school/students/[id]/_components/school-student-panel";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
@@ -35,11 +34,14 @@ export function AdvisorApplicationsTable({
   limit,
   status,
   statusCounts,
-}: AdminAdvisorApplicationsPanelProps) {
+  search,
+  isPending: isPendingFromParent = false,
+}: AdminAdvisorApplicationsPanelProps & { isPending?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [isTabPending, startTransition] = useTransition();
+  const isPending = isPendingFromParent || isTabPending;
 
   const switchStatus = useCallback(
     (nextStatus: AdvisorApplicationStatusFilter) => {
@@ -59,11 +61,7 @@ export function AdvisorApplicationsTable({
   );
 
   return (
-    <SchoolStudentPanel
-      head="My applications"
-      sub="Application support cases assigned to you"
-    >
-      <div className={isPending ? "opacity-75" : ""} aria-busy={isPending}>
+    <>
         <div className="mb-4 flex flex-wrap gap-1 border-b border-[var(--border-light)]">
           {ADVISOR_APPLICATION_STATUS_OPTIONS.map((option) => {
             const active = option.value === status;
@@ -107,7 +105,9 @@ export function AdvisorApplicationsTable({
                     colSpan={6}
                     className="px-4 py-10 text-center text-[var(--text-light)]"
                   >
-                    No applications assigned to you yet.
+                    {search.trim()
+                      ? "No applications match your search."
+                      : "No applications assigned to you yet."}
                   </td>
                 </tr>
               ) : (
@@ -189,7 +189,6 @@ export function AdvisorApplicationsTable({
           pageParam="applicationsPage"
           limitParam="applicationsLimit"
         />
-      </div>
-    </SchoolStudentPanel>
+    </>
   );
 }

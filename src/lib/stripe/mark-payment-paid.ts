@@ -31,6 +31,7 @@ export async function markApplicationPaymentPaid(
       secret,
       payment.application_id,
       now,
+      { isFirstPayment: false },
     );
     return { ok: true };
   }
@@ -68,12 +69,25 @@ export async function markApplicationPaymentPaid(
         secret,
         payment.application_id,
         now,
+        { isFirstPayment: false },
       );
       return { ok: true };
     }
 
     return { ok: false, error: "Payment is not pending." };
   }
+
+  const { count: paidCount, error: paidCountErr } = await secret
+    .from("payments")
+    .select("id", { count: "exact", head: true })
+    .eq("application_id", payment.application_id)
+    .eq("status", "paid");
+
+  if (paidCountErr) {
+    console.error("[markApplicationPaymentPaid] paid count", paidCountErr);
+  }
+
+  const isFirstPayment = (paidCount ?? 0) <= 1;
 
   const studentId = options?.studentId ?? payment.student_id;
   const message =
@@ -99,6 +113,7 @@ export async function markApplicationPaymentPaid(
     secret,
     payment.application_id,
     now,
+    { isFirstPayment },
   );
 
   await createAdvisorPayoutForPayment(paymentId);

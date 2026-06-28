@@ -541,6 +541,115 @@ export async function deleteUniversityTargetCore(
   return { ok: true, applicationId: target.application_id };
 }
 
+async function countRequirementsForTarget(
+  secret: SecretClient,
+  targetId: string,
+): Promise<number> {
+  const { count, error } = await secret
+    .from("application_university_document_requirements")
+    .select("id", { count: "exact", head: true })
+    .eq("university_target_id", targetId);
+
+  if (error) {
+    console.error("[university-target] count requirements", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+export async function createUniversityDocRequirementCore(
+  secret: SecretClient,
+  targetId: string,
+  displayNameRaw: string,
+): Promise<UniversityTargetActionResult> {
+  const target = await loadTarget(secret, targetId);
+  if (!target) return { ok: false, error: "University target not found." };
+
+  const displayName = displayNameRaw.trim().slice(0, MAX_UNIVERSITY_DOC_NAME);
+  if (!displayName) {
+    return { ok: false, error: "Document name is required." };
+  }
+
+  const currentCount = await countRequirementsForTarget(secret, targetId);
+  if (currentCount >= MAX_UNIVERSITY_DOC_REQUIREMENTS) {
+    return {
+      ok: false,
+      error: `This university allows up to ${MAX_UNIVERSITY_DOC_REQUIREMENTS} document requirements.`,
+    };
+  }
+
+  const { data: existingRows, error: existingErr } = await secret
+    .from("application_university_document_requirements")
+    .select("display_name")
+    .eq("university_target_id", targetId);
+
+  if (existingErr) {
+    console.error("[createUniversityDocRequirementCore] existing", existingErr);
+    return { ok: false, error: "Could not add document requirement." };
+  }
+
+  const normalizedNew = displayName.toLowerCase();
+  const hasDuplicate = (existingRows ?? []).some(
+    (row) => row.display_name.trim().toLowerCase() === normalizedNew,
+  );
+  if (hasDuplicate) {
+    return { ok: false, error: "A document with that name already exists." };
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await secret.from("application_university_document_requirements").insert({
+    university_target_id: targetId,
+    display_name: displayName,
+    status: "not_started",
+    sort_order: currentCount,
+    updated_at: now,
+  });
+
+  if (error) {
+    console.error("[createUniversityDocRequirementCore]", error);
+    return { ok: false, error: "Could not add document requirement." };
+  }
+
+  await secret
+    .from("applications")
+    .update({ updated_at: now })
+    .eq("id", target.application_id);
+
+  return { ok: true, applicationId: target.application_id };
+}
+
+export async function deleteUniversityDocRequirementCore(
+  secret: SecretClient,
+  requirementId: string,
+): Promise<UniversityTargetActionResult> {
+  const requirement = await loadRequirementWithTarget(secret, requirementId);
+  if (!requirement) return { ok: false, error: "Document requirement not found." };
+
+  const targetEmbed = requirement.application_university_targets as
+    | { id: string; application_id: number }
+    | { id: string; application_id: number }[];
+  const target = Array.isArray(targetEmbed) ? targetEmbed[0] : targetEmbed;
+  if (!target) return { ok: false, error: "University target not found." };
+
+  const { error } = await secret
+    .from("application_university_document_requirements")
+    .delete()
+    .eq("id", requirementId);
+
+  if (error) {
+    console.error("[deleteUniversityDocRequirementCore]", error);
+    return { ok: false, error: "Could not remove document requirement." };
+  }
+
+  const now = new Date().toISOString();
+  await secret
+    .from("applications")
+    .update({ updated_at: now })
+    .eq("id", target.application_id);
+
+  return { ok: true, applicationId: target.application_id };
+}
+
 export async function updateUniversityDocRequirementStatusCore(
   secret: SecretClient,
   requirementId: string,
@@ -710,7 +819,7 @@ export function buildCreateUniversityTargetInput(input: {
   portalUrl?: string | null;
   status: string;
   notes?: string | null;
-  documentNames: string[];
+  documentNames?: string[];
 }): CreateUniversityTargetInput | { error: string } {
   const status = parseUniversityTargetStatus(input.status);
   if (!status) return { error: "Invalid status." };
@@ -724,7 +833,7 @@ export function buildCreateUniversityTargetInput(input: {
     portalUrl: input.portalUrl ?? null,
     status,
     notes: input.notes ?? null,
-    documentNames: input.documentNames,
+    documentNames: input.documentNames ?? [],
   };
 }
 

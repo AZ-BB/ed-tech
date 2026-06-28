@@ -175,6 +175,8 @@ export default async function AdminStudentDetailPage({
 
     studentNotes,
 
+    advisorNotes,
+
     studentInteractions,
 
     documents,
@@ -208,6 +210,8 @@ export default async function AdminStudentDetailPage({
       countries={countries}
 
       studentNotes={studentNotes}
+
+      advisorNotes={advisorNotes}
 
       studentInteractions={studentInteractions}
 

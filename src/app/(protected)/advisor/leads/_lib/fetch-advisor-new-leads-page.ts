@@ -1,49 +1,81 @@
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
 import {
-  ADMIN_APPLICATION_STATUS_LABEL,
-  type ApplicationStatus,
-} from "@/app/(protected)/admin/applications/_lib/application-status-labels";
+  fetchAdvisorStudentApplicationGroups,
+  studentApplicationOptionsByStudentId,
+  type AdvisorStudentApplicationOption,
+} from "@/lib/advisor-student-application-options";
+import { type ApplicationStatus } from "@/app/(protected)/admin/applications/_lib/application-status-labels";
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
-import { createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  fetchActiveApplicationPlans,
+  hydrateApplicationsPlansEmbeds,
+  type ApplicationPlanCatalogRow,
+} from "@/lib/applications-plans";
+import { mapApplicationToPaymentRequestOption } from "@/lib/payment-request-application-option";
+import type { SendPaymentRequestApplicationOption } from "@/components/application-support/send-payment-request-dialog";
+import { resolvePaymentFromEmailDisplay } from "@/lib/resend/application-payment-request-email";
+import { expireOverduePendingPayments } from "@/lib/payment-request-utils";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
 
 type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 const NON_ACTIVE_APPLICATION_STATUSES: ApplicationStatus[] = [
   "new",
   "scheduled",
+  "payment_in_progress",
   "blocked",
 ];
 
 type LeadRowRaw = {
   id: number;
+  plan_id: number;
+  student_id: string;
   student_name: string | null;
   student_email: string | null;
   school_name: string | null;
-  status: string | null;
-  assigned_at: string | null;
+  package_data: unknown;
   created_at: string | null;
+  scheduled_at: string | null;
   applications_plans:
-    | { name: string; universities_count: number }
-    | { name: string; universities_count: number }[]
+    | { name: string; price: number; universities_count: number }
+    | { name: string; price: number; universities_count: number }[]
     | null;
   schools: { name: string } | { name: string }[] | null;
   student_profiles:
     | { first_name: string; last_name: string; email?: string | null }
     | { first_name: string; last_name: string; email?: string | null }[]
     | null;
+  payments:
+    | {
+        status: string | null;
+        amount: number;
+        due_date: string | null;
+        payment_request_sent_at: string | null;
+        payment_request_token: string | null;
+      }
+    | {
+        status: string | null;
+        amount: number;
+        due_date: string | null;
+        payment_request_sent_at: string | null;
+        payment_request_token: string | null;
+      }[]
+    | null;
 };
 
 export type AdvisorNewLeadRow = {
   id: number;
+  studentId: string;
   studentName: string;
   studentInitials: string;
   studentEmail: string;
   schoolName: string;
-  packageLabel: string;
-  status: string;
-  statusLabel: string;
-  assignedAt: string | null;
-  createdAt: string;
+  dateBooked: string | null;
+  meetingDate: string | null;
+  paymentRequestOption: SendPaymentRequestApplicationOption;
 };
 
 export type AdvisorNewLeadsPanelProps = {
@@ -52,6 +84,11 @@ export type AdvisorNewLeadsPanelProps = {
   page: number;
   limit: number;
   search: string;
+  availablePlans: ApplicationPlanCatalogRow[];
+  advisorName: string;
+  advisorEmail: string;
+  fromEmailDisplay: string;
+  studentApplicationOptions: Record<string, AdvisorStudentApplicationOption[]>;
 };
 
 function paginationRange(page: number, limit: number) {
@@ -83,41 +120,26 @@ function studentInitials(name: string): string {
 
 function mapNewLeadRow(row: LeadRowRaw): AdvisorNewLeadRow {
   const profile = firstEmbed(row.student_profiles);
-  const profileName = profile ? personName(profile.first_name, profile.last_name) : "";
-  const studentName =
-    profileName || row.student_name?.trim() || "Student";
+  const profileName = profile
+    ? personName(profile.first_name, profile.last_name)
+    : "";
+  const studentName = profileName || row.student_name?.trim() || "Student";
   const studentEmail =
     profile?.email?.trim() || row.student_email?.trim() || "—";
 
   const school = firstEmbed(row.schools);
   const schoolName = school?.name?.trim() || row.school_name?.trim() || "—";
 
-  const plan = firstEmbed(row.applications_plans);
-  let packageLabel = "—";
-  if (plan) {
-    const count = plan.universities_count;
-    if (Number.isFinite(count) && count > 0) {
-      packageLabel = `${count} ${count === 1 ? "university" : "universities"}`;
-    } else {
-      packageLabel = plan.name?.trim() || "—";
-    }
-  }
-
-  const status = row.status?.trim() || "new";
-  const statusLabel =
-    ADMIN_APPLICATION_STATUS_LABEL[status as ApplicationStatus] ?? status;
-
   return {
     id: row.id,
+    studentId: row.student_id,
     studentName,
     studentInitials: studentInitials(studentName),
     studentEmail,
     schoolName,
-    packageLabel,
-    status,
-    statusLabel,
-    assignedAt: row.assigned_at,
-    createdAt: row.created_at ?? new Date(0).toISOString(),
+    dateBooked: row.created_at,
+    meetingDate: row.scheduled_at,
+    paymentRequestOption: mapApplicationToPaymentRequestOption(row),
   };
 }
 
@@ -178,15 +200,18 @@ async function fetchAdvisorNewLeadsPage(
     .select(
       `
       id,
+      plan_id,
+      student_id,
       student_name,
       student_email,
       school_name,
-      status,
-      assigned_at,
+      package_data,
       created_at,
-      applications_plans ( name, universities_count ),
+      scheduled_at,
+      applications_plans!applications_plan_id_fkey ( name, price, universities_count ),
       schools ( name ),
-      student_profiles ( first_name, last_name, email )
+      student_profiles ( first_name, last_name, email ),
+      payments ( status, amount, due_date, payment_request_sent_at, payment_request_token )
     `,
       { count: "exact" },
     )
@@ -211,7 +236,11 @@ async function fetchAdvisorNewLeadsPage(
     return { rows: [], totalRows: 0 };
   }
 
-  const rows = ((data ?? []) as unknown as LeadRowRaw[]).map(mapNewLeadRow);
+  const hydratedRows = await hydrateApplicationsPlansEmbeds(
+    client,
+    (data ?? []) as unknown as LeadRowRaw[],
+  );
+  const rows = hydratedRows.map(mapNewLeadRow);
 
   return { rows, totalRows: count ?? 0 };
 }
@@ -225,15 +254,40 @@ export async function fetchAdvisorNewLeadsPanel(options: {
   const advisorId = await resolveCurrentAdvisorId(supabase);
   if (!advisorId) return null;
 
-  const pageResult = await fetchAdvisorNewLeadsPage(advisorId, {
-    ...options,
-    client: supabase,
-  });
+  await expireOverduePendingPayments(await createSupabaseSecretClient());
+
+  const [pageResult, availablePlans, advisorProfile, applicationGroups] =
+    await Promise.all([
+    fetchAdvisorNewLeadsPage(advisorId, {
+      ...options,
+      client: supabase,
+    }),
+    fetchActiveApplicationPlans(supabase),
+    supabase
+      .from("advisors")
+      .select("first_name, last_name, email")
+      .eq("id", advisorId)
+      .maybeSingle(),
+    fetchAdvisorStudentApplicationGroups(supabase, advisorId),
+  ]);
+
+  const advisorName =
+    [advisorProfile.data?.first_name, advisorProfile.data?.last_name]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Advisor";
+  const advisorEmail = advisorProfile.data?.email?.trim() || "";
 
   return {
     ...pageResult,
     page: options.page,
     limit: options.limit,
     search: options.search,
+    availablePlans,
+    advisorName,
+    advisorEmail,
+    fromEmailDisplay: resolvePaymentFromEmailDisplay(),
+    studentApplicationOptions:
+      studentApplicationOptionsByStudentId(applicationGroups),
   };
 }

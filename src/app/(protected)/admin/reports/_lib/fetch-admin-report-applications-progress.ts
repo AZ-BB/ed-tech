@@ -11,6 +11,8 @@ type ApplicationStatus = Database["public"]["Enums"]["application_status"];
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   new: "New",
   scheduled: "Scheduled",
+  payment_in_progress: "Payment in Progress",
+  payment_completed: "Payment Completed",
   in_progress: "In Progress",
   blocked: "Blocked",
   submitted: "Submitted",
@@ -19,6 +21,8 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
 const ACTIVE_STATUSES: ApplicationStatus[] = [
   "new",
   "scheduled",
+  "payment_in_progress",
+  "payment_completed",
   "in_progress",
   "blocked",
 ];

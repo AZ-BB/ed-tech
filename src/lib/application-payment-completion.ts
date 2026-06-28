@@ -1,6 +1,9 @@
 import "server-only";
 
 import {
+  applyFirstPaymentCompletedStatusEffects,
+} from "@/lib/application-support-status-transitions";
+import {
   parseApplicationPackageData,
   type ApplicationPackageData,
 } from "@/lib/application-package-data";
@@ -9,20 +12,19 @@ import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type SecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
-const STATUSES_AFTER_PAYMENT = new Set(["in_progress", "submitted"]);
-
 /**
- * When a payment is completed, move the application into active work (in_progress)
- * and mark the package lifecycle step "Payment confirmed".
+ * When a payment is completed, mark the package lifecycle step "Payment confirmed"
+ * and move the application to payment_completed on the first paid payment.
  */
 export async function applyApplicationPaymentCompletionEffects(
   secret: SecretClient,
   applicationId: number,
   completedAt: string,
+  options?: { isFirstPayment?: boolean },
 ): Promise<void> {
   const { data: application, error } = await secret
     .from("applications")
-    .select("status, package_data, in_progress_at")
+    .select("status, package_data")
     .eq("id", applicationId)
     .maybeSingle();
 
@@ -56,21 +58,26 @@ export async function applyApplicationPaymentCompletionEffects(
     );
   }
 
-  const currentStatus = application.status?.trim() || "new";
-  if (STATUSES_AFTER_PAYMENT.has(currentStatus)) {
-    return;
+  let isFirstPayment = options?.isFirstPayment;
+  if (isFirstPayment === undefined) {
+    const { count, error: countErr } = await secret
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("application_id", applicationId)
+      .eq("status", "paid");
+
+    if (countErr) {
+      console.error("[application-payment-completion] paid count", countErr);
+      isFirstPayment = false;
+    } else {
+      isFirstPayment = (count ?? 0) <= 1;
+    }
   }
 
-  const { error: statusErr } = await secret
-    .from("applications")
-    .update({
-      status: "in_progress",
-      in_progress_at: application.in_progress_at ?? completedAt,
-      updated_at: completedAt,
-    })
-    .eq("id", applicationId);
-
-  if (statusErr) {
-    console.error("[application-payment-completion] status update", statusErr);
-  }
+  await applyFirstPaymentCompletedStatusEffects(
+    secret,
+    applicationId,
+    completedAt,
+    isFirstPayment,
+  );
 }

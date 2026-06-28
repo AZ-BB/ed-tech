@@ -5,7 +5,9 @@ import {
   buildCreateUniversityTargetInput,
   buildUpdateUniversityTargetInput,
   clearUniversityDocRequirementFileCore,
+  createUniversityDocRequirementCore,
   createUniversityTargetCore,
+  deleteUniversityDocRequirementCore,
   deleteUniversityTargetCore,
   linkUniversityDocRequirementToChecklistCore,
   parseRequirementId,
@@ -78,7 +80,7 @@ export async function createAdminUniversityTarget(
     portalUrl?: string | null;
     status: string;
     notes?: string | null;
-    documentNames: string[];
+    documentNames?: string[];
   },
 ): Promise<UniversityTargetActionResult> {
   const access = await assertAdminAccess();
@@ -308,6 +310,45 @@ export async function clearAdminUniversityDocRequirementFile(
 
   const secret = await createSupabaseSecretClient();
   const result = await clearUniversityDocRequirementFileCore(secret, requirementId);
+
+  if (result.ok && result.applicationId) {
+    revalidateApplicationPaths(result.applicationId);
+  }
+
+  return result;
+}
+
+export async function createAdminUniversityDocRequirement(
+  targetIdRaw: string,
+  displayName: string,
+): Promise<UniversityTargetActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const targetId = parseUniversityTargetId(targetIdRaw);
+  if (!targetId) return { ok: false, error: "Invalid university target." };
+
+  const secret = await createSupabaseSecretClient();
+  const result = await createUniversityDocRequirementCore(secret, targetId, displayName);
+
+  if (result.ok && result.applicationId) {
+    revalidateApplicationPaths(result.applicationId);
+  }
+
+  return result;
+}
+
+export async function deleteAdminUniversityDocRequirement(
+  requirementIdRaw: string,
+): Promise<UniversityTargetActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const requirementId = parseRequirementId(requirementIdRaw);
+  if (!requirementId) return { ok: false, error: "Invalid document requirement." };
+
+  const secret = await createSupabaseSecretClient();
+  const result = await deleteUniversityDocRequirementCore(secret, requirementId);
 
   if (result.ok && result.applicationId) {
     revalidateApplicationPaths(result.applicationId);

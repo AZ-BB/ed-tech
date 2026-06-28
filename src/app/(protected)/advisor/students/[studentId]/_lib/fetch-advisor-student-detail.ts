@@ -13,6 +13,7 @@ import {
   parseApplicationPackageData,
   resolveApplicationUniversitiesTotal,
 } from "@/lib/application-package-data";
+import { hydrateApplicationsPlansEmbeds } from "@/lib/applications-plans";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
@@ -133,6 +134,7 @@ type PaymentEmbed = {
 
 type AssignedAppRaw = {
   id: number;
+  plan_id: number;
   status: string | null;
   assigned_at: string | null;
   created_at: string | null;
@@ -198,6 +200,7 @@ export async function fetchAdvisorStudentDetail(
     .select(
       `
       id,
+      plan_id,
       status,
       assigned_at,
       created_at,
@@ -209,7 +212,7 @@ export async function fetchAdvisorStudentDetail(
       extracurricular_activities,
       additional_notes,
       payments ( status, amount, payment_request_sent_at, payment_request_token ),
-      applications_plans ( name, universities_count )
+      applications_plans!applications_plan_id_fkey ( name, universities_count )
     `,
     )
     .eq("assigned_to", advisorId)
@@ -221,7 +224,10 @@ export async function fetchAdvisorStudentDetail(
     return null;
   }
 
-  const apps = (assignedApps ?? []) as unknown as AssignedAppRaw[];
+  const apps = await hydrateApplicationsPlansEmbeds(
+    supabase,
+    (assignedApps ?? []) as unknown as AssignedAppRaw[],
+  );
   if (apps.length === 0) return null;
 
   const [{ data: appProfile }, { count: shortlistCount }] = await Promise.all([

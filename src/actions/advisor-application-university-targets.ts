@@ -9,7 +9,9 @@ import {
   buildCreateUniversityTargetInput,
   buildUpdateUniversityTargetInput,
   clearUniversityDocRequirementFileCore,
+  createUniversityDocRequirementCore,
   createUniversityTargetCore,
+  deleteUniversityDocRequirementCore,
   deleteUniversityTargetCore,
   linkUniversityDocRequirementToChecklistCore,
   parseRequirementId,
@@ -129,7 +131,7 @@ export async function createAdvisorUniversityTarget(
     portalUrl?: string | null;
     status: string;
     notes?: string | null;
-    documentNames: string[];
+    documentNames?: string[];
   },
 ): Promise<UniversityTargetActionResult> {
   const access = await assertAdvisorAccess();
@@ -341,6 +343,46 @@ export async function clearAdvisorUniversityDocRequirementFile(
 
   const secret = await createSupabaseSecretClient();
   const result = await clearUniversityDocRequirementFileCore(
+    secret,
+    access.requirementId,
+  );
+
+  if (result.ok && result.applicationId) {
+    revalidateApplicationPaths(result.applicationId);
+  }
+
+  return result;
+}
+
+export async function createAdvisorUniversityDocRequirement(
+  targetIdRaw: string,
+  displayName: string,
+): Promise<UniversityTargetActionResult> {
+  const access = await assertAdvisorCanAccessTarget(targetIdRaw);
+  if (!access.ok) return access;
+
+  const secret = await createSupabaseSecretClient();
+  const result = await createUniversityDocRequirementCore(
+    secret,
+    access.targetId,
+    displayName,
+  );
+
+  if (result.ok && result.applicationId) {
+    revalidateApplicationPaths(result.applicationId);
+  }
+
+  return result;
+}
+
+export async function deleteAdvisorUniversityDocRequirement(
+  requirementIdRaw: string,
+): Promise<UniversityTargetActionResult> {
+  const access = await assertAdvisorCanAccessRequirement(requirementIdRaw);
+  if (!access.ok) return access;
+
+  const secret = await createSupabaseSecretClient();
+  const result = await deleteUniversityDocRequirementCore(
     secret,
     access.requirementId,
   );

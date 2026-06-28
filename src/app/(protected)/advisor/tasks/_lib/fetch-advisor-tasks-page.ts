@@ -1,4 +1,9 @@
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
+import {
+  fetchAdvisorStudentApplicationGroups,
+  type AdvisorStudentApplicationGroup,
+  type AdvisorStudentApplicationOption,
+} from "@/lib/advisor-student-application-options";
 import type { ApplicationTaskPriority } from "@/lib/application-task-constants";
 import { mapApplicationTaskRow } from "@/lib/fetch-application-tasks";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
@@ -20,6 +25,10 @@ export type AdvisorTaskTableRow = {
   createdAt: string;
 };
 
+export type AdvisorTaskApplicationOption = AdvisorStudentApplicationOption;
+
+export type AdvisorTaskStudentOption = AdvisorStudentApplicationGroup;
+
 export type AdvisorTasksPanelProps = {
   rows: AdvisorTaskTableRow[];
   totalRows: number;
@@ -27,6 +36,7 @@ export type AdvisorTasksPanelProps = {
   limit: number;
   status: AdvisorTaskStatusFilter;
   statusCounts: Record<AdvisorTaskStatusFilter, number>;
+  taskCreateOptions: AdvisorTaskStudentOption[];
 };
 
 type TaskListRowRaw = {
@@ -193,7 +203,10 @@ export async function fetchAdvisorTasksPanel(options: {
   const advisorId = await resolveCurrentAdvisorId(supabase);
   if (!advisorId) return null;
 
-  const applicationIds = await fetchAssignedApplicationIds(supabase, advisorId);
+  const [applicationIds, taskCreateOptions] = await Promise.all([
+    fetchAssignedApplicationIds(supabase, advisorId),
+    fetchAdvisorStudentApplicationGroups(supabase, advisorId),
+  ]);
   const emptyCounts: Record<AdvisorTaskStatusFilter, number> = {
     all: 0,
     undone: 0,
@@ -208,6 +221,7 @@ export async function fetchAdvisorTasksPanel(options: {
       limit: options.limit,
       status: options.status,
       statusCounts: emptyCounts,
+      taskCreateOptions,
     };
   }
 
@@ -264,6 +278,7 @@ export async function fetchAdvisorTasksPanel(options: {
       limit,
       status,
       statusCounts,
+      taskCreateOptions,
     };
   }
 
@@ -276,5 +291,6 @@ export async function fetchAdvisorTasksPanel(options: {
     limit,
     status,
     statusCounts,
+    taskCreateOptions,
   };
 }

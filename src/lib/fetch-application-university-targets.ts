@@ -9,7 +9,7 @@ type DbClient =
   | Awaited<ReturnType<typeof createSupabaseServerClient>>
   | Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
-const UNIVERSITY_TARGETS_SELECT = `
+export const UNIVERSITY_TARGETS_SELECT = `
   id,
   application_id,
   university_id,

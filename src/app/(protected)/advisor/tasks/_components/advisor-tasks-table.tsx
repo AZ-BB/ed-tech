@@ -1,6 +1,13 @@
 "use client";
 
-import { toggleAdvisorApplicationTaskCompleted } from "@/actions/advisor-application-tasks";
+import {
+  createAdvisorApplicationTask,
+  toggleAdvisorApplicationTaskCompleted,
+} from "@/actions/advisor-application-tasks";
+import {
+  AddAdvisorTaskDialog,
+  type AddAdvisorTaskSubmitInput,
+} from "@/app/(protected)/advisor/tasks/_components/add-advisor-task-dialog";
 import type {
   AdvisorTasksPanelProps,
   AdvisorTaskStatusFilter,
@@ -86,12 +93,15 @@ export function AdvisorTasksTable({
   limit,
   status,
   statusCounts,
+  taskCreateOptions,
 }: AdvisorTasksPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [addTaskError, setAddTaskError] = useState<string | null>(null);
 
   const switchStatus = useCallback(
     (nextStatus: AdvisorTaskStatusFilter) => {
@@ -122,11 +132,42 @@ export function AdvisorTasksTable({
     });
   }
 
+  function handleAddTask(input: AddAdvisorTaskSubmitInput) {
+    setAddTaskError(null);
+    startTransition(async () => {
+      const result = await createAdvisorApplicationTask(
+        String(input.applicationId),
+        input.title,
+        input.dueDate,
+        input.priority,
+      );
+      if (!result.ok) {
+        setAddTaskError(result.error);
+        return;
+      }
+      setAddTaskOpen(false);
+      router.refresh();
+    });
+  }
+
   return (
     <div
       className={`overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${isPending ? "opacity-75" : ""}`}
       aria-busy={isPending}
     >
+      <div className="flex flex-wrap items-center justify-end gap-3 border-b border-[var(--border-light)] px-4 py-3">
+        <button
+          type="button"
+          onClick={() => {
+            setAddTaskError(null);
+            setAddTaskOpen(true);
+          }}
+          disabled={isPending || taskCreateOptions.length === 0}
+          className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3.5 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Add task
+        </button>
+      </div>
       <div className="flex flex-wrap gap-1 border-b border-[var(--border-light)] px-4 pt-3">
         {STATUS_OPTIONS.map((option) => {
           const active = option.value === status;
@@ -296,6 +337,17 @@ export function AdvisorTasksTable({
           limitParam="tasksLimit"
         />
       </div>
+
+      <AddAdvisorTaskDialog
+        open={addTaskOpen}
+        onClose={() => {
+          if (!isPending) setAddTaskOpen(false);
+        }}
+        studentOptions={taskCreateOptions}
+        onSubmit={handleAddTask}
+        isSubmitting={isPending}
+        error={addTaskError}
+      />
     </div>
   );
 }

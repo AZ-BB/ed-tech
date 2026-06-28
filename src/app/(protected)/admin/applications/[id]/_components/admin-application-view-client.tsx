@@ -12,33 +12,20 @@ import {
 } from "@/actions/admin-application-tasks";
 import { sendApplicationPaymentRequest } from "@/actions/admin-application-payments";
 import {
-  addAdminApplicationChecklistDocument,
-  approveAdminApplicationChecklistDocument,
-  markAdminApplicationChecklistNotApplicable,
-  rejectAdminApplicationChecklistDocument,
-  requestAdminApplicationChecklistDocument,
-  uploadAdminApplicationChecklistDocument,
-} from "@/actions/admin-application-checklist";
-import {
   toggleAdminApplicationPackageLifecycle,
   updateAdminApplicationPackageStats,
   updateAdminApplicationPackageUniversitiesTotal,
 } from "@/actions/admin-application-package";
 import {
-  clearAdminUniversityDocRequirementFile,
   createAdminUniversityTarget,
-  linkAdminUniversityDocRequirementToChecklist,
   searchAdminUniversitiesForApplication,
-  updateAdminUniversityDocRequirementStatus,
   updateAdminUniversityTarget,
   updateAdminUniversityTargetDecision,
   updateAdminUniversityTargetStatus,
-  uploadAdminUniversityDocRequirement,
 } from "@/actions/admin-application-university-targets";
 import {
   assignAdminApplicationAdvisor,
   addAdminApplicationInternalNote,
-  updateAdminApplicationAdmissionStatus,
   updateAdminApplicationStatus,
 } from "@/actions/admin-applications";
 import type { AdminApplicationAdvisorOption } from "@/app/(protected)/admin/applications/_lib/fetch-admin-application-advisor-options";
@@ -59,22 +46,14 @@ const ADMIN_CONFIG: ApplicationViewConfig = {
   showStudentAdminLink: true,
   showSchoolAdminLink: true,
   showPayoutsTab: true,
+  documentsPortal: "admin",
 };
 
 const ADMIN_ACTIONS: ApplicationViewActions = {
   updateStatus: updateAdminApplicationStatus,
-  updateAdmissionStatus: updateAdminApplicationAdmissionStatus,
   addInternalNote: addAdminApplicationInternalNote,
   sendPaymentRequest: sendApplicationPaymentRequest,
   assignAdvisor: assignAdminApplicationAdvisor,
-  checklist: {
-    requestDocument: requestAdminApplicationChecklistDocument,
-    approveDocument: approveAdminApplicationChecklistDocument,
-    rejectDocument: rejectAdminApplicationChecklistDocument,
-    markNotApplicable: markAdminApplicationChecklistNotApplicable,
-    addDocument: addAdminApplicationChecklistDocument,
-    uploadDocument: uploadAdminApplicationChecklistDocument,
-  },
   calls: {
     logCall: logAdminApplicationCall,
     updateCall: updateAdminApplicationCall,
@@ -96,10 +75,6 @@ const ADMIN_ACTIONS: ApplicationViewActions = {
     updateTarget: updateAdminUniversityTarget,
     updateTargetStatus: updateAdminUniversityTargetStatus,
     updateTargetDecision: updateAdminUniversityTargetDecision,
-    updateDocRequirementStatus: updateAdminUniversityDocRequirementStatus,
-    uploadDocRequirement: uploadAdminUniversityDocRequirement,
-    linkDocRequirementToChecklist: linkAdminUniversityDocRequirementToChecklist,
-    clearDocRequirementFile: clearAdminUniversityDocRequirementFile,
   },
 };
 
@@ -125,6 +100,7 @@ export function AdminApplicationViewClient({
       config={ADMIN_CONFIG}
       actions={ADMIN_ACTIONS}
       applicationPayouts={payload.applicationPayouts}
+      paymentRequestContext={payload.paymentRequestContext}
     />
   );
 }

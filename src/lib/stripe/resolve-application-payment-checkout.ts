@@ -1,6 +1,10 @@
 import "server-only";
 
 import { createApplicationCheckoutSession } from "@/lib/stripe/create-application-checkout-session";
+import {
+  expireOverduePendingPayments,
+  isPaymentOverdue,
+} from "@/lib/payment-request-utils";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type PlanEmbed =
@@ -55,6 +59,7 @@ export async function resolveApplicationPaymentCheckout(
   }
 
   const secret = await createSupabaseSecretClient();
+
   const { data: payment, error } = await secret
     .from("payments")
     .select(
@@ -63,6 +68,7 @@ export async function resolveApplicationPaymentCheckout(
       application_id,
       status,
       amount,
+      due_date,
       applications!inner (
         id,
         student_name,
@@ -103,6 +109,14 @@ export async function resolveApplicationPaymentCheckout(
       type: "error",
       message:
         "This payment could not be completed. Please contact support for assistance.",
+    };
+  }
+
+  if (isPaymentOverdue(payment)) {
+    await expireOverduePendingPayments(secret, { applicationId: payment.application_id });
+    return {
+      type: "error",
+      message: "This payment link has expired. Please contact your advisor for a new request.",
     };
   }
 

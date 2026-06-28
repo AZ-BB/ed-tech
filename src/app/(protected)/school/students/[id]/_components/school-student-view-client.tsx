@@ -95,6 +95,7 @@ export type SchoolStudentViewClientProps = {
   shortlist: SchoolStudentDetailPayload["shortlist"];
   countries: SchoolStudentDetailPayload["countries"];
   studentNotes: SchoolStudentDetailPayload["studentNotes"];
+  advisorNotes: SchoolStudentDetailPayload["advisorNotes"];
   studentInteractions: SchoolStudentDetailPayload["studentInteractions"];
   documents: SchoolStudentDetailPayload["documents"];
   essays: SchoolStudentDetailPayload["essays"];
@@ -667,10 +668,12 @@ function SnapshotContent({
 function NotesTabContent({
   studentId,
   notes,
+  advisorNotes,
   readOnly = false,
 }: {
   studentId: string;
   notes: SchoolStudentDetailPayload["studentNotes"];
+  advisorNotes: SchoolStudentDetailPayload["advisorNotes"];
   readOnly?: boolean;
 }) {
   const router = useRouter();
@@ -715,103 +718,147 @@ function NotesTabContent({
   }
 
   return (
-    <SchoolStudentPanel
-      head="Counselor notes"
-      sub="Internal-only — students cannot see these."
-    >
-      <div className="mb-3.5 flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[rgb(250,249,244)] p-3.5">
-        {!readOnly ? (
-          <form ref={formRef} action={submit} className="flex flex-col gap-2.5">
-          <input type="hidden" name="student_id" value={studentId} />
-          <input type="hidden" name="note_type" value={selectedNoteTag} />
-          <textarea
-            name="content"
-            placeholder="Add internal counselor note... (Cmd+Enter to save)"
-            className="min-h-[64px] w-full resize-y rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)]"
-            disabled={pending}
-            maxLength={8000}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !pending) {
-                e.preventDefault();
-                e.currentTarget.form?.requestSubmit();
-              }
-            }}
-          />
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-[5px]">
-              {SCHOOL_STUDENT_NOTE_TAGS.map((tag) => {
-                const active = selectedNoteTag === tag;
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    disabled={pending}
-                    onClick={() => setSelectedNoteTag(tag)}
-                    className={`cursor-pointer rounded-[8px] border px-[9px] py-1 font-[family-name:var(--font-dm-sans)] text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
-                      active
-                        ? "border-[var(--green-light)] bg-[var(--green-pale)] text-[var(--green-dark)]"
-                        : "border-[var(--border)] bg-white text-[var(--text-mid)]"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="submit"
+    <div className="flex flex-col gap-4">
+      <SchoolStudentPanel
+        head="Counselor notes"
+        sub="Internal-only — students cannot see these."
+      >
+        <div className="mb-3.5 flex flex-col gap-2.5 rounded-[10px] border border-[var(--border-light)] bg-[rgb(250,249,244)] p-3.5">
+          {!readOnly ? (
+            <form ref={formRef} action={submit} className="flex flex-col gap-2.5">
+            <input type="hidden" name="student_id" value={studentId} />
+            <input type="hidden" name="note_type" value={selectedNoteTag} />
+            <textarea
+              name="content"
+              placeholder="Add internal counselor note... (Cmd+Enter to save)"
+              className="min-h-[64px] w-full resize-y rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 font-[family-name:var(--font-dm-sans)] text-[13px] outline-none focus:border-[var(--green-light)]"
               disabled={pending}
-              className="inline-flex shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-55"
-            >
-              {pending ? "Saving…" : "Save note"}
-            </button>
-          </div>
-          {error ? (
-            <div className="text-[12.5px] font-medium text-[#8c2d22]">
-              {error}
+              maxLength={8000}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !pending) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-[5px]">
+                {SCHOOL_STUDENT_NOTE_TAGS.map((tag) => {
+                  const active = selectedNoteTag === tag;
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      disabled={pending}
+                      onClick={() => setSelectedNoteTag(tag)}
+                      className={`cursor-pointer rounded-[8px] border px-[9px] py-1 font-[family-name:var(--font-dm-sans)] text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
+                        active
+                          ? "border-[var(--green-light)] bg-[var(--green-pale)] text-[var(--green-dark)]"
+                          : "border-[var(--border)] bg-white text-[var(--text-mid)]"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="submit"
+                disabled={pending}
+                className="inline-flex shrink-0 items-center justify-center rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 font-[family-name:var(--font-dm-sans)] text-[11.5px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] disabled:opacity-55"
+              >
+                {pending ? "Saving…" : "Save note"}
+              </button>
             </div>
-          ) : null}
-          </form>
-        ) : (
-          <p className="text-[12.5px] text-[var(--text-light)]">
-            Notes are read-only in the admin view.
-          </p>
-        )}
-      </div>
+            {error ? (
+              <div className="text-[12.5px] font-medium text-[#8c2d22]">
+                {error}
+              </div>
+            ) : null}
+            </form>
+          ) : (
+            <p className="text-[12.5px] text-[var(--text-light)]">
+              Notes are read-only in the admin view.
+            </p>
+          )}
+        </div>
 
-      {notes.length === 0 ? (
-        <div className="py-8 text-center text-[13px] text-[var(--text-light)]">
-          {readOnly ? "No counselor notes yet." : "No notes yet — add the first one above"}
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          {notes.map((n) => (
-            <div
-              key={n.id}
-              className="mb-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3.5 last:mb-0"
-            >
-              <div className="mb-2 flex items-center justify-between gap-2.5">
-                <div className="min-w-0 font-[family-name:var(--font-dm-sans)] text-[12px] text-[var(--text-mid)]">
-                  <strong className="font-semibold text-[var(--text)]">
-                    {n.authorLabel}
-                  </strong>
-                  {" · "}
-                  <span className="inline-flex items-center gap-1 rounded-[20px] border border-[var(--border)] bg-transparent px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap text-[var(--text-mid)] leading-snug">
-                    {n.noteType}
-                  </span>
+        {notes.length === 0 ? (
+          <div className="py-8 text-center text-[13px] text-[var(--text-light)]">
+            {readOnly ? "No counselor notes yet." : "No notes yet — add the first one above"}
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {notes.map((n) => (
+              <div
+                key={n.id}
+                className="mb-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3.5 last:mb-0"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2.5">
+                  <div className="min-w-0 font-[family-name:var(--font-dm-sans)] text-[12px] text-[var(--text-mid)]">
+                    <strong className="font-semibold text-[var(--text)]">
+                      {n.authorLabel}
+                    </strong>
+                    {" · "}
+                    <span className="inline-flex items-center gap-1 rounded-[20px] border border-[var(--border)] bg-transparent px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap text-[var(--text-mid)] leading-snug">
+                      {n.noteType}
+                    </span>
+                  </div>
+                  <div className="shrink-0 font-[family-name:var(--font-dm-sans)] text-[11.5px] text-[var(--text-hint)]">
+                    {formatWhen(n.createdAt)}
+                  </div>
                 </div>
-                <div className="shrink-0 font-[family-name:var(--font-dm-sans)] text-[11.5px] text-[var(--text-hint)]">
-                  {formatWhen(n.createdAt)}
+                <div className="font-[family-name:var(--font-dm-sans)] text-[13px] leading-[1.55] text-[var(--text)] whitespace-pre-wrap">
+                  {n.content}
                 </div>
               </div>
-              <div className="font-[family-name:var(--font-dm-sans)] text-[13px] leading-[1.55] text-[var(--text)] whitespace-pre-wrap">
-                {n.content}
+            ))}
+          </div>
+        )}
+      </SchoolStudentPanel>
+
+      <SchoolStudentPanel
+        head="Advisor notes"
+        sub="Shared by platform advisors and admins for this student's application support cases."
+      >
+        {advisorNotes.length === 0 ? (
+          <div className="py-8 text-center text-[13px] text-[var(--text-light)]">
+            No shared advisor notes yet.
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {advisorNotes.map((note) => (
+              <div
+                key={note.id}
+                className="mb-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3.5 last:mb-0"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2.5">
+                  <div className="min-w-0 font-[family-name:var(--font-dm-sans)] text-[12px] text-[var(--text-mid)]">
+                    <strong className="font-semibold text-[var(--text)]">
+                      {note.authorName}
+                    </strong>
+                    {" · "}
+                    <span className="inline-flex items-center gap-1 rounded-[20px] border border-[var(--border)] bg-transparent px-2 py-0.5 text-[10.5px] font-semibold capitalize whitespace-nowrap text-[var(--text-mid)] leading-snug">
+                      {note.authorRole}
+                    </span>
+                    {" · "}
+                    <span className="inline-flex items-center gap-1 rounded-[20px] border border-[var(--border)] bg-transparent px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap text-[var(--text-mid)] leading-snug">
+                      Application #{note.applicationId}
+                    </span>
+                  </div>
+                  <div className="shrink-0 font-[family-name:var(--font-dm-sans)] text-[11.5px] text-[var(--text-hint)]">
+                    {formatWhen(note.createdAt)}
+                  </div>
+                </div>
+                <div className="font-[family-name:var(--font-dm-sans)] text-[13px] leading-[1.55] text-[var(--text)] whitespace-pre-wrap">
+                  {note.content}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </SchoolStudentPanel>
+            ))}
+          </div>
+        )}
+      </SchoolStudentPanel>
+    </div>
   );
 }
 
@@ -878,6 +925,7 @@ export function SchoolStudentViewClient({
   shortlist,
   countries,
   studentNotes,
+  advisorNotes,
   studentInteractions,
   documents,
   essays,
@@ -1017,6 +1065,7 @@ export function SchoolStudentViewClient({
       <NotesTabContent
         studentId={student.id}
         notes={studentNotes}
+        advisorNotes={advisorNotes}
         readOnly={readOnly}
       />
     );
