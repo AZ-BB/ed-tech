@@ -17,7 +17,7 @@ export function SchoolStudentPanel({
 }) {
   return (
     <div
-      className={`mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${className}`}
+      className={`mb-[18px] min-w-0 overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${className}`}
     >
       <div className="flex items-center justify-between gap-3 border-b border-[var(--border-light)] px-5 py-[18px]">
         <div>

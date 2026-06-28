@@ -987,11 +987,11 @@ export function ApplicationViewClient({
   }
 
   return (
-    <div className="w-full">
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+    <div className="min-w-0 w-full max-w-full">
+      <div className="mb-3.5 flex min-w-0 w-full flex-wrap items-start justify-between gap-3">
         <Link
           href={config.backHref}
-          className="sd-back inline-flex cursor-pointer items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-[var(--text-mid)] hover:text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]"
+          className="sd-back inline-flex shrink-0 cursor-pointer items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-[var(--text-mid)] hover:text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
             <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -999,9 +999,9 @@ export function ApplicationViewClient({
           {config.backLabel}
         </Link>
 
-        <div className="flex flex-wrap items-end justify-end gap-3">
+        <div className="flex min-w-0 max-w-full flex-wrap items-end justify-end gap-3">
           {config.showHeaderQuickActions ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <button
                 type="button"
                 disabled={isPending}
@@ -1146,8 +1146,8 @@ export function ApplicationViewClient({
         </div>
       ) : null}
 
-      <div className="sd-grid grid grid-cols-1 items-start gap-5 xl:grid-cols-[280px_1fr] xl:gap-5">
-        <aside className="sd-side flex flex-col gap-3.5 rounded-[14px] border border-[var(--border-light)] bg-white p-[22px] xl:sticky xl:top-[80px]">
+      <div className="sd-grid grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-5">
+        <aside className="sd-side flex min-w-0 flex-col gap-3.5 rounded-[14px] border border-[var(--border-light)] bg-white p-[22px] xl:sticky xl:top-[80px]">
           <div className="sd-side-top flex flex-col items-center gap-2.5 border-b border-[var(--border-light)] pb-[18px] text-center">
             <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] font-[family-name:var(--font-dm-serif)] text-2xl font-bold text-[var(--green-dark)]">
               {ini}
@@ -1196,8 +1196,8 @@ export function ApplicationViewClient({
           </div>
         </aside>
 
-        <div className="sd-main flex flex-col gap-[18px]">
-          <div className="sd-tabs flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
+        <div className="sd-main flex min-w-0 flex-col gap-[18px]">
+          <div className="sd-tabs flex flex-wrap gap-0.5 rounded-[10px] border border-[var(--border-light)] bg-white p-1">
             {tabDefs.map((t) => {
               const active = tab === t.id;
               return (
@@ -1205,7 +1205,7 @@ export function ApplicationViewClient({
                   key={t.id}
                   type="button"
                   onClick={() => switchTab(t.id)}
-                  className={`shrink-0 cursor-pointer rounded-[8px] px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
+                  className={`cursor-pointer rounded-[8px] px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
                     active
                       ? "bg-[var(--green)] text-white"
                       : "text-[var(--text-mid)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
