@@ -3,7 +3,7 @@ import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { ContentTabCounts } from "../_data/content-tabs-data";
 
 async function countTable(
-  table: "universities" | "scholarships" | "announcements" | "news_items",
+  table: "universities" | "scholarships" | "announcements" | "news_items" | "webinars",
 ) {
   const supabase = await createSupabaseSecretClient();
   const { count, error } = await supabase
@@ -19,12 +19,13 @@ async function countTable(
 }
 
 export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
-  const [universities, scholarships, announcements, news] = await Promise.all([
+  const [universities, scholarships, announcements, news, webinars] = await Promise.all([
     countTable("universities"),
     countTable("scholarships"),
     countTable("announcements"),
     countTable("news_items"),
+    countTable("webinars"),
   ]);
 
-  return { universities, scholarships, announcements, news };
+  return { universities, scholarships, announcements, news, webinars };
 }

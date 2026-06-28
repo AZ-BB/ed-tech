@@ -10,6 +10,7 @@ import {
   ADMIN_CONTENT_HOME,
   ADMIN_NEWS_HOME,
   ADMIN_SCHOLARSHIPS_HOME,
+  ADMIN_WEBINARS_HOME,
 } from "../_data/content-tabs-data";
 import {
   triggerAdminScholarshipsExcelDownload,
@@ -23,6 +24,7 @@ import { AdminAddAnnouncementDialog } from "./admin-add-announcement-dialog";
 import { AdminAddNewsDialog } from "./admin-add-news-dialog";
 import { AdminAddScholarshipDialog } from "./admin-add-scholarship-dialog";
 import { AdminAddUniversityDialog } from "./admin-add-university-dialog";
+import { AdminAddWebinarDialog } from "./admin-add-webinar-dialog";
 import { ContentScholarshipsImportDialog } from "./content-scholarships-import-dialog";
 import { ContentUniversitiesImportDialog } from "./content-universities-import-dialog";
 
@@ -101,12 +103,19 @@ export function ContentHeaderActions() {
   const isScholarshipsList = normalized === ADMIN_SCHOLARSHIPS_HOME;
   const isAnnouncementsList = normalized === ADMIN_ANNOUNCEMENTS_HOME;
   const isNewsList = normalized === ADMIN_NEWS_HOME;
+  const isWebinarsList = normalized === ADMIN_WEBINARS_HOME;
 
   const [isExportPending, startExportTransition] = useTransition();
   const [importOpen, setImportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
-  if (!isUniversitiesList && !isScholarshipsList && !isAnnouncementsList && !isNewsList) {
+  if (
+    !isUniversitiesList &&
+    !isScholarshipsList &&
+    !isAnnouncementsList &&
+    !isNewsList &&
+    !isWebinarsList
+  ) {
     return null;
   }
 
@@ -188,6 +197,25 @@ export function ContentHeaderActions() {
         </div>
 
         <AdminAddNewsDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      </>
+    );
+  }
+
+  if (isWebinarsList) {
+    return (
+      <>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-[7px] text-[12px] font-semibold text-white transition-all duration-150 hover:bg-[#1B4332]"
+            onClick={() => setAddOpen(true)}
+          >
+            <HeaderActionIcon icon="add" />
+            Add Webinar
+          </button>
+        </div>
+
+        <AdminAddWebinarDialog open={addOpen} onClose={() => setAddOpen(false)} />
       </>
     );
   }

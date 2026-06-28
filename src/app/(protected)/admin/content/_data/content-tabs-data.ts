@@ -2,15 +2,17 @@ export const ADMIN_CONTENT_HOME = "/admin/content";
 export const ADMIN_SCHOLARSHIPS_HOME = `${ADMIN_CONTENT_HOME}/scholarships`;
 export const ADMIN_ANNOUNCEMENTS_HOME = `${ADMIN_CONTENT_HOME}/announcements`;
 export const ADMIN_NEWS_HOME = `${ADMIN_CONTENT_HOME}/news`;
+export const ADMIN_WEBINARS_HOME = `${ADMIN_CONTENT_HOME}/webinars`;
 
 export type ContentTabId =
   | "universities"
   | "scholarships"
   | "announcements"
-  | "news";
+  | "news"
+  | "webinars";
 
 export type ContentTabCounts = Record<
-  "universities" | "scholarships" | "announcements" | "news",
+  "universities" | "scholarships" | "announcements" | "news" | "webinars",
   number
 >;
 
@@ -39,6 +41,12 @@ export const contentTabs: readonly ContentTab[] = [
     id: "news",
     label: "News & Updates",
     href: ADMIN_NEWS_HOME,
+    showCount: true,
+  },
+  {
+    id: "webinars",
+    label: "Webinars",
+    href: ADMIN_WEBINARS_HOME,
     showCount: true,
   },
 ];
@@ -75,15 +83,27 @@ export function isAdminScholarshipDetailPath(pathname: string): boolean {
   return UUID_RE.test(id);
 }
 
+/** e.g. /admin/content/webinars/{id} — hide list chrome (tabs, header actions). */
+export function isAdminWebinarDetailPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  const prefix = `${ADMIN_WEBINARS_HOME}/`;
+  if (!n.startsWith(prefix)) return false;
+  const id = n.slice(prefix.length).split("/")[0];
+  if (!id || n.slice(prefix.length).includes("/")) return false;
+  return /^\d+$/.test(id);
+}
+
 export function isAdminContentListPath(pathname: string): boolean {
   const n = normalizePath(pathname);
   return (
     (n === ADMIN_CONTENT_HOME ||
       n === ADMIN_SCHOLARSHIPS_HOME ||
       n === ADMIN_ANNOUNCEMENTS_HOME ||
-      n === ADMIN_NEWS_HOME) &&
+      n === ADMIN_NEWS_HOME ||
+      n === ADMIN_WEBINARS_HOME) &&
     !isAdminUniversityDetailPath(n) &&
-    !isAdminScholarshipDetailPath(n)
+    !isAdminScholarshipDetailPath(n) &&
+    !isAdminWebinarDetailPath(n)
   );
 }
 

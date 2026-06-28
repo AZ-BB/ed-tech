@@ -117,6 +117,103 @@ export type Database = {
         }
         Relationships: []
       }
+      advisor_notification_reads: {
+        Row: {
+          advisor_id: string
+          notification_id: string
+          read_at: string
+        }
+        Insert: {
+          advisor_id: string
+          notification_id: string
+          read_at?: string
+        }
+        Update: {
+          advisor_id?: string
+          notification_id?: string
+          read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_notification_reads_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisor_notifications: {
+        Row: {
+          advisor_id: string
+          application_id: number | null
+          body: string | null
+          created_at: string
+          event_type: string
+          id: string
+          link_path: string | null
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+        }
+        Insert: {
+          advisor_id: string
+          application_id?: number | null
+          body?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          link_path?: string | null
+          source_id: string
+          source_table: string
+          student_id: string
+          title: string
+        }
+        Update: {
+          advisor_id?: string
+          application_id?: number | null
+          body?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          link_path?: string | null
+          source_id?: string
+          source_table?: string
+          student_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_notifications_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_notifications_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_notifications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advisor_payouts: {
         Row: {
           advisor_id: string
@@ -346,103 +443,6 @@ export type Database = {
             columns: ["tag_id"]
             isOneToOne: false
             referencedRelation: "advisor_tags"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      advisor_notification_reads: {
-        Row: {
-          advisor_id: string
-          notification_id: string
-          read_at: string
-        }
-        Insert: {
-          advisor_id: string
-          notification_id: string
-          read_at?: string
-        }
-        Update: {
-          advisor_id?: string
-          notification_id?: string
-          read_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "advisor_notification_reads_advisor_id_fkey"
-            columns: ["advisor_id"]
-            isOneToOne: false
-            referencedRelation: "advisors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "advisor_notification_reads_notification_id_fkey"
-            columns: ["notification_id"]
-            isOneToOne: false
-            referencedRelation: "advisor_notifications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      advisor_notifications: {
-        Row: {
-          advisor_id: string
-          application_id: number | null
-          body: string | null
-          created_at: string
-          event_type: string
-          id: string
-          link_path: string | null
-          source_id: string
-          source_table: string
-          student_id: string
-          title: string
-        }
-        Insert: {
-          advisor_id: string
-          application_id?: number | null
-          body?: string | null
-          created_at?: string
-          event_type: string
-          id?: string
-          link_path?: string | null
-          source_id: string
-          source_table: string
-          student_id: string
-          title: string
-        }
-        Update: {
-          advisor_id?: string
-          application_id?: number | null
-          body?: string | null
-          created_at?: string
-          event_type?: string
-          id?: string
-          link_path?: string | null
-          source_id?: string
-          source_table?: string
-          student_id?: string
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "advisor_notifications_advisor_id_fkey"
-            columns: ["advisor_id"]
-            isOneToOne: false
-            referencedRelation: "advisors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "advisor_notifications_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "advisor_notifications_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3179,6 +3179,107 @@ export type Database = {
           },
         ]
       }
+      webinar_registrations: {
+        Row: {
+          id: number
+          meeting_link_sent_at: string | null
+          registered_at: string | null
+          reminder_sent_at: string | null
+          student_id: string
+          webinar_id: number
+        }
+        Insert: {
+          id?: number
+          meeting_link_sent_at?: string | null
+          registered_at?: string | null
+          reminder_sent_at?: string | null
+          student_id: string
+          webinar_id: number
+        }
+        Update: {
+          id?: number
+          meeting_link_sent_at?: string | null
+          registered_at?: string | null
+          reminder_sent_at?: string | null
+          student_id?: string
+          webinar_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_registrations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_registrations_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinars: {
+        Row: {
+          advisor_id: string
+          agenda: Json
+          created_at: string | null
+          description: string | null
+          format: string
+          id: number
+          max_students: number
+          meeting_link: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["webinar_status"]
+          tags: string[]
+          timezone_label: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          advisor_id: string
+          agenda?: Json
+          created_at?: string | null
+          description?: string | null
+          format?: string
+          id?: number
+          max_students: number
+          meeting_link?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["webinar_status"]
+          tags?: string[]
+          timezone_label?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          advisor_id?: string
+          agenda?: Json
+          created_at?: string | null
+          description?: string | null
+          format?: string
+          id?: number
+          max_students?: number
+          meeting_link?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["webinar_status"]
+          tags?: string[]
+          timezone_label?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinars_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -3213,10 +3314,7 @@ export type Database = {
         Args: { p_student_id: string }
         Returns: boolean
       }
-      advisor_dashboard: {
-        Args: never
-        Returns: Json
-      }
+      advisor_dashboard: { Args: never; Returns: Json }
       advisor_students_table_rows: {
         Args: never
         Returns: {
@@ -3233,6 +3331,18 @@ export type Database = {
           student_name: string
         }[]
       }
+      create_advisor_notification: {
+        Args: {
+          p_advisor_id: string
+          p_application_id?: number
+          p_body?: string
+          p_event_type: string
+          p_source_id?: string
+          p_source_table?: string
+          p_student_id: string
+        }
+        Returns: undefined
+      }
       create_school_admin_notification: {
         Args: {
           p_body?: string
@@ -3245,6 +3355,16 @@ export type Database = {
       }
       current_advisor_id: { Args: never; Returns: string }
       current_school_admin_school_id: { Args: never; Returns: string }
+      notify_assigned_advisors_for_student: {
+        Args: {
+          p_body: string
+          p_event_type: string
+          p_source_id: string
+          p_source_table: string
+          p_student_id: string
+        }
+        Returns: undefined
+      }
       process_university_import_meta_batch: {
         Args: { p_limit?: number }
         Returns: number
@@ -3409,6 +3529,7 @@ export type Database = {
         | "in_progress"
         | "ready_to_submit"
         | "submitted"
+      webinar_status: "draft" | "upcoming" | "live" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3635,6 +3756,7 @@ export const Constants = {
         "ready_to_submit",
         "submitted",
       ],
+      webinar_status: ["draft", "upcoming", "live", "completed", "cancelled"],
     },
   },
 } as const

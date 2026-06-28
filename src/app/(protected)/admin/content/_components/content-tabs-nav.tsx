@@ -8,6 +8,7 @@ import {
   contentTabs,
   isAdminScholarshipDetailPath,
   isAdminUniversityDetailPath,
+  isAdminWebinarDetailPath,
 } from "../_data/content-tabs-data";
 
 function normalizePath(pathname: string) {
@@ -25,7 +26,11 @@ export type ContentTabsNavProps = {
 export function ContentTabsNav({ counts }: ContentTabsNavProps) {
   const pathname = usePathname() ?? "";
 
-  if (isAdminUniversityDetailPath(pathname) || isAdminScholarshipDetailPath(pathname)) {
+  if (
+    isAdminUniversityDetailPath(pathname) ||
+    isAdminScholarshipDetailPath(pathname) ||
+    isAdminWebinarDetailPath(pathname)
+  ) {
     return null;
   }
 
