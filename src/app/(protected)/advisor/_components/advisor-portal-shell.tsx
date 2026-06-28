@@ -438,7 +438,7 @@ export function AdvisorPortalShell({
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[240px]">
         <header className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-[14px] max-[760px]:px-4 lg:px-[32px]">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <button
@@ -481,7 +481,7 @@ export function AdvisorPortalShell({
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6">
+        <main className="min-w-0 flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6">
           {children}
         </main>
       </div>
