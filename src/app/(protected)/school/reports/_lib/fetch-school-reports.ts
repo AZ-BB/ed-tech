@@ -504,10 +504,10 @@ export async function fetchSchoolReports(options?: {
       .eq("school_id", schoolId)
       .eq(
         "status",
-        "submitted" satisfies Database["public"]["Enums"]["application_status"],
+        "active_package" satisfies Database["public"]["Enums"]["application_status"],
       )
-      .gte("submitted_at", monthStartIso)
-      .lt("submitted_at", monthEndExclusiveIso);
+      .gte("payment_completed_at", monthStartIso)
+      .lt("payment_completed_at", monthEndExclusiveIso);
     if (teacherFilter && schoolStudentIds.length > 0) {
       appsQuery = appsQuery.in("student_id", schoolStudentIds);
     }
@@ -620,7 +620,7 @@ export async function fetchSchoolReports(options?: {
         appCountsByStudent.set(sid, cur);
       }
       cur.total += 1;
-      if (row.status === "submitted") cur.submitted += 1;
+      if (row.status === "active_package") cur.submitted += 1;
     }
   } else if (appsByStudentRes.error) {
     console.error(

@@ -45,10 +45,10 @@ export async function fetchAdminReportMonthlySummary(
     .select("id", { count: "exact", head: true })
     .eq(
       "status",
-      "submitted" satisfies Database["public"]["Enums"]["application_status"],
+      "active_package" satisfies Database["public"]["Enums"]["application_status"],
     )
-    .gte("submitted_at", bounds.startIso)
-    .lt("submitted_at", bounds.endExclusiveIso);
+    .gte("payment_completed_at", bounds.startIso)
+    .lt("payment_completed_at", bounds.endExclusiveIso);
   if (filters.schoolId) {
     appsSubmittedQuery = appsSubmittedQuery.eq("school_id", filters.schoolId);
   }

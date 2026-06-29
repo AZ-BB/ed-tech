@@ -377,7 +377,7 @@ export function mapApplicationDetailPayload(
   return {
     application: {
       id: data.id,
-      status: data.status?.trim() || "new",
+      status: data.status?.trim() || "lead",
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       submittedAt: data.submitted_at,

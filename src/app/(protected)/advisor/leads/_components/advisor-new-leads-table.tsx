@@ -1,8 +1,8 @@
 "use client";
 
 import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
+import { updateAdvisorApplicationStatus } from "@/actions/advisor-applications";
 import type { AdvisorNewLeadsPanelProps } from "@/app/(protected)/advisor/leads/_lib/fetch-advisor-new-leads-page";
-import { useAdvisorStudentApplicationNavigation } from "@/app/(protected)/advisor/_lib/use-advisor-student-application-navigation";
 import {
   SendPaymentRequestDialog,
   type SendPaymentRequestApplicationOption,
@@ -37,15 +37,12 @@ export function AdvisorNewLeadsTable({
   advisorName,
   advisorEmail,
   fromEmailDisplay,
-  studentApplicationOptions,
 }: AdvisorNewLeadsPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search);
-  const { handleStudentClick, applicationSelectDialog } =
-    useAdvisorStudentApplicationNavigation(studentApplicationOptions);
   const [requestPaymentOpen, setRequestPaymentOpen] = useState(false);
   const [selectedPaymentOption, setSelectedPaymentOption] =
     useState<SendPaymentRequestApplicationOption | null>(null);
@@ -54,6 +51,10 @@ export function AdvisorNewLeadsTable({
   );
   const [requestPaymentMessage, setRequestPaymentMessage] = useState<
     string | null
+  >(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [markingNotSuitableId, setMarkingNotSuitableId] = useState<
+    number | null
   >(null);
 
   useEffect(() => {
@@ -111,6 +112,27 @@ export function AdvisorNewLeadsTable({
     });
   }
 
+  function openApplication(applicationId: number) {
+    router.push(`/advisor/applications/${applicationId}`);
+  }
+
+  function handleMarkNotSuitable(applicationId: number) {
+    setActionError(null);
+    setMarkingNotSuitableId(applicationId);
+    startTransition(async () => {
+      const result = await updateAdvisorApplicationStatus(
+        String(applicationId),
+        "not_suitable",
+      );
+      setMarkingNotSuitableId(null);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   return (
     <div
       className={`overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${isPending ? "opacity-75" : ""}`}
@@ -145,8 +167,17 @@ export function AdvisorNewLeadsTable({
         </p>
       ) : null}
 
+      {actionError ? (
+        <p
+          className="border-b border-[var(--border-light)] px-4 py-3 text-[12px] font-medium text-[#c0392b]"
+          role="alert"
+        >
+          {actionError}
+        </p>
+      ) : null}
+
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[880px] border-collapse text-[13px]">
+        <table className="w-full min-w-[980px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
               <th className="px-4 py-3">Student name</th>
@@ -178,22 +209,31 @@ export function AdvisorNewLeadsTable({
                 return (
                   <tr
                     key={row.id}
-                    className="border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
+                    className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
+                    onClick={() => openApplication(row.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openApplication(row.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Open application #${row.id} for ${row.studentName}`}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-bold text-[var(--green-dark)]">
                           {row.studentInitials}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleStudentClick(row.studentId, row.studentName)
-                          }
-                          className="cursor-pointer text-left font-semibold text-[var(--green-dark)] transition-colors hover:text-[var(--green)] hover:underline"
-                        >
-                          {row.studentName}
-                        </button>
+                        <div>
+                          <div className="font-semibold text-[var(--green-dark)]">
+                            {row.studentName}
+                          </div>
+                          <div className="text-[11px] text-[var(--text-hint)]">
+                            #{row.id}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[var(--text-light)]">
@@ -209,32 +249,52 @@ export function AdvisorNewLeadsTable({
                       {formatWhen(row.meetingDate)}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        disabled={isPending || !canSendPayment}
-                        aria-label={
-                          row.paymentRequestOption.hasPendingPaymentRequest
-                            ? "Payment request pending"
-                            : "Send payment request"
-                        }
-                        title={
-                          row.paymentRequestOption.hasPendingPaymentRequest
-                            ? "A payment request is already pending for this application"
-                            : !row.paymentRequestOption.studentEmail.trim()
-                              ? "Student email is required to send a payment request"
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={isPending || !canSendPayment}
+                          aria-label={
+                            row.paymentRequestOption.hasPendingPaymentRequest
+                              ? "Payment request pending"
                               : "Send payment request"
-                        }
-                        onClick={() =>
-                          handleOpenRequestPayment(row.paymentRequestOption)
-                        }
-                        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--green-dark)] transition-colors hover:bg-[var(--green-bg)] disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <Send
-                          className="h-4 w-4"
-                          strokeWidth={2.25}
-                          aria-hidden
-                        />
-                      </button>
+                          }
+                          title={
+                            row.paymentRequestOption.hasPendingPaymentRequest
+                              ? "A payment request is already pending for this application"
+                              : !row.paymentRequestOption.studentEmail.trim()
+                                ? "Student email is required to send a payment request"
+                                : "Send payment request"
+                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenRequestPayment(row.paymentRequestOption);
+                          }}
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] border border-[#e0deda] bg-white text-[var(--green-dark)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Send
+                            className="h-4 w-4"
+                            strokeWidth={2.25}
+                            aria-hidden
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={
+                            isPending || markingNotSuitableId === row.id
+                          }
+                          aria-label="Mark as not suitable"
+                          title="Mark as not suitable"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleMarkNotSuitable(row.id);
+                          }}
+                          className="cursor-pointer rounded-[8px] border border-[#f0c4c4] bg-[#FCEBEB] px-3 py-1.5 text-[11.5px] font-semibold text-[#8c2d22] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {markingNotSuitableId === row.id
+                            ? "Updating..."
+                            : "Mark as not suitable"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -274,8 +334,6 @@ export function AdvisorNewLeadsTable({
           error={requestPaymentError}
         />
       ) : null}
-
-      {applicationSelectDialog}
     </div>
   );
 }

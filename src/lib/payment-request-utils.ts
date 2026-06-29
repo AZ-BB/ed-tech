@@ -183,8 +183,5 @@ export function formatPlanDisplayName(
 }
 
 export function formatPlanSelectLabel(plan: ApplicationPlanOption): string {
-  if (isCustomApplicationPlan(plan)) {
-    return plan.name?.trim() || "Custom Advisory Package";
-  }
-  return `${formatPlanDisplayName(plan)} — AED ${plan.price.toLocaleString()}`;
+  return formatPlanDisplayName(plan);
 }

@@ -3,10 +3,10 @@ import {
   resolveFirstUncheckedLifecycleLabel,
 } from "@/lib/application-package-data";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
-import { isPaymentRequestSent } from "@/lib/payment-request-utils";
 
 export type AdvisorStudentManagementStatus =
   | "lead"
+  | "not_suitable"
   | "payment_requested"
   | "active_package";
 
@@ -15,6 +15,7 @@ export const ADVISOR_STUDENT_STATUS_LABEL: Record<
   string
 > = {
   lead: "Lead",
+  not_suitable: "Not Suitable",
   payment_requested: "Payment Requested",
   active_package: "Active Package",
 };
@@ -36,26 +37,39 @@ export type AdvisorApplicationSnapshot = {
   }[];
 };
 
-function hasPaidPayment(payments: AdvisorApplicationSnapshot["payments"]): boolean {
-  return payments.some((payment) => payment.status === "paid");
-}
+const STATUS_PRIORITY: Record<AdvisorStudentManagementStatus, number> = {
+  active_package: 4,
+  payment_requested: 3,
+  not_suitable: 2,
+  lead: 1,
+};
 
-function hasSentPaymentRequest(
-  payments: AdvisorApplicationSnapshot["payments"],
-): boolean {
-  return payments.some(isPaymentRequestSent);
+function normalizeApplicationStatus(status: string): AdvisorStudentManagementStatus {
+  const value = status.trim();
+  if (
+    value === "active_package" ||
+    value === "payment_requested" ||
+    value === "not_suitable" ||
+    value === "lead"
+  ) {
+    return value;
+  }
+  return "lead";
 }
 
 export function deriveStudentManagementStatus(
   apps: AdvisorApplicationSnapshot[],
 ): AdvisorStudentManagementStatus {
-  if (apps.some((app) => hasPaidPayment(app.payments))) {
-    return "active_package";
+  if (apps.length === 0) return "lead";
+
+  let best: AdvisorStudentManagementStatus = "lead";
+  for (const app of apps) {
+    const status = normalizeApplicationStatus(app.status);
+    if (STATUS_PRIORITY[status] > STATUS_PRIORITY[best]) {
+      best = status;
+    }
   }
-  if (apps.some((app) => hasSentPaymentRequest(app.payments))) {
-    return "payment_requested";
-  }
-  return "lead";
+  return best;
 }
 
 export function resolveLatestApplication<T extends { updatedAt: string | null; id: number }>(
@@ -191,6 +205,8 @@ export function advisorStudentStatusPillClass(
       return "bg-[var(--green-bg)] text-[var(--green-dark)]";
     case "payment_requested":
       return "bg-[#dbeafe] text-[#1e40af]";
+    case "not_suitable":
+      return "bg-[#FCEBEB] text-[#E74C3C]";
     case "lead":
     default:
       return "bg-[#FFF3E0] text-[#E67E22]";
@@ -205,6 +221,7 @@ export function parseAdvisorStudentStatusFilter(
   if (
     value === "active_package" ||
     value === "payment_requested" ||
+    value === "not_suitable" ||
     value === "lead"
   ) {
     return value;

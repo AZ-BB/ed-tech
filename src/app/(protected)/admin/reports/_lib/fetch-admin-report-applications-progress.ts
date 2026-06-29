@@ -9,22 +9,16 @@ import { buildReportMeta } from "./report-scope";
 type ApplicationStatus = Database["public"]["Enums"]["application_status"];
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  new: "New",
-  scheduled: "Scheduled",
-  payment_in_progress: "Payment in Progress",
-  payment_completed: "Payment Completed",
-  in_progress: "In Progress",
-  blocked: "Blocked",
-  submitted: "Submitted",
+  lead: "Lead",
+  not_suitable: "Not Suitable",
+  payment_requested: "Payment Requested",
+  active_package: "Active Package",
 };
 
 const ACTIVE_STATUSES: ApplicationStatus[] = [
-  "new",
-  "scheduled",
-  "payment_in_progress",
-  "payment_completed",
-  "in_progress",
-  "blocked",
+  "lead",
+  "payment_requested",
+  "active_package",
 ];
 
 export async function fetchAdminReportApplicationsProgress(
@@ -65,9 +59,9 @@ export async function fetchAdminReportApplicationsProgress(
   let submittedQuery = supabase
     .from("applications")
     .select("id", { count: "exact", head: true })
-    .eq("status", "submitted")
-    .gte("submitted_at", bounds.startIso)
-    .lt("submitted_at", bounds.endExclusiveIso);
+    .eq("status", "active_package")
+    .gte("payment_completed_at", bounds.startIso)
+    .lt("payment_completed_at", bounds.endExclusiveIso);
   if (filters.schoolId) {
     submittedQuery = submittedQuery.eq("school_id", filters.schoolId);
   }
@@ -95,7 +89,7 @@ export async function fetchAdminReportApplicationsProgress(
     statusCountsMap.set(status, 0);
   }
   for (const row of allAppsRes.data ?? []) {
-    const s = (row.status?.trim() || "new") as ApplicationStatus;
+    const s = (row.status?.trim() || "lead") as ApplicationStatus;
     statusCountsMap.set(s, (statusCountsMap.get(s) ?? 0) + 1);
   }
 
@@ -121,7 +115,7 @@ export async function fetchAdminReportApplicationsProgress(
           .filter(Boolean)
           .join(" ")
       : "Unassigned";
-    const status = (row.status?.trim() || "new") as ApplicationStatus;
+    const status = (row.status?.trim() || "lead") as ApplicationStatus;
     return {
       id: row.id,
       studentName,

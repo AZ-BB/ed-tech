@@ -3604,13 +3604,10 @@ export type Database = {
         | "award"
         | "portfolio"
       application_status:
-        | "new"
-        | "scheduled"
-        | "payment_in_progress"
-        | "payment_completed"
-        | "in_progress"
-        | "blocked"
-        | "submitted"
+        | "lead"
+        | "not_suitable"
+        | "payment_requested"
+        | "active_package"
       contact_submission_status: "new" | "read" | "archived"
       gender: "male" | "female"
       news_tag: "visa" | "deadline" | "update"
@@ -3826,13 +3823,10 @@ export const Constants = {
         "portfolio",
       ],
       application_status: [
-        "new",
-        "scheduled",
-        "payment_in_progress",
-        "payment_completed",
-        "in_progress",
-        "blocked",
-        "submitted",
+        "lead",
+        "not_suitable",
+        "payment_requested",
+        "active_package",
       ],
       contact_submission_status: ["new", "read", "archived"],
       gender: ["male", "female"],

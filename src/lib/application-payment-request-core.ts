@@ -16,7 +16,11 @@ import {
   resolvePaymentFromEmailDisplay,
 } from "@/lib/resend/application-payment-request-email";
 import { buildApplicationPaymentUrl } from "@/lib/resend/site-url";
-import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
+import {
+  replacePaymentLinkPlaceholder,
+  validatePaymentRequestEmailBody,
+  type SendPaymentRequestInput,
+} from "@/lib/payment-request-email-content";
 import {
   expireOverduePendingPayments,
   formatPlanDisplayName,
@@ -219,6 +223,11 @@ export async function sendApplicationPaymentRequestCore(
     return { ok: false, error: "Select a package." };
   }
 
+  const emailBodyError = validatePaymentRequestEmailBody(input.emailBody ?? "");
+  if (emailBodyError) {
+    return { ok: false, error: emailBodyError };
+  }
+
   if (!isStripeConfigured()) {
     return {
       ok: false,
@@ -392,6 +401,11 @@ export async function sendApplicationPaymentRequestCore(
   const packageDisplayName = formatPlanDisplayName(planRow, customUniversitiesCount);
   const fromEmailDisplay = resolvePaymentFromEmailDisplay();
 
+  const resolvedEmailBody = replacePaymentLinkPlaceholder(
+    input.emailBody.trim(),
+    payUrl,
+  );
+
   const emailResult = await sendApplicationPaymentRequestEmail({
     recipientEmail: studentEmail,
     studentFirstName,
@@ -400,6 +414,7 @@ export async function sendApplicationPaymentRequestCore(
     amountAed,
     senderName: options.actorName,
     fromEmailDisplay,
+    bodyOverride: resolvedEmailBody,
   });
 
   if ("error" in emailResult) {

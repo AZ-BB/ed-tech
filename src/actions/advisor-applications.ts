@@ -19,13 +19,10 @@ import { revalidatePath } from "next/cache";
 type ApplicationStatus = Database["public"]["Enums"]["application_status"];
 
 const VALID_STATUSES = new Set<string>([
-  "new",
-  "scheduled",
-  "payment_in_progress",
-  "payment_completed",
-  "in_progress",
-  "blocked",
-  "submitted",
+  "lead",
+  "not_suitable",
+  "payment_requested",
+  "active_package",
 ]);
 
 type AdvisorApplicationActionResult = { ok: true } | { ok: false; error: string };
@@ -76,6 +73,8 @@ async function insertApplicationActivityLog(input: {
 function revalidateApplicationPaths(applicationId: number) {
   revalidatePath("/advisor/applications");
   revalidatePath(`/advisor/applications/${applicationId}`);
+  revalidatePath("/advisor/students");
+  revalidatePath("/advisor/leads");
   revalidatePath("/admin/applications");
   revalidatePath(`/admin/applications/${applicationId}`);
 }

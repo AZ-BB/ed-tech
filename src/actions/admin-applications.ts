@@ -22,13 +22,10 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const VALID_STATUSES = new Set<string>([
-  "new",
-  "scheduled",
-  "payment_in_progress",
-  "payment_completed",
-  "in_progress",
-  "blocked",
-  "submitted",
+  "lead",
+  "not_suitable",
+  "payment_requested",
+  "active_package",
 ]);
 
 type AdminApplicationActionResult = { ok: true } | { ok: false; error: string };

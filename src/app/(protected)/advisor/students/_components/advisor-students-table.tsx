@@ -1,7 +1,6 @@
 "use client";
 
 import type { AdvisorStudentsPanelProps } from "@/app/(protected)/advisor/students/_lib/fetch-advisor-students-page";
-import { useAdvisorStudentApplicationNavigation } from "@/app/(protected)/advisor/_lib/use-advisor-student-application-navigation";
 import {
   ADVISOR_STUDENT_STATUS_LABEL,
   advisorStudentStatusPillClass,
@@ -20,6 +19,7 @@ const STATUS_OPTIONS: {
 }[] = [
   { value: "all", label: "All" },
   { value: "lead", label: "Lead" },
+  { value: "not_suitable", label: "Not Suitable" },
   { value: "payment_requested", label: "Payment Requested" },
   { value: "active_package", label: "Active Package" },
 ];
@@ -50,15 +50,12 @@ export function AdvisorStudentsTable({
   search,
   status,
   statusCounts,
-  studentApplicationOptions,
 }: AdvisorStudentsPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search);
-  const { handleStudentClick, applicationSelectDialog } =
-    useAdvisorStudentApplicationNavigation(studentApplicationOptions);
 
   useEffect(() => {
     setSearchInput(search);
@@ -107,6 +104,13 @@ export function AdvisorStudentsTable({
     [pathname, router, searchParams, status],
   );
 
+  const openApplication = useCallback(
+    (applicationId: number) => {
+      router.push(`/advisor/applications/${applicationId}`);
+    },
+    [router],
+  );
+
   return (
     <div
       className={`overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white ${isPending ? "opacity-75" : ""}`}
@@ -153,21 +157,23 @@ export function AdvisorStudentsTable({
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search students..."
+            placeholder="Search applications..."
             className="w-[240px] max-w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-[#faf9f4] py-[7px] pl-8 pr-3 text-[12.5px] text-[var(--text)] outline-none transition-colors focus:border-[var(--green-light)] focus:bg-white"
           />
         </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1080px] border-collapse text-[13px]">
+        <table className="w-full min-w-[1180px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-              <th className="px-4 py-3">Student</th>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">School</th>
+              <th className="px-4 py-3">Package</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Destinations</th>
               <th className="px-4 py-3">Initial meeting</th>
-              <th className="px-4 py-3">Package purchased</th>
+              <th className="px-4 py-3">Destinations</th>
               <th className="px-4 py-3">Deadline risk</th>
             </tr>
           </thead>
@@ -175,90 +181,90 @@ export function AdvisorStudentsTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={8}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {search.trim()
-                    ? "No students match your search."
-                    : "No students with assigned applications yet."}
+                    ? "No applications match your search."
+                    : "No assigned applications yet."}
                 </td>
               </tr>
             ) : (
-              rows.map((row) => {
-                function openApplication() {
-                  handleStudentClick(row.studentId, row.studentName);
-                }
-
-                return (
-                  <tr
-                    key={row.studentId}
-                    className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
-                    onClick={openApplication}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openApplication();
-                      }
-                    }}
-                    tabIndex={0}
-                    role="link"
-                    aria-label={`Open application for ${row.studentName}`}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-bold text-[var(--green-dark)]">
-                          {row.studentInitials}
-                        </span>
-                        <div>
-                          <div className="font-semibold text-[var(--text)]">
-                            {row.studentName}
-                          </div>
-                          <div className="text-[11.5px] text-[var(--text-light)]">
-                            {row.schoolName}
-                          </div>
+              rows.map((row) => (
+                <tr
+                  key={row.applicationId}
+                  className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
+                  onClick={() => openApplication(row.applicationId)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openApplication(row.applicationId);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`Open application #${row.applicationId} for ${row.studentName}`}
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-bold text-[var(--green-dark)]">
+                        {row.studentInitials}
+                      </span>
+                      <div>
+                        <div className="font-semibold text-[var(--text)]">
+                          {row.studentName}
+                        </div>
+                        <div className="text-[11px] text-[var(--text-hint)]">
+                          #{row.applicationId}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${advisorStudentStatusPillClass(row.managementStatus)}`}
-                      >
-                        {ADVISOR_STUDENT_STATUS_LABEL[row.managementStatus]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.destinations.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {row.destinations.map((dest) => (
-                            <span
-                              key={`${row.studentId}-${dest.countryCode}`}
-                              className="inline-flex rounded-full border border-[var(--border-light)] bg-[#faf9f4] px-2 py-0.5 text-[10px] font-medium text-[var(--text-mid)]"
-                            >
-                              {dest.label}
-                              {dest.count > 1 ? ` ×${dest.count}` : ""}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-[var(--text-hint)]">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-light)]">
-                      {formatDate(row.initialMeetingDate)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-mid)]">
-                      {row.packagePurchased}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${deadlineRiskClass(row.deadlineRiskLevel)}`}
-                      >
-                        {row.deadlineRiskLabel}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-[var(--text-light)]">
+                    {row.studentEmail}
+                  </td>
+                  <td className="px-4 py-3 text-[var(--text-mid)]">
+                    {row.schoolName}
+                  </td>
+                  <td className="px-4 py-3 text-[var(--text-mid)]">
+                    {row.packageLabel}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${advisorStudentStatusPillClass(row.status)}`}
+                    >
+                      {ADVISOR_STUDENT_STATUS_LABEL[row.status]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[var(--text-light)]">
+                    {formatDate(row.initialMeetingDate)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {row.destinations.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {row.destinations.map((dest) => (
+                          <span
+                            key={`${row.applicationId}-${dest.countryCode}`}
+                            className="inline-flex rounded-full border border-[var(--border-light)] bg-[#faf9f4] px-2 py-0.5 text-[10px] font-medium text-[var(--text-mid)]"
+                          >
+                            {dest.label}
+                            {dest.count > 1 ? ` ×${dest.count}` : ""}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[var(--text-hint)]">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${deadlineRiskClass(row.deadlineRiskLevel)}`}
+                    >
+                      {row.deadlineRiskLabel}
+                    </span>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
@@ -274,8 +280,6 @@ export function AdvisorStudentsTable({
           limitParam="studentsLimit"
         />
       </div>
-
-      {applicationSelectDialog}
     </div>
   );
 }

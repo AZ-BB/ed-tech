@@ -8,44 +8,32 @@ type SecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 export type ApplicationSupportStatus =
   Database["public"]["Enums"]["application_status"];
 
-export const APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_PAYMENT_IN_PROGRESS =
+export const APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_PAYMENT_REQUESTED =
   new Set<ApplicationSupportStatus>([
-    "payment_in_progress",
-    "payment_completed",
-    "in_progress",
-    "submitted",
+    "payment_requested",
+    "active_package",
   ]);
 
-export const APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_PAYMENT_COMPLETED =
-  new Set<ApplicationSupportStatus>([
-    "payment_completed",
-    "in_progress",
-    "submitted",
-  ]);
+export const APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_ACTIVE_PACKAGE =
+  new Set<ApplicationSupportStatus>(["active_package"]);
 
 export function buildApplicationSupportStatusTimestampPatch(
   status: ApplicationSupportStatus,
   now: string,
 ): Partial<Database["public"]["Tables"]["applications"]["Update"]> {
   switch (status) {
-    case "scheduled":
-      return { scheduled_at: now };
-    case "payment_in_progress":
+    case "payment_requested":
       return { payment_in_progress_at: now };
-    case "payment_completed":
+    case "active_package":
       return { payment_completed_at: now };
-    case "in_progress":
-      return { in_progress_at: now };
-    case "blocked":
+    case "not_suitable":
       return { blocked_at: now };
-    case "submitted":
-      return { submitted_at: now };
     default:
       return {};
   }
 }
 
-/** First payment request sent → payment_in_progress. */
+/** First payment request sent → payment_requested. */
 export async function applyFirstPaymentRequestStatusEffects(
   secret: SecretClient,
   applicationId: number,
@@ -62,26 +50,29 @@ export async function applyFirstPaymentRequestStatusEffects(
     return;
   }
 
-  const currentStatus = (application.status?.trim() || "new") as ApplicationSupportStatus;
-  if (APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_PAYMENT_IN_PROGRESS.has(currentStatus)) {
+  const currentStatus = (application.status?.trim() || "lead") as ApplicationSupportStatus;
+  if (
+    currentStatus === "not_suitable" ||
+    APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_PAYMENT_REQUESTED.has(currentStatus)
+  ) {
     return;
   }
 
   const { error: updateErr } = await secret
     .from("applications")
     .update({
-      status: "payment_in_progress",
+      status: "payment_requested",
       payment_in_progress_at: application.payment_in_progress_at ?? at,
       updated_at: at,
     })
     .eq("id", applicationId);
 
   if (updateErr) {
-    console.error("[application-support-status] payment_in_progress update", updateErr);
+    console.error("[application-support-status] payment_requested update", updateErr);
   }
 }
 
-/** First payment completed → payment_completed (package lifecycle still updated separately). */
+/** First payment completed → active_package (package lifecycle still updated separately). */
 export async function applyFirstPaymentCompletedStatusEffects(
   secret: SecretClient,
   applicationId: number,
@@ -101,21 +92,24 @@ export async function applyFirstPaymentCompletedStatusEffects(
     return;
   }
 
-  const currentStatus = (application.status?.trim() || "new") as ApplicationSupportStatus;
-  if (APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_PAYMENT_COMPLETED.has(currentStatus)) {
+  const currentStatus = (application.status?.trim() || "lead") as ApplicationSupportStatus;
+  if (
+    currentStatus === "not_suitable" ||
+    APPLICATION_SUPPORT_STATUSES_AT_OR_PAST_ACTIVE_PACKAGE.has(currentStatus)
+  ) {
     return;
   }
 
   const { error: updateErr } = await secret
     .from("applications")
     .update({
-      status: "payment_completed",
+      status: "active_package",
       payment_completed_at: application.payment_completed_at ?? completedAt,
       updated_at: completedAt,
     })
     .eq("id", applicationId);
 
   if (updateErr) {
-    console.error("[application-support-status] payment_completed update", updateErr);
+    console.error("[application-support-status] active_package update", updateErr);
   }
 }

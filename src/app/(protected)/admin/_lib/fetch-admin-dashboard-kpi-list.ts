@@ -19,12 +19,9 @@ export type AdminDashboardKpiListResult = {
 };
 
 const ACTIVE_APPLICATION_STATUSES = [
-  "new",
-  "scheduled",
-  "payment_in_progress",
-  "payment_completed",
-  "in_progress",
-  "blocked",
+  "lead",
+  "payment_requested",
+  "active_package",
 ] as const;
 
 function paginationRange(page: number, limit: number) {
@@ -262,7 +259,7 @@ async function fetchApplicationsKpiList(
     const school = student ? firstEmbed(student.schools) : null;
     const studentName =
       row.student_name?.trim() || personName(student?.first_name, student?.last_name);
-    const statusKey = (row.status?.trim() ?? "new") as keyof typeof ADMIN_APPLICATION_STATUS_LABEL;
+    const statusKey = (row.status?.trim() ?? "lead") as keyof typeof ADMIN_APPLICATION_STATUS_LABEL;
     const statusLabel = ADMIN_APPLICATION_STATUS_LABEL[statusKey] ?? row.status ?? "—";
     const schoolName = school?.name?.trim();
 

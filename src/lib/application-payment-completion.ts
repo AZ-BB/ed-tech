@@ -14,7 +14,7 @@ type SecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
 /**
  * When a payment is completed, mark the package lifecycle step "Payment confirmed"
- * and move the application to payment_completed on the first paid payment.
+ * and move the application to active_package on the first paid payment.
  */
 export async function applyApplicationPaymentCompletionEffects(
   secret: SecretClient,

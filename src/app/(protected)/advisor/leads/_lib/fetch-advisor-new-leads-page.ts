@@ -1,9 +1,4 @@
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
-import {
-  fetchAdvisorStudentApplicationGroups,
-  studentApplicationOptionsByStudentId,
-  type AdvisorStudentApplicationOption,
-} from "@/lib/advisor-student-application-options";
 import { type ApplicationStatus } from "@/app/(protected)/admin/applications/_lib/application-status-labels";
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import {
@@ -22,12 +17,7 @@ import {
 
 type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-const NON_ACTIVE_APPLICATION_STATUSES: ApplicationStatus[] = [
-  "new",
-  "scheduled",
-  "payment_in_progress",
-  "blocked",
-];
+const NON_ACTIVE_APPLICATION_STATUSES: ApplicationStatus[] = ["lead"];
 
 type LeadRowRaw = {
   id: number;
@@ -88,7 +78,6 @@ export type AdvisorNewLeadsPanelProps = {
   advisorName: string;
   advisorEmail: string;
   fromEmailDisplay: string;
-  studentApplicationOptions: Record<string, AdvisorStudentApplicationOption[]>;
 };
 
 function paginationRange(page: number, limit: number) {
@@ -151,49 +140,12 @@ export function parseAdvisorNewLeadsSearch(
   return value?.trim() ?? "";
 }
 
-async function fetchPaidApplicationIds(
-  client: DbClient,
-  applicationIds: number[],
-): Promise<number[]> {
-  if (applicationIds.length === 0) return [];
-
-  const { data, error } = await client
-    .from("payments")
-    .select("application_id")
-    .eq("status", "paid")
-    .in("application_id", applicationIds);
-
-  if (error) {
-    console.error("[fetchPaidApplicationIds]", error);
-    return [];
-  }
-
-  return [...new Set((data ?? []).map((row) => row.application_id))];
-}
-
 async function fetchAdvisorNewLeadsPage(
   advisorId: string,
   options: { page: number; limit: number; search: string; client: DbClient },
 ): Promise<{ rows: AdvisorNewLeadRow[]; totalRows: number }> {
   const { page, limit, search, client } = options;
   const { from, to } = paginationRange(page, limit);
-
-  const { data: assignedApps, error: assignedErr } = await client
-    .from("applications")
-    .select("id")
-    .eq("assigned_to", advisorId);
-
-  if (assignedErr) {
-    console.error("[fetchAdvisorNewLeadsPage] assigned", assignedErr);
-    return { rows: [], totalRows: 0 };
-  }
-
-  const assignedIds = (assignedApps ?? []).map((row) => row.id);
-  if (assignedIds.length === 0) {
-    return { rows: [], totalRows: 0 };
-  }
-
-  const paidApplicationIds = await fetchPaidApplicationIds(client, assignedIds);
 
   let query = client
     .from("applications")
@@ -219,10 +171,6 @@ async function fetchAdvisorNewLeadsPage(
     .in("status", NON_ACTIVE_APPLICATION_STATUSES)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false });
-
-  if (paidApplicationIds.length > 0) {
-    query = query.not("id", "in", `(${paidApplicationIds.join(",")})`);
-  }
 
   if (search) {
     const e = escapeIlike(search);
@@ -256,8 +204,7 @@ export async function fetchAdvisorNewLeadsPanel(options: {
 
   await expireOverduePendingPayments(await createSupabaseSecretClient());
 
-  const [pageResult, availablePlans, advisorProfile, applicationGroups] =
-    await Promise.all([
+  const [pageResult, availablePlans, advisorProfile] = await Promise.all([
     fetchAdvisorNewLeadsPage(advisorId, {
       ...options,
       client: supabase,
@@ -268,7 +215,6 @@ export async function fetchAdvisorNewLeadsPanel(options: {
       .select("first_name, last_name, email")
       .eq("id", advisorId)
       .maybeSingle(),
-    fetchAdvisorStudentApplicationGroups(supabase, advisorId),
   ]);
 
   const advisorName =
@@ -287,7 +233,5 @@ export async function fetchAdvisorNewLeadsPanel(options: {
     advisorName,
     advisorEmail,
     fromEmailDisplay: resolvePaymentFromEmailDisplay(),
-    studentApplicationOptions:
-      studentApplicationOptionsByStudentId(applicationGroups),
   };
 }

@@ -29,6 +29,10 @@ const ALLOWED_FILTER = new Set<string>(SCHOOL_APPLICATION_FILTER_STATUSES);
 /** Legacy `applications.status` query params from older URLs. */
 const LEGACY_DB_STATUS_TO_FILTER: Record<string, SchoolApplicationFilterStatus> =
   {
+    lead: "considering",
+    not_suitable: "rejected",
+    payment_requested: "preparing_application",
+    active_package: "preparing_application",
     new: "considering",
     assigned: "shortlisted",
     scheduled: "shortlisted",
