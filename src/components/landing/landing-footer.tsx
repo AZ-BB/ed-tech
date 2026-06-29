@@ -18,6 +18,9 @@ export function LandingFooter() {
               <Link href="/for-schools">For Schools</Link>
             </li>
             <li>
+              <Link href="/webinars">Webinars</Link>
+            </li>
+            <li>
               <Link href="/for-advisors">For Advisors</Link>
             </li>
           </ul>

@@ -9,16 +9,19 @@ import {
   type PaymentRequestEmailContentInput,
 } from "@/lib/payment-request-email-content";
 
-export type SendApplicationPaymentRequestEmailInput = PaymentRequestEmailContentInput;
+export type SendApplicationPaymentRequestEmailInput = PaymentRequestEmailContentInput & {
+  bodyOverride?: string;
+};
 
 export async function sendApplicationPaymentRequestEmail(
   input: SendApplicationPaymentRequestEmailInput,
 ) {
+  const emailOptions = input.bodyOverride != null ? { bodyOverride: input.bodyOverride } : {};
   return sendResendEmail({
     to: input.recipientEmail,
     subject: PAYMENT_REQUEST_EMAIL_SUBJECT,
-    html: buildPaymentRequestEmailHtml(input),
-    text: buildPaymentRequestEmailText(input),
+    html: buildPaymentRequestEmailHtml(input, emailOptions),
+    text: buildPaymentRequestEmailText(input, emailOptions),
     tags: [{ name: "category", value: "application_payment_request" }],
   });
 }

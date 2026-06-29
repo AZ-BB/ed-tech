@@ -1,4 +1,5 @@
 import type { Database } from "@/database.types";
+import { displayHostName as resolveDisplayHostName } from "@/lib/webinar-host";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type WebinarStatus = Database["public"]["Enums"]["webinar_status"];
@@ -10,14 +11,20 @@ export type AdminWebinarTableRow = {
   scheduledAt: string;
   timezoneLabel: string;
   format: string;
-  advisorId: string;
+  advisorId: string | null;
   advisorName: string;
+  hostName: string | null;
+  hostTitle: string | null;
+  hostBio: string | null;
+  hostImageUrl: string | null;
+  displayHostName: string;
   maxStudents: number;
   registeredCount: number;
   tags: string[];
   agenda: string[];
   status: WebinarStatus;
   meetingLink: string | null;
+  isFeatured: boolean;
 };
 
 export type AdminAdvisorOption = {
@@ -67,6 +74,11 @@ export async function fetchAdminWebinarsPage(): Promise<AdminWebinarTableRow[]> 
       agenda,
       status,
       meeting_link,
+      is_featured,
+      host_name,
+      host_title,
+      host_bio,
+      host_image_url,
       advisors ( first_name, last_name )
     `,
     )
@@ -110,12 +122,24 @@ export async function fetchAdminWebinarsPage(): Promise<AdminWebinarTableRow[]> 
       format: row.format?.trim() ?? "Live online webinar",
       advisorId: row.advisor_id,
       advisorName: advisorName || "—",
+      hostName: row.host_name,
+      hostTitle: row.host_title,
+      hostBio: row.host_bio,
+      hostImageUrl: row.host_image_url,
+      displayHostName: resolveDisplayHostName({
+        host_name: row.host_name,
+        host_title: row.host_title,
+        host_bio: row.host_bio,
+        host_image_url: row.host_image_url,
+        advisors: advisor,
+      }),
       maxStudents: row.max_students,
       registeredCount: counts.get(row.id) ?? 0,
       tags: row.tags ?? [],
       agenda: parseAgenda(row.agenda),
       status: row.status,
       meetingLink: row.meeting_link,
+      isFeatured: row.is_featured ?? false,
     };
   });
 }

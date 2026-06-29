@@ -3284,27 +3284,39 @@ export type Database = {
       }
       webinar_registrations: {
         Row: {
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
           id: number
           meeting_link_sent_at: string | null
           registered_at: string | null
+          registration_type: Database["public"]["Enums"]["webinar_registration_type"]
           reminder_sent_at: string | null
-          student_id: string
+          student_id: string | null
           webinar_id: number
         }
         Insert: {
+          guest_email?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: number
           meeting_link_sent_at?: string | null
           registered_at?: string | null
+          registration_type?: Database["public"]["Enums"]["webinar_registration_type"]
           reminder_sent_at?: string | null
-          student_id: string
+          student_id?: string | null
           webinar_id: number
         }
         Update: {
+          guest_email?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: number
           meeting_link_sent_at?: string | null
           registered_at?: string | null
+          registration_type?: Database["public"]["Enums"]["webinar_registration_type"]
           reminder_sent_at?: string | null
-          student_id?: string
+          student_id?: string | null
           webinar_id?: number
         }
         Relationships: [
@@ -3326,12 +3338,17 @@ export type Database = {
       }
       webinars: {
         Row: {
-          advisor_id: string
+          advisor_id: string | null
           agenda: Json
           created_at: string | null
           description: string | null
           format: string
+          host_bio: string | null
+          host_image_url: string | null
+          host_name: string | null
+          host_title: string | null
           id: number
+          is_featured: boolean
           max_students: number
           meeting_link: string | null
           scheduled_at: string
@@ -3342,12 +3359,17 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          advisor_id: string
+          advisor_id?: string | null
           agenda?: Json
           created_at?: string | null
           description?: string | null
           format?: string
+          host_bio?: string | null
+          host_image_url?: string | null
+          host_name?: string | null
+          host_title?: string | null
           id?: number
+          is_featured?: boolean
           max_students: number
           meeting_link?: string | null
           scheduled_at: string
@@ -3358,12 +3380,17 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          advisor_id?: string
+          advisor_id?: string | null
           agenda?: Json
           created_at?: string | null
           description?: string | null
           format?: string
+          host_bio?: string | null
+          host_image_url?: string | null
+          host_name?: string | null
+          host_title?: string | null
           id?: number
+          is_featured?: boolean
           max_students?: number
           meeting_link?: string | null
           scheduled_at?: string
@@ -3577,13 +3604,10 @@ export type Database = {
         | "award"
         | "portfolio"
       application_status:
-        | "new"
-        | "scheduled"
-        | "payment_in_progress"
-        | "payment_completed"
-        | "in_progress"
-        | "blocked"
-        | "submitted"
+        | "lead"
+        | "not_suitable"
+        | "payment_requested"
+        | "active_package"
       contact_submission_status: "new" | "read" | "archived"
       gender: "male" | "female"
       news_tag: "visa" | "deadline" | "update"
@@ -3633,6 +3657,7 @@ export type Database = {
         | "in_progress"
         | "ready_to_submit"
         | "submitted"
+      webinar_registration_type: "platform" | "non_platform"
       webinar_status: "draft" | "upcoming" | "live" | "completed" | "cancelled"
     }
     CompositeTypes: {
@@ -3798,13 +3823,10 @@ export const Constants = {
         "portfolio",
       ],
       application_status: [
-        "new",
-        "scheduled",
-        "payment_in_progress",
-        "payment_completed",
-        "in_progress",
-        "blocked",
-        "submitted",
+        "lead",
+        "not_suitable",
+        "payment_requested",
+        "active_package",
       ],
       contact_submission_status: ["new", "read", "archived"],
       gender: ["male", "female"],
@@ -3861,6 +3883,7 @@ export const Constants = {
         "ready_to_submit",
         "submitted",
       ],
+      webinar_registration_type: ["platform", "non_platform"],
       webinar_status: ["draft", "upcoming", "live", "completed", "cancelled"],
     },
   },

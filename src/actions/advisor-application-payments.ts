@@ -21,6 +21,8 @@ function revalidateApplicationPaths(applicationId: number) {
   revalidatePath("/advisor/applications");
   revalidatePath(`/advisor/applications/${applicationId}`);
   revalidatePath("/advisor/payments");
+  revalidatePath("/advisor/leads");
+  revalidatePath("/advisor/students");
 }
 
 export async function sendAdvisorApplicationPaymentRequest(

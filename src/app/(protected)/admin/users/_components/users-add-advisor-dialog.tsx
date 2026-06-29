@@ -6,8 +6,10 @@ import {
   fetchAdvisorFormOptions,
   type AdminCountryOption,
 } from "@/actions/admin-advisors";
+import { generateRandomPassword } from "@/lib/generate-random-password";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CountryMultiSelectAutocomplete } from "./country-multi-select-autocomplete";
 
@@ -29,6 +31,8 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
   const [specializationCountryCodes, setSpecializationCountryCodes] = useState<string[]>([]);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -91,9 +95,17 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
     );
   }
 
+  function handleGeneratePassword() {
+    if (passwordInputRef.current) {
+      passwordInputRef.current.value = generateRandomPassword(8);
+    }
+  }
+
   function handleClose() {
     setError(null);
+    setShowPassword(false);
     setSpecializationCountryCodes([]);
+    if (passwordInputRef.current) passwordInputRef.current.value = "";
     if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     setAvatarPreviewUrl(null);
     onClose();
@@ -116,7 +128,7 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
             Add Advisor
           </h2>
           <p className="mt-2 text-[13px] text-[#666]">
-            Create a new advisor profile. Upload a profile photo instead of pasting an image URL.
+            Create a new advisor profile. Login credentials are emailed to the address below.
           </p>
         </div>
 
@@ -163,6 +175,7 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
                   name="email"
                   type="email"
                   required
+                  autoComplete="email"
                   className={inputClassName}
                 />
               </div>
@@ -171,6 +184,42 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
                   Phone
                 </label>
                 <input id="add-advisor-phone" name="phone" type="tel" className={inputClassName} />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="add-advisor-password" className={labelClassName}>
+                Password
+              </label>
+              <div className="flex gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <input
+                    ref={passwordInputRef}
+                    id="add-advisor-password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    className={`${inputClassName} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md border-0 bg-transparent p-1 text-[#888] hover:text-[#4a4a4a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#40916C] focus-visible:ring-offset-1"
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGeneratePassword}
+                  className="shrink-0 rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[12px] font-semibold text-[#4a4a4a] whitespace-nowrap"
+                >
+                  Generate password
+                </button>
               </div>
             </div>
 

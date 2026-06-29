@@ -122,8 +122,6 @@ function mapActivePackageRow(row: ActivePackageRowRaw): AdvisorActivePackageRow 
     .filter((value): value is string => Boolean(value))
     .sort()[0] ?? null;
 
-  const applicationStatus = row.status?.trim() || "new";
-
   return {
     id: row.id,
     studentName,
@@ -132,7 +130,7 @@ function mapActivePackageRow(row: ActivePackageRowRaw): AdvisorActivePackageRow 
     packagePurchased: formatPackagePurchased(plan, row.package_data),
     amountPaidAed,
     paidOn,
-    statusLabel: applicationStatus === "submitted" ? "Submitted" : "Active",
+    statusLabel: "Active",
   };
 }
 
@@ -163,13 +161,12 @@ async function fetchAdvisorActivePackagesPage(
       package_data,
       applications_plans!applications_plan_id_fkey ( name, price, universities_count ),
       student_profiles ( first_name, last_name, email ),
-      payments!inner ( amount, status, paid_at )
+      payments ( amount, status, paid_at )
     `,
       { count: "exact" },
     )
     .eq("assigned_to", advisorId)
-    .eq("payments.status", "paid")
-    .in("status", ["payment_completed", "in_progress", "submitted"])
+    .eq("status", "active_package")
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false });
 

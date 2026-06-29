@@ -58,6 +58,7 @@ export async function proxy(request: NextRequest) {
     "/application-support",
     "/api/webhooks",
     "/recommendation",
+    "/webinars",
   ]
   const isPublicOpenRoute = publicOpenRoutes.some((route) =>
     pathname.startsWith(route),

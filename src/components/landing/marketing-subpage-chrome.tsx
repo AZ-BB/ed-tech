@@ -33,6 +33,9 @@ export function MarketingSubpageNav() {
         <Link className="nav-link" href="/#testimonials">
           Testimonials
         </Link>
+        <Link className="nav-link" href="/webinars">
+          Webinars
+        </Link>
         <Link className="nav-link" href="/#faq">
           FAQ
         </Link>

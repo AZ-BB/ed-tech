@@ -209,7 +209,7 @@ export async function submitApplicationSupport(
       ...DEFAULT_APPLICATION_PACKAGE_DATA,
       universitiesTotal: plan.universities_count,
     },
-    status: "new",
+    status: "lead",
   };
 
   const { data: appRow, error: insErr } = await secret

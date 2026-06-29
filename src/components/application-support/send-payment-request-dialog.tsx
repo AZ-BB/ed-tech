@@ -94,6 +94,8 @@ export function SendPaymentRequestDialog({
   const [customUniversitiesCount, setCustomUniversitiesCount] = useState("");
   const [dueDate, setDueDate] = useState(defaultPaymentDueDateString());
   const [internalNote, setInternalNote] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [emailBodyCustomized, setEmailBodyCustomized] = useState(false);
 
   const selectedOption = useMemo(
     () =>
@@ -128,7 +130,8 @@ export function SendPaymentRequestDialog({
     !selectedPlan ||
     !amountValid ||
     !customCountValid ||
-    !dueDate.trim();
+    !dueDate.trim() ||
+    !emailBody.trim();
 
   function initializeFromOption(option: SendPaymentRequestApplicationOption) {
     setSelectedPlanId(String(option.planId));
@@ -148,6 +151,8 @@ export function SendPaymentRequestDialog({
 
     setDueDate(defaultPaymentDueDateString());
     setInternalNote("");
+    setEmailBodyCustomized(false);
+    setEmailBody("");
 
     if (fixedApplication) {
       setSelectedApplicationId(String(fixedApplication.applicationId));
@@ -174,7 +179,7 @@ export function SendPaymentRequestDialog({
     );
   }, [selectedPlan, isCustomPlan, parsedCustomCount]);
 
-  const emailPreviewBody = useMemo(() => {
+  const defaultEmailBody = useMemo(() => {
     if (!selectedOption || !selectedPlan || !amountValid) return "";
     return buildPaymentRequestEmailBody(
       {
@@ -197,6 +202,17 @@ export function SendPaymentRequestDialog({
     senderName,
     fromEmailDisplay,
   ]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (emailBodyCustomized) return;
+    setEmailBody(defaultEmailBody);
+  }, [open, defaultEmailBody, emailBodyCustomized]);
+
+  useEffect(() => {
+    if (!open || !selectedOption) return;
+    setEmailBodyCustomized(false);
+  }, [open, selectedOption?.applicationId]);
 
   useEffect(() => {
     if (!selectedPlan || isCustomApplicationPlan(selectedPlan)) return;
@@ -225,6 +241,7 @@ export function SendPaymentRequestDialog({
       planId: selectedPlan.id,
       amountAed: parsedAmount,
       dueDate,
+      emailBody: emailBody.trim(),
       customUniversitiesCount: isCustomPlan ? parsedCustomCount : null,
       internalNote: internalNote.trim() || null,
     });
@@ -429,8 +446,25 @@ export function SendPaymentRequestDialog({
                   ) : null}
 
                   <div>
-                    <label className={labelClassName}>Email preview</label>
-                    <div className="rounded-[8px] border border-[var(--border-light)] bg-[var(--cream)] px-[18px] py-4 text-[13px] leading-relaxed text-[var(--text-mid)]">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <label htmlFor="payment-email-body" className={labelClassName}>
+                        Email message
+                      </label>
+                      {emailBodyCustomized ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEmailBodyCustomized(false);
+                            setEmailBody(defaultEmailBody);
+                          }}
+                          disabled={isSubmitting || fieldsLocked || !defaultEmailBody}
+                          className="cursor-pointer text-[11px] font-semibold text-[var(--green)] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Reset to template
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="rounded-[8px] border border-[var(--border-light)] bg-[var(--cream)] px-[18px] py-4">
                       <div className="mb-1.5 text-[12px]">
                         <b className="inline-block min-w-[60px] text-[var(--text)]">To:</b>{" "}
                         {selectedOption.studentEmail || "—"}
@@ -439,13 +473,22 @@ export function SendPaymentRequestDialog({
                         <b className="inline-block min-w-[60px] text-[var(--text)]">From:</b>{" "}
                         {senderName} &lt;{senderEmail || fromEmailDisplay}&gt;
                       </div>
-                      <div className="mb-1.5 text-[12px]">
+                      <div className="mb-3 text-[12px]">
                         <b className="inline-block min-w-[60px] text-[var(--text)]">Subject:</b>{" "}
                         {PAYMENT_REQUEST_EMAIL_SUBJECT}
                       </div>
-                      <div className="mt-3 whitespace-pre-wrap border-t border-[var(--border-light)] pt-3 text-[13px]">
-                        {emailPreviewBody || "Complete the form above to preview the email."}
-                      </div>
+                      <textarea
+                        id="payment-email-body"
+                        rows={10}
+                        value={emailBody}
+                        onChange={(event) => {
+                          setEmailBody(event.target.value);
+                          setEmailBodyCustomized(true);
+                        }}
+                        placeholder="Complete the form above to preview the email."
+                        className={`${inputClassName} min-h-[200px] resize-y bg-white leading-relaxed`}
+                        disabled={isSubmitting || fieldsLocked}
+                      />
                     </div>
                   </div>
 

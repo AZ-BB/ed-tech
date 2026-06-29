@@ -45,18 +45,11 @@ export async function fetchAdminApplicationsStats(): Promise<AdminApplicationsSt
   const [activeCases, pendingAssignment, inProgress, submitted] =
     await Promise.all([
       countApplications({
-        status: [
-          "new",
-          "scheduled",
-          "payment_in_progress",
-          "payment_completed",
-          "in_progress",
-          "blocked",
-        ],
+        status: ["lead", "payment_requested", "active_package"],
       }),
       countApplications({ assignedToNull: true }),
-      countApplications({ status: "in_progress" }),
-      countApplications({ status: "submitted" }),
+      countApplications({ status: "payment_requested" }),
+      countApplications({ status: "active_package" }),
     ]);
 
   return {

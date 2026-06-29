@@ -253,7 +253,7 @@ export async function fetchAdvisorStudentDetail(
   const snapshots = apps.map((app) => ({
     id: app.id,
     studentId,
-    status: app.status?.trim() || "new",
+    status: app.status?.trim() || "lead",
     updatedAt: app.updated_at,
     createdAt: app.created_at,
     packageDataRaw: app.package_data,
@@ -302,7 +302,7 @@ export async function fetchAdvisorStudentDetail(
       fallbackStartedAt: app.assigned_at,
     });
 
-    const status = app.status?.trim() || "new";
+    const status = app.status?.trim() || "lead";
 
     return {
       id: app.id,

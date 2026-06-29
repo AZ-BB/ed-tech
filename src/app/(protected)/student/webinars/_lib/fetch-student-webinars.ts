@@ -1,4 +1,5 @@
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import { resolveWebinarHost } from "@/lib/webinar-host";
 
 export type StudentWebinarCard = {
   id: number;
@@ -17,6 +18,7 @@ export type StudentWebinarCard = {
   speakerTitle: string;
   speakerBio: string;
   speakerInitials: string;
+  speakerImageUrl: string | null;
   avatarColorClass: string;
 };
 
@@ -38,11 +40,134 @@ function parseAgenda(value: unknown): string[] {
   return value.map((item) => String(item ?? "").trim()).filter(Boolean);
 }
 
-function initialsFromName(firstName: string | null, lastName: string | null): string {
-  const first = firstName?.trim().charAt(0) ?? "";
-  const last = lastName?.trim().charAt(0) ?? "";
-  const combined = `${first}${last}`.toUpperCase();
-  return combined || "UA";
+const WEBINAR_SELECT = `
+  id,
+  title,
+  description,
+  scheduled_at,
+  timezone_label,
+  format,
+  tags,
+  agenda,
+  max_students,
+  host_name,
+  host_title,
+  host_bio,
+  host_image_url,
+  advisors (
+    first_name,
+    last_name,
+    title,
+    description,
+    about
+  )
+`;
+
+type WebinarRow = {
+  id: number;
+  title: string | null;
+  description: string | null;
+  scheduled_at: string;
+  timezone_label: string | null;
+  format: string | null;
+  tags: string[] | null;
+  agenda: unknown;
+  max_students: number;
+  host_name: string | null;
+  host_title: string | null;
+  host_bio: string | null;
+  host_image_url: string | null;
+  advisors:
+    | {
+        first_name: string | null;
+        last_name: string | null;
+        title: string | null;
+        description: string | null;
+        about: string | null;
+      }
+    | {
+        first_name: string | null;
+        last_name: string | null;
+        title: string | null;
+        description: string | null;
+        about: string | null;
+      }[]
+    | null;
+};
+
+function mapRowToCard(
+  row: WebinarRow,
+  registeredCount: number,
+  isRegistered: boolean,
+  colorIndex: number,
+): StudentWebinarCard {
+  const advisor = Array.isArray(row.advisors) ? row.advisors[0] : row.advisors;
+  const maxStudents = row.max_students;
+  const avatarColorClass = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
+  const host = resolveWebinarHost({
+    host_name: row.host_name,
+    host_title: row.host_title,
+    host_bio: row.host_bio,
+    host_image_url: row.host_image_url,
+    advisors: advisor,
+  });
+
+  return {
+    id: row.id,
+    title: row.title?.trim() ?? "",
+    description: row.description?.trim() ?? "",
+    scheduledAt: row.scheduled_at,
+    timezoneLabel: row.timezone_label?.trim() ?? "GST",
+    format: row.format?.trim() ?? "Live online webinar",
+    tags: row.tags ?? [],
+    agenda: parseAgenda(row.agenda),
+    maxStudents,
+    registeredCount,
+    isRegistered,
+    isFull: registeredCount >= maxStudents,
+    speakerName: host.speakerName,
+    speakerTitle: host.speakerTitle,
+    speakerBio: host.speakerBio,
+    speakerInitials: host.speakerInitials,
+    speakerImageUrl: host.speakerImageUrl,
+    avatarColorClass,
+  };
+}
+
+async function fetchRegistrationMeta(
+  webinarIds: number[],
+  studentId: string | null,
+): Promise<{ counts: Map<number, number>; registeredIds: Set<number> }> {
+  const counts = new Map<number, number>();
+  const registeredIds = new Set<number>();
+
+  if (webinarIds.length === 0) {
+    return { counts, registeredIds };
+  }
+
+  const supabase = await createSupabaseSecretClient();
+  const { data: registrations, error: regErr } = await supabase
+    .from("webinar_registrations")
+    .select("webinar_id, student_id, registration_type")
+    .in("webinar_id", webinarIds);
+
+  if (regErr) {
+    console.error("[fetchRegistrationMeta] registrations", regErr);
+    return { counts, registeredIds };
+  }
+
+  for (const reg of registrations ?? []) {
+    counts.set(reg.webinar_id, (counts.get(reg.webinar_id) ?? 0) + 1);
+    if (
+      studentId &&
+      reg.registration_type === "platform" &&
+      reg.student_id === studentId
+    ) {
+      registeredIds.add(reg.webinar_id);
+    }
+  }
+
+  return { counts, registeredIds };
 }
 
 export async function fetchStudentWebinarsPage(
@@ -53,28 +178,10 @@ export async function fetchStudentWebinarsPage(
 
   const { data, error } = await supabase
     .from("webinars")
-    .select(
-      `
-      id,
-      title,
-      description,
-      scheduled_at,
-      timezone_label,
-      format,
-      tags,
-      agenda,
-      max_students,
-      advisors (
-        first_name,
-        last_name,
-        title,
-        description,
-        about
-      )
-    `,
-    )
+    .select(WEBINAR_SELECT)
     .eq("status", "upcoming")
     .gte("scheduled_at", now)
+    .order("is_featured", { ascending: false })
     .order("scheduled_at", { ascending: true });
 
   if (error) {
@@ -83,59 +190,50 @@ export async function fetchStudentWebinarsPage(
   }
 
   const webinarIds = (data ?? []).map((row) => row.id);
-  const counts = new Map<number, number>();
-  const registeredIds = new Set<number>();
+  const { counts, registeredIds } = await fetchRegistrationMeta(webinarIds, studentId);
 
-  if (webinarIds.length > 0) {
-    const { data: registrations, error: regErr } = await supabase
-      .from("webinar_registrations")
-      .select("webinar_id, student_id")
-      .in("webinar_id", webinarIds);
+  return (data ?? []).map((row, index) =>
+    mapRowToCard(
+      row as WebinarRow,
+      counts.get(row.id) ?? 0,
+      registeredIds.has(row.id),
+      index,
+    ),
+  );
+}
 
-    if (regErr) {
-      console.error("[fetchStudentWebinarsPage] registrations", regErr);
-    } else {
-      for (const reg of registrations ?? []) {
-        counts.set(reg.webinar_id, (counts.get(reg.webinar_id) ?? 0) + 1);
-        if (studentId && reg.student_id === studentId) {
-          registeredIds.add(reg.webinar_id);
-        }
-      }
-    }
+export async function fetchStudentWebinarById(
+  id: number,
+  studentId: string | null,
+): Promise<StudentWebinarCard | null> {
+  const supabase = await createSupabaseSecretClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("webinars")
+    .select(WEBINAR_SELECT)
+    .eq("id", id)
+    .eq("status", "upcoming")
+    .gte("scheduled_at", now)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[fetchStudentWebinarById]", error);
+    return null;
   }
 
-  return (data ?? []).map((row, index) => {
-    const advisor = Array.isArray(row.advisors) ? row.advisors[0] : row.advisors;
-    const registeredCount = counts.get(row.id) ?? 0;
-    const maxStudents = row.max_students;
-    const speakerBio =
-      advisor?.about?.trim() || advisor?.description?.trim() || "";
+  if (!data) {
+    return null;
+  }
 
-    return {
-      id: row.id,
-      title: row.title?.trim() ?? "",
-      description: row.description?.trim() ?? "",
-      scheduledAt: row.scheduled_at,
-      timezoneLabel: row.timezone_label?.trim() ?? "GST",
-      format: row.format?.trim() ?? "Live online webinar",
-      tags: row.tags ?? [],
-      agenda: parseAgenda(row.agenda),
-      maxStudents,
-      registeredCount,
-      isRegistered: registeredIds.has(row.id),
-      isFull: registeredCount >= maxStudents,
-      speakerName: advisor
-        ? [advisor.first_name?.trim(), advisor.last_name?.trim()].filter(Boolean).join(" ")
-        : "Advisor",
-      speakerTitle: advisor?.title?.trim() ?? "Univeera Advisor",
-      speakerBio,
-      speakerInitials: initialsFromName(
-        advisor?.first_name ?? null,
-        advisor?.last_name ?? null,
-      ),
-      avatarColorClass: AVATAR_COLORS[index % AVATAR_COLORS.length],
-    };
-  });
+  const { counts, registeredIds } = await fetchRegistrationMeta([id], studentId);
+
+  return mapRowToCard(
+    data as WebinarRow,
+    counts.get(id) ?? 0,
+    registeredIds.has(id),
+    id,
+  );
 }
 
 export async function getStudentIdForWebinars(): Promise<string | null> {

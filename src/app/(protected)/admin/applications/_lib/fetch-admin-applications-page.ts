@@ -129,7 +129,7 @@ function mapApplicationRow(row: AppRowRaw): AdminApplicationTableRow {
     packageLabel: resolvePackageLabel(row),
     universitiesLabel: resolveUniversitiesLabel(row),
     advisorName: personNameFromEmbed(row.advisors),
-    status: row.status?.trim() || "new",
+    status: row.status?.trim() || "lead",
   };
 }
 

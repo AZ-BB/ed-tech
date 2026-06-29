@@ -159,6 +159,100 @@ async function uploadAdvisorAvatar(
   return publicStorageObjectUrl(ADVISOR_AVATARS_BUCKET, path);
 }
 
+type SupabaseSecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
+
+async function deleteAdvisorProfile(service: SupabaseSecretClient, advisorId: string) {
+  await service.from("advisor_tags_joint").delete().eq("advisor_id", advisorId);
+  await service.from("advisor_specializations_countries").delete().eq("advisor_id", advisorId);
+  await service.from("advisors").delete().eq("id", advisorId);
+}
+
+type ProvisionAdvisorAuthResult =
+  | { ok: true }
+  | { ok: false; error: string; createdUserId?: string };
+
+async function provisionAdvisorAuthAndSendCredentials(opts: {
+  service: SupabaseSecretClient;
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+  mode: "create" | "send";
+  existingUser: { id: string; user_metadata: unknown } | null;
+}): Promise<ProvisionAdvisorAuthResult> {
+  const { service, email, firstName, lastName, password, mode, existingUser } = opts;
+  const userMetadata = { firstName, lastName, type: "advisor" as const };
+  let createdUserId: string | undefined;
+
+  if (mode === "create") {
+    if (existingUser) {
+      return { ok: false, error: "An account with this email already exists." };
+    }
+
+    const { data: authData, error: createError } = await service.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: userMetadata,
+    });
+
+    if (createError || !authData.user) {
+      console.error("[provisionAdvisorAuthAndSendCredentials] createUser", createError);
+      return { ok: false, error: createError?.message || "Could not create advisor login." };
+    }
+
+    createdUserId = authData.user.id;
+  } else if (existingUser) {
+    const existingMeta = existingUser.user_metadata as AuthUserMetadata | undefined;
+    const conflict = authAccountTypeConflictMessage(existingMeta?.type);
+    if (conflict) {
+      return { ok: false, error: conflict };
+    }
+
+    const { error: updateError } = await service.auth.admin.updateUserById(existingUser.id, {
+      password,
+      email_confirm: true,
+      user_metadata: userMetadata,
+    });
+
+    if (updateError) {
+      console.error("[provisionAdvisorAuthAndSendCredentials] updateUserById", updateError);
+      return { ok: false, error: updateError.message || "Could not update advisor login." };
+    }
+  } else {
+    const { data: authData, error: createError } = await service.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: userMetadata,
+    });
+
+    if (createError || !authData.user) {
+      console.error("[provisionAdvisorAuthAndSendCredentials] createUser", createError);
+      return { ok: false, error: createError?.message || "Could not create advisor login." };
+    }
+  }
+
+  const loginUrl = await buildLoginPageUrl();
+  const emailResult = await sendStaffCredentialsEmail({
+    to: email,
+    firstName,
+    email,
+    password,
+    loginUrl,
+  });
+
+  if ("error" in emailResult) {
+    return {
+      ok: false,
+      error: emailResult.error || "Credentials email could not be sent.",
+      ...(createdUserId ? { createdUserId } : {}),
+    };
+  }
+
+  return { ok: true };
+}
+
 type CreateAdvisorResult = { ok: true } | { ok: false; error: string };
 
 export async function createAdvisor(formData: FormData): Promise<CreateAdvisorResult> {
@@ -205,7 +299,34 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
     return { ok: false, error: "Payout percentage must be between 0 and 100." };
   }
 
+  const password = String(formData.get("password") ?? "");
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, error: "Password must be at least 8 characters." };
+  }
+
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL before creating advisors.",
+    };
+  }
+
   const service = await createSupabaseSecretClient();
+
+  const authLookup = await findAuthUserByEmail(service, email);
+  if (authLookup.error) {
+    return { ok: false, error: authLookup.error };
+  }
+
+  if (authLookup.user) {
+    const existingMeta = authLookup.user.user_metadata as AuthUserMetadata | undefined;
+    const conflict = authAccountTypeConflictMessage(existingMeta?.type);
+    if (conflict) {
+      return { ok: false, error: conflict };
+    }
+    return { ok: false, error: "An account with this email already exists." };
+  }
 
   const { data: existingAdvisor } = await service
     .from("advisors")
@@ -306,16 +427,29 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
     }
   } catch (error) {
     console.error("[createAdvisor] post-create", error);
-    await service.from("advisor_tags_joint").delete().eq("advisor_id", advisorId);
-    await service
-      .from("advisor_specializations_countries")
-      .delete()
-      .eq("advisor_id", advisorId);
-    await service.from("advisors").delete().eq("id", advisorId);
+    await deleteAdvisorProfile(service, advisorId);
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Could not finish creating advisor.",
     };
+  }
+
+  const authResult = await provisionAdvisorAuthAndSendCredentials({
+    service,
+    email,
+    firstName,
+    lastName,
+    password,
+    mode: "create",
+    existingUser: null,
+  });
+
+  if (!authResult.ok) {
+    if (authResult.createdUserId) {
+      await service.auth.admin.deleteUser(authResult.createdUserId);
+    }
+    await deleteAdvisorProfile(service, advisorId);
+    return { ok: false, error: authResult.error };
   }
 
   revalidatePath("/admin/users");
@@ -624,7 +758,6 @@ export async function sendAdvisorLoginCredentials(
   const email = advisor.email.trim().toLowerCase();
   const firstName = advisor.first_name.trim();
   const lastName = advisor.last_name.trim();
-  const userMetadata = { firstName, lastName, type: "advisor" as const };
 
   if (await isAdvisorLoginProvisioned(service, email)) {
     return {
@@ -638,52 +771,18 @@ export async function sendAdvisorLoginCredentials(
     return { ok: false, error: existingLookup.error };
   }
 
-  const existingUser = existingLookup.user;
-  if (existingUser) {
-    const existingMeta = existingUser.user_metadata as AuthUserMetadata | undefined;
-    const conflict = authAccountTypeConflictMessage(existingMeta?.type);
-    if (conflict) {
-      return { ok: false, error: conflict };
-    }
-
-    const { error: updateError } = await service.auth.admin.updateUserById(existingUser.id, {
-      password,
-      email_confirm: true,
-      user_metadata: userMetadata,
-    });
-
-    if (updateError) {
-      console.error("[sendAdvisorLoginCredentials] updateUserById", updateError);
-      return { ok: false, error: updateError.message || "Could not update advisor login." };
-    }
-  } else {
-    const { error: createError } = await service.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: userMetadata,
-    });
-
-    if (createError) {
-      console.error("[sendAdvisorLoginCredentials] createUser", createError);
-      return { ok: false, error: createError.message || "Could not create advisor login." };
-    }
-  }
-
-  const loginUrl = await buildLoginPageUrl();
-  const emailResult = await sendStaffCredentialsEmail({
-    to: email,
-    firstName,
+  const provisionResult = await provisionAdvisorAuthAndSendCredentials({
+    service,
     email,
+    firstName,
+    lastName,
     password,
-    loginUrl,
+    mode: "send",
+    existingUser: existingLookup.user,
   });
 
-  if ("error" in emailResult) {
-    return {
-      ok: false,
-      error: emailResult.error || "Credentials email could not be sent.",
-    };
+  if (!provisionResult.ok) {
+    return { ok: false, error: provisionResult.error };
   }
 
   revalidatePath("/admin/users");

@@ -4,10 +4,13 @@ import type { Database } from "@/database.types";
 import { isResendConfigured } from "@/lib/resend/config";
 import { resolveStudentFirstNameForEmail } from "@/lib/resend/session-cancelled-student-email";
 import { sendWebinarMeetingLinkEmail } from "@/lib/resend/webinar-meeting-link-email";
+import { sendWebinarRegistrationConfirmationEmail } from "@/lib/resend/webinar-registration-confirmation-email";
 import { sendWebinarReminderEmail } from "@/lib/resend/webinar-reminder-email";
+import { resolveWebinarHost } from "@/lib/webinar-host";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type WebinarStatus = Database["public"]["Enums"]["webinar_status"];
+type WebinarRegistrationType = Database["public"]["Enums"]["webinar_registration_type"];
 
 type WebinarRow = {
   id: number;
@@ -16,16 +19,26 @@ type WebinarRow = {
   timezone_label: string;
   meeting_link: string | null;
   status: WebinarStatus;
+  host_name: string | null;
+  host_title: string | null;
+  host_bio: string | null;
+  host_image_url: string | null;
   advisors: {
     first_name: string | null;
     last_name: string | null;
+    title?: string | null;
+    description?: string | null;
+    about?: string | null;
   } | null;
 };
 
 type RegistrationRow = {
   id: number;
   webinar_id: number;
-  student_id: string;
+  student_id: string | null;
+  registration_type: WebinarRegistrationType;
+  guest_name: string | null;
+  guest_email: string | null;
   reminder_sent_at: string | null;
   meeting_link_sent_at: string | null;
   student_profiles: {
@@ -35,17 +48,58 @@ type RegistrationRow = {
   } | null;
 };
 
-function advisorDisplayName(
-  advisor: WebinarRow["advisors"],
-  fallback = "your advisor",
-): string {
-  if (!advisor) return fallback;
-  const name = [advisor.first_name?.trim(), advisor.last_name?.trim()]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-  return name || fallback;
+const REGISTRATION_EMAIL_SELECT = `
+  id,
+  webinar_id,
+  student_id,
+  registration_type,
+  guest_name,
+  guest_email,
+  reminder_sent_at,
+  meeting_link_sent_at,
+  student_profiles ( email, first_name, last_name )
+`;
+
+function hostNameForEmail(webinar: WebinarRow, fallback = "your advisor"): string {
+  return resolveWebinarHost(webinar).hostLabelForEmail || fallback;
 }
+
+function firstNameFromGuestName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "there";
+  return trimmed.split(/\s+/)[0] ?? "there";
+}
+
+function resolveRegistrationRecipient(reg: RegistrationRow): {
+  email: string | null;
+  firstName: string;
+} {
+  if (reg.registration_type === "non_platform") {
+    return {
+      email: reg.guest_email?.trim() ?? null,
+      firstName: firstNameFromGuestName(reg.guest_name ?? ""),
+    };
+  }
+
+  return {
+    email: reg.student_profiles?.email?.trim() ?? null,
+    firstName: resolveStudentFirstNameForEmail(null, reg.student_profiles),
+  };
+}
+
+const WEBINAR_EMAIL_SELECT = `
+  id,
+  title,
+  scheduled_at,
+  timezone_label,
+  meeting_link,
+  status,
+  host_name,
+  host_title,
+  host_bio,
+  host_image_url,
+  advisors ( first_name, last_name, title, description, about )
+`;
 
 export type WebinarEmailBatchResult = {
   sent: number;
@@ -72,17 +126,7 @@ export async function sendWebinarDayBeforeReminders(): Promise<WebinarEmailBatch
 
   const { data: webinars, error: webinarsErr } = await secret
     .from("webinars")
-    .select(
-      `
-      id,
-      title,
-      scheduled_at,
-      timezone_label,
-      meeting_link,
-      status,
-      advisors ( first_name, last_name )
-    `,
-    )
+    .select(WEBINAR_EMAIL_SELECT)
     .in("status", ["upcoming", "live"])
     .gte("scheduled_at", tomorrowStart.toISOString())
     .lt("scheduled_at", tomorrowEnd.toISOString());
@@ -103,16 +147,7 @@ export async function sendWebinarDayBeforeReminders(): Promise<WebinarEmailBatch
 
   const { data: registrations, error: regErr } = await secret
     .from("webinar_registrations")
-    .select(
-      `
-      id,
-      webinar_id,
-      student_id,
-      reminder_sent_at,
-      meeting_link_sent_at,
-      student_profiles ( email, first_name, last_name )
-    `,
-    )
+    .select(REGISTRATION_EMAIL_SELECT)
     .in("webinar_id", webinarIds)
     .is("reminder_sent_at", null);
 
@@ -126,19 +161,19 @@ export async function sendWebinarDayBeforeReminders(): Promise<WebinarEmailBatch
 
   for (const reg of (registrations ?? []) as RegistrationRow[]) {
     const webinar = webinarById.get(reg.webinar_id);
-    const email = reg.student_profiles?.email?.trim();
-    if (!webinar || !email) {
+    const recipient = resolveRegistrationRecipient(reg);
+    if (!webinar || !recipient.email) {
       result.skipped += 1;
       continue;
     }
 
     const sendResult = await sendWebinarReminderEmail({
-      to: email,
-      studentFirstName: resolveStudentFirstNameForEmail(null, reg.student_profiles),
+      to: recipient.email,
+      studentFirstName: recipient.firstName,
       webinarTitle: webinar.title,
       scheduledAt: webinar.scheduled_at,
       timezoneLabel: webinar.timezone_label,
-      advisorName: advisorDisplayName(webinar.advisors),
+      advisorName: hostNameForEmail(webinar),
     });
 
     if (!("ok" in sendResult)) {
@@ -186,17 +221,7 @@ export async function sendWebinarMeetingLinks(
 
   const { data: webinar, error: webinarErr } = await secret
     .from("webinars")
-    .select(
-      `
-      id,
-      title,
-      scheduled_at,
-      timezone_label,
-      meeting_link,
-      status,
-      advisors ( first_name, last_name )
-    `,
-    )
+    .select(WEBINAR_EMAIL_SELECT)
     .eq("id", webinarId)
     .maybeSingle();
 
@@ -209,16 +234,7 @@ export async function sendWebinarMeetingLinks(
 
   const { data: registrations, error: regErr } = await secret
     .from("webinar_registrations")
-    .select(
-      `
-      id,
-      webinar_id,
-      student_id,
-      reminder_sent_at,
-      meeting_link_sent_at,
-      student_profiles ( email, first_name, last_name )
-    `,
-    )
+    .select(REGISTRATION_EMAIL_SELECT)
     .eq("webinar_id", webinarId)
     .is("meeting_link_sent_at", null);
 
@@ -231,19 +247,19 @@ export async function sendWebinarMeetingLinks(
   const nowIso = new Date().toISOString();
 
   for (const reg of (registrations ?? []) as RegistrationRow[]) {
-    const email = reg.student_profiles?.email?.trim();
-    if (!email) {
+    const recipient = resolveRegistrationRecipient(reg);
+    if (!recipient.email) {
       result.skipped += 1;
       continue;
     }
 
     const sendResult = await sendWebinarMeetingLinkEmail({
-      to: email,
-      studentFirstName: resolveStudentFirstNameForEmail(null, reg.student_profiles),
+      to: recipient.email,
+      studentFirstName: recipient.firstName,
       webinarTitle: webinarRow.title,
       scheduledAt: webinarRow.scheduled_at,
       timezoneLabel: webinarRow.timezone_label,
-      advisorName: advisorDisplayName(webinarRow.advisors),
+      advisorName: hostNameForEmail(webinarRow),
       meetingLink: trimmedLink,
     });
 
@@ -271,4 +287,213 @@ export async function sendWebinarMeetingLinks(
   }
 
   return result;
+}
+
+async function sendMeetingLinkForRegistration(
+  webinarId: number,
+  registrationId: number,
+): Promise<{ ok: true; sent: boolean } | { ok: false; error: string }> {
+  if (!isResendConfigured()) {
+    return { ok: false, error: "Resend is not configured." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+
+  const { data: webinar, error: webinarErr } = await secret
+    .from("webinars")
+    .select(WEBINAR_EMAIL_SELECT)
+    .eq("id", webinarId)
+    .maybeSingle();
+
+  if (webinarErr || !webinar) {
+    return { ok: false, error: "Webinar not found." };
+  }
+
+  const webinarRow = webinar as WebinarRow;
+  const meetingLink = webinarRow.meeting_link?.trim();
+  if (!meetingLink) {
+    return { ok: true, sent: false };
+  }
+
+  const { data: registration, error: regErr } = await secret
+    .from("webinar_registrations")
+    .select(REGISTRATION_EMAIL_SELECT)
+    .eq("id", registrationId)
+    .eq("webinar_id", webinarId)
+    .maybeSingle();
+
+  if (regErr || !registration) {
+    return { ok: false, error: "Could not load registration." };
+  }
+
+  const regRow = registration as RegistrationRow;
+
+  if (regRow.meeting_link_sent_at) {
+    return { ok: true, sent: false };
+  }
+
+  const recipient = resolveRegistrationRecipient(regRow);
+  if (!recipient.email) {
+    return { ok: true, sent: false };
+  }
+
+  const sendResult = await sendWebinarMeetingLinkEmail({
+    to: recipient.email,
+    studentFirstName: recipient.firstName,
+    webinarTitle: webinarRow.title,
+    scheduledAt: webinarRow.scheduled_at,
+    timezoneLabel: webinarRow.timezone_label,
+    advisorName: hostNameForEmail(webinarRow),
+    meetingLink,
+  });
+
+  if (!("ok" in sendResult)) {
+    return {
+      ok: false,
+      error: sendResult.error ?? "Could not send meeting link email.",
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+  const { error: updateErr } = await secret
+    .from("webinar_registrations")
+    .update({ meeting_link_sent_at: nowIso })
+    .eq("id", regRow.id);
+
+  if (updateErr) {
+    console.error("[sendMeetingLinkForRegistration] update", updateErr);
+    return { ok: false, error: "Could not mark meeting link as sent." };
+  }
+
+  return { ok: true, sent: true };
+}
+
+export async function sendWebinarMeetingLinkForNewRegistration(
+  webinarId: number,
+  studentId: string,
+): Promise<{ ok: true; sent: boolean } | { ok: false; error: string }> {
+  const secret = await createSupabaseSecretClient();
+
+  const { data: registration, error: regErr } = await secret
+    .from("webinar_registrations")
+    .select("id")
+    .eq("webinar_id", webinarId)
+    .eq("student_id", studentId)
+    .eq("registration_type", "platform")
+    .maybeSingle();
+
+  if (regErr || !registration) {
+    return { ok: false, error: "Could not load registration." };
+  }
+
+  return sendMeetingLinkForRegistration(webinarId, registration.id);
+}
+
+export async function sendWebinarMeetingLinkForNewGuestRegistration(
+  webinarId: number,
+  registrationId: number,
+): Promise<{ ok: true; sent: boolean } | { ok: false; error: string }> {
+  return sendMeetingLinkForRegistration(webinarId, registrationId);
+}
+
+async function sendRegistrationConfirmationForRegistration(
+  webinarId: number,
+  registrationId: number,
+): Promise<{ ok: true; sent: boolean } | { ok: false; error: string }> {
+  if (!isResendConfigured()) {
+    return { ok: false, error: "Resend is not configured." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+
+  const { data: webinar, error: webinarErr } = await secret
+    .from("webinars")
+    .select(WEBINAR_EMAIL_SELECT)
+    .eq("id", webinarId)
+    .maybeSingle();
+
+  if (webinarErr || !webinar) {
+    return { ok: false, error: "Webinar not found." };
+  }
+
+  const webinarRow = webinar as WebinarRow;
+
+  const { data: registration, error: regErr } = await secret
+    .from("webinar_registrations")
+    .select(REGISTRATION_EMAIL_SELECT)
+    .eq("id", registrationId)
+    .eq("webinar_id", webinarId)
+    .maybeSingle();
+
+  if (regErr || !registration) {
+    return { ok: false, error: "Could not load registration." };
+  }
+
+  const regRow = registration as RegistrationRow;
+  const recipient = resolveRegistrationRecipient(regRow);
+  if (!recipient.email) {
+    return { ok: true, sent: false };
+  }
+
+  const meetingLink = webinarRow.meeting_link?.trim() || null;
+
+  const sendResult = await sendWebinarRegistrationConfirmationEmail({
+    to: recipient.email,
+    studentFirstName: recipient.firstName,
+    webinarTitle: webinarRow.title,
+    scheduledAt: webinarRow.scheduled_at,
+    timezoneLabel: webinarRow.timezone_label,
+    advisorName: hostNameForEmail(webinarRow),
+    meetingLink,
+  });
+
+  if (!("ok" in sendResult)) {
+    return {
+      ok: false,
+      error: sendResult.error ?? "Could not send registration confirmation email.",
+    };
+  }
+
+  if (meetingLink) {
+    const nowIso = new Date().toISOString();
+    const { error: updateErr } = await secret
+      .from("webinar_registrations")
+      .update({ meeting_link_sent_at: nowIso })
+      .eq("id", regRow.id);
+
+    if (updateErr) {
+      console.error("[sendRegistrationConfirmationForRegistration] update", updateErr);
+      return { ok: false, error: "Could not mark meeting link as sent." };
+    }
+  }
+
+  return { ok: true, sent: true };
+}
+
+export async function sendWebinarRegistrationConfirmationForNewRegistration(
+  webinarId: number,
+  studentId: string,
+): Promise<{ ok: true; sent: boolean } | { ok: false; error: string }> {
+  const secret = await createSupabaseSecretClient();
+
+  const { data: registration, error: regErr } = await secret
+    .from("webinar_registrations")
+    .select("id")
+    .eq("webinar_id", webinarId)
+    .eq("student_id", studentId)
+    .eq("registration_type", "platform")
+    .maybeSingle();
+
+  if (regErr || !registration) {
+    return { ok: false, error: "Could not load registration." };
+  }
+
+  return sendRegistrationConfirmationForRegistration(webinarId, registration.id);
+}
+
+export async function sendWebinarRegistrationConfirmationForNewGuestRegistration(
+  webinarId: number,
+  registrationId: number,
+): Promise<{ ok: true; sent: boolean } | { ok: false; error: string }> {
+  return sendRegistrationConfirmationForRegistration(webinarId, registrationId);
 }

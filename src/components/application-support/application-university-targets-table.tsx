@@ -41,10 +41,10 @@ export const UNIVERSITY_TARGET_SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
 
 export const universityTargetStatusSelectClass =
-  "w-[118px] max-w-[118px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_6px_center] bg-no-repeat py-1 pl-2 pr-6 text-[12px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
+  "w-[118px] max-w-[118px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_6px_center] bg-no-repeat py-1 pl-2 pr-6 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 
 export const universityTargetDecisionSelectClass =
-  "w-[128px] max-w-[128px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_6px_center] bg-no-repeat py-1 pl-2 pr-6 text-[12px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
+  "w-[128px] max-w-[128px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_6px_center] bg-no-repeat py-1 pl-2 pr-6 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 
 const iconBtnClass =
   "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] border border-[#e0deda] bg-white text-[#4a4a4a] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-45";
@@ -68,6 +68,7 @@ type ApplicationUniversityTargetsTableProps = {
   emptyMessage?: string;
   renderLeadingColumns?: (target: ApplicationUniversityTargetRow) => ReactNode;
   leadingHeaderColumns?: ReactNode;
+  renderExtraActions?: (target: ApplicationUniversityTargetRow) => ReactNode;
   minWidthClass?: string;
 };
 
@@ -77,6 +78,7 @@ export function ApplicationUniversityTargetsTable({
   emptyMessage = "No universities added yet.",
   renderLeadingColumns,
   leadingHeaderColumns,
+  renderExtraActions,
   minWidthClass = "min-w-[580px]",
 }: ApplicationUniversityTargetsTableProps) {
   const router = useRouter();
@@ -158,12 +160,12 @@ export function ApplicationUniversityTargetsTable({
               {targets.map((target) => (
                 <tr key={target.id} className="border-b border-[#ece9e4] last:border-b-0">
                   {renderLeadingColumns?.(target)}
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3 text-[13px] text-[#4a4a4a]">
                     <div className="flex items-center gap-2">
-                      <span className="text-[14px]" aria-hidden>
+                      <span className="text-[13px]" aria-hidden>
                         {target.countryFlag}
                       </span>
-                      <span className="text-[12px] font-semibold text-[#1a1a1a]">
+                      <span className="font-semibold text-[#1a1a1a]">
                         {target.universityName}
                       </span>
                     </div>
@@ -211,7 +213,8 @@ export function ApplicationUniversityTargetsTable({
                     </select>
                   </td>
                   <td className="px-3 py-3">
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end gap-2">
+                      {renderExtraActions?.(target)}
                       <button
                         type="button"
                         className={iconBtnClass}

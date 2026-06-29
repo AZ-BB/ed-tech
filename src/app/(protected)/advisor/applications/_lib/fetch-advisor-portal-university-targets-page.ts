@@ -3,17 +3,37 @@ import {
   mapApplicationUniversityTargetRow,
   type UniversityTargetRaw,
 } from "@/lib/application-university-target-mapper";
+import {
+  parseApplicationPackageData,
+  resolveApplicationUniversitiesTotal,
+} from "@/lib/application-package-data";
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
 import { UNIVERSITY_TARGETS_SELECT } from "@/lib/fetch-application-university-targets";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
+import {
+  escapeIlike,
+  nameEmailSearchOrFilter,
+} from "@/app/(protected)/school/_lib/student-search";
+import type {
+  AdvisorUniversityTargetDecisionFilter,
+  AdvisorUniversityTargetStatusFilter,
+} from "./parse-advisor-university-targets-filters";
 
 type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+type PlanEmbed = {
+  name: string;
+  price: number;
+  universities_count: number;
+};
 
 type ApplicationEmbed = {
   id: number;
   student_name: string | null;
   student_email: string | null;
   status: string | null;
+  package_data: unknown;
+  applications_plans: PlanEmbed | PlanEmbed[] | null;
   student_profiles:
     | ({ first_name: string; last_name: string; email?: string | null })
     | ({ first_name: string; last_name: string; email?: string | null })[]
@@ -28,6 +48,8 @@ export type AdvisorPortalUniversityTargetRow = ApplicationUniversityTargetRow & 
   studentName: string;
   studentEmail: string;
   applicationStatus: string;
+  packageLabel: string;
+  packagePrice: number;
 };
 
 export type AdvisorPortalUniversityTargetsPanelProps = {
@@ -35,6 +57,9 @@ export type AdvisorPortalUniversityTargetsPanelProps = {
   totalRows: number;
   page: number;
   limit: number;
+  search: string;
+  status: AdvisorUniversityTargetStatusFilter;
+  decision: AdvisorUniversityTargetDecisionFilter;
 };
 
 function paginationRange(page: number, limit: number) {
@@ -56,6 +81,71 @@ function personName(
   return [first?.trim(), last?.trim()].filter(Boolean).join(" ").trim();
 }
 
+function resolvePackageLabel(application: ApplicationEmbed | null): string {
+  const plan = application ? firstEmbed(application.applications_plans) : null;
+  if (!plan) return "—";
+
+  const packageData = parseApplicationPackageData(application?.package_data);
+  const count = resolveApplicationUniversitiesTotal(
+    packageData,
+    plan.universities_count,
+  );
+  if (Number.isFinite(count) && count > 0) {
+    return `${count} unis`;
+  }
+
+  return plan.name?.trim() || "—";
+}
+
+function resolvePackagePrice(application: ApplicationEmbed | null): number {
+  const plan = application ? firstEmbed(application.applications_plans) : null;
+  return plan?.price ?? 0;
+}
+
+async function fetchMatchingStudentIds(
+  client: DbClient,
+  search: string,
+): Promise<string[]> {
+  const profileFilter = nameEmailSearchOrFilter(search);
+  if (!profileFilter) return [];
+
+  const { data, error } = await client
+    .from("student_profiles")
+    .select("id")
+    .or(profileFilter)
+    .limit(200);
+
+  if (error) {
+    console.error("[fetchAdvisorUniversityTargetsPage] profile search", error);
+    return [];
+  }
+
+  return (data ?? []).map((row) => row.id);
+}
+
+async function buildUniversityTargetsSearchOrFilter(
+  client: DbClient,
+  search: string,
+): Promise<string | null> {
+  const trimmed = search.trim();
+  if (!trimmed) return null;
+
+  const e = escapeIlike(trimmed);
+  const clauses = [
+    `university_name.ilike.%${e}%`,
+    `applications.student_name.ilike.%${e}%`,
+    `applications.student_email.ilike.%${e}%`,
+  ];
+
+  const studentIds = await fetchMatchingStudentIds(client, trimmed);
+  if (studentIds.length > 0) {
+    const inList = studentIds.map((id) => `"${id}"`).join(",");
+    clauses.push(`applications.student_id.in.(${inList})`);
+  }
+
+  return clauses.join(",");
+}
+
 function mapTargetRow(raw: TargetRowRaw): AdvisorPortalUniversityTargetRow {
   const target = mapApplicationUniversityTargetRow(raw);
   const application = firstEmbed(raw.applications);
@@ -70,18 +160,27 @@ function mapTargetRow(raw: TargetRowRaw): AdvisorPortalUniversityTargetRow {
     ...target,
     studentName,
     studentEmail,
-    applicationStatus: application?.status?.trim() || "new",
+    applicationStatus: application?.status?.trim() || "lead",
+    packageLabel: resolvePackageLabel(application),
+    packagePrice: resolvePackagePrice(application),
   };
 }
 
 async function fetchAdvisorUniversityTargetsPage(
   advisorId: string,
-  options: { page: number; limit: number; client: DbClient },
+  options: {
+    page: number;
+    limit: number;
+    search: string;
+    status: AdvisorUniversityTargetStatusFilter;
+    decision: AdvisorUniversityTargetDecisionFilter;
+    client: DbClient;
+  },
 ): Promise<{ rows: AdvisorPortalUniversityTargetRow[]; totalRows: number }> {
-  const { page, limit, client } = options;
+  const { page, limit, search, status, decision, client } = options;
   const { from, to } = paginationRange(page, limit);
 
-  const { data, count, error } = await client
+  let query = client
     .from("application_university_targets")
     .select(
       `
@@ -92,6 +191,8 @@ async function fetchAdvisorUniversityTargetsPage(
         student_email,
         status,
         assigned_to,
+        package_data,
+        applications_plans ( name, price, universities_count ),
         student_profiles ( first_name, last_name, email )
       )
     `,
@@ -99,8 +200,22 @@ async function fetchAdvisorUniversityTargetsPage(
     )
     .eq("applications.assigned_to", advisorId)
     .order("created_at", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .range(from, to);
+    .order("sort_order", { ascending: true });
+
+  if (status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  if (decision !== "all") {
+    query = query.eq("decision", decision);
+  }
+
+  const searchOrFilter = await buildUniversityTargetsSearchOrFilter(client, search);
+  if (searchOrFilter) {
+    query = query.or(searchOrFilter);
+  }
+
+  const { data, count, error } = await query.range(from, to);
 
   if (error) {
     console.error("[fetchAdvisorUniversityTargetsPage]", error);
@@ -114,13 +229,22 @@ async function fetchAdvisorUniversityTargetsPage(
 export async function fetchAdvisorPortalUniversityTargetsPanel(options: {
   page: number;
   limit: number;
+  search: string;
+  status: AdvisorUniversityTargetStatusFilter;
+  decision: AdvisorUniversityTargetDecisionFilter;
 }): Promise<AdvisorPortalUniversityTargetsPanelProps | null> {
   const supabase = await createSupabaseServerClient();
   const advisorId = await resolveCurrentAdvisorId(supabase);
   if (!advisorId) return null;
 
+  const search = options.search.trim();
+
   const pageResult = await fetchAdvisorUniversityTargetsPage(advisorId, {
-    ...options,
+    page: options.page,
+    limit: options.limit,
+    search,
+    status: options.status,
+    decision: options.decision,
     client: supabase,
   });
 
@@ -128,5 +252,8 @@ export async function fetchAdvisorPortalUniversityTargetsPanel(options: {
     ...pageResult,
     page: options.page,
     limit: options.limit,
+    search,
+    status: options.status,
+    decision: options.decision,
   };
 }

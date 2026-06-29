@@ -78,7 +78,7 @@ export function AdminAddWebinarDialog({ open, onClose }: AdminAddWebinarDialogPr
           </button>
         </div>
 
-        <form key={formKey} onSubmit={handleSubmit} className="px-5 py-4">
+        <form key={formKey} onSubmit={handleSubmit} encType="multipart/form-data" className="px-5 py-4">
           {error ? (
             <p className="mb-4 rounded-[8px] bg-[#fef2f2] px-3 py-2 text-[12px] text-[#b91c1c]">
               {error}
