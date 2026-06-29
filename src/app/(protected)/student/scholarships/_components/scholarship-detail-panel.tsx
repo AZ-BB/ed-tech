@@ -274,9 +274,11 @@ export function ScholarshipDetailPanel({
                   highlight={false}
                 />
               </div>
-              <div className="mt-3.5 rounded-[var(--radius-sm)] border-l-[3px] border-[var(--green-light)] bg-[var(--green-pale)] px-4 py-3 text-[12.5px] leading-normal text-[var(--text-mid)]">
-                {s.importantNotes}
-              </div>
+              {s.tooltip.trim() ? (
+                <div className="mt-3.5 rounded-[var(--radius-sm)] border-l-[3px] border-[var(--green-light)] bg-[var(--green-pale)] px-4 py-3 text-[12.5px] leading-normal text-[var(--text-mid)]">
+                  {s.tooltip}
+                </div>
+              ) : null}
             </DetailCard>
           </div>
 

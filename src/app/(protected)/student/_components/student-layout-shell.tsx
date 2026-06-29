@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
+  PlayCircle,
   ScanSearch,
   Send,
   Settings,
@@ -61,6 +62,8 @@ function StudentNavIcon({
       return <Package {...common} />;
     case "webinars":
       return <Video {...common} />;
+    case "student-stories":
+      return <PlayCircle {...common} />;
     case "account-settings":
       return <Settings {...common} />;
     default:

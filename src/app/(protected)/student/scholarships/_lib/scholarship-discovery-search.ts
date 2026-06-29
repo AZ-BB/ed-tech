@@ -16,7 +16,7 @@ export function scholarshipMatchesQuery(s: Scholarship, raw: string): boolean {
     s.englishReq,
     s.otherElig,
     s.applicationMethod,
-    s.importantNotes,
+    s.tooltip,
     s.type,
     s.competition,
     s.deadline,

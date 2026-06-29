@@ -30,7 +30,7 @@ export type Scholarship = {
     travel: string;
     other: string;
   };
-  importantNotes: string;
+  tooltip: string;
   competition: string;
   renewable: string;
   applicationUrl: string;

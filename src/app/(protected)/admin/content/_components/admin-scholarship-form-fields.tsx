@@ -337,7 +337,7 @@ export function AdminScholarshipFormFields({
             <textarea name="other" rows={2} defaultValue={s?.other ?? ""} className={inputClassName} />
           </div>
           <div className="sm:col-span-2">
-            <label className={labelClassName}>Tooltip</label>
+            <label className={labelClassName}>Coverage note (green box on student detail)</label>
             <input name="tooltip" defaultValue={s?.tooltip ?? ""} className={inputClassName} />
           </div>
         </div>

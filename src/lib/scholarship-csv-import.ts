@@ -11,6 +11,11 @@ import {
 } from "@/lib/scholarship-discovery-slug";
 import { buildImportProgress, type ImportProgressPayload } from "@/lib/admin-import-progress";
 import type { ImportRowAddition, ImportRowUpdate } from "@/lib/admin-import-report";
+import {
+  mergeApplicationUrlIntoDiscoveryPayload,
+  normalizeScholarshipApplicationUrl,
+  scholarshipLinkFieldsFromApplicationUrl,
+} from "@/lib/scholarship-application-url";
 import { csvToRecords } from "@/lib/university-csv-import";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -189,6 +194,8 @@ function buildDiscoveryPayloadFromImportRow(
   const docs = [1, 2, 3, 4, 5]
     .map((i) => cell(row, `doc_${i}`))
     .filter(Boolean);
+  const applicationUrlRaw = cell(row, "application_url");
+  const linkFields = scholarshipLinkFieldsFromApplicationUrl(applicationUrlRaw);
 
   return {
     id: discoverySlug,
@@ -218,14 +225,13 @@ function buildDiscoveryPayloadFromImportRow(
       travel: cell(row, "travel") || "—",
       other: cell(row, "other_benefits") || "—",
     },
-    importantNotes: "",
     competition: formatCompetitionLabel(parseCompetition(cell(row, "competition"))),
     renewable: parseBool(cell(row, "is_renewable"), false) ? "Yes" : "No",
-    applicationUrl: "",
+    applicationUrl: linkFields.applicationUrl,
     applicationWebsiteName: "",
-    applicationWebsiteDomain: "",
-    isOfficialSource: false,
-    linkStatus: "missing",
+    applicationWebsiteDomain: linkFields.applicationWebsiteDomain,
+    isOfficialSource: Boolean(linkFields.applicationUrl),
+    linkStatus: linkFields.linkStatus,
     linkNotes: "",
     fallbackUrl: "",
     deadline_date: parseDeadline(cell(row, "deadline_date"), defaultYear),
@@ -240,6 +246,7 @@ function rowToScholarshipPayload(
   const name = displayImportName(cell(row, "name"));
   const discoverySlugRaw = cell(row, "discovery_slug");
   const discoverySlug = discoverySlugRaw || slugifyScholarshipName(name);
+  const applicationUrl = normalizeScholarshipApplicationUrl(cell(row, "application_url")) || null;
 
   return {
     name,
@@ -273,11 +280,11 @@ function rowToScholarshipPayload(
     other: cell(row, "other") || null,
     tooltip: cell(row, "tooltip") || null,
     discovery_slug: discoverySlug,
-    discovery_payload: buildDiscoveryPayloadFromImportRow(
-      row,
-      defaultYear,
-      discoverySlug,
-      destinationCodes,
+    application_url: applicationUrl,
+    discovery_payload: mergeApplicationUrlIntoDiscoveryPayload(
+      buildDiscoveryPayloadFromImportRow(row, defaultYear, discoverySlug, destinationCodes),
+      applicationUrl,
+      { name, slug: discoverySlug },
     ),
     updated_at: new Date().toISOString(),
   };

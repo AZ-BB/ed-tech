@@ -29,6 +29,7 @@ export const SCHOLARSHIPS_DISCOVERY_SELECT_BASE = [
   "academic_eligibility",
   "method",
   "deadline",
+  "application_url",
   "city",
   "ielts_min_score",
   "toefl_min_score",

@@ -3,7 +3,7 @@
 import { updateAdminScholarship } from "@/actions/admin-scholarships";
 import { AdminScholarshipFormFields } from "@/app/(protected)/admin/content/_components/admin-scholarship-form-fields";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { AdminScholarshipDetailPayload } from "../_lib/fetch-admin-scholarship-detail";
 
@@ -21,6 +21,16 @@ export function AdminEditScholarshipDialog({
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
+
+  useEffect(() => {
+    if (!open) {
+      setIsSubmitting(false);
+      setError(null);
+      return;
+    }
+    setFormKey((k) => k + 1);
+  }, [open]);
 
   if (!open) return null;
 
@@ -38,6 +48,7 @@ export function AdminEditScholarshipDialog({
       return;
     }
 
+    setIsSubmitting(false);
     onClose();
     router.refresh();
   }
@@ -69,7 +80,7 @@ export function AdminEditScholarshipDialog({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+        <form key={formKey} onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
             <AdminScholarshipFormFields
               countries={payload.countries}

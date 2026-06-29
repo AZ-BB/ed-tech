@@ -1729,6 +1729,7 @@ export type Database = {
         Row: {
           academic_eligibility: string | null
           application_fee: number | null
+          application_url: string | null
           city: string | null
           competition:
             | Database["public"]["Enums"]["scholarship_competition_type"]
@@ -1769,6 +1770,7 @@ export type Database = {
         Insert: {
           academic_eligibility?: string | null
           application_fee?: number | null
+          application_url?: string | null
           city?: string | null
           competition?:
             | Database["public"]["Enums"]["scholarship_competition_type"]
@@ -1809,6 +1811,7 @@ export type Database = {
         Update: {
           academic_eligibility?: string | null
           application_fee?: number | null
+          application_url?: string | null
           city?: string | null
           competition?:
             | Database["public"]["Enums"]["scholarship_competition_type"]
@@ -2943,6 +2946,106 @@ export type Database = {
           },
         ]
       }
+      student_stories: {
+        Row: {
+          ambassador_id: string
+          byline_meta_override: string | null
+          created_at: string | null
+          description: string
+          duration_label: string | null
+          id: number
+          is_active: boolean
+          is_lead: boolean
+          language: Database["public"]["Enums"]["student_story_language"] | null
+          sort_order: number
+          title: string
+          topic_id: number
+          updated_at: string | null
+          youtube_video_id: string
+        }
+        Insert: {
+          ambassador_id: string
+          byline_meta_override?: string | null
+          created_at?: string | null
+          description: string
+          duration_label?: string | null
+          id?: number
+          is_active?: boolean
+          is_lead?: boolean
+          language?:
+            | Database["public"]["Enums"]["student_story_language"]
+            | null
+          sort_order?: number
+          title: string
+          topic_id: number
+          updated_at?: string | null
+          youtube_video_id: string
+        }
+        Update: {
+          ambassador_id?: string
+          byline_meta_override?: string | null
+          created_at?: string | null
+          description?: string
+          duration_label?: string | null
+          id?: number
+          is_active?: boolean
+          is_lead?: boolean
+          language?:
+            | Database["public"]["Enums"]["student_story_language"]
+            | null
+          sort_order?: number
+          title?: string
+          topic_id?: number
+          updated_at?: string | null
+          youtube_video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_stories_ambassador_id_fkey"
+            columns: ["ambassador_id"]
+            isOneToOne: false
+            referencedRelation: "ambassadors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_stories_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "student_story_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_story_topics: {
+        Row: {
+          created_at: string | null
+          gradient_css: string | null
+          id: number
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gradient_css?: string | null
+          id?: number
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gradient_css?: string | null
+          id?: number
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       system: {
         Row: {
           created_at: string | null
@@ -3508,6 +3611,7 @@ export type Database = {
         | "base_credit"
         | "extra_credits"
       student_status: "high_priority" | "at_risk" | "missing_docs"
+      student_story_language: "en" | "ar" | "mixed"
       tuition_type: "full" | "partial"
       university_difficulty: "easy" | "medium" | "hard"
       university_doc_requirement_status:
@@ -3732,6 +3836,7 @@ export const Constants = {
         "extra_credits",
       ],
       student_status: ["high_priority", "at_risk", "missing_docs"],
+      student_story_language: ["en", "ar", "mixed"],
       tuition_type: ["full", "partial"],
       university_difficulty: ["easy", "medium", "hard"],
       university_doc_requirement_status: [

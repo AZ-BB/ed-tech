@@ -7,6 +7,10 @@ import {
 } from "@/app/(protected)/admin/content/_lib/fetch-admin-scholarships-export";
 import { ADMIN_SCHOLARSHIPS_HOME } from "@/app/(protected)/admin/content/_data/content-tabs-data";
 import {
+  mergeApplicationUrlIntoDiscoveryPayload,
+  normalizeScholarshipApplicationUrl,
+} from "@/lib/scholarship-application-url";
+import {
   loadUsedDiscoverySlugs,
   pickUniqueDiscoverySlug,
   slugifyScholarshipName,
@@ -233,50 +237,6 @@ function parseScholarshipFormFields(formData: FormData): ScholarshipFormFields {
   };
 }
 
-function normalizeApplicationUrl(raw: string | null): string {
-  const trimmed = raw?.trim() ?? "";
-  if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
-
-function hostnameFromApplicationUrl(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./i, "") || null;
-  } catch {
-    return null;
-  }
-}
-
-function mergeDiscoveryPayloadApplicationUrl(
-  existing: Json | null,
-  fields: ScholarshipFormFields,
-): Json | null {
-  const applicationUrl = normalizeApplicationUrl(fields.applicationUrl);
-  const hasExistingObject =
-    existing != null && typeof existing === "object" && !Array.isArray(existing);
-  const base: Record<string, unknown> = hasExistingObject
-    ? { ...(existing as Record<string, unknown>) }
-    : {};
-
-  const slug = fields.discoverySlug?.trim() || "";
-  if (!hasExistingObject && !applicationUrl && !slug) return null;
-
-  if (!base.id && slug) base.id = slug;
-  if (!base.name && fields.name) base.name = fields.name;
-
-  base.applicationUrl = applicationUrl;
-  if (applicationUrl) {
-    const domain = hostnameFromApplicationUrl(applicationUrl);
-    if (domain) base.applicationWebsiteDomain = domain;
-    if (!base.linkStatus || base.linkStatus === "missing") base.linkStatus = "verified";
-  } else if (hasExistingObject) {
-    base.linkStatus = "missing";
-  }
-
-  return base as Json;
-}
-
 function validateScholarshipFormFields(
   fields: ScholarshipFormFields,
 ): { ok: true } | { ok: false; error: string } {
@@ -323,9 +283,11 @@ function scholarshipFieldsToDbPayload(
     other: fields.other,
     tooltip: fields.tooltip,
     discovery_slug: fields.discoverySlug,
-    discovery_payload: mergeDiscoveryPayloadApplicationUrl(
+    application_url: normalizeScholarshipApplicationUrl(fields.applicationUrl) || null,
+    discovery_payload: mergeApplicationUrlIntoDiscoveryPayload(
       existingDiscoveryPayload,
-      fields,
+      fields.applicationUrl,
+      { name: fields.name, slug: fields.discoverySlug ?? undefined },
     ),
   };
 }
