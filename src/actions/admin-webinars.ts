@@ -4,8 +4,11 @@ import {
   ADMIN_WEBINARS_HOME,
 } from "@/app/(protected)/admin/content/_data/content-tabs-data";
 import { fetchAdminAdvisorOptions } from "@/app/(protected)/admin/content/_lib/fetch-admin-webinars-page";
+import { fetchAdminWebinarAttendeesExport } from "@/app/(protected)/admin/content/_lib/fetch-admin-webinar-attendees-export";
+import type { AdminWebinarAttendeeExportRow } from "@/app/(protected)/admin/content/_lib/fetch-admin-webinar-attendees-export";
 import type { Database } from "@/database.types";
 import { sendWebinarMeetingLinks } from "@/lib/send-webinar-emails";
+import { uploadWebinarHostImage } from "@/lib/webinar-host-image-upload";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -31,6 +34,8 @@ const WEBINAR_STATUSES = new Set<string>([
   "completed",
   "cancelled",
 ]);
+
+const ACTIVE_WEBINAR_STATUSES = new Set<WebinarStatus>(["upcoming", "live"]);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -116,6 +121,30 @@ function validateScheduledAtInFuture(
   return null;
 }
 
+function parseOptionalMeetingLink(
+  raw: string,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return { ok: true, value: null };
+  }
+
+  try {
+    new URL(trimmed);
+    return { ok: true, value: trimmed };
+  } catch {
+    return { ok: false, error: "Please enter a valid meeting link URL." };
+  }
+}
+
+function parseHostImageFile(formData: FormData): File | null {
+  const file = formData.get("host_image");
+  if (!(file instanceof File) || file.size === 0) {
+    return null;
+  }
+  return file;
+}
+
 function parseWebinarForm(
   formData: FormData,
   options?: { existingScheduledAt?: string | null },
@@ -128,11 +157,18 @@ function parseWebinarForm(
         scheduledAt: string;
         timezoneLabel: string;
         format: string;
-        advisorId: string;
+        advisorId: string | null;
+        hostName: string | null;
+        hostTitle: string | null;
+        hostBio: string | null;
+        hostImageUrl: string | null;
+        removeHostImage: boolean;
+        hostImageFile: File | null;
         maxStudents: number;
         tags: string[];
         agenda: string[];
         status: WebinarStatus;
+        meetingLink: string | null;
       };
     }
   | { ok: false; error: string } {
@@ -146,11 +182,26 @@ function parseWebinarForm(
   const format =
     String(formData.get("format") ?? "Live online webinar").trim() ||
     "Live online webinar";
-  const advisorId = String(formData.get("advisor_id") ?? "").trim();
+  const hostMode = String(formData.get("host_mode") ?? "advisor").trim();
+  const advisorIdRaw = String(formData.get("advisor_id") ?? "").trim();
+  const hostNameRaw = String(formData.get("host_name") ?? "").trim();
+  const hostTitle = String(formData.get("host_title") ?? "").trim() || null;
+  const hostBio = String(formData.get("host_bio") ?? "").trim() || null;
+  const existingHostImageUrl =
+    String(formData.get("existing_host_image_url") ?? "").trim() || null;
+  const removeHostImage = String(formData.get("remove_host_image") ?? "") === "1";
+  const hostImageFile = parseHostImageFile(formData);
   const maxStudentsRaw = Number.parseInt(String(formData.get("max_students") ?? ""), 10);
   const statusRaw = String(formData.get("status") ?? "upcoming").trim();
   const tags = parseTags(String(formData.get("tags") ?? ""));
   const agenda = parseAgendaItems(formData);
+  const meetingLinkParsed = parseOptionalMeetingLink(
+    String(formData.get("meeting_link") ?? ""),
+  );
+
+  if (!meetingLinkParsed.ok) {
+    return meetingLinkParsed;
+  }
 
   if (!title) {
     return { ok: false, error: "Title is required." };
@@ -168,8 +219,19 @@ function parseWebinarForm(
     return { ok: false, error: futureDateError };
   }
 
-  if (!UUID_RE.test(advisorId)) {
-    return { ok: false, error: "Please select an advisor." };
+  let advisorId: string | null = null;
+  let hostName: string | null = null;
+
+  if (hostMode === "custom") {
+    if (!hostNameRaw) {
+      return { ok: false, error: "Host name is required for a custom host." };
+    }
+    hostName = hostNameRaw;
+  } else {
+    if (!UUID_RE.test(advisorIdRaw)) {
+      return { ok: false, error: "Please select an advisor." };
+    }
+    advisorId = advisorIdRaw;
   }
 
   if (!Number.isFinite(maxStudentsRaw) || maxStudentsRaw <= 0) {
@@ -189,11 +251,59 @@ function parseWebinarForm(
       timezoneLabel,
       format,
       advisorId,
+      hostName,
+      hostTitle,
+      hostBio,
+      hostImageUrl: existingHostImageUrl,
+      removeHostImage,
+      hostImageFile,
       maxStudents: maxStudentsRaw,
       tags,
       agenda,
       status: statusRaw as WebinarStatus,
+      meetingLink: meetingLinkParsed.value,
     },
+  };
+}
+
+async function resolveHostImageUrl(
+  webinarId: number,
+  parsed: Extract<Awaited<ReturnType<typeof parseWebinarForm>>, { ok: true }>["data"],
+): Promise<string | null> {
+  if (parsed.hostImageFile) {
+    return uploadWebinarHostImage(webinarId, parsed.hostImageFile);
+  }
+
+  if (parsed.removeHostImage) {
+    return null;
+  }
+
+  return parsed.hostImageUrl;
+}
+
+function webinarHostPayload(
+  parsed: Extract<Awaited<ReturnType<typeof parseWebinarForm>>, { ok: true }>["data"],
+  hostImageUrl: string | null,
+): Pick<
+  Database["public"]["Tables"]["webinars"]["Update"],
+  "advisor_id" | "host_name" | "host_title" | "host_bio" | "host_image_url"
+> {
+  if (parsed.hostName) {
+    return {
+      advisor_id: null,
+      host_name: parsed.hostName,
+      host_title: parsed.hostTitle,
+      host_bio: parsed.hostBio,
+      host_image_url: hostImageUrl,
+    };
+  }
+
+  return {
+    advisor_id: parsed.advisorId,
+    host_name: null,
+    host_title: null,
+    host_bio: null,
+    host_image_url: null,
   };
 }
 
@@ -217,6 +327,7 @@ export async function createAdminWebinar(
 
   const secret = await createSupabaseSecretClient();
   const now = new Date().toISOString();
+  const hostPayload = webinarHostPayload(parsed.data, null);
 
   const { data, error } = await secret
     .from("webinars")
@@ -226,11 +337,16 @@ export async function createAdminWebinar(
       scheduled_at: parsed.data.scheduledAt,
       timezone_label: parsed.data.timezoneLabel,
       format: parsed.data.format,
-      advisor_id: parsed.data.advisorId,
+      advisor_id: hostPayload.advisor_id ?? null,
+      host_name: hostPayload.host_name,
+      host_title: hostPayload.host_title,
+      host_bio: hostPayload.host_bio,
+      host_image_url: hostPayload.host_image_url,
       max_students: parsed.data.maxStudents,
       tags: parsed.data.tags,
       agenda: parsed.data.agenda,
       status: parsed.data.status,
+      meeting_link: parsed.data.meetingLink,
       created_at: now,
       updated_at: now,
     })
@@ -240,6 +356,26 @@ export async function createAdminWebinar(
   if (error || !data) {
     console.error("[createAdminWebinar]", error);
     return { ok: false, error: "Could not create webinar." };
+  }
+
+  if (parsed.data.hostImageFile) {
+    try {
+      const hostImageUrl = await resolveHostImageUrl(data.id, parsed.data);
+      const { error: imageUpdateErr } = await secret
+        .from("webinars")
+        .update({ host_image_url: hostImageUrl, updated_at: new Date().toISOString() })
+        .eq("id", data.id);
+
+      if (imageUpdateErr) {
+        console.error("[createAdminWebinar] host image", imageUpdateErr);
+        return { ok: false, error: "Webinar created but host image could not be saved." };
+      }
+    } catch (uploadErr) {
+      console.error("[createAdminWebinar] host image upload", uploadErr);
+      const message =
+        uploadErr instanceof Error ? uploadErr.message : "Could not upload host image.";
+      return { ok: false, error: message };
+    }
   }
 
   revalidateWebinarPaths(data.id);
@@ -278,22 +414,44 @@ export async function updateAdminWebinar(
   });
   if (!parsed.ok) return parsed;
 
-  const { error } = await secret
-    .from("webinars")
-    .update({
-      title: parsed.data.title,
-      description: parsed.data.description,
-      scheduled_at: parsed.data.scheduledAt,
-      timezone_label: parsed.data.timezoneLabel,
-      format: parsed.data.format,
-      advisor_id: parsed.data.advisorId,
-      max_students: parsed.data.maxStudents,
-      tags: parsed.data.tags,
-      agenda: parsed.data.agenda,
-      status: parsed.data.status,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
+  let hostImageUrl = parsed.data.hostImageUrl;
+  if (parsed.data.hostImageFile || parsed.data.removeHostImage) {
+    try {
+      hostImageUrl = await resolveHostImageUrl(id, parsed.data);
+    } catch (uploadErr) {
+      console.error("[updateAdminWebinar] host image upload", uploadErr);
+      const message =
+        uploadErr instanceof Error ? uploadErr.message : "Could not upload host image.";
+      return { ok: false, error: message };
+    }
+  }
+
+  const hostPayload = webinarHostPayload(parsed.data, hostImageUrl);
+
+  const updatePayload: Database["public"]["Tables"]["webinars"]["Update"] = {
+    title: parsed.data.title,
+    description: parsed.data.description,
+    scheduled_at: parsed.data.scheduledAt,
+    timezone_label: parsed.data.timezoneLabel,
+    format: parsed.data.format,
+    advisor_id: hostPayload.advisor_id ?? null,
+    host_name: hostPayload.host_name,
+    host_title: hostPayload.host_title,
+    host_bio: hostPayload.host_bio,
+    host_image_url: hostPayload.host_image_url,
+    max_students: parsed.data.maxStudents,
+    tags: parsed.data.tags,
+    agenda: parsed.data.agenda,
+    status: parsed.data.status,
+    meeting_link: parsed.data.meetingLink,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!ACTIVE_WEBINAR_STATUSES.has(parsed.data.status)) {
+    updatePayload.is_featured = false;
+  }
+
+  const { error } = await secret.from("webinars").update(updatePayload).eq("id", id);
 
   if (error) {
     console.error("[updateAdminWebinar]", error);
@@ -326,9 +484,76 @@ export async function deleteAdminWebinar(
   return { ok: true };
 }
 
+export async function toggleAdminWebinarFeatured(
+  webinarId: number,
+): Promise<AdminWebinarActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  if (!Number.isFinite(webinarId) || webinarId <= 0) {
+    return { ok: false, error: "Invalid webinar." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: webinar, error: fetchErr } = await secret
+    .from("webinars")
+    .select("id, status, is_featured")
+    .eq("id", webinarId)
+    .maybeSingle();
+
+  if (fetchErr || !webinar) {
+    console.error("[toggleAdminWebinarFeatured] fetch", fetchErr);
+    return { ok: false, error: "Webinar not found." };
+  }
+
+  if (!ACTIVE_WEBINAR_STATUSES.has(webinar.status)) {
+    return {
+      ok: false,
+      error: "Only upcoming or live webinars can be featured.",
+    };
+  }
+
+  const now = new Date().toISOString();
+
+  if (webinar.is_featured) {
+    const { error } = await secret
+      .from("webinars")
+      .update({ is_featured: false, updated_at: now })
+      .eq("id", webinarId);
+
+    if (error) {
+      console.error("[toggleAdminWebinarFeatured] unset", error);
+      return { ok: false, error: "Could not update featured webinar." };
+    }
+  } else {
+    const { error: clearErr } = await secret
+      .from("webinars")
+      .update({ is_featured: false, updated_at: now })
+      .eq("is_featured", true);
+
+    if (clearErr) {
+      console.error("[toggleAdminWebinarFeatured] clear", clearErr);
+      return { ok: false, error: "Could not update featured webinar." };
+    }
+
+    const { error: setErr } = await secret
+      .from("webinars")
+      .update({ is_featured: true, updated_at: now })
+      .eq("id", webinarId);
+
+    if (setErr) {
+      console.error("[toggleAdminWebinarFeatured] set", setErr);
+      return { ok: false, error: "Could not set featured webinar." };
+    }
+  }
+
+  revalidateWebinarPaths(webinarId);
+  return { ok: true };
+}
+
 export async function startAdminWebinarSession(
   webinarId: number,
-  meetingLink: string,
+  meetingLink?: string,
 ): Promise<StartWebinarSessionResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -337,7 +562,21 @@ export async function startAdminWebinarSession(
     return { ok: false, error: "Invalid webinar." };
   }
 
-  const trimmedLink = meetingLink.trim();
+  const secret = await createSupabaseSecretClient();
+
+  const { data: existing, error: existingErr } = await secret
+    .from("webinars")
+    .select("meeting_link")
+    .eq("id", webinarId)
+    .maybeSingle();
+
+  if (existingErr || !existing) {
+    console.error("[startAdminWebinarSession] fetch existing", existingErr);
+    return { ok: false, error: "Webinar not found." };
+  }
+
+  const trimmedLink =
+    meetingLink?.trim() || existing.meeting_link?.trim() || "";
   if (!trimmedLink) {
     return { ok: false, error: "Meeting link is required." };
   }
@@ -348,7 +587,6 @@ export async function startAdminWebinarSession(
     return { ok: false, error: "Please enter a valid meeting link URL." };
   }
 
-  const secret = await createSupabaseSecretClient();
   const now = new Date().toISOString();
 
   const { error: updateErr } = await secret
@@ -381,4 +619,27 @@ export async function getAdminAdvisorOptionsForForm() {
   const access = await assertAdminAccess();
   if (!access.ok) return [];
   return fetchAdminAdvisorOptions();
+}
+
+type ExportAdminWebinarAttendeesResult =
+  | { ok: true; rows: AdminWebinarAttendeeExportRow[] }
+  | { ok: false; error: string };
+
+export async function exportAdminWebinarAttendeesExcel(
+  webinarId: number,
+): Promise<ExportAdminWebinarAttendeesResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  if (!Number.isFinite(webinarId) || webinarId <= 0) {
+    return { ok: false, error: "Invalid webinar." };
+  }
+
+  try {
+    const rows = await fetchAdminWebinarAttendeesExport(webinarId);
+    return { ok: true, rows };
+  } catch (error) {
+    console.error("[admin-webinars] export attendees", error);
+    return { ok: false, error: "Could not export webinar attendees." };
+  }
 }

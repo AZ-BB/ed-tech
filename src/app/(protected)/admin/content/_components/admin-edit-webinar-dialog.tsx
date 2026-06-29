@@ -82,7 +82,7 @@ export function AdminEditWebinarDialog({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-5 py-4">
+        <form onSubmit={handleSubmit} encType="multipart/form-data" className="px-5 py-4">
           <input type="hidden" name="id" value={row.id} />
 
           {error ? (

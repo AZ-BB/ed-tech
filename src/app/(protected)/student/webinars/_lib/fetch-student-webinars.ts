@@ -1,4 +1,5 @@
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import { resolveWebinarHost } from "@/lib/webinar-host";
 
 export type StudentWebinarCard = {
   id: number;
@@ -17,6 +18,7 @@ export type StudentWebinarCard = {
   speakerTitle: string;
   speakerBio: string;
   speakerInitials: string;
+  speakerImageUrl: string | null;
   avatarColorClass: string;
 };
 
@@ -38,13 +40,6 @@ function parseAgenda(value: unknown): string[] {
   return value.map((item) => String(item ?? "").trim()).filter(Boolean);
 }
 
-function initialsFromName(firstName: string | null, lastName: string | null): string {
-  const first = firstName?.trim().charAt(0) ?? "";
-  const last = lastName?.trim().charAt(0) ?? "";
-  const combined = `${first}${last}`.toUpperCase();
-  return combined || "UA";
-}
-
 export async function fetchStudentWebinarsPage(
   studentId: string | null,
 ): Promise<StudentWebinarCard[]> {
@@ -64,6 +59,10 @@ export async function fetchStudentWebinarsPage(
       tags,
       agenda,
       max_students,
+      host_name,
+      host_title,
+      host_bio,
+      host_image_url,
       advisors (
         first_name,
         last_name,
@@ -75,6 +74,7 @@ export async function fetchStudentWebinarsPage(
     )
     .eq("status", "upcoming")
     .gte("scheduled_at", now)
+    .order("is_featured", { ascending: false })
     .order("scheduled_at", { ascending: true });
 
   if (error) {
@@ -89,7 +89,7 @@ export async function fetchStudentWebinarsPage(
   if (webinarIds.length > 0) {
     const { data: registrations, error: regErr } = await supabase
       .from("webinar_registrations")
-      .select("webinar_id, student_id")
+      .select("webinar_id, student_id, registration_type")
       .in("webinar_id", webinarIds);
 
     if (regErr) {
@@ -97,7 +97,11 @@ export async function fetchStudentWebinarsPage(
     } else {
       for (const reg of registrations ?? []) {
         counts.set(reg.webinar_id, (counts.get(reg.webinar_id) ?? 0) + 1);
-        if (studentId && reg.student_id === studentId) {
+        if (
+          studentId &&
+          reg.registration_type === "platform" &&
+          reg.student_id === studentId
+        ) {
           registeredIds.add(reg.webinar_id);
         }
       }
@@ -108,8 +112,14 @@ export async function fetchStudentWebinarsPage(
     const advisor = Array.isArray(row.advisors) ? row.advisors[0] : row.advisors;
     const registeredCount = counts.get(row.id) ?? 0;
     const maxStudents = row.max_students;
-    const speakerBio =
-      advisor?.about?.trim() || advisor?.description?.trim() || "";
+    const avatarColorClass = AVATAR_COLORS[index % AVATAR_COLORS.length];
+    const host = resolveWebinarHost({
+      host_name: row.host_name,
+      host_title: row.host_title,
+      host_bio: row.host_bio,
+      host_image_url: row.host_image_url,
+      advisors: advisor,
+    });
 
     return {
       id: row.id,
@@ -124,16 +134,12 @@ export async function fetchStudentWebinarsPage(
       registeredCount,
       isRegistered: registeredIds.has(row.id),
       isFull: registeredCount >= maxStudents,
-      speakerName: advisor
-        ? [advisor.first_name?.trim(), advisor.last_name?.trim()].filter(Boolean).join(" ")
-        : "Advisor",
-      speakerTitle: advisor?.title?.trim() ?? "Univeera Advisor",
-      speakerBio,
-      speakerInitials: initialsFromName(
-        advisor?.first_name ?? null,
-        advisor?.last_name ?? null,
-      ),
-      avatarColorClass: AVATAR_COLORS[index % AVATAR_COLORS.length],
+      speakerName: host.speakerName,
+      speakerTitle: host.speakerTitle,
+      speakerBio: host.speakerBio,
+      speakerInitials: host.speakerInitials,
+      speakerImageUrl: host.speakerImageUrl,
+      avatarColorClass,
     };
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteAdminWebinar } from "@/actions/admin-webinars";
+import { deleteAdminWebinar, toggleAdminWebinarFeatured } from "@/actions/admin-webinars";
 import { ADMIN_WEBINARS_HOME } from "@/app/(protected)/admin/content/_data/content-tabs-data";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -14,6 +14,10 @@ function formatTableDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return format(d, "MMM d, yyyy h:mm a");
+}
+
+function isActiveWebinarStatus(status: AdminWebinarTableRow["status"]) {
+  return status === "upcoming" || status === "live";
 }
 
 type AdminWebinarsTableClientProps = {
@@ -40,6 +44,17 @@ export function AdminWebinarsTableClient({ rows }: AdminWebinarsTableClientProps
     });
   }
 
+  function handleToggleFeatured(row: AdminWebinarTableRow) {
+    startTransition(async () => {
+      const result = await toggleAdminWebinarFeatured(row.id);
+      if (!result.ok) {
+        window.alert(result.error ?? "Could not update featured webinar.");
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   return (
     <>
       <div className="overflow-hidden rounded-[12px] border border-[#ece9e4] bg-white">
@@ -57,7 +72,7 @@ export function AdminWebinarsTableClient({ rows }: AdminWebinarsTableClientProps
             <thead>
               <tr className="border-b border-[#ece9e4] bg-[#faf9f7] text-[11px] font-semibold uppercase tracking-wide text-[#a0a0a0]">
                 <th className="px-5 py-3">Title</th>
-                <th className="px-5 py-3">Advisor</th>
+                <th className="px-5 py-3">Host</th>
                 <th className="px-5 py-3">Scheduled</th>
                 <th className="px-5 py-3">Registrations</th>
                 <th className="px-5 py-3">Status</th>
@@ -78,9 +93,21 @@ export function AdminWebinarsTableClient({ rows }: AdminWebinarsTableClientProps
                     className="border-b border-[#ece9e4] text-[13px] text-[#4a4a4a] last:border-b-0"
                   >
                     <td className="max-w-[220px] px-5 py-3 font-medium text-[#1a1a1a]">
-                      <span className="line-clamp-2">{row.title}</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="line-clamp-2">{row.title}</span>
+                        {row.isFeatured ? (
+                          <span className="w-fit rounded-full bg-[#f0f7f2] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#2D6A4F]">
+                            Featured
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-3">{row.advisorName}</td>
+                    <td className="whitespace-nowrap px-5 py-3">
+                      {row.displayHostName}
+                      {row.hostName ? (
+                        <span className="mt-0.5 block text-[11px] text-[#a0a0a0]">Custom host</span>
+                      ) : null}
+                    </td>
                     <td className="whitespace-nowrap px-5 py-3 text-[12px]">
                       {formatTableDate(row.scheduledAt)}
                     </td>
@@ -90,6 +117,20 @@ export function AdminWebinarsTableClient({ rows }: AdminWebinarsTableClientProps
                     <td className="whitespace-nowrap px-5 py-3 capitalize">{row.status}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-2">
+                        {isActiveWebinarStatus(row.status) ? (
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={() => handleToggleFeatured(row)}
+                            className={`cursor-pointer rounded-[6px] border px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-60 ${
+                              row.isFeatured
+                                ? "border-[#2D6A4F] bg-[#f0f7f2] text-[#2D6A4F]"
+                                : "border-[#e0deda] bg-white text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+                            }`}
+                          >
+                            {row.isFeatured ? "Unfeature" : "Set featured"}
+                          </button>
+                        ) : null}
                         <Link
                           href={`${ADMIN_WEBINARS_HOME}/${row.id}`}
                           className="rounded-[6px] border border-[#e0deda] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#4a4a4a] transition-colors hover:border-[#2D6A4F] hover:text-[#2D6A4F]"

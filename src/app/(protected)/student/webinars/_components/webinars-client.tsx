@@ -1,7 +1,9 @@
 "use client";
 
 import { registerForWebinar } from "@/actions/student-webinars";
+import { registerForWebinarAsGuest } from "@/actions/public-webinars";
 import { format, isValid, parseISO } from "date-fns";
+import { Calendar, CircleCheck, Clock, DollarSign, FileText, Globe, Layers, MapPin, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -23,6 +25,33 @@ const AVATAR_GRADIENTS: Record<string, string> = {
   "av-9": "linear-gradient(135deg, #3a3a3a, #1a1a1a)",
   "av-10": "linear-gradient(135deg, #0f766e, #0e5c57)",
 };
+
+const FAQS_PUBLIC = [
+  {
+    q: "Are Univeera webinars free?",
+    a: "Yes. Webinars are free for students, families and school counselors unless otherwise stated.",
+  },
+  {
+    q: "Who can attend?",
+    a: "Students, families and school counselors are welcome. Most sessions are designed for students in Grades 11 and 12.",
+  },
+  {
+    q: "How do I receive the webinar link?",
+    a: "After you register, Univeera will email you the meeting link when the session starts, plus a reminder the day before.",
+  },
+  {
+    q: "Are the sessions recorded?",
+    a: "Some sessions are recorded and shared after the webinar, depending on the speaker and topic.",
+  },
+  {
+    q: "Can I ask questions during the session?",
+    a: "Yes. Most webinars include a live Q&A section where students and families can ask questions.",
+  },
+  {
+    q: "How often are webinars hosted?",
+    a: "Univeera hosts webinars every two weeks, with additional sessions added during key application periods.",
+  },
+] as const;
 
 const FAQS = [
   {
@@ -51,32 +80,45 @@ const FAQS = [
   },
 ] as const;
 
-const TOPICS = [
+const HERO_FEATURES = [
+  { icon: Calendar, label: "Bi-weekly live sessions" },
+  { icon: Layers, label: "Expert-led guidance" },
+  { icon: Globe, label: "Built for Middle East students" },
+  { icon: CircleCheck, label: "Free for registered students" },
+] as const;
+
+const TOPICS: { icon: LucideIcon; title: string; desc: string }[] = [
   {
+    icon: MapPin,
     title: "Study destinations",
     desc: "UK, US, Canada, Europe, Australia and GCC university options.",
   },
   {
+    icon: FileText,
     title: "Application guidance",
     desc: "UCAS, Common App, essays, recommendation letters, interviews and deadlines.",
   },
   {
+    icon: DollarSign,
     title: "Scholarships & funding",
     desc: "How to find scholarships, understand eligibility and submit stronger applications.",
   },
   {
+    icon: Clock,
     title: "Major & career exploration",
     desc: "Helping students connect their interests and strengths to future careers.",
   },
   {
+    icon: Users,
     title: "Student & alumni stories",
     desc: "Real experiences from Middle Eastern students studying locally and abroad.",
   },
   {
+    icon: TrendingUp,
     title: "Career & professional pathways",
-    desc: "How to break into consulting, banking, and tech — plus internships and networks.",
+    desc: "How to break into consulting, banking, and tech — plus internships, networks, and life beyond graduation.",
   },
-] as const;
+];
 
 function formatWebinarDate(iso: string): string {
   const parsed = parseISO(iso);
@@ -88,6 +130,37 @@ function formatWebinarTime(iso: string): string {
   const parsed = parseISO(iso);
   if (!isValid(parsed)) return "";
   return format(parsed, "h:mm a");
+}
+
+function WebinarSpeakerAvatar({
+  webinar,
+  size,
+}: {
+  webinar: StudentWebinarCard;
+  size: "featured" | "card";
+}) {
+  const featuredClasses = `h-[54px] w-[54px] ${fontSerif} text-[20px] tracking-[-0.5px]`;
+  const cardClasses = `h-[42px] w-[42px] ${fontSerif} text-[15px]`;
+
+  if (webinar.speakerImageUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={webinar.speakerImageUrl}
+        alt=""
+        className={`shrink-0 rounded-full object-cover ${size === "featured" ? featuredClasses : cardClasses}`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-full text-white ${size === "featured" ? featuredClasses : cardClasses}`}
+      style={{ background: AVATAR_GRADIENTS[webinar.avatarColorClass] }}
+    >
+      {webinar.speakerInitials}
+    </div>
+  );
 }
 
 function ChevronIcon({ open }: { open: boolean }) {
@@ -109,9 +182,12 @@ function ChevronIcon({ open }: { open: boolean }) {
 
 type WebinarsClientProps = {
   initialWebinars: StudentWebinarCard[];
+  mode?: "student" | "public";
 };
 
-export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
+export function WebinarsClient({ initialWebinars, mode = "student" }: WebinarsClientProps) {
+  const isPublic = mode === "public";
+  const faqs = isPublic ? FAQS_PUBLIC : FAQS;
   const router = useRouter();
   const [webinars, setWebinars] = useState(initialWebinars);
   const [modalWebinar, setModalWebinar] = useState<StudentWebinarCard | null>(null);
@@ -120,6 +196,9 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
   const [modalError, setModalError] = useState<string | null>(null);
   const [openAgendaIds, setOpenAgendaIds] = useState<Set<number>>(new Set());
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
 
   useEffect(() => {
     setWebinars(initialWebinars);
@@ -133,6 +212,9 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
     setModalSuccess(false);
     setModalError(null);
     setIsSubmitting(false);
+    setGuestName("");
+    setGuestEmail("");
+    setGuestPhone("");
   }, []);
 
   useEffect(() => {
@@ -157,7 +239,14 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
     setIsSubmitting(true);
     setModalError(null);
 
-    const result = await registerForWebinar(modalWebinar.id);
+    const result = isPublic
+      ? await registerForWebinarAsGuest(modalWebinar.id, {
+          name: guestName,
+          email: guestEmail,
+          phone: guestPhone || undefined,
+        })
+      : await registerForWebinar(modalWebinar.id);
+
     if (!result.ok) {
       setModalError(result.error);
       setIsSubmitting(false);
@@ -169,7 +258,7 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
         w.id === modalWebinar.id
           ? {
               ...w,
-              isRegistered: true,
+              isRegistered: isPublic ? w.isRegistered : true,
               registeredCount: w.registeredCount + 1,
             }
           : w,
@@ -236,7 +325,7 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
   }
 
   return (
-    <div className={`mx-auto max-w-[1180px] px-5 pb-20 pt-6 ${fontSans} antialiased text-[var(--text)]`}>
+    <div className={`mx-auto max-w-[1180px] pb-20 pt-6 ${fontSans} antialiased text-[var(--text)]`}>
       <section className="relative mb-12 overflow-hidden rounded-[24px] border border-[var(--border-light)] bg-gradient-to-br from-[#fffefb] to-[var(--green-pale)] px-11 py-[60px] max-[900px]:px-6 max-[900px]:py-10">
         <div className={`relative z-[1] mb-[18px] inline-flex items-center gap-1.5 rounded-full border border-[rgba(45,106,79,0.15)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--green)] ${fontSans}`}>
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--green)]" />
@@ -270,18 +359,19 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
           ) : null}
         </div>
         <div className="relative z-[1] flex flex-wrap gap-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-light)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)]">
-            Bi-weekly live sessions
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-light)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)]">
-            Expert-led guidance
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-light)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)]">
-            Built for Middle East students
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-light)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)]">
-            Free for registered students
-          </div>
+          {HERO_FEATURES.map(({ icon: Icon, label }) => (
+            <div
+              key={label}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-light)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)]"
+            >
+              <Icon
+                className="h-3.5 w-3.5 shrink-0 text-[var(--text-mid)]"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+              {label}
+            </div>
+          ))}
         </div>
         <p className="relative z-[1] mt-3.5 text-[12px] italic text-[var(--text-light)]">
           New sessions added every month.
@@ -319,12 +409,7 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
               </div>
               <p className="text-[14px] leading-[1.6] text-[var(--text-mid)]">{featured.description}</p>
               <div className="flex items-center gap-3.5 rounded-[14px] bg-[var(--sand)] p-3.5">
-                <div
-                  className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full ${fontSerif} text-[20px] tracking-[-0.5px] text-white`}
-                  style={{ background: AVATAR_GRADIENTS[featured.avatarColorClass] }}
-                >
-                  {featured.speakerInitials}
-                </div>
+                <WebinarSpeakerAvatar webinar={featured} size="featured" />
                 <div>
                   <p className="text-[14.5px] font-bold leading-[1.2]">{featured.speakerName}</p>
                   <p className="mt-0.5 text-[12.5px] leading-[1.3] text-[var(--text-light)]">{featured.speakerTitle}</p>
@@ -415,12 +500,7 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
                 </div>
                 <p className="text-[13.5px] leading-[1.55] text-[var(--text-mid)]">{webinar.description}</p>
                 <div className="flex items-center gap-2.5 rounded-[11px] bg-[var(--sand)] p-3">
-                  <div
-                    className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full ${fontSerif} text-[15px] text-white`}
-                    style={{ background: AVATAR_GRADIENTS[webinar.avatarColorClass] }}
-                  >
-                    {webinar.speakerInitials}
-                  </div>
+                  <WebinarSpeakerAvatar webinar={webinar} size="card" />
                   <div>
                     <p className="text-[13px] font-bold leading-[1.2]">{webinar.speakerName}</p>
                     <p className="mt-0.5 text-[11.5px] leading-[1.2] text-[var(--text-light)]">{webinar.speakerTitle}</p>
@@ -463,12 +543,23 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
           Our webinars are designed to support students at every stage of the university journey.
         </p>
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-          {TOPICS.map((topic) => (
-            <div key={topic.title} className="rounded-[18px] border border-[var(--border-light)] bg-white p-6">
-              <p className="mb-2 text-[15px] font-bold leading-[1.25]">{topic.title}</p>
-              <p className="text-[12.5px] leading-[1.55] text-[var(--text-light)]">{topic.desc}</p>
-            </div>
-          ))}
+          {TOPICS.map((topic) => {
+            const Icon = topic.icon;
+            return (
+              <div
+                key={topic.title}
+                className="group relative flex cursor-pointer flex-col gap-2.5 overflow-hidden rounded-[18px] border border-[var(--border-light)] bg-white p-6 transition-all duration-200 before:pointer-events-none before:absolute before:right-0 before:top-0 before:h-20 before:w-20 before:translate-x-5 before:-translate-y-5 before:rounded-full before:bg-[radial-gradient(circle,rgba(45,106,79,0.05)_0%,transparent_70%)] before:content-[''] hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)]"
+              >
+                <div className="relative z-[1] mb-1.5 flex h-[42px] w-[42px] items-center justify-center rounded-[11px] bg-[var(--green-pale)] text-[var(--green)]">
+                  <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden />
+                </div>
+                <p className="relative z-[1] text-[15px] font-bold leading-[1.25]">{topic.title}</p>
+                <p className="relative z-[1] text-[12.5px] leading-[1.55] text-[var(--text-light)]">
+                  {topic.desc}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -481,7 +572,7 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
           Quick answers to the most common questions about our webinars.
         </p>
         <div className="flex flex-col gap-2">
-          {FAQS.map((faq, index) => (
+          {faqs.map((faq, index) => (
             <div
               key={faq.q}
               className={`overflow-hidden rounded-[14px] border bg-white ${openFaqIndex === index ? "border-[var(--green-light)]" : "border-[var(--border-light)]"}`}
@@ -553,8 +644,70 @@ export function WebinarsClient({ initialWebinars }: WebinarsClientProps) {
                   <span>{modalWebinar.speakerName}</span>
                 </div>
                 <p className="mb-[18px] text-[13px] leading-[1.5] text-[var(--text-mid)]">
-                  Confirm your spot for this live session. No extra details needed — you&apos;re registering as your logged-in student account.
+                  {isPublic
+                    ? "Enter your details to reserve your spot. We'll email you a reminder the day before and the meeting link when the session starts."
+                    : "Confirm your spot for this live session. No extra details needed — you're registering as your logged-in student account."}
                 </p>
+                {isPublic ? (
+                  <div className="mb-[18px] flex flex-col gap-3">
+                    <div>
+                      <label
+                        htmlFor="webinar-guest-name"
+                        className="mb-1 block text-[12px] font-semibold text-[var(--text)]"
+                      >
+                        Full name
+                      </label>
+                      <input
+                        id="webinar-guest-name"
+                        type="text"
+                        autoComplete="name"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        placeholder="Enter your full name"
+                        required
+                        disabled={isSubmitting}
+                        className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="webinar-guest-email"
+                        className="mb-1 block text-[12px] font-semibold text-[var(--text)]"
+                      >
+                        Email address
+                      </label>
+                      <input
+                        id="webinar-guest-email"
+                        type="email"
+                        autoComplete="email"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        required
+                        disabled={isSubmitting}
+                        className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="webinar-guest-phone"
+                        className="mb-1 block text-[12px] font-semibold text-[var(--text)]"
+                      >
+                        Phone number <span className="font-normal text-[var(--text-light)]">(optional)</span>
+                      </label>
+                      <input
+                        id="webinar-guest-phone"
+                        type="tel"
+                        autoComplete="tel"
+                        value={guestPhone}
+                        onChange={(e) => setGuestPhone(e.target.value)}
+                        placeholder="Enter your phone number"
+                        disabled={isSubmitting}
+                        className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
+                      />
+                    </div>
+                  </div>
+                ) : null}
                 {modalError ? (
                   <p className="mb-4 rounded-[8px] bg-[#fef2f2] px-3 py-2 text-[12px] text-[#b91c1c]">{modalError}</p>
                 ) : null}

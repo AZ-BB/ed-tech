@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { sendWebinarRegistrationConfirmationForNewRegistration } from "@/lib/send-webinar-emails";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 type RegisterWebinarResult = { ok: true } | { ok: false; error: string };
@@ -47,7 +48,7 @@ export async function registerForWebinar(
 
   const { data: webinar, error: webinarErr } = await secret
     .from("webinars")
-    .select("id, status, max_students, scheduled_at")
+    .select("id, status, max_students, scheduled_at, meeting_link")
     .eq("id", webinarId)
     .maybeSingle();
 
@@ -82,6 +83,7 @@ export async function registerForWebinar(
     .select("id")
     .eq("webinar_id", webinarId)
     .eq("student_id", actor.studentId)
+    .eq("registration_type", "platform")
     .maybeSingle();
 
   if (existingErr) {
@@ -96,11 +98,20 @@ export async function registerForWebinar(
   const { error: insertErr } = await secret.from("webinar_registrations").insert({
     webinar_id: webinarId,
     student_id: actor.studentId,
+    registration_type: "platform",
   });
 
   if (insertErr) {
     console.error("[registerForWebinar] insert", insertErr);
     return { ok: false, error: "Could not complete registration." };
+  }
+
+  const emailResult = await sendWebinarRegistrationConfirmationForNewRegistration(
+    webinarId,
+    actor.studentId,
+  );
+  if (!emailResult.ok) {
+    console.error("[registerForWebinar] registration confirmation email", emailResult.error);
   }
 
   revalidatePath("/student/webinars");

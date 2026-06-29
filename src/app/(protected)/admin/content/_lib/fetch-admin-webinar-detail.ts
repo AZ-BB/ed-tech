@@ -1,12 +1,15 @@
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import type { AdminWebinarTableRow } from "./fetch-admin-webinars-page";
+import { displayHostName as resolveDisplayHostName } from "@/lib/webinar-host";
 
 export type AdminWebinarEnrollmentRow = {
   id: number;
-  studentId: string;
-  studentName: string;
+  registrationType: "platform" | "non_platform";
+  studentId: string | null;
+  name: string;
   email: string;
+  phone: string | null;
   schoolName: string;
   registeredAt: string | null;
   reminderSentAt: string | null;
@@ -33,6 +36,11 @@ export async function fetchAdminWebinarDetail(
       agenda,
       status,
       meeting_link,
+      is_featured,
+      host_name,
+      host_title,
+      host_bio,
+      host_image_url,
       advisors ( first_name, last_name )
     `,
     )
@@ -67,12 +75,24 @@ export async function fetchAdminWebinarDetail(
     format: data.format?.trim() ?? "Live online webinar",
     advisorId: data.advisor_id,
     advisorName: advisorName || "—",
+    hostName: data.host_name,
+    hostTitle: data.host_title,
+    hostBio: data.host_bio,
+    hostImageUrl: data.host_image_url,
+    displayHostName: resolveDisplayHostName({
+      host_name: data.host_name,
+      host_title: data.host_title,
+      host_bio: data.host_bio,
+      host_image_url: data.host_image_url,
+      advisors: advisor,
+    }),
     maxStudents: data.max_students,
     registeredCount: count ?? 0,
     tags: data.tags ?? [],
     agenda,
     status: data.status,
     meetingLink: data.meeting_link,
+    isFeatured: data.is_featured ?? false,
   };
 }
 
@@ -85,7 +105,11 @@ export async function fetchAdminWebinarEnrollments(
     .select(
       `
       id,
+      registration_type,
       student_id,
+      guest_name,
+      guest_email,
+      guest_phone,
       registered_at,
       reminder_sent_at,
       meeting_link_sent_at,
@@ -106,6 +130,23 @@ export async function fetchAdminWebinarEnrollments(
   }
 
   return (data ?? []).map((row) => {
+    const registrationType = row.registration_type as "platform" | "non_platform";
+
+    if (registrationType === "non_platform") {
+      return {
+        id: row.id,
+        registrationType,
+        studentId: null,
+        name: row.guest_name?.trim() || "—",
+        email: row.guest_email?.trim() ?? "—",
+        phone: row.guest_phone?.trim() || null,
+        schoolName: "—",
+        registeredAt: row.registered_at,
+        reminderSentAt: row.reminder_sent_at,
+        meetingLinkSentAt: row.meeting_link_sent_at,
+      };
+    }
+
     const profile = Array.isArray(row.student_profiles)
       ? row.student_profiles[0]
       : row.student_profiles;
@@ -121,9 +162,11 @@ export async function fetchAdminWebinarEnrollments(
 
     return {
       id: row.id,
+      registrationType,
       studentId: row.student_id,
-      studentName: studentName || "—",
+      name: studentName || "—",
       email: profile?.email?.trim() ?? "—",
+      phone: null,
       schoolName: school?.name?.trim() ?? "—",
       registeredAt: row.registered_at,
       reminderSentAt: row.reminder_sent_at,

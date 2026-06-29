@@ -89,6 +89,10 @@ export function AdminStartWebinarSessionDialog({
             students who have not received it yet.
           </p>
 
+          <p className="mb-4 rounded-[8px] bg-[#f0f7f2] px-3 py-2 text-[12px] leading-relaxed text-[#2D6A4F]">
+            No meeting link is saved for this webinar yet. Add one below to start the session.
+          </p>
+
           <div className="mb-5">
             <label htmlFor="webinar-meeting-link" className={webinarLabelClassName}>
               Meeting link

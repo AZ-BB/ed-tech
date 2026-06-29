@@ -130,8 +130,22 @@ function isStudentAmbassadorsCatalogPath(pathname: string) {
   return normalizePath(pathname) === "/student/ambassadors";
 }
 
+function isStudentWebinarsPath(pathname: string) {
+  return normalizePath(pathname) === "/student/webinars";
+}
+
 function isStudentApplicationSupportPath(pathname: string) {
   return normalizePath(pathname) === "/student/application-support";
+}
+
+function shellHeaderWidthClass(pathname: string): string {
+  if (isStudentAmbassadorsCatalogPath(pathname)) {
+    return "mx-auto w-full max-w-7xl";
+  }
+  if (isStudentWebinarsPath(pathname)) {
+    return "mx-auto w-full max-w-[1180px]";
+  }
+  return "";
 }
 
 function shellHeaderFromPathname(pathname: string): {
@@ -301,7 +315,7 @@ export function StudentLayoutShell({
     isStudentUniversityDetailPath(pathname) ||
     isStudentAdvisorSessionBookPath(pathname) ||
     isStudentAmbassadorSessionBookPath(pathname);
-  const narrowTopNavToContent = isStudentAmbassadorsCatalogPath(pathname);
+  const headerWidthClass = shellHeaderWidthClass(pathname);
   const useGreenPageBackground = isStudentApplicationSupportPath(pathname);
 
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
@@ -329,7 +343,7 @@ export function StudentLayoutShell({
         {hideTopNav ? null : (
           <header
             className={`relative z-10 mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5${
-              narrowTopNavToContent ? " mx-auto w-full max-w-7xl" : ""
+              headerWidthClass ? ` ${headerWidthClass}` : ""
             }`}
           >
             <div className="flex items-center gap-3">
