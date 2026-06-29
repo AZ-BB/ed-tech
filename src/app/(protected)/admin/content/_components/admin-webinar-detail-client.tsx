@@ -3,10 +3,11 @@
 import { exportAdminWebinarAttendeesExcel, startAdminWebinarSession, toggleAdminWebinarFeatured } from "@/actions/admin-webinars";
 import { triggerAdminWebinarAttendeesExcelDownload } from "@/app/(protected)/admin/content/_lib/admin-webinar-attendees-excel";
 import { ADMIN_WEBINARS_HOME } from "@/app/(protected)/admin/content/_data/content-tabs-data";
+import { webinarDetailHref } from "@/app/(protected)/student/webinars/_components/webinar-constants";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { WebinarTags } from "@/app/(protected)/student/webinars/_components/webinar-tag-badge";
 import type { AdminWebinarEnrollmentRow } from "../_lib/fetch-admin-webinar-detail";
@@ -25,6 +26,17 @@ function isActiveWebinarStatus(status: AdminWebinarTableRow["status"]) {
   return status === "upcoming" || status === "live";
 }
 
+function buildPublicWebinarUrl(webinarId: number): string {
+  const path = webinarDetailHref(webinarId, "public");
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${path}`;
+  }
+  const fromEnv =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  return fromEnv ? `${fromEnv}${path}` : path;
+}
+
 type AdminWebinarDetailClientProps = {
   webinar: AdminWebinarTableRow;
   enrollments: AdminWebinarEnrollmentRow[];
@@ -41,6 +53,31 @@ export function AdminWebinarDetailClient({
   const [startError, setStartError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isExportPending, startExportTransition] = useTransition();
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current) {
+        clearTimeout(copyResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  async function handleCopyPublicLink() {
+    const url = buildPublicWebinarUrl(webinar.id);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyState("copied");
+    } catch {
+      setCopyState("error");
+    }
+
+    if (copyResetTimerRef.current) {
+      clearTimeout(copyResetTimerRef.current);
+    }
+    copyResetTimerRef.current = setTimeout(() => setCopyState("idle"), 2000);
+  }
 
   function handleToggleFeatured() {
     startTransition(async () => {
@@ -145,6 +182,13 @@ export function AdminWebinarDetailClient({
                 {webinar.isFeatured ? "Unfeature" : "Set featured"}
               </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() => void handleCopyPublicLink()}
+              className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-2 text-[12px] font-semibold text-[#4a4a4a] hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            >
+              {copyState === "copied" ? "Copied!" : copyState === "error" ? "Copy failed" : "Copy link"}
+            </button>
             <button
               type="button"
               onClick={() => setEditOpen(true)}

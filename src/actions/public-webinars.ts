@@ -143,5 +143,6 @@ export async function registerForWebinarAsGuest(
   }
 
   revalidatePath("/webinars");
+  revalidatePath(`/webinars/${webinarId}`);
   return { ok: true };
 }

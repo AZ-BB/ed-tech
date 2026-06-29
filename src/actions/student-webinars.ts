@@ -115,5 +115,6 @@ export async function registerForWebinar(
   }
 
   revalidatePath("/student/webinars");
+  revalidatePath(`/student/webinars/${webinarId}`);
   return { ok: true };
 }

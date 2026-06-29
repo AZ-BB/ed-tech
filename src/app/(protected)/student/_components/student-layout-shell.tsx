@@ -96,6 +96,9 @@ function isSidebarNavLinkActive(
   if (item.id === "ambassadors" && h === "/student/ambassadors" && n.startsWith(`${h}/`)) {
     return true;
   }
+  if (item.id === "webinars" && h === "/student/webinars" && n.startsWith(`${h}/`)) {
+    return true;
+  }
   return false;
 }
 
@@ -128,7 +131,8 @@ function isStudentAmbassadorsCatalogPath(pathname: string) {
 }
 
 function isStudentWebinarsPath(pathname: string) {
-  return normalizePath(pathname) === "/student/webinars";
+  const normalized = normalizePath(pathname);
+  return normalized === "/student/webinars" || normalized.startsWith("/student/webinars/");
 }
 
 function isStudentApplicationSupportPath(pathname: string) {
