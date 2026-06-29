@@ -11,6 +11,7 @@ import {
   scholarshipDiscoveryRowToScholarship,
   scholarshipFromPayloadRow,
 } from "./scholarship-row-to-scholarship";
+import { scholarshipLinkFieldsFromApplicationUrl } from "@/lib/scholarship-application-url";
 
 export const SCHOLARSHIP_PAGE_SIZE = 12;
 
@@ -138,18 +139,47 @@ export function parseScholarshipDiscoverySearchParams(
 }
 
 /** Prefer `discovery_payload`; otherwise map from core columns only. */
+function overlayApplicationUrlFromColumn(
+  scholarship: Scholarship,
+  applicationUrl: string | null | undefined,
+): Scholarship {
+  if (scholarship.applicationUrl?.trim()) return scholarship;
+  const linkFields = scholarshipLinkFieldsFromApplicationUrl(applicationUrl ?? "");
+  if (!linkFields.applicationUrl) return scholarship;
+  return {
+    ...scholarship,
+    applicationUrl: linkFields.applicationUrl,
+    applicationWebsiteDomain: linkFields.applicationWebsiteDomain,
+    linkStatus: linkFields.linkStatus,
+    isOfficialSource: true,
+  };
+}
+
+function overlayTooltipFromColumn(
+  scholarship: Scholarship,
+  tooltip: string | null | undefined,
+): Scholarship {
+  const fromColumn = tooltip?.trim();
+  if (fromColumn) return { ...scholarship, tooltip: fromColumn };
+  return { ...scholarship, tooltip: scholarship.tooltip?.trim() ?? "" };
+}
+
 function mapDiscoveryRow(row: ScholarshipDiscoveryRow): Scholarship | null {
+  let scholarship: Scholarship | null = null;
   if (row.discovery_payload && typeof row.discovery_payload === "object") {
-    return scholarshipFromPayloadRow({
+    scholarship = scholarshipFromPayloadRow({
       id: row.id,
       discovery_slug: row.discovery_slug,
       discovery_payload: row.discovery_payload as Record<string, unknown>,
     });
+  } else if (row.name?.trim()) {
+    scholarship = scholarshipDiscoveryRowToScholarship(row);
   }
-  if (row.name?.trim()) {
-    return scholarshipDiscoveryRowToScholarship(row);
-  }
-  return null;
+  if (!scholarship) return null;
+  return overlayTooltipFromColumn(
+    overlayApplicationUrlFromColumn(scholarship, row.application_url),
+    row.tooltip,
+  );
 }
 
 function parseRpcPayload(raw: unknown): RpcDiscoveryPage | null {

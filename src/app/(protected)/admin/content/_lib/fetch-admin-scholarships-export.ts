@@ -1,4 +1,5 @@
 import type { Json } from "@/database.types";
+import { resolveScholarshipApplicationUrl } from "@/lib/scholarship-application-url";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type AdminScholarshipExportRow = {
@@ -35,6 +36,7 @@ export type AdminScholarshipExportRow = {
   application_fee: string;
   intakes: string;
   method: string;
+  application_url: string;
   other: string;
   tooltip: string;
   discovery_slug: string;
@@ -73,9 +75,11 @@ type ScholarshipExportQueryRow = {
   application_fee: number | null;
   intakes: string | null;
   method: string | null;
+  application_url: string | null;
   other: string | null;
   tooltip: string | null;
   discovery_slug: string | null;
+  discovery_payload: Json | null;
   scholarship_destinations: DestinationRow[] | null;
 };
 
@@ -141,6 +145,7 @@ function mapScholarshipToExportRow(row: ScholarshipExportQueryRow): AdminScholar
     application_fee: str(row.application_fee),
     intakes: row.intakes?.trim() ?? "",
     method: row.method?.trim() ?? "",
+    application_url: resolveScholarshipApplicationUrl(row.application_url, row.discovery_payload),
     other: row.other?.trim() ?? "",
     tooltip: row.tooltip?.trim() ?? "",
     discovery_slug: row.discovery_slug?.trim() ?? "",
@@ -182,9 +187,11 @@ export async function fetchAdminScholarshipsExport(): Promise<AdminScholarshipEx
       application_fee,
       intakes,
       method,
+      application_url,
       other,
       tooltip,
       discovery_slug,
+      discovery_payload,
       scholarship_destinations ( country_code )
       `,
     )

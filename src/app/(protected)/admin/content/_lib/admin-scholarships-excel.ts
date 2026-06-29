@@ -41,6 +41,7 @@ export const SCHOLARSHIP_IMPORT_COLUMNS: AdminExcelColumnDef[] = [
   { key: "application_fee", header: "application_fee", width: 14 },
   { key: "intakes", header: "intakes", width: 16 },
   { key: "method", header: "method", width: 16 },
+  { key: "application_url", header: "application_url", width: 36 },
   { key: "other", header: "other", width: 16 },
   { key: "tooltip", header: "tooltip", width: 20 },
   { key: "discovery_slug", header: "discovery_slug", width: 24 },
@@ -80,8 +81,9 @@ export const SCHOLARSHIP_EXCEL_SAMPLE_ROW: Record<string, string> = {
   application_fee: "0",
   intakes: "Fall 2026",
   method: "Online portal",
+  application_url: "https://example.edu/apply",
   other: "",
-  tooltip: "",
+  tooltip: "Shown in the green note box under What's covered on the student detail panel.",
   discovery_slug: "sample-government-scholarship",
 };
 

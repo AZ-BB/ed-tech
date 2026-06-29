@@ -1,4 +1,5 @@
 import { flagFromCountryCode } from "@/lib/country-flag-emoji";
+import { scholarshipLinkFieldsFromApplicationUrl } from "@/lib/scholarship-application-url";
 
 import type { Scholarship } from "../_components/types";
 
@@ -36,6 +37,8 @@ export type ScholarshipDiscoveryRow = {
   academic_eligibility: string | null;
   method: string | null;
   deadline: string | null;
+  application_url?: string | null;
+  tooltip?: string | null;
   tuition_type: string | null;
   discovery_payload?: unknown;
 };
@@ -78,6 +81,7 @@ export function scholarshipDiscoveryRowToScholarship(
   const slug = row.discovery_slug?.trim() || row.id;
   const code = row.nationality_country_code?.trim().toLowerCase();
   const eligibleNationalities = code ? [code] : ["other"];
+  const linkFields = scholarshipLinkFieldsFromApplicationUrl(row.application_url ?? "");
 
   return {
     id: slug,
@@ -107,18 +111,18 @@ export function scholarshipDiscoveryRowToScholarship(
       travel: row.travel?.trim() || "—",
       other: row.other_benefits?.trim() || "—",
     },
-    importantNotes: "",
+    tooltip: row.tooltip?.trim() ?? "",
     competition: row.competition
       ? String(row.competition)
           .replace(/_/g, " ")
           .replace(/\b\w/g, (c) => c.toUpperCase())
       : "Medium",
     renewable: row.is_renewable ? "Yes" : "No",
-    applicationUrl: "",
+    applicationUrl: linkFields.applicationUrl,
     applicationWebsiteName: "",
-    applicationWebsiteDomain: "",
-    isOfficialSource: false,
-    linkStatus: "missing",
+    applicationWebsiteDomain: linkFields.applicationWebsiteDomain,
+    isOfficialSource: Boolean(linkFields.applicationUrl),
+    linkStatus: linkFields.linkStatus,
     linkNotes: "",
     fallbackUrl: "",
   };

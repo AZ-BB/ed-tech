@@ -1,15 +1,17 @@
 "use client";
 
 import { exportAdminScholarshipsExcel } from "@/actions/admin-scholarships";
+import { getAdminStudentStoryTopicsForForm } from "@/actions/admin-student-stories";
 import { exportAdminUniversitiesExcel } from "@/actions/admin-universities";
 import { usePathname } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import {
   ADMIN_ANNOUNCEMENTS_HOME,
   ADMIN_CONTENT_HOME,
   ADMIN_NEWS_HOME,
   ADMIN_SCHOLARSHIPS_HOME,
+  ADMIN_STUDENT_STORIES_HOME,
   ADMIN_WEBINARS_HOME,
 } from "../_data/content-tabs-data";
 import {
@@ -25,8 +27,11 @@ import { AdminAddNewsDialog } from "./admin-add-news-dialog";
 import { AdminAddScholarshipDialog } from "./admin-add-scholarship-dialog";
 import { AdminAddUniversityDialog } from "./admin-add-university-dialog";
 import { AdminAddWebinarDialog } from "./admin-add-webinar-dialog";
+import { AdminAddStudentStoryDialog } from "./admin-add-student-story-dialog";
+import { AdminAddStudentStoryTopicDialog } from "./admin-add-student-story-topic-dialog";
 import { ContentScholarshipsImportDialog } from "./content-scholarships-import-dialog";
 import { ContentUniversitiesImportDialog } from "./content-universities-import-dialog";
+import type { AdminStudentStoryTopicRow } from "../_lib/fetch-admin-student-story-topics";
 
 function normalizePath(pathname: string) {
   return pathname.replace(/\/$/, "") || "/";
@@ -104,17 +109,28 @@ export function ContentHeaderActions() {
   const isAnnouncementsList = normalized === ADMIN_ANNOUNCEMENTS_HOME;
   const isNewsList = normalized === ADMIN_NEWS_HOME;
   const isWebinarsList = normalized === ADMIN_WEBINARS_HOME;
+  const isStudentStoriesList = normalized === ADMIN_STUDENT_STORIES_HOME;
 
   const [isExportPending, startExportTransition] = useTransition();
   const [importOpen, setImportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [addTopicOpen, setAddTopicOpen] = useState(false);
+  const [storyTopics, setStoryTopics] = useState<AdminStudentStoryTopicRow[]>([]);
+
+  useEffect(() => {
+    if (!isStudentStoriesList) return;
+    void getAdminStudentStoryTopicsForForm().then((result) => {
+      if (result.ok) setStoryTopics(result.topics);
+    });
+  }, [isStudentStoriesList]);
 
   if (
     !isUniversitiesList &&
     !isScholarshipsList &&
     !isAnnouncementsList &&
     !isNewsList &&
-    !isWebinarsList
+    !isWebinarsList &&
+    !isStudentStoriesList
   ) {
     return null;
   }
@@ -161,6 +177,41 @@ export function ContentHeaderActions() {
         `admin-scholarships-${day}.xlsx`,
       );
     });
+  }
+
+  if (isStudentStoriesList) {
+    return (
+      <>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => setAddTopicOpen(true)}
+          >
+            <HeaderActionIcon icon="add" />
+            Add Topic
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-[7px] text-[12px] font-semibold text-white transition-all duration-150 hover:bg-[#1B4332]"
+            onClick={() => setAddOpen(true)}
+          >
+            <HeaderActionIcon icon="add" />
+            Add Story
+          </button>
+        </div>
+
+        <AdminAddStudentStoryDialog
+          open={addOpen}
+          onClose={() => setAddOpen(false)}
+          topics={storyTopics}
+        />
+        <AdminAddStudentStoryTopicDialog
+          open={addTopicOpen}
+          onClose={() => setAddTopicOpen(false)}
+        />
+      </>
+    );
   }
 
   if (isAnnouncementsList) {
