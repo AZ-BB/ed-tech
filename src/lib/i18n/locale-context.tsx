@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useLayoutEffect } from "react";
 import { en } from "./dictionaries/en";
 import type { Dictionary } from "./get-dictionary";
 import { getDirection, type Locale } from "./config";
@@ -21,9 +21,14 @@ export function LocaleProvider({
   dict: Dictionary;
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    document.documentElement.lang = locale;
-    document.documentElement.dir = getDirection(locale);
+  useLayoutEffect(() => {
+    const dir = getDirection(locale);
+    if (document.documentElement.lang !== locale) {
+      document.documentElement.lang = locale;
+    }
+    if (document.documentElement.dir !== dir) {
+      document.documentElement.dir = dir;
+    }
   }, [locale]);
 
   return (

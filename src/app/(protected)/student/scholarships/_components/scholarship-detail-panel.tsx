@@ -2,16 +2,12 @@
 
 import clsx from "clsx";
 import type { CSSProperties, ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
 import type { Scholarship } from "./types";
 import { cardBadgeClass, competitionColor } from "./badge-styles";
 
-const TAB_IDS = [
-  { id: "d-overview", label: "Overview" },
-  { id: "d-eligibility", label: "Eligibility" },
-  { id: "d-application", label: "Application" },
-  { id: "d-coverage", label: "Coverage" },
-] as const;
+type TabId = "d-overview" | "d-eligibility" | "d-application" | "d-coverage";
 
 type Props = {
   scholarship: Scholarship | null;
@@ -34,9 +30,19 @@ export function ScholarshipDetailPanel({
   onSaveScholarship,
   onShortlistScholarship,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<(typeof TAB_IDS)[number]["id"]>(
-    "d-overview",
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
+  const tabIds = useMemo(
+    () =>
+      [
+        { id: "d-overview" as const, label: t.overview },
+        { id: "d-eligibility" as const, label: t.eligibilitySection },
+        { id: "d-application" as const, label: t.applicationInfo },
+        { id: "d-coverage" as const, label: t.whatsCovered },
+      ] as const,
+    [t],
   );
+  const [activeTab, setActiveTab] = useState<TabId>("d-overview");
 
   useEffect(() => {
     if (open) setActiveTab("d-overview");
@@ -56,7 +62,7 @@ export function ScholarshipDetailPanel({
     };
   }, [open, onClose]);
 
-  const scrollToSection = useCallback((id: (typeof TAB_IDS)[number]["id"]) => {
+  const scrollToSection = useCallback((id: TabId) => {
     setActiveTab(id);
     document.getElementById(id)?.scrollIntoView({
       behavior: "smooth",
@@ -99,7 +105,7 @@ export function ScholarshipDetailPanel({
             type="button"
             className="absolute right-3.5 top-3.5 z-[5] flex h-[34px] w-[34px] items-center justify-center rounded-full border-0 bg-white/90 transition-colors hover:bg-white"
             onClick={onClose}
-            aria-label="Close details"
+            aria-label={t.closeDetails}
           >
             <svg
               width="16"
@@ -127,7 +133,7 @@ export function ScholarshipDetailPanel({
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" />
             </svg>
-            <span>Deadline: {s.deadline}</span>
+            <span>{t.deadlineLabel}: {s.deadline}</span>
           </div>
           <div className="absolute -bottom-6 left-7 z-[3] flex h-14 w-14 items-center justify-center rounded-[14px] border-[3px] border-white bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
             <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[11px] bg-[var(--green-bg)]">
@@ -168,7 +174,7 @@ export function ScholarshipDetailPanel({
         </div>
 
         <div className="sticky top-0 z-[5] flex flex-wrap gap-0 border-b border-[var(--border-light)] bg-white px-7">
-          {TAB_IDS.map((tab) => (
+          {tabIds.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -187,22 +193,22 @@ export function ScholarshipDetailPanel({
 
         <div className="flex flex-col gap-4 p-5 max-[700px]:flex-col lg:flex-row lg:gap-4 lg:p-5">
           <div className="min-w-0 flex-1 space-y-3.5">
-            <DetailCard id="d-overview" title="Overview" icon={<InfoIcon />}>
+            <DetailCard id="d-overview" title={t.overview} icon={<InfoIcon />}>
               <p className="mb-1 text-[13.5px] leading-relaxed text-[var(--text-mid)]">
                 {s.shortSummary}
               </p>
-              <DetailRow label="Target students" value={s.eligSummary} />
+              <DetailRow label={t.targetStudents} value={s.eligSummary} />
               <DetailRow
-                label="Destination"
+                label={t.destination}
                 value={s.destinations.join(", ")}
               />
-              <DetailRow label="Level" value={s.degreeLevels} />
-              <DetailRow label="Fields" value={s.fieldsOfStudy} />
+              <DetailRow label={t.level} value={s.degreeLevels} />
+              <DetailRow label={t.fields} value={s.fieldsOfStudy} />
             </DetailCard>
 
-            <DetailCard id="d-eligibility" title="Eligibility" icon={<UserIcon />}>
+            <DetailCard id="d-eligibility" title={t.eligibilitySection} icon={<UserIcon />}>
               <DetailRow
-                label="Nationality"
+                label={t.nationality}
                 value={
                   natLocked ? (
                     <NationalityLockBadge label={s.eligSummary} />
@@ -211,29 +217,29 @@ export function ScholarshipDetailPanel({
                   )
                 }
               />
-              <DetailRow label="Academic" value={s.academicElig} />
-              <DetailRow label="English" value={s.englishReq} />
-              <DetailRow label="Other" value={s.otherElig} />
+              <DetailRow label={t.academic} value={s.academicElig} />
+              <DetailRow label={t.english} value={s.englishReq} />
+              <DetailRow label={t.otherField} value={s.otherElig} />
             </DetailCard>
 
             <DetailCard
               id="d-application"
-              title="Application info"
+              title={t.applicationInfo}
               icon={<CalendarIcon />}
             >
               <DetailRow
-                label="Deadline"
+                label={t.deadline}
                 value={
                   <span className="font-semibold text-[var(--green)]">
                     {s.deadline}
                   </span>
                 }
               />
-              <DetailRow label="Method" value={s.applicationMethod} />
-              <DetailRow label="Competition" value={s.competition} />
+              <DetailRow label={dict.student.universities.method} value={s.applicationMethod} />
+              <DetailRow label={t.competition} value={s.competition} />
               <div className="mt-3.5">
                 <div className="mb-2 text-[13px] font-semibold">
-                  Documents required
+                  {t.documentsRequired}
                 </div>
                 <ul className="flex list-none flex-col gap-1.5">
                   {s.requiredDocs.map((d) => (
@@ -252,16 +258,16 @@ export function ScholarshipDetailPanel({
               </div>
             </DetailCard>
 
-            <DetailCard id="d-coverage" title="What's covered" icon={<MoneyIcon />}>
+            <DetailCard id="d-coverage" title={t.whatsCovered} icon={<MoneyIcon />}>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 max-[700px]:grid-cols-1">
-                <CovItem label="Tuition" value={s.coverageDetails.tuition} highlight />
+                <CovItem label={t.tuition} value={s.coverageDetails.tuition} highlight />
                 <CovItem
-                  label="Living stipend"
+                  label={t.livingStipend}
                   value={s.coverageDetails.stipend}
                   highlight={s.coverageDetails.stipend !== "Not specified"}
                 />
                 <CovItem
-                  label="Travel"
+                  label={t.travel}
                   value={s.coverageDetails.travel}
                   highlight={
                     s.coverageDetails.travel !== "Not specified" &&
@@ -269,7 +275,7 @@ export function ScholarshipDetailPanel({
                   }
                 />
                 <CovItem
-                  label="Other benefits"
+                  label={t.otherBenefits}
                   value={s.coverageDetails.other}
                   highlight={false}
                 />
@@ -284,7 +290,7 @@ export function ScholarshipDetailPanel({
 
           <aside className="w-full shrink-0 lg:w-[220px]">
             <div className="sticky top-5 rounded-[var(--radius)] border border-[var(--border-light)] bg-white p-5">
-              <div className="mb-3.5 text-[14px] font-semibold">Your actions</div>
+              <div className="mb-3.5 text-[14px] font-semibold">{t.yourActions}</div>
               <SideBtn
                 tone={isSaved ? "saved" : "neutral"}
                 icon={<HeartIcon filled={isSaved} />}
@@ -292,7 +298,7 @@ export function ScholarshipDetailPanel({
                 disabled={!onSaveScholarship}
                 ariaPressed={isSaved}
               >
-                {isSaved ? "Saved" : "Save scholarship"}
+                {isSaved ? t.saved : t.saveScholarship}
               </SideBtn>
               <SideBtn
                 tone={isShortlisted ? "shortlisted" : "neutral"}
@@ -301,24 +307,24 @@ export function ScholarshipDetailPanel({
                 disabled={!onShortlistScholarship}
                 ariaPressed={isShortlisted}
               >
-                {isShortlisted ? "On shortlist" : "Add to shortlist"}
+                {isShortlisted ? t.onShortlist : t.addToShortlist}
               </SideBtn>
               <SideBtn primary icon={<ExternalIcon />} onClick={onApplyNow}>
-                Apply now
+                {t.applyNow}
               </SideBtn>
               <div className="my-3.5 border-t border-[var(--border-light)]" />
               <div className="mb-2.5 text-[11px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
-                Quick info
+                {t.quickInfo}
               </div>
-              <SideStat label="Coverage" value={s.coverageLabel} valueClass="text-[var(--green)]" />
+              <SideStat label={t.coverage} value={s.coverageLabel} valueClass="text-[var(--green)]" />
               <SideStat
-                label="Competition"
+                label={t.competition}
                 value={s.competition}
                 valueStyle={{ color: competitionColor(s.competition) }}
               />
-              <SideStat label="Level" value={s.degreeLevels} />
+              <SideStat label={t.level} value={s.degreeLevels} />
               <SideStat
-                label="Renewable"
+                label={t.renewable}
                 value={s.renewable}
                 valueClass="text-[var(--green)]"
               />

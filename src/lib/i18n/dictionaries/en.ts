@@ -13,6 +13,7 @@ import { forAdvisorsEn } from "./for-advisors-en";
 import { aboutEn } from "./about-en";
 import { webinarsEn } from "./webinars-en";
 import { forSchoolsEn } from "./for-schools-en";
+import { studentEn } from "./student-en";
 
 export const en = {
   common: commonEn,
@@ -29,4 +30,5 @@ export const en = {
   signup: signupEn,
   forAdvisors: forAdvisorsEn,
   about: aboutEn,
+  student: studentEn,
 } as const;

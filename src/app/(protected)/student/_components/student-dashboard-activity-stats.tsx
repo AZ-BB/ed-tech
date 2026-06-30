@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import {
@@ -18,6 +19,8 @@ export function StudentDashboardActivityStats({
   essaysReviewedCount,
   aiMatchesGeneratedCount,
 }: Props) {
+  const { dict } = useLocale();
+  const d = dict.student.dashboard;
   const [counts, setCounts] = useState<StudentDashboardActivityCounts | null>(
     null,
   );
@@ -95,7 +98,7 @@ export function StudentDashboardActivityStats({
   return (
     <>
       <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-hint)]">
-        Your activity
+        {d.yourActivity}
       </div>
       <div
         className="mb-5 grid grid-cols-2 gap-3 min-[801px]:grid-cols-4"
@@ -117,7 +120,7 @@ export function StudentDashboardActivityStats({
               )}
             </div>
             <div className="mt-0.5 text-[11px] font-medium text-[var(--text-light)]">
-              {m.label}
+              {d.activity[m.key]}
             </div>
           </div>
         ))}

@@ -6,6 +6,7 @@ import {
     removeUniversityFromFavourites,
     removeUniversityFromShortlist,
 } from "@/actions/universities";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { createContext, useCallback, useContext, useOptimistic, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
@@ -40,6 +41,8 @@ export function UniversityDetailStudentActivityProvider({
     initialFavourite,
     children,
 }: ProviderProps) {
+    const { dict } = useLocale();
+    const t = dict.student.universities;
     const router = useRouter();
     const [, startTransition] = useTransition();
     const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -59,7 +62,7 @@ export function UniversityDetailStudentActivityProvider({
                 setOptimisticShortlist(false);
                 const res = await removeUniversityFromShortlist(universityId);
                 if (res.error) {
-                    const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                    const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                     setActionMessage(msg);
                     throw new Error(msg);
                 }
@@ -70,7 +73,7 @@ export function UniversityDetailStudentActivityProvider({
                 setOptimisticShortlist(true);
                 const res = await addUniversityToShortlist(universityId);
                 if (res.error) {
-                    const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                    const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                     setActionMessage(msg);
                     throw new Error(msg);
                 }
@@ -86,7 +89,7 @@ export function UniversityDetailStudentActivityProvider({
                 setOptimisticFavourite(false);
                 const res = await removeUniversityFromFavourites(universityId);
                 if (res.error) {
-                    const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                    const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                     setActionMessage(msg);
                     throw new Error(msg);
                 }
@@ -97,7 +100,7 @@ export function UniversityDetailStudentActivityProvider({
                 setOptimisticFavourite(true);
                 const res = await addUniversityToFavourites(universityId);
                 if (res.error) {
-                    const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                    const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                     setActionMessage(msg);
                     throw new Error(msg);
                 }
@@ -119,12 +122,14 @@ export function UniversityDetailStudentActivityProvider({
 
 export function DetailHeaderFavouriteButton() {
     const { optimisticFavourite, toggleFavourite } = useDetailStudentActivity();
+    const { dict } = useLocale();
+    const t = dict.student.universities;
 
     return (
         <button
             type="button"
-            aria-label={optimisticFavourite ? "Remove from favourites" : "Save university to favourites"}
-            title={optimisticFavourite ? "Remove from favourites" : "Save university"}
+            aria-label={optimisticFavourite ? t.removeFromFavourites : t.saveUniversity}
+            title={optimisticFavourite ? t.removeFromFavourites : t.saveUniversity}
             onClick={(e) => {
                 e.preventDefault();
                 toggleFavourite();
@@ -151,6 +156,8 @@ export function DetailHeaderFavouriteButton() {
 export function DetailSidebarActivityButtons() {
     const { optimisticFavourite, optimisticShortlist, actionMessage, toggleFavourite, toggleShortlist } =
         useDetailStudentActivity();
+    const { dict } = useLocale();
+    const t = dict.student.universities;
 
     return (
         <div className="mb-1">
@@ -169,7 +176,7 @@ export function DetailSidebarActivityButtons() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
                 </svg>
-                {optimisticFavourite ? "Saved" : "Save university"}
+                {optimisticFavourite ? t.saved : t.saveUniversity}
             </button>
             <button
                 type="button"
@@ -186,7 +193,7 @@ export function DetailSidebarActivityButtons() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <path d="M12 2l2.4 7.4H22l-6 4.6L18.3 21 12 16.4 5.7 21l2.3-7L2 9.4h7.6z" />
                 </svg>
-                {optimisticShortlist ? "Shortlisted" : "Add to shortlist"}
+                {optimisticShortlist ? t.shortlisted : t.addToShortlist}
             </button>
             {actionMessage ? (
                 <p className="mb-2 text-[11px] leading-snug text-[#C0392B]" role="status">

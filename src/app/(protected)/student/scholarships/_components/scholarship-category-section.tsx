@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
 import type { Scholarship } from "./types";
 import { ScholarshipCard } from "./scholarship-card";
 
@@ -28,6 +31,8 @@ export function ScholarshipCategorySection({
   onToggleSave,
   footer,
 }: Props) {
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
   if (scholarships.length === 0 && !footer) return null;
 
   return (
@@ -44,7 +49,7 @@ export function ScholarshipCategorySection({
         </div>
         {typeof count === "number" ? (
           <span className="ml-auto shrink-0 rounded-xl bg-[var(--sand)] px-3 py-0.5 text-[11px] font-medium text-[var(--text-hint)]">
-            {count} available
+            {t.available.replace("{count}", String(count))}
           </span>
         ) : null}
       </div>

@@ -1,6 +1,8 @@
 "use client";
 
 import clsx from "clsx";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { ArrowForwardIcon } from "../../_components/directional-icons";
 import type { Scholarship } from "./types";
 import { cardBadgeClass } from "./badge-styles";
 
@@ -17,6 +19,8 @@ export function ScholarshipCard({
   saved,
   onToggleSave,
 }: Props) {
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
   const covClass =
     s.coverage === "full"
       ? "text-[var(--green)]"
@@ -33,7 +37,8 @@ export function ScholarshipCard({
           onOpenDetail();
         }
       }}
-      className="relative w-full cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-5 text-left transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:px-[22px]"
+      className="scholarship-card-ltr relative w-full cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-5 text-left transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:px-[22px]"
+      dir="ltr"
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-[var(--text)]">
@@ -56,7 +61,7 @@ export function ScholarshipCard({
       <div className="mb-3.5 flex border-y border-[var(--border-light)]">
         <div className="flex-1 border-r border-[var(--border-light)] py-2.5 text-center last:border-r-0">
           <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
-            Coverage
+            {t.coverage}
           </div>
           <div className={clsx("text-[12px] font-semibold text-[var(--text)]", covClass)}>
             {s.coverageLabel}
@@ -64,7 +69,7 @@ export function ScholarshipCard({
         </div>
         <div className="flex-1 border-r border-[var(--border-light)] py-2.5 text-center last:border-r-0">
           <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
-            Deadline
+            {t.deadline}
           </div>
           <div className="text-[12px] font-semibold text-[var(--text)]">
             {s.deadline}
@@ -72,7 +77,7 @@ export function ScholarshipCard({
         </div>
         <div className="flex-1 py-2.5 text-center">
           <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
-            Eligibility
+            {t.eligibility}
           </div>
           <div className="text-[12px] font-semibold text-[var(--text)]">
             {s.eligSummary}
@@ -83,7 +88,7 @@ export function ScholarshipCard({
         <button
           type="button"
           className="flex cursor-pointer h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-white transition-colors hover:border-[var(--green-bg)] hover:bg-[var(--green-bg)]"
-          aria-label={saved ? "Remove from saved" : "Save scholarship"}
+          aria-label={saved ? t.removeFromSaved : t.saveScholarship}
           onClick={(e) => {
             e.stopPropagation();
             onToggleSave();
@@ -102,18 +107,8 @@ export function ScholarshipCard({
           </svg>
         </button>
         <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-[18px] py-2 text-[12px] font-semibold text-white">
-          View details
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            aria-hidden
-          >
-            <path d="M5 12h14M13 5l7 7-7 7" />
-          </svg>
+          {t.viewDetails}
+          <ArrowForwardIcon size={12} />
         </span>
       </div>
     </div>

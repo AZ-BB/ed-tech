@@ -4,6 +4,7 @@ import { useRef } from "react";
 
 import type { Country } from "@/lib/countries";
 import { COUNTRIES } from "@/lib/countries";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 /**
  * Arab states for the nationality filter (ISO alpha-2, uppercase).
@@ -116,14 +117,21 @@ const favouritesToggleOffClass = `${favouritesToggleBase} border-[#b8860b]/40 bg
 const favouritesToggleOnClass = `${favouritesToggleBase} border-[#b8860b] bg-[#fef9e7] text-[#b8860b]`;
 
 /** Labels for filter values that are not plain ISO alpha-2 codes. */
-const SYNTHETIC_NATIONALITY_OPTIONS: readonly { value: string; label: string }[] =
-  [
-    { value: "eu-cit", label: "European Union (any member state)" },
-    { value: "us-cit", label: "United States citizen" },
-    { value: "gb-cit", label: "United Kingdom citizen" },
-    { value: "ca-cit", label: "Canadian citizen" },
-    { value: "other", label: "Other nationality" },
-  ];
+function buildSyntheticNationalityOptions(t: {
+  euCitizen: string;
+  usCitizen: string;
+  gbCitizen: string;
+  caCitizen: string;
+  otherNationality: string;
+}) {
+  return [
+    { value: "eu-cit", label: t.euCitizen },
+    { value: "us-cit", label: t.usCitizen },
+    { value: "gb-cit", label: t.gbCitizen },
+    { value: "ca-cit", label: t.caCitizen },
+    { value: "other", label: t.otherNationality },
+  ] as const;
+}
 
 const destinationNameSet = new Set(COUNTRIES.map((c) => c.name));
 
@@ -158,12 +166,15 @@ export function ScholarshipSelectorBar({
   onSearchSubmit,
   onClearFilters,
 }: Props) {
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
+  const syntheticNationalityOptions = buildSyntheticNationalityOptions(t);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const nationalityUnknown =
     nationality !== "any" &&
     !alpha2LowerSet.has(nationality) &&
-    !SYNTHETIC_NATIONALITY_OPTIONS.some((o) => o.value === nationality);
+    !syntheticNationalityOptions.some((o) => o.value === nationality);
 
   const destinationUnknown =
     destination !== "any" &&
@@ -174,34 +185,34 @@ export function ScholarshipSelectorBar({
     <div className="mb-5 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-[18px] text-[14px] text-[var(--text-mid)] max-[700px]:items-stretch">
       <div className="flex w-full min-w-0 flex-wrap items-center gap-2.5 max-[700px]:flex-col max-[700px]:items-stretch">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2.5 max-[700px]:w-full max-[700px]:flex-col max-[700px]:items-stretch">
-        <span>I am a</span>
+        <span>{t.iAmA}</span>
         <div className="relative inline-block">
           <select
             className={selectClass}
             value={nationality}
             onChange={(e) => onNationalityChange(e.target.value)}
-            aria-label="Nationality"
+            aria-label={t.nationality}
           >
-            <option value="any">Any nationality</option>
+            <option value="any">{t.anyNationality}</option>
             {nationalityUnknown ? (
               <option value={nationality}>{nationality}</option>
             ) : null}
-            <optgroup label="Arab nationalities">
+            <optgroup label={t.arabNationalities}>
               {ARAB_COUNTRIES_FOR_NATIONALITY.map((c) => (
                 <option key={c.alpha2} value={c.alpha2.toLowerCase()}>
                   {demonym(c)}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="All countries">
+            <optgroup label={t.allCountries}>
               {NON_ARAB_COUNTRIES.map((c) => (
                 <option key={c.alpha2} value={c.alpha2.toLowerCase()}>
                   {demonym(c)}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Regional / other">
-              {SYNTHETIC_NATIONALITY_OPTIONS.map((o) => (
+            <optgroup label={t.regionalOther}>
+              {syntheticNationalityOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
@@ -210,19 +221,19 @@ export function ScholarshipSelectorBar({
           </select>
           <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
-        <span>looking to study in</span>
+        <span>{t.lookingToStudyIn}</span>
         <div className="relative inline-block">
           <select
             className={selectClass}
             value={destination}
             onChange={(e) => onDestinationChange(e.target.value)}
-            aria-label="Destination"
+            aria-label={t.destination}
           >
-            <option value="any">Any destination</option>
+            <option value="any">{t.anyDestination}</option>
             {destinationUnknown ? (
               <option value={destination}>{destination}</option>
             ) : null}
-            <optgroup label="All countries">
+            <optgroup label={t.allCountries}>
               {COUNTRIES.map((c) => (
                 <option key={c.alpha2} value={c.name}>
                   {c.name}
@@ -232,17 +243,17 @@ export function ScholarshipSelectorBar({
           </select>
           <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
-        <span>and want a</span>
+        <span>{t.andWantA}</span>
         <div className="relative inline-block">
           <select
             className={selectClass}
             value={coverage}
             onChange={(e) => onCoverageChange(e.target.value)}
-            aria-label="Coverage type"
+            aria-label={t.coverageType}
           >
-            <option value="any">Any coverage</option>
-            <option value="full">Full scholarship</option>
-            <option value="partial">Partial scholarship</option>
+            <option value="any">{t.anyCoverage}</option>
+            <option value="full">{t.fullScholarship}</option>
+            <option value="partial">{t.partialScholarship}</option>
           </select>
           <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
@@ -264,21 +275,21 @@ export function ScholarshipSelectorBar({
             >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
-            Clear filters
+            {t.clearFilters}
           </button>
         ) : null}
       </div>
       <div className="flex flex-wrap items-end gap-2 border-t border-[var(--border-light)] pt-3 max-[700px]:flex-col">
         <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-[12px] font-medium text-[var(--text-light)]">
-          Search
+          {t.search}
           <input
             key={q}
             ref={searchRef}
             type="search"
             className={inputClass}
-            placeholder="Name, provider, country, field of study…"
+            placeholder={t.searchPlaceholder}
             defaultValue={q}
-            aria-label="Search scholarships"
+            aria-label={t.searchScholarships}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -291,21 +302,19 @@ export function ScholarshipSelectorBar({
           type="button"
           aria-pressed={favouritesOnly}
           aria-label={
-            favouritesOnly
-              ? "Show all scholarships"
-              : "Show favourite scholarships only"
+            favouritesOnly ? t.showAllScholarships : t.showFavouritesOnly
           }
           className={favouritesOnly ? favouritesToggleOnClass : favouritesToggleOffClass}
           onClick={onFavouritesToggle}
         >
-          Favourites
+          {t.favourites}
         </button>
         <button
           type="button"
           className="rounded-[var(--radius-pill)] bg-[var(--green)] px-5 py-2.5 text-[13px] font-medium text-white hover:opacity-95"
           onClick={() => onSearchSubmit(searchRef.current?.value ?? "")}
         >
-          Search
+          {t.search}
         </button>
       </div>
     </div>

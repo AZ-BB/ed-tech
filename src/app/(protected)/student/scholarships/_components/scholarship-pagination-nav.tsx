@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 type Props = {
   currentPage: number;
   totalPages: number;
@@ -17,6 +18,8 @@ export function ScholarshipPaginationNav({
   ariaLabel,
   onPageChange,
 }: Props) {
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
   if (totalItems === 0) return null;
 
   const prev = currentPage > 1 ? currentPage - 1 : null;
@@ -28,7 +31,10 @@ export function ScholarshipPaginationNav({
       aria-label={ariaLabel}
     >
       <span className="text-[var(--text-light)]">
-        Page {currentPage} of {totalPages} ({totalItems} total)
+        {t.pageOf
+          .replace("{current}", String(currentPage))
+          .replace("{total}", String(totalPages))
+          .replace("{items}", String(totalItems))}
       </span>
       <div className="flex gap-2">
         {prev ? (
@@ -37,11 +43,11 @@ export function ScholarshipPaginationNav({
             onClick={() => onPageChange?.(prev)}
             className="cursor-pointer rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3 py-1.5 font-medium text-[var(--text)] hover:bg-[var(--sand)]"
           >
-            Previous
+            {t.previous}
           </button>
         ) : (
           <span className="rounded-[var(--radius-sm)] border border-transparent px-3 py-1.5 text-[var(--text-hint)]">
-            Previous
+            {t.previous}
           </span>
         )}
         {next ? (
@@ -50,11 +56,11 @@ export function ScholarshipPaginationNav({
             onClick={() => onPageChange?.(next)}
             className="cursor-pointer rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3 py-1.5 font-medium text-[var(--text)] hover:bg-[var(--sand)]"
           >
-            Next
+            {t.next}
           </button>
         ) : (
           <span className="rounded-[var(--radius-sm)] border border-transparent px-3 py-1.5 text-[var(--text-hint)]">
-            Next
+            {t.next}
           </span>
         )}
       </div>

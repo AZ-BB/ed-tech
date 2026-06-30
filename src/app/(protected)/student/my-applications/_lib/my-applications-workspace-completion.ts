@@ -17,6 +17,13 @@ export type MyApplicationsWorkspaceCompletion = {
   missingAreas: string[];
 };
 
+export type WorkspaceCompletionLabels = {
+  allSet: string;
+  addOne: string;
+  addMany: string;
+  missing: Record<string, string>;
+};
+
 const WORKSPACE_WEIGHTS = {
   profile: 50,
   universities: 15,
@@ -94,23 +101,18 @@ export function getMyApplicationsWorkspaceCompletion(args: {
 
 export function workspaceCompletionSubtitle(
   missingAreas: string[],
+  labels: WorkspaceCompletionLabels,
 ): string {
   if (missingAreas.length === 0) {
-    return "Great work — your counselor has a solid picture of your application.";
+    return labels.allSet;
   }
 
-  const labels: Record<string, string> = {
-    profile: "profile details",
-    universities: "a university shortlist",
-    documents: "required documents",
-    essays: "at least one essay",
-    recommendations: "a recommendation request",
-  };
-
-  const parts = missingAreas.map((key) => labels[key] ?? key);
+  const parts = missingAreas.map((key) => labels.missing[key] ?? key);
   if (parts.length === 1) {
-    return `Add ${parts[0]} to keep building your application.`;
+    return labels.addOne.replace("{item}", parts[0]);
   }
   const last = parts.pop();
-  return `Add ${parts.join(", ")} and ${last} to keep building your application.`;
+  return labels.addMany
+    .replace("{items}", parts.join(", "))
+    .replace("{last}", last ?? "");
 }

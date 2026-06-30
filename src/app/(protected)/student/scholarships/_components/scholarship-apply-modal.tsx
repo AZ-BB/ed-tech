@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { useEffect } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
 import type { Scholarship } from "./types";
 import { applyModalTypeBadgeClass } from "./badge-styles";
 
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) {
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -69,7 +72,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
               type="button"
               className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--border-light)] bg-[var(--sand)] transition-colors hover:bg-[var(--border-light)]"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t.close}
             >
               <svg
                 width="14"
@@ -113,7 +116,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
 
         <div className="px-6 pb-6 pt-5">
           <div className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
-            Application source
+            {t.applicationSource}
           </div>
           <div className="mb-3 rounded-[var(--radius)] border border-[var(--border-light)] bg-[var(--sand)] p-4">
             <div className="mb-2.5 flex items-center gap-3">
@@ -135,12 +138,12 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
                 <div className="text-[13px] font-semibold text-[var(--text)]">
                   {verified || uncertain
                     ? s.applicationWebsiteName
-                    : "Application link not available"}
+                    : t.linkNotAvailable}
                 </div>
                 <div className="text-[11px] text-[var(--text-light)]">
                   {verified || uncertain
                     ? s.applicationWebsiteDomain || "—"
-                    : "No direct URL found"}
+                    : t.noDirectUrl}
                 </div>
               </div>
             </div>
@@ -168,7 +171,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
                   >
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
-                  Official source
+                  {t.officialSource}
                 </span>
               ) : null}
               {verified ? (
@@ -184,7 +187,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
                   >
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
-                  Verified link
+                  {t.verifiedLink}
                 </span>
               ) : null}
               {uncertain ? (
@@ -201,7 +204,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 8v4M12 16h.01" />
                   </svg>
-                  Link may be outdated
+                  {t.linkMayBeOutdated}
                 </span>
               ) : null}
               {!verified && !uncertain ? (
@@ -218,7 +221,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
                     <circle cx="12" cy="12" r="10" />
                     <path d="M15 9l-6 6M9 9l6 6" />
                   </svg>
-                  Link not available
+                  {t.linkNotAvailableBadge}
                 </span>
               ) : null}
             </div>
@@ -226,12 +229,12 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
 
           <p className="mb-4 px-0.5 text-[11px] leading-normal text-[var(--text-hint)]">
             {verified
-              ? "You will be redirected to the official scholarship website to complete your application."
+              ? t.redirectHint
               : uncertain
-                ? "This link points to an official domain but the specific page may have changed. Please verify."
+                ? t.uncertainHint
                 : fallbackOnly
-                  ? "A direct application link could not be verified. You can visit the official website for more information."
-                  : "No verified application link is available at this time."}
+                  ? t.fallbackHint
+                  : t.noVerifiedLink}
           </p>
 
           <div className="flex items-center justify-end gap-2.5">
@@ -240,7 +243,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
               className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-5 py-2.5 text-[12px] font-medium text-[var(--text-mid)] transition-colors hover:border-[var(--green)] hover:bg-[var(--green-pale)] hover:text-[var(--green)]"
               onClick={onClose}
             >
-              Close
+              {t.close}
             </button>
             {verified || uncertain ? (
               <a
@@ -262,7 +265,7 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
                   <path d="M15 3h6v6" />
                   <path d="M10 14L21 3" />
                 </svg>
-                Go to official website
+                {t.goToOfficialWebsite}
               </a>
             ) : fallbackOnly ? (
               <a
@@ -284,11 +287,11 @@ export function ScholarshipApplyModal({ scholarship: s, open, onClose }: Props) 
                   <path d="M15 3h6v6" />
                   <path d="M10 14L21 3" />
                 </svg>
-                Visit official website
+                {t.visitOfficialWebsite}
               </a>
             ) : (
               <span className="cursor-not-allowed rounded-[var(--radius-pill)] bg-[var(--border)] px-6 py-2.5 text-[12px] font-semibold text-[var(--text-hint)] opacity-40">
-                Link not available
+                {t.linkNotAvailableBadge}
               </span>
             )}
           </div>

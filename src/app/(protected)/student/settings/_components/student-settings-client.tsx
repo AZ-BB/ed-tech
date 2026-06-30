@@ -7,6 +7,8 @@ import {
 } from "@/actions/student-settings";
 import { PersonProfileAvatar } from "@/components/person-profile-avatar";
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { StudentLanguageSwitcher } from "@/lib/i18n/student-language-switcher";
 import type { GeneralResponse } from "@/utils/response";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useRouter } from "next/navigation";
@@ -100,6 +102,10 @@ export function StudentSettingsClient({
   countries: { id: string; name: string }[];
   initial: StudentSettingsInitial;
 }) {
+  const { dict } = useLocale();
+  const s = dict.student.settings;
+  const c = dict.student.common;
+  const logoutCopy = dict.student.logout;
   const router = useRouter();
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -193,7 +199,7 @@ export function StudentSettingsClient({
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setAvatarPreviewUrl(null);
       setRemoveAvatar(false);
-      showToast("Personal information saved.");
+      showToast(s.toastPersonalSaved);
       setEditingPersonal(false);
       router.refresh();
     }
@@ -239,7 +245,7 @@ export function StudentSettingsClient({
           setNewsPlatform(initial.notificationNewsPlatform);
           return;
         }
-        showToast("Notification preference updated");
+        showToast(s.toastNotificationUpdated);
         router.refresh();
       });
     },
@@ -274,23 +280,23 @@ export function StudentSettingsClient({
     const email = authEmail.trim();
 
     if (!email) {
-      setPwError("Missing account email. Sign in again.");
+      setPwError(s.pwErrorMissingEmail);
       return;
     }
     if (!current || !next || !confirm) {
-      setPwError("Fill in all password fields.");
+      setPwError(s.pwErrorFillAll);
       return;
     }
     if (next.length < MIN_PASSWORD) {
-      setPwError(`New password must be at least ${MIN_PASSWORD} characters.`);
+      setPwError(s.pwErrorMinLength.replace("{min}", String(MIN_PASSWORD)));
       return;
     }
     if (next !== confirm) {
-      setPwError("New passwords do not match.");
+      setPwError(s.pwErrorMismatch);
       return;
     }
     if (current === next) {
-      setPwError("New password must be different from your current password.");
+      setPwError(s.pwErrorSameAsCurrent);
       return;
     }
 
@@ -302,21 +308,21 @@ export function StudentSettingsClient({
         password: current,
       });
       if (signErr) {
-        setPwError("Current password is incorrect.");
+        setPwError(s.pwErrorIncorrectCurrent);
         return;
       }
       const { error: updErr } = await supabase.auth.updateUser({
         password: next,
       });
       if (updErr) {
-        setPwError(updErr.message || "Could not update password.");
+        setPwError(updErr.message || s.pwErrorUpdateFailed);
         return;
       }
       if (pwCurrentRef.current) pwCurrentRef.current.value = "";
       if (pwNewRef.current) pwNewRef.current.value = "";
       if (pwConfirmRef.current) pwConfirmRef.current.value = "";
       setPwOpen(false);
-      showToast("Password updated successfully");
+      showToast(s.toastPasswordUpdated);
     } finally {
       setPwSubmitting(false);
     }
@@ -343,13 +349,16 @@ export function StudentSettingsClient({
         </div>
       ) : null}
 
-      <header className="mb-7">
-        <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] text-[var(--text)]">
-          Account settings
-        </h1>
-        <p className="mt-1 text-sm text-[var(--text-light)]">
-          Manage your account details, security, and preferences
-        </p>
+      <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] text-[var(--text)]">
+            {s.pageTitle}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--text-light)]">
+            {s.pageSubtitle}
+          </p>
+        </div>
+        <StudentLanguageSwitcher />
       </header>
 
       {/* Personal */}
@@ -370,7 +379,7 @@ export function StudentSettingsClient({
                 <circle cx="12" cy="7" r="4" />
               </svg>
             </span>
-            Personal Information
+            {s.personalInfo}
           </div>
           {!editingPersonal ? (
             <button type="button" className={btnEditClass()} onClick={startEditPersonal}>
@@ -386,7 +395,7 @@ export function StudentSettingsClient({
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
-              Edit
+              {c.edit}
             </button>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -396,11 +405,11 @@ export function StudentSettingsClient({
                 disabled={personalPending}
                 onClick={cancelEditPersonal}
               >
-                Cancel
+                {c.cancel}
               </button>
               <button type="submit" form="student-personal-form" className={btnSaveClass()} disabled={personalPending}>
                 {personalPending ? (
-                  "Saving…"
+                  s.saving
                 ) : (
                   <>
                     <svg
@@ -414,7 +423,7 @@ export function StudentSettingsClient({
                     >
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
-                    Save
+                    {c.save}
                   </>
                 )}
               </button>
@@ -431,38 +440,36 @@ export function StudentSettingsClient({
             />
             <div className="min-w-0">
               <div className="text-[15px] font-semibold text-[var(--text)]">
-                {displayFullName || "—"}
+                {displayFullName || s.emptyValue}
               </div>
               <p className="mt-0.5 text-[12px] text-[var(--text-light)]">
-                {editingPersonal
-                  ? "Update your photo below, then save."
-                  : "Profile photo — edit personal info to change."}
+                {editingPersonal ? s.profilePhotoHintEdit : s.profilePhotoHintView}
               </p>
             </div>
           </div>
           {!editingPersonal ? (
             <div className="grid grid-cols-1 sm:grid-cols-2">
               <div className="border-b border-[var(--border-light)] border-r-0 px-[18px] py-4 transition-colors sm:border-r sm:border-[var(--border-light)]">
-                <div className={roLabelClass()}>Full name</div>
-                <div className={roValueClass()}>{displayFullName || "—"}</div>
+                <div className={roLabelClass()}>{s.fullName}</div>
+                <div className={roValueClass()}>{displayFullName || s.emptyValue}</div>
               </div>
               <div className="border-b border-[var(--border-light)] px-[18px] py-4">
-                <div className={roLabelClass()}>Email</div>
+                <div className={roLabelClass()}>{s.email}</div>
                 <div className={roValueClass()}>{initial.email}</div>
                 <p className="mt-1 text-[11px] text-[var(--text-hint)]">
-                  Used for login and important updates
+                  {s.emailHint}
                 </p>
               </div>
               <div className="border-r-0 px-[18px] py-4 transition-colors sm:border-r sm:border-[var(--border-light)]">
-                <div className={roLabelClass()}>Phone number</div>
-                <div className={roValueClass()}>{initial.phone.trim() || "—"}</div>
+                <div className={roLabelClass()}>{s.phoneNumber}</div>
+                <div className={roValueClass()}>{initial.phone.trim() || s.emptyValue}</div>
               </div>
               <div className="border-b border-[var(--border-light)] px-[18px] py-4 sm:border-b-0">
-                <div className={roLabelClass()}>Grade</div>
-                <div className={roValueClass()}>{initial.grade || "—"}</div>
+                <div className={roLabelClass()}>{s.grade}</div>
+                <div className={roValueClass()}>{initial.grade || s.emptyValue}</div>
               </div>
               <div className="px-[18px] py-4">
-                <div className={roLabelClass()}>Nationality</div>
+                <div className={roLabelClass()}>{s.nationality}</div>
                 <div className={roValueClass()}>{initial.nationalityName}</div>
               </div>
             </div>
@@ -470,7 +477,7 @@ export function StudentSettingsClient({
             <form id="student-personal-form" action={personalAction} className="grid grid-cols-1 gap-[18px] sm:grid-cols-2">
               <input type="hidden" name="remove_avatar" value={removeAvatar ? "1" : "0"} />
               <div className="sm:col-span-2">
-                <span className={labelClass()}>Profile photo</span>
+                <span className={labelClass()}>{s.profilePhoto}</span>
                 <div className="flex flex-wrap items-center gap-4">
                   <PersonProfileAvatar
                     avatarUrl={avatarDisplayUrl}
@@ -489,7 +496,7 @@ export function StudentSettingsClient({
                       className={`${fieldClass()} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[var(--green-bg)] file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-[var(--green-dark)]`}
                     />
                     <p className="mt-1.5 text-[11px] text-[var(--text-hint)]">
-                      PNG, JPEG, WebP, or GIF. Max 5 MB.
+                      {s.photoFormats}
                     </p>
                     {canRemoveAvatar ? (
                       <button
@@ -497,12 +504,12 @@ export function StudentSettingsClient({
                         className={`${btnOutlineClass()} mt-2`}
                         onClick={handleRemoveAvatar}
                       >
-                        Remove photo
+                        {s.removePhoto}
                       </button>
                     ) : null}
                     {removeAvatar && !avatarPreviewUrl ? (
                       <p className="mt-2 text-[11px] font-medium text-[var(--text-mid)]">
-                        Photo will be removed when you save.
+                        {s.photoWillBeRemoved}
                       </p>
                     ) : null}
                   </div>
@@ -510,7 +517,7 @@ export function StudentSettingsClient({
               </div>
               <div>
                 <label className={labelClass()} htmlFor="ss-full-name">
-                  Full name
+                  {s.fullName}
                 </label>
                 <input
                   id="ss-full-name"
@@ -518,26 +525,26 @@ export function StudentSettingsClient({
                   className={fieldClass()}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Enter your full name"
+                  placeholder={s.fullNamePlaceholder}
                   autoComplete="name"
                   required
                 />
               </div>
               <div>
-                <span className={labelClass()}>Email</span>
+                <span className={labelClass()}>{s.email}</span>
                 <div
                   className={`${fieldClass()} cursor-not-allowed bg-[#faf9f4] text-[var(--text-light)]`}
-                  title="Email cannot be changed here"
+                  title={s.emailCannotChange}
                 >
                   {initial.email}
                 </div>
                 <p className="mt-1 text-[11px] text-[var(--text-hint)]">
-                  Used for login and important updates
+                  {s.emailHint}
                 </p>
               </div>
               <div>
                 <label className={labelClass()} htmlFor="ss-phone">
-                  Phone number
+                  {s.phoneNumber}
                 </label>
                 <input
                   id="ss-phone"
@@ -546,14 +553,14 @@ export function StudentSettingsClient({
                   className={fieldClass()}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter your phone number"
+                  placeholder={s.phonePlaceholder}
                   autoComplete="tel"
                   maxLength={64}
                 />
               </div>
               <div>
                 <label className={labelClass()} htmlFor="ss-grade">
-                  Grade
+                  {s.grade}
                 </label>
                 <select
                   id="ss-grade"
@@ -572,7 +579,7 @@ export function StudentSettingsClient({
               </div>
               <div>
                 <label className={labelClass()} htmlFor="ss-nationality">
-                  Nationality
+                  {s.nationality}
                 </label>
                 <select
                   id="ss-nationality"
@@ -582,9 +589,9 @@ export function StudentSettingsClient({
                   onChange={(e) => setNationalityCode(e.target.value)}
                   required
                 >
-                  {countries.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
+                  {countries.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name}
                     </option>
                   ))}
                 </select>
@@ -616,17 +623,17 @@ export function StudentSettingsClient({
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </span>
-            School Information
+            {s.schoolInfo}
           </div>
         </div>
         <div className="px-6 py-5 sm:px-7 sm:py-6">
           <div className="grid grid-cols-1 sm:grid-cols-2">
             <div className="px-[18px] py-4 sm:border-r sm:border-[var(--border-light)]">
-              <div className={roLabelClass()}>School name</div>
+              <div className={roLabelClass()}>{s.schoolName}</div>
               <div className={roValueClass()}>{initial.schoolName}</div>
             </div>
             <div className="px-[18px] py-4">
-              <div className={roLabelClass()}>Country your school is in</div>
+              <div className={roLabelClass()}>{s.schoolCountry}</div>
               <div className={roValueClass()}>{initial.schoolCountryName}</div>
             </div>
           </div>
@@ -651,7 +658,7 @@ export function StudentSettingsClient({
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
             </span>
-            Security
+            {s.security}
           </div>
         </div>
         <div className="px-6 py-5 sm:px-7 sm:py-6">
@@ -671,12 +678,12 @@ export function StudentSettingsClient({
                 </svg>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-[var(--text)]">Change password</h4>
-                <p className="text-xs text-[var(--text-hint)]">Update your account password</p>
+                <h4 className="text-sm font-semibold text-[var(--text)]">{s.changePassword}</h4>
+                <p className="text-xs text-[var(--text-hint)]">{s.changePasswordDesc}</p>
               </div>
             </div>
             <button type="button" className={`${btnOutlineClass()} shrink-0`} onClick={() => setPwOpen(true)}>
-              Change password
+              {s.changePassword}
             </button>
           </div>
           <p className="mt-3 border-t border-[var(--border-light)] pt-2.5 text-[11px] text-[var(--text-hint)]">
@@ -703,15 +710,15 @@ export function StudentSettingsClient({
                 <path d="M13.73 21a2 2 0 01-3.46 0" />
               </svg>
             </span>
-            Preferences
+            {s.preferences}
           </div>
         </div>
         <div className="px-6 py-2 sm:px-7">
           <div className="flex flex-col gap-1 border-b border-[var(--border-light)] py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-xl pr-4">
-              <h4 className="text-sm font-medium text-[var(--text)]">Application updates & reminders</h4>
+              <h4 className="text-sm font-medium text-[var(--text)]">{s.appUpdatesTitle}</h4>
               <p className="mt-0.5 text-xs text-[var(--text-hint)]">
-                Receive updates about deadlines, scholarships, and application progress
+                {s.appUpdatesDesc}
               </p>
             </div>
             <label className="relative h-6 w-11 shrink-0 cursor-pointer">
@@ -732,9 +739,9 @@ export function StudentSettingsClient({
           </div>
           <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-xl pr-4">
-              <h4 className="text-sm font-medium text-[var(--text)]">New universities & platform updates</h4>
+              <h4 className="text-sm font-medium text-[var(--text)]">{s.newsPlatformTitle}</h4>
               <p className="mt-0.5 text-xs text-[var(--text-hint)]">
-                Get notified about new universities, advisors, and features
+                {s.newsPlatformDesc}
               </p>
             </div>
             <label className="relative h-6 w-11 shrink-0 cursor-pointer">
@@ -775,7 +782,7 @@ export function StudentSettingsClient({
                 <path d="M21 12H9" />
               </svg>
             </span>
-            Account
+            {s.account}
           </div>
         </div>
         <div className="px-6 py-5 sm:px-7 sm:py-6">
@@ -795,12 +802,12 @@ export function StudentSettingsClient({
                 <path d="M21 12H9" />
               </svg>
               <div>
-                <div className="text-sm font-medium text-[var(--text)]">Log out</div>
-                <div className="text-xs text-[var(--text-hint)]">Sign out of your account on this device</div>
+                <div className="text-sm font-medium text-[var(--text)]">{s.logOut}</div>
+                <div className="text-xs text-[var(--text-hint)]">{s.logOutDesc}</div>
               </div>
             </div>
             <button type="button" className={`${btnOutlineClass()} shrink-0`} onClick={() => setLogoutOpen(true)}>
-              Log out
+              {s.logOut}
             </button>
           </div>
         </div>
@@ -828,16 +835,16 @@ export function StudentSettingsClient({
                   id="student-pw-title"
                   className="font-[family-name:var(--font-dm-serif)] text-lg font-bold text-[var(--text)]"
                 >
-                  Change password
+                  {s.changePasswordModalTitle}
                 </h2>
                 <p className="mt-0.5 text-xs text-[var(--text-hint)]">
-                  Enter your current password and choose a new one
+                  {s.changePasswordModalSubtitle}
                 </p>
               </div>
               <button
                 type="button"
                 className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[var(--border-light)] bg-[var(--sand)] transition-colors hover:bg-[var(--border-light)]"
-                aria-label="Close"
+                aria-label={c.close}
                 onClick={() => !pwSubmitting && setPwOpen(false)}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7a7a7a" strokeWidth="2" strokeLinecap="round" aria-hidden>
@@ -849,7 +856,7 @@ export function StudentSettingsClient({
               <div className="space-y-4 px-6 pb-7 pt-5 sm:px-7">
                 <div>
                   <label className={labelClass()} htmlFor="student-pw-current">
-                    Current password
+                    {s.currentPassword}
                   </label>
                   <input
                     id="student-pw-current"
@@ -857,12 +864,12 @@ export function StudentSettingsClient({
                     type="password"
                     className={fieldClass()}
                     autoComplete="current-password"
-                    placeholder="Enter current password"
+                    placeholder={s.currentPasswordPlaceholder}
                   />
                 </div>
                 <div>
                   <label className={labelClass()} htmlFor="student-pw-new">
-                    New password
+                    {s.newPassword}
                   </label>
                   <input
                     id="student-pw-new"
@@ -870,12 +877,12 @@ export function StudentSettingsClient({
                     type="password"
                     className={fieldClass()}
                     autoComplete="new-password"
-                    placeholder="Enter new password"
+                    placeholder={s.newPasswordPlaceholder}
                   />
                 </div>
                 <div>
                   <label className={labelClass()} htmlFor="student-pw-confirm">
-                    Confirm new password
+                    {s.confirmNewPassword}
                   </label>
                   <input
                     id="student-pw-confirm"
@@ -883,7 +890,7 @@ export function StudentSettingsClient({
                     type="password"
                     className={fieldClass()}
                     autoComplete="new-password"
-                    placeholder="Confirm new password"
+                    placeholder={s.confirmPasswordPlaceholder}
                   />
                 </div>
                 {pwError ? (
@@ -907,10 +914,10 @@ export function StudentSettingsClient({
               </div>
               <div className="flex justify-end gap-2.5 border-t border-[var(--border-light)] px-6 py-4 sm:px-7">
                 <button type="button" className={btnCancelClass()} disabled={pwSubmitting} onClick={() => setPwOpen(false)}>
-                  Cancel
+                  {c.cancel}
                 </button>
                 <button type="submit" className={btnSaveClass()} disabled={pwSubmitting}>
-                  {pwSubmitting ? "Updating…" : "Update password"}
+                  {pwSubmitting ? s.updating : s.updatePassword}
                 </button>
               </div>
             </form>
@@ -936,19 +943,19 @@ export function StudentSettingsClient({
           >
             <div className="border-b border-[var(--border-light)] px-6 py-5 sm:px-7">
               <h2 id="student-logout-title" className="font-[family-name:var(--font-dm-serif)] text-xl tracking-tight text-[var(--text)]">
-                Log out?
+                {logoutCopy.title}
               </h2>
               <p className="mt-2 text-sm text-[var(--text-light)]">
-                You will be signed out of your account on this device. You can sign in again anytime.
+                {logoutCopy.description}
               </p>
             </div>
             <div className="flex flex-wrap justify-end gap-2 px-6 py-4 sm:px-7">
               <button type="button" className={btnCancelClass()} onClick={() => setLogoutOpen(false)}>
-                Cancel
+                {c.cancel}
               </button>
               <form action={logout} className="inline">
                 <button type="submit" className={btnSaveClass()}>
-                  Log out
+                  {s.logOut}
                 </button>
               </form>
             </div>

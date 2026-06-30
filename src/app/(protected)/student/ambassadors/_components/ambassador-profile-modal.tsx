@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
 import { CountryFlag } from "@/components/country-flag";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
+import { ArrowForwardIcon } from "../../_components/directional-icons";
 
 const AVATAR_PALETTE: { bg: string; fg: string }[] = [
   { bg: "#E8F3EC", fg: "#2F5D50" },
@@ -31,22 +33,6 @@ function formatStudyYears(start: number | null, end: number | null): string {
   if (start != null) return String(start);
   if (end != null) return String(end);
   return "—";
-}
-
-function formatHeadlineSubtitle(a: AmbassadorCatalogEntry): string {
-  const status = a.isCurrentStudent ? "Student" : "Graduate";
-  const majorPart = a.major?.trim();
-  const yearPart =
-    a.graduationYear != null
-      ? String(a.graduationYear)
-      : a.startYear != null
-        ? String(a.startYear)
-        : null;
-
-  if (majorPart && yearPart) return `${majorPart} ${status} — ${yearPart}`;
-  if (majorPart) return `${majorPart} ${status}`;
-  if (yearPart) return `${status} — ${yearPart}`;
-  return status;
 }
 
 function SectionIcon({ children }: { children: ReactNode }) {
@@ -86,17 +72,17 @@ type Props = {
 };
 
 export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
+  const { dict } = useLocale();
+  const am = dict.student.ambassadors;
   const pal = paletteForId(ambassador.id);
   const ini = initials(ambassador.firstName, ambassador.lastName);
   const destName =
     getCountryNameByAlpha2(ambassador.destinationCode) ?? ambassador.destinationCode;
   const natName =
     getCountryNameByAlpha2(ambassador.nationalityCode) ?? ambassador.nationalityCode;
-  const statusLabel = ambassador.isCurrentStudent ? "Current student" : "Graduate";
+  const statusLabel = ambassador.isCurrentStudent ? am.currentStudent : am.graduate;
   const helps =
-    ambassador.helps.length > 0
-      ? ambassador.helps
-      : ["Campus life and culture", "Application experience", "Scholarships and housing"];
+    ambassador.helps.length > 0 ? ambassador.helps : [...am.defaultHelps];
   const headerTags =
     ambassador.tags.length > 0
       ? ambassador.tags
@@ -105,6 +91,23 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
           ambassador.destinationCode,
           ...(ambassador.major ? [ambassador.major] : []),
         ].filter(Boolean);
+
+  const majorPart = ambassador.major?.trim();
+  const yearPart =
+    ambassador.graduationYear != null
+      ? String(ambassador.graduationYear)
+      : ambassador.startYear != null
+        ? String(ambassador.startYear)
+        : null;
+  const statusWord = ambassador.isCurrentStudent ? am.student : am.graduate;
+  const headlineSubtitle =
+    majorPart && yearPart
+      ? `${majorPart} ${statusWord} — ${yearPart}`
+      : majorPart
+        ? `${majorPart} ${statusWord}`
+        : yearPart
+          ? `${statusWord} — ${yearPart}`
+          : statusWord;
 
   return (
     <div
@@ -125,7 +128,7 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
           type="button"
           className="absolute right-4 top-4 z-[5] flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-white transition hover:bg-[var(--sand)]"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={am.close}
         >
           <svg
             width="14"
@@ -156,27 +159,31 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
             <div className="min-w-0 flex-1">
               <h2
                 id="ambassador-profile-name"
-                className="font-[family-name:var(--font-dm-serif)] text-[26px] leading-tight font-bold text-[var(--text)]"
+                className="bidi-ltr font-[family-name:var(--font-dm-serif)] text-[26px] leading-tight font-bold text-[var(--text)]"
+                dir="ltr"
               >
                 {ambassador.firstName} {ambassador.lastName}
               </h2>
               <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-[var(--text-mid)]">
                 <CountryFlag code={ambassador.destinationCode} size={18} />
-                <span>{ambassador.displayUniversity}</span>
+                <span className="bidi-ltr truncate" dir="ltr">
+                  {ambassador.displayUniversity}
+                </span>
               </div>
-              <p className="mt-1 text-[13px] text-[var(--text-light)]">
-                {formatHeadlineSubtitle(ambassador)}
+              <p className="bidi-ltr mt-1 text-[13px] text-[var(--text-light)]" dir="ltr">
+                {headlineSubtitle}
               </p>
             </div>
           </div>
           {headerTags.length > 0 ? (
             <div className="mt-4 flex flex-wrap gap-1.5">
-              {headerTags.map((t) => (
+              {headerTags.map((tag) => (
                 <span
-                  key={t}
-                  className="rounded-[50px] border border-[var(--border-light)] bg-white px-3 py-1 text-[11px] font-medium text-[var(--text-mid)]"
+                  key={tag}
+                  className="bidi-ltr rounded-[50px] border border-[var(--border-light)] bg-white px-3 py-1 text-[11px] font-medium text-[var(--text-mid)]"
+                  dir="ltr"
                 >
-                  {t}
+                  {tag}
                 </span>
               ))}
             </div>
@@ -193,9 +200,11 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
                   <path d="M12 11v5" strokeLinecap="round" />
                 </svg>
               }
-              title="About"
+              title={am.about}
             >
-              <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">{ambassador.about}</p>
+              <p className="bidi-ltr text-[13px] leading-relaxed text-[var(--text-mid)]" dir="ltr">
+                {ambassador.about}
+              </p>
             </ProfileSection>
           ) : null}
 
@@ -206,9 +215,11 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
                 <path d="M6 12h12" strokeLinecap="round" />
               </svg>
             }
-            title="Nationality"
+            title={am.nationality}
           >
-            <p className="text-[13px] text-[var(--text-mid)]">{natName}</p>
+            <p className="bidi-ltr text-[13px] text-[var(--text-mid)]" dir="ltr">
+              {natName}
+            </p>
           </ProfileSection>
 
           <ProfileSection
@@ -218,9 +229,11 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
                 <circle cx="12" cy="11" r="2.5" />
               </svg>
             }
-            title="Study destination"
+            title={am.studyDestinationLabel}
           >
-            <p className="text-[13px] text-[var(--text-mid)]">{destName}</p>
+            <p className="bidi-ltr text-[13px] text-[var(--text-mid)]" dir="ltr">
+              {destName}
+            </p>
           </ProfileSection>
 
           <ProfileSection
@@ -230,18 +243,22 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
                 <path d="M6 12v5c0 1 2 2 6 2s6-1 6-2v-5" strokeLinejoin="round" />
               </svg>
             }
-            title="Academic background"
+            title={am.academicBackground}
           >
             <dl className="mt-0.5 grid grid-cols-[5.75rem_1fr] items-baseline gap-x-5 gap-y-2">
-              <dt className="text-[12px] text-[var(--text-light)]">University</dt>
-              <dd className="text-[13px] text-[var(--text)]">{ambassador.displayUniversity}</dd>
-              <dt className="text-[12px] text-[var(--text-light)]">Major</dt>
-              <dd className="text-[13px] text-[var(--text)]">{ambassador.major?.trim() || "—"}</dd>
-              <dt className="text-[12px] text-[var(--text-light)]">Years</dt>
+              <dt className="text-[12px] text-[var(--text-light)]">{am.university}</dt>
+              <dd className="bidi-ltr text-[13px] text-[var(--text)]" dir="ltr">
+                {ambassador.displayUniversity}
+              </dd>
+              <dt className="text-[12px] text-[var(--text-light)]">{am.major}</dt>
+              <dd className="bidi-ltr text-[13px] text-[var(--text)]" dir="ltr">
+                {ambassador.major?.trim() || "—"}
+              </dd>
+              <dt className="text-[12px] text-[var(--text-light)]">{am.years}</dt>
               <dd className="text-[13px] text-[var(--text)]">
                 {formatStudyYears(ambassador.startYear, ambassador.graduationYear)}
               </dd>
-              <dt className="text-[12px] text-[var(--text-light)]">Status</dt>
+              <dt className="text-[12px] text-[var(--text-light)]">{am.statusLabel}</dt>
               <dd className="text-[13px] text-[var(--text)]">{statusLabel}</dd>
             </dl>
           </ProfileSection>
@@ -253,13 +270,15 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
                 <path d="M8 12.5l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             }
-            title="What I can help with"
+            title={am.whatICanHelp}
           >
             <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {helps.map((x) => (
                 <li key={x} className="flex items-start gap-2 text-[12.5px] leading-snug text-[var(--text-mid)]">
                   <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--green)]" />
-                  {x}
+                  <span className="bidi-ltr" dir="ltr">
+                    {x}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -272,13 +291,11 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
             className="inline-flex w-full max-w-[320px] items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3.5 text-[14px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white sm:w-auto"
             onClick={onClose}
           >
-            Book a call
-            <span className="text-base leading-none" aria-hidden>
-              →
-            </span>
+            {am.bookCall}
+            <ArrowForwardIcon size={16} strokeWidth={2} />
           </Link>
           <p className="mx-auto mt-3 max-w-[340px] text-[11px] leading-relaxed text-[var(--text-hint)]">
-            Submit your request and we&apos;ll confirm your session within 24 hours.
+            {am.modalFooterNote}
           </p>
         </div>
       </div>

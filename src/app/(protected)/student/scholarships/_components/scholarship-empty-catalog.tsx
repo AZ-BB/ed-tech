@@ -1,4 +1,11 @@
+"use client";
+
+import { useLocale } from "@/lib/i18n/locale-context";
+
 export function ScholarshipEmptyCatalog() {
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
+
   return (
     <div className="mx-auto">
       <div className="relative overflow-hidden rounded-2xl border border-[var(--border-light)] bg-white px-8 py-12 text-center shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
@@ -16,16 +23,13 @@ export function ScholarshipEmptyCatalog() {
         </div>
 
         <h2 className="serif relative mb-2 text-[22px] font-bold leading-tight text-[var(--text)]">
-          Scholarships are on the way
+          {t.emptyTitle}
         </h2>
         <p className="relative mb-6 text-[15px] leading-relaxed text-[var(--text-mid)]">
-          We&apos;re still loading programs into this directory. Once listings go live,
-          you&apos;ll be able to search by nationality, destination, and coverage and save
-          opportunities you care about.
+          {t.emptyBody}
         </p>
         <p className="relative text-[13px] text-[var(--text-light)]">
-          Please check back in a little while. If you think this is a mistake, let your
-          school or advisor know.
+          {t.emptyFootnote}
         </p>
       </div>
     </div>

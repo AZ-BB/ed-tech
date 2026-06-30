@@ -3,6 +3,7 @@
 import { logAdvisorSessionsCatalogView } from "@/actions/advisor-sessions";
 import type { AdvisorCatalogAdvisor } from "../_lib/advisor-catalog";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -40,18 +41,6 @@ const MENA_ALPHA2 = new Set([
   "KM",
   "SO",
 ]);
-
-const LANG_OPTIONS = [
-  { value: "", label: "Language" },
-  { value: "English", label: "English" },
-  { value: "Arabic", label: "Arabic" },
-] as const;
-
-const BG_OPTIONS = [
-  { value: "", label: "Advisor background" },
-  { value: "Arab / MENA", label: "Arab / MENA" },
-  { value: "International", label: "International" },
-] as const;
 
 function initials(first: string, last: string): string {
   const a = first.trim().charAt(0);
@@ -120,6 +109,24 @@ type Props = {
 };
 
 export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Props) {
+  const { dict } = useLocale();
+  const at = dict.student.advisors;
+  const langOptions = useMemo(
+    () => [
+      { value: "", label: at.language },
+      { value: "English", label: at.languageEnglish },
+      { value: "Arabic", label: at.languageArabic },
+    ],
+    [at],
+  );
+  const bgOptions = useMemo(
+    () => [
+      { value: "", label: at.advisorBackground },
+      { value: "Arab / MENA", label: at.backgroundMena },
+      { value: "International", label: at.backgroundInternational },
+    ],
+    [at],
+  );
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dest, setDest] = useState("");
@@ -196,16 +203,20 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
 
   const baseCountry = (code: string) => getCountryNameByAlpha2(code) ?? code;
 
+  const benefitIcons = [
+    "M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3",
+    "M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z",
+    "M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6",
+    "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
+  ];
+
   return (
     <div className="mx-auto w-full pb-16">
       <div className="page-header mb-5 px-1">
         <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] text-[var(--text)] font-bold">
-          Book a 1:1 advisor session before you apply
+          {at.pageTitle}
         </h1>
-        <p className="mt-1 text-sm leading-relaxed text-[var(--text-light)]">
-          Get practical support on your destination, essays, scholarships, and next steps — tailored to your goals and
-          profile.
-        </p>
+        <p className="mt-1 text-sm leading-relaxed text-[var(--text-light)]">{at.pageSubtitle}</p>
       </div>
 
       <div className="mb-3.5 flex items-center gap-2.5 rounded-2xl border border-[var(--border-light)] bg-white px-[18px] py-3">
@@ -215,17 +226,17 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
         </svg>
         <input
           className="min-w-0 flex-1 border-0 bg-transparent font-[family-name:var(--font-dm-sans)] text-sm text-[var(--text)] outline-none placeholder:text-[#c0bdb8]"
-          placeholder="Search by name, destination, or expertise (e.g. USA, UK, essays)"
+          placeholder={at.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search advisors"
+          aria-label={at.searchAriaLabel}
         />
         {search ? (
           <button
             type="button"
             className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--sand)] text-sm text-[var(--text-hint)] transition hover:bg-[var(--border)] hover:text-[var(--text-mid)]"
             onClick={() => setSearch("")}
-            aria-label="Clear search"
+            aria-label={at.clearSearchAria}
           >
             ×
           </button>
@@ -243,9 +254,9 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
             }}
             value={dest}
             onChange={(e) => setDest(e.target.value)}
-            aria-label="Target destination"
+            aria-label={at.targetDestination}
           >
-            <option value="">Target destination</option>
+            <option value="">{at.targetDestination}</option>
             {catalogCountries.map((c) => {
               const value = c.id.trim().toUpperCase();
               return (
@@ -264,9 +275,9 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
             }}
             value={lang}
             onChange={(e) => setLang(e.target.value)}
-            aria-label="Language"
+            aria-label={at.language}
           >
-            {LANG_OPTIONS.map((o) => (
+            {langOptions.map((o) => (
               <option key={o.label} value={o.value}>
                 {o.label}
               </option>
@@ -281,9 +292,9 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
             }}
             value={bg}
             onChange={(e) => setBg(e.target.value)}
-            aria-label="Advisor background"
+            aria-label={at.advisorBackground}
           >
-            {BG_OPTIONS.map((o) => (
+            {bgOptions.map((o) => (
               <option key={o.label} value={o.value}>
                 {o.label}
               </option>
@@ -298,7 +309,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
-              Clear all
+              {at.clearAll}
             </button>
           ) : null}
         </div>
@@ -311,7 +322,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                   type="button"
                   className="cursor-pointer text-[13px] opacity-60 hover:opacity-100"
                   onClick={() => clearOne("dest")}
-                  aria-label={`Remove ${activeDestLabel} filter`}
+                  aria-label={at.removeFilterAria.replace("{filter}", activeDestLabel)}
                 >
                   ×
                 </button>
@@ -320,7 +331,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
             {lang ? (
               <span className="inline-flex items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-bg)] px-3 py-1 text-[11px] font-medium text-[var(--green)]">
                 {lang}
-                <button type="button" className="cursor-pointer text-[13px] opacity-60 hover:opacity-100" onClick={() => clearOne("lang")} aria-label={`Remove ${lang} filter`}>
+                <button type="button" className="cursor-pointer text-[13px] opacity-60 hover:opacity-100" onClick={() => clearOne("lang")} aria-label={at.removeFilterAria.replace("{filter}", lang)}>
                   ×
                 </button>
               </span>
@@ -328,7 +339,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
             {bg ? (
               <span className="inline-flex items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-bg)] px-3 py-1 text-[11px] font-medium text-[var(--green)]">
                 {bg}
-                <button type="button" className="cursor-pointer text-[13px] opacity-60 hover:opacity-100" onClick={() => clearOne("bg")} aria-label={`Remove ${bg} filter`}>
+                <button type="button" className="cursor-pointer text-[13px] opacity-60 hover:opacity-100" onClick={() => clearOne("bg")} aria-label={at.removeFilterAria.replace("{filter}", bg)}>
                   ×
                 </button>
               </span>
@@ -343,47 +354,30 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
             <circle cx="4" cy="4" r="4" fill="#52B788" />
           </svg>
           <strong className="font-bold text-[var(--green-dark)]">{initialAdvisors.length}</strong>
-          <span>advisors available</span>
+          <span>{at.advisorsAvailable}</span>
         </div>
         <div className="flex cursor-default items-center gap-1.5 rounded-[50px] border-[1.5px] border-[#c8e6d0] bg-[var(--green-pale)] px-[18px] py-2 text-xs font-medium text-[#2F5D50] transition hover:-translate-y-px hover:border-[#a8d5b8] hover:bg-[var(--green-bg)] hover:shadow-[0_2px_8px_rgba(45,106,79,0.08)]">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
             <path d="M20 6L9 17l-5-5" />
           </svg>
           <strong className="font-bold text-[var(--green-dark)]">150+</strong>
-          <span>sessions completed</span>
+          <span>{at.sessionsCompleted}</span>
         </div>
       </div>
 
       <div className="mb-5 rounded-2xl border border-[var(--border-light)] bg-white px-7 py-6 max-[700px]:px-5">
         <div className="font-[family-name:var(--font-dm-serif)] text-[17px] text-[var(--text)]">
-          What you&apos;ll get from your session
+          {at.benefitsTitle}
         </div>
         <div className="mt-3.5 grid grid-cols-4 gap-3 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1">
-          {[
-            {
-              t: "Clear next steps based on your target destination",
-              d: "M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3",
-            },
-            {
-              t: "Personalized advice on applications and essays",
-              d: "M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z",
-            },
-            {
-              t: "Guidance on scholarships and deadlines",
-              d: "M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6",
-            },
-            {
-              t: "A chance to ask specific questions before you apply",
-              d: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
-            },
-          ].map((item) => (
-            <div key={item.t} className="flex items-start gap-2.5 text-[12.5px] leading-snug text-[var(--text-mid)]">
+          {at.benefits.map((text, i) => (
+            <div key={text} className="flex items-start gap-2.5 text-[12.5px] leading-snug text-[var(--text-mid)]">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--green-bg)]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
-                  <path d={item.d} />
+                  <path d={benefitIcons[i]!} />
                 </svg>
               </div>
-              <span>{item.t}</span>
+              <span>{text}</span>
             </div>
           ))}
         </div>
@@ -393,13 +387,14 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
         {filtered.map((a) => {
           const pal = paletteForId(a.id);
           const ini = initials(a.firstName, a.lastName);
-          const helps = a.helps.length > 0 ? a.helps.slice(0, 5) : (a.tags.length > 0 ? a.tags : ["General admissions guidance"]);
+          const helps = a.helps.length > 0 ? a.helps.slice(0, 5) : (a.tags.length > 0 ? a.tags : [at.generalGuidance]);
           return (
             <div
               key={a.id}
               role="button"
               tabIndex={0}
-              className="flex flex-col justify-between cursor-pointer rounded-2xl border border-[var(--border-light)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
+              dir="ltr"
+              className="advisor-card-ltr flex flex-col justify-between cursor-pointer rounded-2xl border border-[var(--border-light)] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
               onClick={() => setDetail(a)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -424,21 +419,21 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                     <div className="text-[15px] font-semibold text-[var(--text)]">
                       {a.firstName} {a.lastName}
                     </div>
-                    <div className="text-xs text-[var(--text-light)]">{a.title ?? "Advisor"}</div>
+                    <div className="text-xs text-[var(--text-light)]">{a.title ?? at.defaultTitle}</div>
                     <div className="mt-1.5 flex flex-wrap gap-1 text-[11px] text-[var(--text-hint)]">
                       <span className="inline-flex items-center gap-1">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
-                        {yrsLabel(a.experienceYears)} years
+                        {yrsLabel(a.experienceYears)} {at.years}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <circle cx="12" cy="12" r="10" />
                           <path d="M2 12h20" />
                         </svg>
-                        Based in {baseCountry(a.nationalityCode)}
+                        {at.basedIn} {baseCountry(a.nationalityCode)}
                       </span>
                       {a.languages ? (
                         <span className="inline-flex items-center gap-1">
@@ -457,9 +452,9 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                 {a.bestFor ? (
                   <div className="mb-2.5 rounded-lg border border-[#e0eddf] bg-[var(--green-pale)] px-3 py-2.5 text-[11.5px] leading-snug text-[var(--text-mid)]">
                     <strong className="mb-0.5 block text-[10.5px] font-semibold uppercase tracking-wide text-[var(--green-dark)]">
-                      Best for
+                      {at.bestFor}
                     </strong>
-                    {a.bestFor}
+                    <span>{a.bestFor}</span>
                   </div>
                 ) : null}
                 <div className="mb-3 flex flex-wrap gap-1">
@@ -470,9 +465,9 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                   ))}
                 </div>
                 <div className="mb-3.5 flex flex-wrap gap-1.5">
-                  {a.tags.slice(0, 8).map((t) => (
-                    <span key={t} className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10.5px] font-medium text-[var(--text-mid)]">
-                      {t}
+                  {a.tags.slice(0, 8).map((tag) => (
+                    <span key={tag} className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10.5px] font-medium text-[var(--text-mid)]">
+                      {tag}
                     </span>
                   ))}
                 </div>
@@ -486,7 +481,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                       e.stopPropagation();
                       toggleSave(a.id);
                     }}
-                    aria-label={savedIds.includes(a.id) ? "Remove from saved" : "Save advisor"}
+                    aria-label={savedIds.includes(a.id) ? at.removeFromSaved : at.saveAdvisor}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7a7a7a" strokeWidth="1.8" aria-hidden>
                       <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
@@ -497,14 +492,14 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                     className="inline-flex items-center gap-1.5 rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    Book session
+                    {at.bookSession}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
                       <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
                     </svg>
                   </Link>
                 </div>
                 <p className="mt-2.5 text-center text-[10.5px] text-[var(--text-hint)]">
-                  Your details are saved to your advisor session request.
+                  {at.detailsSavedNote}
                 </p>
               </div>
             </div>
@@ -516,13 +511,13 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="1.8" aria-hidden>
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
-        Trusted by students across the Middle East · Book early to secure your preferred time
+        {at.footerTrust}
       </p>
 
       {filtered.length === 0 ? (
         <div className="py-10 text-center">
-          <h3 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">No advisors found</h3>
-          <p className="mt-1.5 text-[13px] text-[var(--text-light)]">Try searching by destination, advisor name, or area of support</p>
+          <h3 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">{at.emptyTitle}</h3>
+          <p className="mt-1.5 text-[13px] text-[var(--text-light)]">{at.emptySubtitle}</p>
           <button
             type="button"
             className="mt-4 cursor-pointer rounded-[50px] border-[1.5px] border-[var(--border)] bg-white px-5 py-2 text-xs font-semibold text-[var(--text-mid)] transition hover:border-[var(--green)] hover:text-[var(--green)]"
@@ -531,7 +526,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
               clearFilters();
             }}
           >
-            Clear search
+            {at.clearSearch}
           </button>
         </div>
       ) : null}
@@ -549,7 +544,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
               type="button"
               className="absolute right-4 top-4 z-[5] flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-white hover:bg-[var(--sand)]"
               onClick={() => setDetail(null)}
-              aria-label="Close"
+              aria-label={at.close}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" aria-hidden>
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -561,7 +556,7 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
               const dmHelps =
                 detail.helps.length > 0
                   ? detail.helps
-                  : ["Applications and timelines", "Essays and personal statements", "Scholarships and funding"];
+                  : [...at.modalDefaultHelps];
               return (
                 <>
                   <div className="flex gap-4 px-7 pb-5 pt-7">
@@ -576,19 +571,19 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                       )}
                     </div>
                     <div className="min-w-0 flex-1 pr-8">
-                      <div className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">
+                      <div className="bidi-ltr font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]" dir="ltr">
                         {detail.firstName} {detail.lastName}
                       </div>
-                      <div className="text-[13px] text-[var(--text-light)]">{detail.title ?? "Advisor"}</div>
+                      <div className="bidi-ltr text-[13px] text-[var(--text-light)]" dir="ltr">{detail.title ?? at.defaultTitle}</div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <span className="rounded-[50px] border border-[#d5e8db] bg-[var(--green-bg)] px-2.5 py-0.5 text-[10.5px] font-medium text-[var(--green)]">
-                          {yrsLabel(detail.experienceYears)} years experience
+                          {yrsLabel(detail.experienceYears)} {at.yearsExperience}
                         </span>
                         <span className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-2.5 py-0.5 text-[10.5px] font-medium text-[var(--text-mid)]">
-                          Based in {baseCountry(detail.nationalityCode)}
+                          {at.basedIn} <span className="bidi-ltr" dir="ltr">{baseCountry(detail.nationalityCode)}</span>
                         </span>
                         {detail.languages ? (
-                          <span className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-2.5 py-0.5 text-[10.5px] font-medium text-[var(--text-mid)]">
+                          <span className="bidi-ltr rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-2.5 py-0.5 text-[10.5px] font-medium text-[var(--text-mid)]" dir="ltr">
                             {detail.languages}
                           </span>
                         ) : null}
@@ -603,9 +598,9 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                           </svg>
-                          Who is this session for?
+                          {at.modalSessionFor}
                         </div>
-                        <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">{detail.bestFor ?? detail.sessionFor}</p>
+                        <p className="bidi-ltr text-[13px] leading-relaxed text-[var(--text-mid)]" dir="ltr">{detail.bestFor ?? detail.sessionFor}</p>
                       </div>
                     ) : null}
                     <div className="mb-5">
@@ -614,18 +609,18 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                           <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                           <path d="M22 4L12 14.01l-3-3" />
                         </svg>
-                        What you can cover in this session
+                        {at.modalCoverTitle}
                       </div>
                       <ul className="flex flex-col gap-2">
                         {dmHelps.map((x) => (
                           <li key={x} className="flex items-start gap-2 text-[12.5px] text-[var(--text-mid)]">
                             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--green)]" />
-                            {x}
+                            <span className="bidi-ltr" dir="ltr">{x}</span>
                           </li>
                         ))}
                         <li className="flex items-start gap-2 text-[12.5px] text-[var(--text-mid)]">
                           <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--green)]" />
-                          Deadlines and next steps
+                          {at.modalDeadlines}
                         </li>
                       </ul>
                     </div>
@@ -636,15 +631,15 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                             <circle cx="12" cy="12" r="10" />
                             <path d="M12 16v-4M12 8h.01" />
                           </svg>
-                          About {detail.firstName}
+                          {at.modalAbout.replace("{name}", detail.firstName)}
                         </div>
-                        <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">{detail.about}</p>
+                        <p className="bidi-ltr text-[13px] leading-relaxed text-[var(--text-mid)]" dir="ltr">{detail.about}</p>
                       </div>
                     ) : null}
                     <div className="mb-5 rounded-xl border border-[var(--border-light)] bg-[var(--sand)] px-[18px] py-4">
-                      <div className="mb-2.5 text-xs font-semibold text-[var(--text)]">How it works</div>
+                      <div className="mb-2.5 text-xs font-semibold text-[var(--text)]">{at.modalHowItWorks}</div>
                       <div className="flex flex-col gap-2">
-                        {["Tell us about your goals", "Confirm your booking", "Choose a time that works for you"].map((label, i) => (
+                        {at.modalSteps.map((label, i) => (
                           <div key={label} className="flex items-center gap-2.5 text-xs text-[var(--text-mid)]">
                             <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[10px] font-bold text-[var(--green)]">
                               {i + 1}
@@ -660,13 +655,13 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                         className="inline-flex items-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3 text-[13px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
                         onClick={() => setDetail(null)}
                       >
-                        Book session
+                        {at.bookSession}
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
                           <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
                         </svg>
                       </Link>
                       <p className="mt-2 text-[10.5px] text-[var(--text-hint)]">
-                        Complete your advisor session request on the next page.
+                        {at.modalCompleteNote}
                       </p>
                     </div>
                   </div>

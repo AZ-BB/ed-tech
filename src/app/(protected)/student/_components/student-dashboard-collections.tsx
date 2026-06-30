@@ -8,11 +8,8 @@ import {
   fetchDashboardShortlistedUniScholarship,
   type DashboardCollectionCard,
 } from "../_lib/dashboard-collections";
-import {
-  savedTabLabels,
-  shortlistTabLabels,
-} from "../_data/student-dashboard-data";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 const scrollRowClass =
   "flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]";
@@ -27,14 +24,18 @@ function CollectionCardsRow({
   items,
   loading,
   emptyLabel,
+  loadingLabel,
 }: {
   items: DashboardCollectionCard[];
   loading: boolean;
   emptyLabel: string;
+  loadingLabel: string;
 }) {
   if (loading) {
     return (
-      <p className="px-0.5 py-6 text-xs text-[var(--text-hint)]">Loading…</p>
+      <p className="px-0.5 py-6 text-xs text-[var(--text-hint)]">
+        {loadingLabel}
+      </p>
     );
   }
   if (items.length === 0) {
@@ -55,20 +56,20 @@ function CollectionCardsRow({
             className={`block text-inherit no-underline ${cardOuterClass}`}
           >
             <div className="mb-1.5 text-sm">{item.flag}</div>
-            <div className="truncate text-[13px] font-semibold">
+            <div className="bidi-ltr truncate text-[13px] font-semibold" dir="ltr">
               {item.name}
             </div>
-            <div className="text-[11px] text-[var(--text-light)]">
+            <div className="bidi-ltr text-[11px] text-[var(--text-light)]" dir="ltr">
               {item.sub}
             </div>
           </Link>
         ) : (
           <div key={item.key} className={cardOuterClass}>
             <div className="mb-1.5 text-sm">{item.flag}</div>
-            <div className="truncate text-[13px] font-semibold">
+            <div className="bidi-ltr truncate text-[13px] font-semibold" dir="ltr">
               {item.name}
             </div>
-            <div className="text-[11px] text-[var(--text-light)]">
+            <div className="bidi-ltr text-[11px] text-[var(--text-light)]" dir="ltr">
               {item.sub}
             </div>
           </div>
@@ -79,6 +80,25 @@ function CollectionCardsRow({
 }
 
 export function StudentDashboardCollections() {
+  const { dict } = useLocale();
+  const t = dict.student.dashboard.collections;
+  const loadingLabel = dict.student.common.loading;
+
+  const savedTabLabels = useMemo(
+    () => [
+      t.savedTabs.universities,
+      t.savedTabs.scholarships,
+      t.savedTabs.advisors,
+      t.savedTabs.ambassadors,
+    ],
+    [t],
+  );
+
+  const shortlistTabLabels = useMemo(
+    () => [t.shortlistTabs.universities, t.shortlistTabs.scholarships],
+    [t],
+  );
+
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [savedTab, setSavedTab] = useState(0);
   const [shortlistTab, setShortlistTab] = useState(0);
@@ -104,7 +124,7 @@ export function StudentDashboardCollections() {
       if (userErr || !userData.user) {
         setLoadingSaved(false);
         setLoadingShortlist(false);
-        setLoadError("Sign in to see your saved items.");
+        setLoadError(t.signInRequired);
         return;
       }
       setLoadingSaved(true);
@@ -120,7 +140,7 @@ export function StudentDashboardCollections() {
         }
       } catch {
         if (!cancelled) {
-          setLoadError("Could not load your lists. Try refreshing the page.");
+          setLoadError(t.loadError);
         }
       } finally {
         if (!cancelled) {
@@ -132,7 +152,7 @@ export function StudentDashboardCollections() {
     return () => {
       cancelled = true;
     };
-  }, [supabase]);
+  }, [supabase, t.loadError, t.signInRequired]);
 
   return (
     <>
@@ -154,7 +174,7 @@ export function StudentDashboardCollections() {
           >
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
           </svg>
-          Your saved items
+          {t.yourSavedItems}
         </div>
         <div className="mb-3.5 flex gap-0 border-b border-[var(--border-light)]">
           {savedTabLabels.map((label, idx) => (
@@ -175,7 +195,8 @@ export function StudentDashboardCollections() {
         <CollectionCardsRow
           items={savedByTab[savedTab] ?? []}
           loading={loadingSaved}
-          emptyLabel="Nothing saved here yet — browse and tap save to add items."
+          emptyLabel={t.savedEmpty}
+          loadingLabel={loadingLabel}
         />
       </div>
 
@@ -192,10 +213,10 @@ export function StudentDashboardCollections() {
           >
             <path d="M8 6h13M8 12h13M8 18h13M4 6h.01M4 12h.01M4 18h.01" />
           </svg>
-          Your shortlist
+          {t.yourShortlist}
         </div>
         <p className="mb-3.5 px-0.5 text-[11px] leading-snug text-[var(--text-light)]">
-          Universities and scholarships you marked as shortlisted appear here.
+          {t.shortlistSub}
         </p>
         <div className="mb-3.5 flex gap-0 border-b border-[var(--border-light)]">
           {shortlistTabLabels.map((label, idx) => (
@@ -216,7 +237,8 @@ export function StudentDashboardCollections() {
         <CollectionCardsRow
           items={shortlistByTab[shortlistTab] ?? []}
           loading={loadingShortlist}
-          emptyLabel="Nothing shortlisted yet — use shortlist from university search or scholarships."
+          emptyLabel={t.shortlistEmpty}
+          loadingLabel={loadingLabel}
         />
       </div>
     </>

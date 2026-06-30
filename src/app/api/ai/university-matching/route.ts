@@ -37,6 +37,8 @@ export type StudentMatchingPayload = {
   workLocationPreference: string;
   budgetBand: string;
   extraNotes?: string;
+  /** UI locale — controls response language from the model. */
+  locale?: "en" | "ar";
 };
 
 type UniversityMatch = {
@@ -60,12 +62,93 @@ type MatchResponse = {
 
 const fallbackModel = "gpt-4.1-mini";
 
+/** Strict JSON schema for OpenAI Structured Outputs — avoids malformed LLM JSON (e.g. Arabic text). */
+const UNIVERSITY_MATCHING_RESPONSE_FORMAT = {
+  type: "json_schema" as const,
+  name: "university_matching_response",
+  strict: true,
+  schema: {
+    type: "object",
+    properties: {
+      profileSummary: { type: "string" },
+      recommendedStrategy: {
+        type: "array",
+        items: { type: "string" },
+      },
+      matches: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            universityName: { type: "string" },
+            programName: { type: "string" },
+            city: { type: "string" },
+            country: { type: "string" },
+            tuitionEstimate: { type: "string" },
+            admissionFit: {
+              type: "string",
+              enum: ["Reach", "Target", "Likely"],
+            },
+            whyItMatches: {
+              type: "array",
+              items: { type: "string" },
+            },
+            considerations: { type: "string" },
+            nextSteps: {
+              type: "array",
+              items: { type: "string" },
+            },
+            sourceUrl: { type: "string" },
+          },
+          required: [
+            "universityName",
+            "programName",
+            "city",
+            "country",
+            "tuitionEstimate",
+            "admissionFit",
+            "whyItMatches",
+            "considerations",
+            "nextSteps",
+            "sourceUrl",
+          ],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ["profileSummary", "recommendedStrategy", "matches"],
+    additionalProperties: false,
+  },
+};
+
+const MAX_OUTPUT_TOKENS = 16_384;
+
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((item): item is string => typeof item === "string")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function parseLocale(value: unknown): "en" | "ar" | undefined {
+  if (value === "en" || value === "ar") return value;
+  return undefined;
+}
+
+function responseLanguageInstructions(locale: "en" | "ar" | undefined): string {
+  if (locale === "ar") {
+    return `
+Language (required):
+- The student is using Arabic. Write profileSummary, each recommendedStrategy item, every whyItMatches bullet, considerations, and nextSteps in Modern Standard Arabic.
+- Keep universityName, programName, city, country, sourceUrl, and tuitionEstimate in their conventional spelling (Latin script for international university names is fine).
+- admissionFit must remain exactly one of these English enum values: "Reach", "Target", or "Likely" (do not translate admissionFit).
+`;
+  }
+  return `
+Language:
+- Write profileSummary, recommendedStrategy, whyItMatches, considerations, and nextSteps in clear English.
+`;
 }
 
 function sanitizePayload(body: unknown): StudentMatchingPayload | null {
@@ -93,6 +176,7 @@ function sanitizePayload(body: unknown): StudentMatchingPayload | null {
     workLocationPreference: String(o.workLocationPreference ?? "").trim(),
     budgetBand: String(o.budgetBand ?? "").trim(),
     extraNotes: String(o.extraNotes ?? "").trim() || undefined,
+    locale: parseLocale(o.locale),
   };
 }
 
@@ -141,13 +225,32 @@ function extractOutputText(response: unknown): string | undefined {
   return chunks.join("\n").trim() || undefined;
 }
 
-function safeJsonParse(text: string): MatchResponse {
+function extractJsonObject(text: string): string {
   const cleaned = text
     .trim()
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "");
-  return JSON.parse(cleaned) as MatchResponse;
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start !== -1 && end > start) {
+    return cleaned.slice(start, end + 1);
+  }
+  return cleaned;
+}
+
+function safeJsonParse(text: string): MatchResponse {
+  const candidate = extractJsonObject(text);
+  return JSON.parse(candidate) as MatchResponse;
+}
+
+function parseMatchResponseError(error: unknown): string {
+  if (error instanceof SyntaxError) {
+    return "The AI response could not be parsed. Please try again.";
+  }
+  return error instanceof Error ? error.message : "Unable to generate matches.";
 }
 
 export async function POST(request: Request) {
@@ -198,6 +301,7 @@ export async function POST(request: Request) {
 
   const prompt = `
 You are Univeera's university matching advisor. Recommend universities using reasoning and retrieval over your knowledge (web search when available). Do not call external databases owned by this app — your recommendations come entirely from the model.
+${responseLanguageInstructions(payload.locale)}
 
 Student profile (complete questionnaire):
 ${JSON.stringify(payload, null, 2)}
@@ -228,7 +332,9 @@ Rules:
 - Prefer official university or admissions pages for sourceUrl.
 - Do not include matchScore, numeric fit scores, or any other scoring field; the product does not display scores.
 - Do not include markdown, comments, or text outside JSON.
+- Escape any double quotes inside string values with a backslash.
 - Do not invent exact deadlines or scholarship guarantees; say what must be verified on official sites.
+- Keep each whyItMatches bullet to one sentence when possible so the full response fits.
 `;
 
   try {
@@ -242,6 +348,10 @@ Rules:
         model,
         input: prompt,
         tools: [{ type: "web_search_preview" }],
+        max_output_tokens: MAX_OUTPUT_TOKENS,
+        text: {
+          format: UNIVERSITY_MATCHING_RESPONSE_FORMAT,
+        },
       }),
     });
 
@@ -265,9 +375,20 @@ Rules:
       );
     }
 
-    const parsed = safeJsonParse(outputText) as MatchResponse & {
+    let parsed: MatchResponse & {
       matches?: (UniversityMatch & { matchScore?: unknown })[];
     };
+    try {
+      parsed = safeJsonParse(outputText) as MatchResponse & {
+        matches?: (UniversityMatch & { matchScore?: unknown })[];
+      };
+    } catch (parseError) {
+      return NextResponse.json(
+        { error: parseMatchResponseError(parseError) },
+        { status: 502 },
+      );
+    }
+
     const matches: MatchResponse = {
       profileSummary: parsed.profileSummary,
       recommendedStrategy: parsed.recommendedStrategy ?? [],
@@ -335,8 +456,7 @@ Rules:
 
     return NextResponse.json(matches);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to generate matches.";
+    const message = parseMatchResponseError(error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

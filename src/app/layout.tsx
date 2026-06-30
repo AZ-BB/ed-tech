@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Serif_Display, Noto_Sans_Arabic } from "next/font/google";
+import { cookies } from "next/headers";
+import { defaultLocale, getDirection, isLocale } from "@/lib/i18n/config";
+import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import "./globals.css";
 import "./landing-page.css";
 
@@ -32,14 +35,20 @@ export const metadata: Metadata = {
     "Discover, prepare, and apply to universities — all in one platform designed to guide students and teachers from first search to acceptance letter.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const rawLocale = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale = rawLocale && isLocale(rawLocale) ? rawLocale : defaultLocale;
+  const dir = getDirection(locale);
+
   return (
     <html
-      lang="en"
+      lang={locale}
+      dir={dir}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
       className={`${dmSans.variable} ${dmSerif.variable} ${notoSansArabic.variable} h-full antialiased`}

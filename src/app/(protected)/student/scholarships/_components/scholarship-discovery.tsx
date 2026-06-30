@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import {
   addScholarshipToShortlist,
   removeScholarshipFromShortlist,
@@ -51,6 +52,8 @@ export function ScholarshipDiscovery({
 }: {
   pageData: ScholarshipDiscoveryPageData;
 }) {
+  const { dict } = useLocale();
+  const t = dict.student.scholarships;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -221,7 +224,7 @@ export function ScholarshipDiscovery({
       return next;
     });
     console.error(
-      typeof res.error === "string" ? res.error : "Scholarship action failed",
+      typeof res.error === "string" ? res.error : t.actionFailed,
     );
   };
 
@@ -249,7 +252,7 @@ export function ScholarshipDiscovery({
       return next;
     });
     console.error(
-      typeof res.error === "string" ? res.error : "Scholarship action failed",
+      typeof res.error === "string" ? res.error : t.actionFailed,
     );
   };
 
@@ -277,7 +280,7 @@ export function ScholarshipDiscovery({
       return next;
     });
     console.error(
-      typeof res.error === "string" ? res.error : "Scholarship action failed",
+      typeof res.error === "string" ? res.error : t.actionFailed,
     );
   };
 
@@ -290,11 +293,9 @@ export function ScholarshipDiscovery({
       <div className="mx-auto w-full px-2 pb-16 pt-0">
         <header className="mb-8">
           <h1 className="serif mb-1 text-[26px] font-bold text-[var(--text)]">
-            Find your scholarship
+            {t.title}
           </h1>
-          <p className="text-[14px] text-[var(--text-light)]">
-            Scholarships matched to your nationality, destination, and goals
-          </p>
+          <p className="text-[14px] text-[var(--text-light)]">{t.subtitle}</p>
         </header>
         <ScholarshipEmptyCatalog />
       </div>
@@ -305,11 +306,9 @@ export function ScholarshipDiscovery({
     <div className="mx-auto w-full px-2 pb-16 pt-0">
       <header className="mb-6">
         <h1 className="serif mb-1 text-[26px] font-bold text-[var(--text)]">
-          Find your scholarship
+          {t.title}
         </h1>
-        <p className="text-[14px] text-[var(--text-light)]">
-          Scholarships matched to your nationality, destination, and goals
-        </p>
+        <p className="text-[14px] text-[var(--text-light)]">{t.subtitle}</p>
       </header>
 
       <ScholarshipSelectorBar
@@ -329,24 +328,24 @@ export function ScholarshipDiscovery({
 
       {noResults ? (
         <p className="py-10 text-center text-[13px] text-[var(--text-light)]">
-          {filters.favouritesOnly
-            ? "No favourite scholarships match your current filters or search."
-            : "No scholarships match your current filters or search."}
+          {filters.favouritesOnly ? t.noFavouritesMatch : t.noMatch}
         </p>
       ) : null}
 
       {totalMatches > 0 ? (
         <>
           <p className="mb-3 text-[12px] text-[var(--text-hint)]">
-            {totalMatches} scholarship{totalMatches === 1 ? "" : "s"} match your
-            filters · Government: {pageData.government.totalMatching} · Other:{" "}
-            {pageData.other.totalMatching}
+            {t.matchSummary
+              .replace("{total}", String(totalMatches))
+              .replace("{plural}", totalMatches === 1 ? "" : "s")
+              .replace("{gov}", String(pageData.government.totalMatching))
+              .replace("{other}", String(pageData.other.totalMatching))}
           </p>
 
           <div
             className="mb-4 flex gap-1 rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[#faf9f7] p-1"
             role="tablist"
-            aria-label="Scholarship type"
+            aria-label={t.scholarshipType}
           >
             <button
               type="button"
@@ -359,7 +358,7 @@ export function ScholarshipDiscovery({
               }`}
               onClick={() => setTab("government")}
             >
-              Government
+              {t.government}
               <span className="ml-1 text-[11px] font-normal text-[var(--text-hint)]">
                 ({pageData.government.totalMatching})
               </span>
@@ -375,7 +374,7 @@ export function ScholarshipDiscovery({
               }`}
               onClick={() => setTab("other")}
             >
-              Other
+              {t.other}
               <span className="ml-1 text-[11px] font-normal text-[var(--text-hint)]">
                 ({pageData.other.totalMatching})
               </span>
@@ -395,9 +394,7 @@ export function ScholarshipDiscovery({
             {tabSlice.totalMatching === 0 ? (
               <div>
                 <p className="py-10 text-center text-[13px] text-[var(--text-light)]">
-                  {activeTab === "government"
-                    ? "No government programs match your current filters or search."
-                    : "No other programs match your current filters or search."}
+                  {activeTab === "government" ? t.noGovernmentMatch : t.noOtherMatch}
                 </p>
                 {activeTab === "government" &&
                   pageData.other.totalMatching > 1 && (
@@ -420,10 +417,12 @@ export function ScholarshipDiscovery({
                         <circle cx="11" cy="11" r="8" />
                         <path d="m21 21-4.3-4.3" />
                       </svg>
-                      There are {pageData.other.totalMatching} more scholarships
-                      available &mdash;{" "}
+                      {t.moreScholarships.replace(
+                        "{count}",
+                        String(pageData.other.totalMatching),
+                      )}{" "}
                       <span className="font-medium underline underline-offset-2">
-                        view Other scholarships
+                        {t.viewOtherScholarships}
                       </span>
                     </button>
                   )}
@@ -431,18 +430,19 @@ export function ScholarshipDiscovery({
             ) : (
               <ScholarshipCategorySection
                 title={
-                  activeTab === "government"
-                    ? "Government scholarships"
-                    : "Other scholarships"
+                  activeTab === "government" ? t.governmentTitle : t.otherTitle
                 }
                 subtitle={
                   activeTab === "government"
                     ? governmentCountryLabel
-                      ? `Programs where ${governmentCountryLabel} is the sponsoring government`
-                      : "National and ministry-funded programs"
+                      ? t.governmentSubtitleCountry.replace(
+                          "{country}",
+                          governmentCountryLabel,
+                        )
+                      : t.governmentSubtitleNational
                     : govCountryAlpha2
-                      ? "University, foundation, corporate, and government programs from other countries"
-                      : "University, foundation, corporate, and other programs"
+                      ? t.otherSubtitleWithGov
+                      : t.otherSubtitle
                 }
                 iconWrapClass={
                   activeTab === "government" ? "bg-[var(--green-bg)]" : "bg-[#F0EDE8]"
@@ -474,10 +474,12 @@ export function ScholarshipDiscovery({
                             <circle cx="11" cy="11" r="8" />
                             <path d="m21 21-4.3-4.3" />
                           </svg>
-                          There are {pageData.other.totalMatching} more
-                          scholarships available &mdash;{" "}
+                          {t.moreScholarships.replace(
+                            "{count}",
+                            String(pageData.other.totalMatching),
+                          )}{" "}
                           <span className="font-medium underline underline-offset-2">
-                            view Other scholarships
+                            {t.viewOtherScholarships}
                           </span>
                         </button>
                       )}
@@ -490,8 +492,8 @@ export function ScholarshipDiscovery({
                       totalItems={tabSlice.totalMatching}
                       ariaLabel={
                         activeTab === "government"
-                          ? "Government scholarships pages"
-                          : "Other scholarships pages"
+                          ? t.govPagination
+                          : t.otherPagination
                       }
                     />
                   </>

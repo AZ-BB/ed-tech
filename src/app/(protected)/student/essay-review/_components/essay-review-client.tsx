@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useCallback, useMemo, useState } from "react";
 import { downloadEssayReviewReportPdf } from "../_lib/build-essay-review-report-pdf";
 import type { EssayReviewFeedback } from "../_lib/essay-review-types";
@@ -17,6 +18,8 @@ function ratingBadgeClass(rating: string) {
 }
 
 export function EssayReviewClient() {
+  const { dict } = useLocale();
+  const t = dict.student.essayReview;
   const [essayPrompt, setEssayPrompt] = useState("");
   const [university, setUniversity] = useState("");
   const [essayText, setEssayText] = useState("");
@@ -33,7 +36,7 @@ export function EssayReviewClient() {
 
   const submit = useCallback(async () => {
     if (wc < 150) {
-      showError("Please write at least 150 words for a meaningful review.");
+      showError(t.minWordsError);
       return;
     }
     setError(null);
@@ -51,7 +54,7 @@ export function EssayReviewClient() {
       });
       const data = (await res.json()) as { error?: string } & Partial<EssayReviewFeedback>;
       if (!res.ok) {
-        showError(typeof data.error === "string" ? data.error : "Something went wrong.");
+        showError(typeof data.error === "string" ? data.error : t.somethingWrong);
         return;
       }
       setFeedback(data as EssayReviewFeedback);
@@ -62,11 +65,11 @@ export function EssayReviewClient() {
         });
       });
     } catch {
-      showError("Network error. Check your connection and try again.");
+      showError(t.networkError);
     } finally {
       setLoading(false);
     }
-  }, [essayPrompt, essayText, university, wc, showError]);
+  }, [essayPrompt, essayText, university, wc, showError, t]);
 
   const runAgain = useCallback(() => {
     setFeedback(null);
@@ -79,10 +82,10 @@ export function EssayReviewClient() {
       try {
         await downloadEssayReviewReportPdf(feedback, essayPrompt, university);
       } catch {
-        showError("Could not generate the PDF. Please try again.");
+        showError(t.pdfError);
       }
     })();
-  }, [feedback, essayPrompt, university, showError]);
+  }, [feedback, essayPrompt, university, showError, t]);
 
   const fieldLabelClass =
     "mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text)] [&>svg]:opacity-40";
@@ -93,10 +96,10 @@ export function EssayReviewClient() {
     <div className="mx-auto w-full pb-16">
       <div className="page-header mb-5 px-4">
         <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] text-[var(--text)] font-bold">
-          Essay review
+          {t.title}
         </h1>
         <p className="mt-1 text-sm text-[var(--text-light)]">
-          Get detailed, personalized feedback to strengthen your university application essays
+          {t.subtitle}
         </p>
       </div>
 
@@ -111,13 +114,13 @@ export function EssayReviewClient() {
               </svg>
               Essay prompt{" "}
               <span className="ml-1 font-normal text-[12px] text-[var(--text-hint)]">
-                (optional but recommended)
+                {t.optionalRecommended}
               </span>
             </label>
             <textarea
               id="essay-prompt"
               className={`${inputClass} min-h-[60px] resize-none`}
-              placeholder="e.g. Why do you want to study this program?"
+              placeholder={t.promptPlaceholder}
               value={essayPrompt}
               onChange={(e) => setEssayPrompt(e.target.value)}
               rows={2}
@@ -130,13 +133,13 @@ export function EssayReviewClient() {
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
               </svg>
-              University{" "}
-              <span className="ml-1 font-normal text-[12px] text-[var(--text-hint)]">(optional)</span>
+              {t.university}{" "}
+              <span className="ml-1 font-normal text-[12px] text-[var(--text-hint)]">{t.optional}</span>
             </label>
             <input
               id="essay-uni"
               className={`${inputClass} h-[60px]`}
-              placeholder="e.g. University of Toronto"
+              placeholder={t.universityPlaceholder}
               value={university}
               onChange={(e) => setUniversity(e.target.value)}
             />
@@ -149,12 +152,12 @@ export function EssayReviewClient() {
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
               <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
             </svg>
-            Your essay
-          </label>
-          <textarea
-            id="essay-text"
-            className={`${inputClass} min-h-[280px] resize-y rounded-[var(--radius)] leading-[1.75]`}
-            placeholder="Paste your personal statement or application essay here..."
+              {t.yourEssay}
+            </label>
+            <textarea
+              id="essay-text"
+              className={`${inputClass} min-h-[280px] resize-y rounded-[var(--radius)] leading-[1.75]`}
+              placeholder={t.essayPlaceholder}
             value={essayText}
             onChange={(e) => setEssayText(e.target.value)}
           />
@@ -164,10 +167,10 @@ export function EssayReviewClient() {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 16v-4M12 8h.01" />
               </svg>
-              Minimum 150 words for a meaningful review
+              {t.minWords}
             </span>
             <span className="text-[12px] text-[var(--text-hint)]">
-              <strong className="font-semibold text-[var(--text-mid)]">{wc}</strong> words
+              <strong className="font-semibold text-[var(--text-mid)]">{wc}</strong> {t.words}
             </span>
           </div>
         </div>
@@ -195,7 +198,7 @@ export function EssayReviewClient() {
             <path d="M22 2L11 13" />
             <path d="M22 2l-7 20-4-9-9-4 20-7z" />
           </svg>
-          Review my essay
+          {t.reviewMyEssay}
         </button>
 
         {loading ? (
@@ -205,11 +208,11 @@ export function EssayReviewClient() {
               aria-hidden
             />
             <p className="mt-3.5 text-sm text-[var(--text-light)]">
-              Analyzing your essay
+              {t.analyzing}
               <span className="inline animate-pulse">…</span>
             </p>
             <p className="mt-1 text-[12px] text-[var(--text-hint)]">
-              Evaluating structure, clarity, specificity, and voice
+              {t.evaluating}
             </p>
           </div>
         ) : null}
@@ -219,20 +222,20 @@ export function EssayReviewClient() {
         <div id="essay-review-results" className="block">
           <div className="mb-3.5 flex flex-wrap gap-2">
             <div className="rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-white px-3.5 py-1.5 text-[12px] text-[var(--text-light)]">
-              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.words}</strong> words
+              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.words}</strong> {t.words}
             </div>
             <div className="rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-white px-3.5 py-1.5 text-[12px] text-[var(--text-light)]">
-              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.sentences}</strong> sentences
+              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.sentences}</strong> {t.sentences}
             </div>
             <div className="rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-white px-3.5 py-1.5 text-[12px] text-[var(--text-light)]">
-              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.paragraphs}</strong> paragraphs
+              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.paragraphs}</strong> {t.paragraphs}
             </div>
             <div className="rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-white px-3.5 py-1.5 text-[12px] text-[var(--text-light)]">
-              Avg sentence:{" "}
-              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.avgSentLen}</strong> words
+              {t.avgSentence}:{" "}
+              <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.avgSentLen}</strong> {t.words}
             </div>
             <div className="rounded-[var(--radius-pill)] border border-[var(--border-light)] bg-white px-3.5 py-1.5 text-[12px] text-[var(--text-light)]">
-              Score:{" "}
+              {t.score}:{" "}
               <strong className="font-semibold text-[var(--text-mid)]">{feedback._stats.score}</strong>/100
             </div>
           </div>
@@ -246,10 +249,10 @@ export function EssayReviewClient() {
                     <path d="M12 8v4M12 16h.01" />
                   </svg>
                 </span>
-                Could not review this text
+                {t.couldNotReview}
               </div>
               <p className="text-[14.5px] leading-relaxed text-[var(--text-mid)]">
-                {feedback.invalid_reason ?? "The model could not treat this submission as an application essay."}
+                {feedback.invalid_reason ?? t.invalidDefault}
               </p>
             </div>
           ) : null}
@@ -264,7 +267,7 @@ export function EssayReviewClient() {
                       <path d="M12 16v-4M12 8h.01" />
                     </svg>
                   </span>
-                  Overall assessment
+                  {t.overallAssessment}
                 </div>
                 <p className="text-[14.5px] leading-[1.7] text-[var(--text-mid)]">{feedback.assessment}</p>
               </div>
@@ -277,7 +280,7 @@ export function EssayReviewClient() {
                         <path d="M4 7h16M4 12h16M4 17h10" />
                       </svg>
                     </span>
-                    Structure analysis
+                    {t.structureAnalysis}
                   </div>
                   <div className="flex flex-col gap-2">
                     {feedback.structure.map((s, i) => (
@@ -312,7 +315,7 @@ export function EssayReviewClient() {
                         <path d="M20 6L9 17l-5-5" />
                       </svg>
                     </span>
-                    What works well
+                    {t.whatWorks}
                   </div>
                   <ul className="flex flex-col gap-2">
                     {feedback.strengths.map((s) => (
@@ -334,7 +337,7 @@ export function EssayReviewClient() {
                         <path d="M12 8v4M12 16h.01" />
                       </svg>
                     </span>
-                    Areas for improvement
+                    {t.improvements}
                   </div>
                   <ul className="flex flex-col gap-2">
                     {feedback.improvements.map((s) => (
@@ -356,7 +359,7 @@ export function EssayReviewClient() {
                         <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                       </svg>
                     </span>
-                    Sentence-level rewrites
+                    {t.rewrites}
                   </div>
                   <div className="flex flex-col gap-3.5">
                     {feedback.suggestions.map((s, i) => (
@@ -369,7 +372,7 @@ export function EssayReviewClient() {
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
                               <path d="M18 6L6 18M6 6l12 12" />
                             </svg>
-                            Original
+                            {t.original}
                           </div>
                           <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">&ldquo;{s.original}&rdquo;</p>
                         </div>
@@ -378,7 +381,7 @@ export function EssayReviewClient() {
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
                               <path d="M20 6L9 17l-5-5" />
                             </svg>
-                            Suggested improvement
+                            {t.suggested}
                           </div>
                           <p className="text-[13px] font-medium leading-relaxed text-[var(--text)]">
                             &ldquo;{s.improved}&rdquo;
@@ -391,7 +394,7 @@ export function EssayReviewClient() {
                                 <circle cx="12" cy="12" r="10" />
                                 <path d="M12 16v-4M12 8h.01" />
                               </svg>
-                              Why
+                              {t.why}
                             </div>
                             <p className="text-[12px] italic leading-relaxed text-[var(--text-light)]">{s.reason}</p>
                           </div>
@@ -410,7 +413,7 @@ export function EssayReviewClient() {
                         <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
                       </svg>
                     </span>
-                    Writing quality
+                    {t.writingQuality}
                   </div>
                   <div className="grid grid-cols-2 gap-2 max-[600px]:grid-cols-1">
                     {feedback.quality.map((q) => (
@@ -450,7 +453,7 @@ export function EssayReviewClient() {
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </span>
-                  Voice & authenticity
+                  {t.voiceAuthenticity}
                 </div>
                 <p className="mb-3 text-[13.5px] leading-relaxed text-[var(--text-mid)]">{feedback.authenticity.assessment}</p>
                 {feedback.authenticity.flags.length > 0 ? (
@@ -474,7 +477,7 @@ export function EssayReviewClient() {
                         <path d="M22 4L12 14.01l-3-3" />
                       </svg>
                     </span>
-                    Final recommendation
+                    {t.finalRecommendation}
                   </div>
                   <p className="text-[14px] leading-[1.7] text-[var(--text-mid)]">{feedback.recommendation}</p>
                 </div>
@@ -492,7 +495,7 @@ export function EssayReviewClient() {
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                 <path d="M7 10l5 5 5-5M12 15V3" />
               </svg>
-              Download report
+              {t.downloadReport}
             </button>
             <button
               type="button"
@@ -504,7 +507,7 @@ export function EssayReviewClient() {
                 <path d="M1 20v-6h6" />
                 <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
               </svg>
-              Review again
+              {t.reviewAgain}
             </button>
           </div>
         </div>
