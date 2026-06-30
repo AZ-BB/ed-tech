@@ -22,19 +22,46 @@ import {
   useState,
 } from "react";
 
+import { useLocale } from "@/lib/i18n/locale-context";
+
 import type { AiMatchingProfileDefaults } from "../_lib/load-ai-matching-profile-defaults";
 
-const PROGRESS_LABELS = [
-  "Getting started",
-  "About you",
-  "Academics",
-  "Study interests",
-  "Lifestyle",
-  "Goals",
-  "Budget",
+const TOTAL_PROGRESS = 7;
+
+function formatTemplate(template: string, vars: Record<string, string | number>): string {
+  let out = template;
+  for (const [key, val] of Object.entries(vars)) {
+    out = out.split(`{${key}}`).join(String(val));
+  }
+  return out;
+}
+
+function optLabel(map: Record<string, string>, key: string): string {
+  return map[key] ?? key;
+}
+
+const ACADEMIC_SYSTEM_VALUES = [
+  "ib",
+  "al",
+  "us",
+  "igcse",
+  "french",
+  "indian",
+  "national",
+  "other",
 ] as const;
 
-const TOTAL_PROGRESS = 7;
+/** English labels sent to the matching API (form stores system value codes). */
+const ACADEMIC_SYSTEM_LABELS_EN: Record<string, string> = {
+  ib: "IB (International Baccalaureate)",
+  al: "A Levels",
+  us: "American System (GPA)",
+  igcse: "IGCSE",
+  french: "French Baccalaureate",
+  indian: "Indian Curriculum (CBSE/ISC)",
+  national: "National Curriculum",
+  other: "Other",
+};
 
 const MAJOR_GROUPS: Record<string, string[]> = {
   "Business & Management": [
@@ -254,33 +281,16 @@ const SAT_TOTAL_MAX = 1600;
 const ACT_COMPOSITE_MIN = 1;
 const ACT_COMPOSITE_MAX = 36;
 
-function testScoreFieldMeta(test: string): {
-  label: string;
-  placeholder: string;
-  scoreHint?: string;
-} {
-  switch (test) {
-    case "SAT":
-      return {
-        label: "SAT Score",
-        placeholder: `e.g. 1420 (max ${SAT_TOTAL_MAX})`,
-        scoreHint: `Total score out of ${SAT_TOTAL_MAX}.`,
-      };
-    case "IELTS":
-      return { label: "IELTS Band", placeholder: "e.g. 7.0" };
-    case "ACT":
-      return {
-        label: "ACT Score",
-        placeholder: `e.g. 32 (max ${ACT_COMPOSITE_MAX})`,
-        scoreHint: `Composite out of ${ACT_COMPOSITE_MAX}.`,
-      };
-    case "TOEFL":
-      return { label: "TOEFL Score", placeholder: "e.g. 100" };
-    case "Duolingo":
-      return { label: "Duolingo Score", placeholder: "e.g. 120" };
-    default:
-      return { label: `${test} score`, placeholder: "" };
-  }
+function testScoreFieldFromOptions(
+  test: string,
+  testScores: Record<
+    string,
+    { label: string; placeholder: string; scoreHint?: string }
+  >,
+): { label: string; placeholder: string; scoreHint?: string } {
+  const row = testScores[test];
+  if (row) return row;
+  return { label: `${test} score`, placeholder: "" };
 }
 
 /** Strips non-digits and caps at SAT composite maximum (1600 scale). */
@@ -296,16 +306,25 @@ function sanitizeSatScoreInput(raw: string): string {
  * null = valid. "required" = empty (handled by missing-score validation).
  * Any other string = user-facing error.
  */
-function satScoreValidationMessage(raw: string): string | null {
-  const t = raw.trim();
-  if (!t) return "required";
-  if (!/^\d+$/.test(t)) return "Enter a whole number.";
-  const n = Number.parseInt(t, 10);
+function satScoreValidationMessage(
+  raw: string,
+  msgs?: { wholeNumber: string; satAboveMax: string; satBelowMin: string },
+): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return "required";
+  if (!/^\d+$/.test(trimmed)) {
+    return msgs?.wholeNumber ?? "invalid";
+  }
+  const n = Number.parseInt(trimmed, 10);
   if (n > SAT_TOTAL_MAX) {
-    return `SAT is scored out of ${SAT_TOTAL_MAX}; enter ${SAT_TOTAL_MAX} or below.`;
+    return msgs
+      ? formatTemplate(msgs.satAboveMax, { max: SAT_TOTAL_MAX })
+      : "invalid";
   }
   if (n < SAT_TOTAL_MIN) {
-    return `SAT composite is usually between ${SAT_TOTAL_MIN} and ${SAT_TOTAL_MAX}.`;
+    return msgs
+      ? formatTemplate(msgs.satBelowMin, { min: SAT_TOTAL_MIN, max: SAT_TOTAL_MAX })
+      : "invalid";
   }
   return null;
 }
@@ -319,45 +338,27 @@ function sanitizeActScoreInput(raw: string): string {
   return String(Math.min(ACT_COMPOSITE_MAX, n));
 }
 
-function actScoreValidationMessage(raw: string): string | null {
-  const t = raw.trim();
-  if (!t) return "required";
-  if (!/^\d+$/.test(t)) return "Enter a whole number.";
-  const n = Number.parseInt(t, 10);
+function actScoreValidationMessage(
+  raw: string,
+  msgs?: { wholeNumber: string; actAboveMax: string; actBelowMin: string },
+): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return "required";
+  if (!/^\d+$/.test(trimmed)) {
+    return msgs?.wholeNumber ?? "invalid";
+  }
+  const n = Number.parseInt(trimmed, 10);
   if (n > ACT_COMPOSITE_MAX) {
-    return `ACT is scored out of ${ACT_COMPOSITE_MAX}; enter ${ACT_COMPOSITE_MAX} or below.`;
+    return msgs
+      ? formatTemplate(msgs.actAboveMax, { max: ACT_COMPOSITE_MAX })
+      : "invalid";
   }
   if (n < ACT_COMPOSITE_MIN) {
-    return `ACT composite is usually between ${ACT_COMPOSITE_MIN} and ${ACT_COMPOSITE_MAX}.`;
+    return msgs
+      ? formatTemplate(msgs.actBelowMin, { min: ACT_COMPOSITE_MIN, max: ACT_COMPOSITE_MAX })
+      : "invalid";
   }
   return null;
-}
-
-const ACADEMIC_SYSTEMS = [
-  { value: "ib", label: "IB (International Baccalaureate)" },
-  { value: "al", label: "A Levels" },
-  { value: "us", label: "American System (GPA)" },
-  { value: "igcse", label: "IGCSE" },
-  { value: "french", label: "French Baccalaureate" },
-  { value: "indian", label: "Indian Curriculum (CBSE/ISC)" },
-  { value: "national", label: "National Curriculum" },
-  { value: "other", label: "Other" },
-] as const;
-
-/** Labels & placeholders from `showGradeInput()` in ai_university_matching.html */
-function gradeFieldMeta(systemValue: string): { label: string; placeholder: string } {
-  const map: Record<string, readonly [string, string]> = {
-    ib: ["Predicted IB score", "e.g. 38"],
-    al: ["Predicted A Level grades", "e.g. AAB"],
-    us: ["Current GPA", "e.g. 3.7"],
-    igcse: ["Predicted IGCSE grades", "e.g. 7A* 2A"],
-    french: ["Predicted score", "e.g. 15/20"],
-    indian: ["Predicted percentage", "e.g. 92%"],
-    national: ["Current average", "e.g. 90%"],
-    other: ["Your score / grade", "Enter your score"],
-  };
-  const row = map[systemValue] ?? map.other;
-  return { label: row[0], placeholder: row[1] };
 }
 
 const DEGREE_LEVELS = [
@@ -505,6 +506,7 @@ type MatchingPayload = {
   workLocationPreference: string;
   budgetBand: string;
   extraNotes?: string;
+  locale?: "en" | "ar";
 };
 
 function ValidationHint({ show, children }: { show: boolean; children: React.ReactNode }) {
@@ -520,14 +522,14 @@ function ValidationHint({ show, children }: { show: boolean; children: React.Rea
 function CountryPicker({
   value,
   onChange,
-  placeholder,
   invalid,
 }: {
   value: string;
   onChange: (name: string) => void;
-  placeholder: string;
   invalid?: boolean;
 }) {
+  const { dict } = useLocale();
+  const labels = dict.student.aiMatching;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -580,10 +582,12 @@ function CountryPicker({
           {selected ? (
             <>
               <span className="text-base leading-none">{selected.flag}</span>
-              {selected.name}
+              <span className="bidi-ltr" dir="ltr">
+                {selected.name}
+              </span>
             </>
           ) : (
-            placeholder
+            labels.countryPlaceholder
           )}
         </span>
         <ChevronDown
@@ -599,7 +603,7 @@ function CountryPicker({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search country..."
+              placeholder={labels.searchCountry}
               className="w-full rounded-lg border-[1.5px] border-[var(--border-light)] bg-[var(--sand)] px-3 py-2 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:bg-white"
             />
           </div>
@@ -621,13 +625,15 @@ function CountryPicker({
                   }}
                 >
                   <span className="w-[22px] text-center text-[15px]">{c.flag}</span>
-                  <span className="flex-1">{c.name}</span>
+                  <span className="bidi-ltr flex-1" dir="ltr">
+                    {c.name}
+                  </span>
                 </button>
               </li>
             ))}
             {filtered.length === 0 ? (
               <li className="px-4 py-4 text-center text-[12px] text-[var(--text-hint)]">
-                No countries found
+                {labels.noCountriesFound}
               </li>
             ) : null}
           </ul>
@@ -646,6 +652,9 @@ function MajorPicker({
   onChange: (major: string) => void;
   invalid?: boolean;
 }) {
+  const { dict } = useLocale();
+  const labels = dict.student.aiMatching;
+  const majorGroupLabels = dict.student.aiMatching.options.majorGroups as Record<string, string>;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -692,7 +701,13 @@ function MajorPicker({
             value ? "font-medium text-[var(--text)]" : "text-[var(--text-hint)]",
           )}
         >
-          {value || "Select a field"}
+          {value ? (
+            <span className="bidi-ltr" dir="ltr">
+              {value}
+            </span>
+          ) : (
+            labels.selectField
+          )}
         </span>
         <ChevronDown
           className={clsx(
@@ -711,7 +726,7 @@ function MajorPicker({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search majors..."
+              placeholder={labels.searchMajors}
               className="w-full rounded-lg border-[1.5px] border-[var(--border-light)] bg-[var(--sand)] py-2 pl-9 pr-3 text-[13px] outline-none focus:border-[var(--green-light)] focus:bg-white"
               autoFocus
             />
@@ -720,7 +735,7 @@ function MajorPicker({
             {groups.map(({ group, majors }) => (
               <div key={group}>
                 <div className="px-4 pb-1.5 pt-2 text-[10px] font-bold uppercase tracking-[0.8px] text-[var(--text-hint)]">
-                  {group}
+                  {optLabel(majorGroupLabels, group)}
                 </div>
                 {majors.map((m) => (
                   <button
@@ -738,14 +753,16 @@ function MajorPicker({
                       setQuery("");
                     }}
                   >
-                    {m}
+                    <span className="bidi-ltr" dir="ltr">
+                      {m}
+                    </span>
                   </button>
                 ))}
               </div>
             ))}
             {groups.length === 0 ? (
               <div className="py-8 text-center text-[12px] text-[var(--text-hint)]">
-                No majors found
+                {labels.noMajorsFound}
               </div>
             ) : null}
           </div>
@@ -831,25 +848,37 @@ function SubjectChip({
 }
 
 function MatchCard({ match }: { match: UniversityMatch }) {
+  const { dict } = useLocale();
+  const t = dict.student.aiMatching;
+  const fitLabels = t.admissionFitLabels as Record<string, string>;
+  const admissionFitLabel = fitLabels[match.admissionFit] ?? match.admissionFit;
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-7 transition hover:border-[#d5dbd8] hover:shadow-[0_6px_22px_rgba(0,0,0,0.05)] max-[600px]:px-5 max-[600px]:py-[22px]">
       <p className="mb-[18px] text-[13px] text-[var(--text-light)]">
-        Program aligned with your interests and academic strengths.
+        {t.programAligned}
       </p>
       <div className="mb-3.5">
         <h3 className="serif text-[22px] leading-tight tracking-[-0.2px] text-[var(--text)] max-[600px]:text-[19px]">
-          {match.universityName}
+          <span className="bidi-ltr" dir="ltr">
+            {match.universityName}
+          </span>
         </h3>
-        <p className="mt-1 text-[13px] text-[var(--text-light)]">{match.programName}</p>
+        <p className="mt-1 text-[13px] text-[var(--text-light)]">
+          <span className="bidi-ltr" dir="ltr">
+            {match.programName}
+          </span>
+        </p>
         <p className="mt-2 flex items-center gap-1.5 text-[13px] text-[var(--text-light)]">
           <MapPin className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
-          {match.city}, {match.country}
+          <span className="bidi-ltr" dir="ltr">
+            {match.city}, {match.country}
+          </span>
         </p>
       </div>
 
       <div className="mb-[18px] flex flex-wrap gap-2">
         <span className="rounded-[var(--radius-pill)] bg-[var(--green-pale)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--green)]">
-          {match.admissionFit}
+          {admissionFitLabel}
         </span>
         <span className="rounded-[var(--radius-pill)] bg-[var(--sand)] px-2.5 py-1 text-[11.5px] font-medium text-[var(--text-mid)]">
           {match.tuitionEstimate}
@@ -858,7 +887,7 @@ function MatchCard({ match }: { match: UniversityMatch }) {
 
       <div className="mb-3.5 rounded-[var(--radius)] border border-[#d5e8db] bg-[var(--green-pale)] px-5 py-4">
         <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.7px] text-[var(--green)]">
-          Why this matches
+          {t.whyMatches}
         </div>
         <ul className="flex flex-col gap-[7px]">
           {match.whyItMatches.map((reason) => (
@@ -893,7 +922,7 @@ function MatchCard({ match }: { match: UniversityMatch }) {
           rel="noreferrer"
           className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-[var(--radius-pill)] bg-[var(--green)] px-[22px] py-2.5 text-[12.5px] font-semibold text-white! no-underline transition hover:bg-[var(--green-dark)] hover:text-white! min-[640px]:self-center"
         >
-          Visit official page
+          {t.visitOfficialPage}
           <ExternalLink className="size-3.5 shrink-0 text-white!" strokeWidth={2} aria-hidden />
         </a>
       </div>
@@ -923,64 +952,93 @@ function scoreFieldInvalidKey(test: string): string {
   return `score:${test}`;
 }
 
-function validateStep(step: number, form: FormState): string | null {
+function validateStep(
+  step: number,
+  form: FormState,
+  v: {
+    enterFullName: string;
+    enterSchoolName: string;
+    selectSchoolCountry: string;
+    selectCountry: string;
+    selectAcademicSystem: string;
+    enterScore: string;
+    selectTest: string;
+    enterTestScores: string;
+    checkSat: string;
+    checkAct: string;
+    selectDestination: string;
+    selectDegree: string;
+    selectMajor: string;
+    selectInterest: string;
+    selectSubject: string;
+    selectEnvironment: string;
+    selectMatters: string;
+    maxMatters: string;
+    selectActivity: string;
+    selectAmbition: string;
+    selectGoal: string;
+    selectWorkLoc: string;
+    selectBudget: string;
+  },
+): string | null {
   switch (step) {
     case 1:
-      if (!form.fullName.trim()) return "Please enter your full name.";
-      if (!form.schoolName.trim()) return "Please enter your school name.";
-      if (!form.schoolCountry) return "Please select your school's country.";
-      if (!form.nationality) return "Please select your country.";
+      if (!form.fullName.trim()) return v.enterFullName;
+      if (!form.schoolName.trim()) return v.enterSchoolName;
+      if (!form.schoolCountry) return v.selectSchoolCountry;
+      if (!form.nationality) return v.selectCountry;
       return null;
     case 2:
-      if (!form.academicSystem) return "Please select your academic system.";
-      if (!form.predictedScore.trim()) return "Please enter your score.";
-      if (form.testsTaken.length === 0) return "Please select at least one test option.";
+      if (!form.academicSystem) return v.selectAcademicSystem;
+      if (!form.predictedScore.trim()) return v.enterScore;
+      if (form.testsTaken.length === 0) return v.selectTest;
       if (missingScoreTests(form).length > 0) {
-        return "Please enter a score for each selected test.";
+        return v.enterTestScores;
       }
       if (satScoreFieldInvalid(form)) {
         const m = satScoreValidationMessage(form.testScores["SAT"] ?? "");
-        return m && m !== "required" ? m : "Please check your SAT score.";
+        return m && m !== "required" ? m : v.checkSat;
       }
       if (actScoreFieldInvalid(form)) {
         const m = actScoreValidationMessage(form.testScores["ACT"] ?? "");
-        return m && m !== "required" ? m : "Please check your ACT score.";
+        return m && m !== "required" ? m : v.checkAct;
       }
       return null;
     case 3:
-      if (!form.primaryStudyDestination) return "Please select where you would like to study.";
-      if (!form.degreeLevel) return "Please select degree level.";
-      if (!form.intendedMajor) return "Please select a field of study.";
-      if (form.excites.length === 0) return "Select at least one interest.";
-      if (form.strongestSubjects.length === 0) return "Select at least one subject.";
+      if (!form.primaryStudyDestination) return v.selectDestination;
+      if (!form.degreeLevel) return v.selectDegree;
+      if (!form.intendedMajor) return v.selectMajor;
+      if (form.excites.length === 0) return v.selectInterest;
+      if (form.strongestSubjects.length === 0) return v.selectSubject;
       return null;
     case 4:
-      if (!form.campusEnvironment) return "Please select a campus environment.";
-      if (form.mattersMost.length === 0) return "Please select what matters most (up to 2).";
-      if (form.mattersMost.length > 2) return "Select at most 2 priorities.";
-      if (form.outsideActivities.length === 0) return "Select at least one activity.";
-      if (!form.academicAmbition) return "Please select your academic ambition.";
+      if (!form.campusEnvironment) return v.selectEnvironment;
+      if (form.mattersMost.length === 0) return v.selectMatters;
+      if (form.mattersMost.length > 2) return v.maxMatters;
+      if (form.outsideActivities.length === 0) return v.selectActivity;
+      if (!form.academicAmbition) return v.selectAmbition;
       return null;
     case 5:
-      if (!form.goalAfterUniversity) return "Please select your goal after university.";
-      if (!form.workLocationPreference) return "Please select a work location preference.";
+      if (!form.goalAfterUniversity) return v.selectGoal;
+      if (!form.workLocationPreference) return v.selectWorkLoc;
       return null;
     case 6:
-      if (!form.budgetBand) return "Please select your budget range.";
+      if (!form.budgetBand) return v.selectBudget;
       return null;
     default:
       return null;
   }
 }
 
-function formToPayload(form: FormState): MatchingPayload {
-  const sys = ACADEMIC_SYSTEMS.find((x) => x.value === form.academicSystem);
+function formToPayload(form: FormState, locale: "en" | "ar"): MatchingPayload {
+  const academicSystemLabel =
+    ACADEMIC_SYSTEM_LABELS_EN[form.academicSystem] ?? form.academicSystem;
   return {
     fullName: form.fullName.trim(),
     schoolName: form.schoolName.trim(),
     schoolCountry: form.schoolCountry,
     nationality: form.nationality,
-    academicSystem: sys?.label ?? form.academicSystem,
+    academicSystem: academicSystemLabel,
     predictedScore: form.predictedScore.trim(),
     testsTaken: form.testsTaken,
     testScoreNotes: buildTestScoreNotes(form),
@@ -997,6 +1055,7 @@ function formToPayload(form: FormState): MatchingPayload {
     workLocationPreference: form.workLocationPreference,
     budgetBand: form.budgetBand,
     extraNotes: form.extraNotes.trim() || undefined,
+    locale,
   };
 }
 
@@ -1005,6 +1064,19 @@ export function AiUniversityMatching({
 }: {
   profileDefaults?: AiMatchingProfileDefaults | null;
 }) {
+  const { dict, locale } = useLocale();
+  const t = dict.student.aiMatching;
+  const o = t.options;
+  const scoreMsgs = useMemo(
+    () => ({
+      wholeNumber: t.enterWholeNumber,
+      satAboveMax: t.scoreValidation.satAboveMax,
+      satBelowMin: t.scoreValidation.satBelowMin,
+      actAboveMax: t.scoreValidation.actAboveMax,
+      actBelowMin: t.scoreValidation.actBelowMin,
+    }),
+    [t],
+  );
   const [form, setForm] = useState(() =>
     formStateFromProfileDefaults(profileDefaults ?? null),
   );
@@ -1082,10 +1154,11 @@ export function AiUniversityMatching({
     return s;
   }, [stepError, screen, form]);
 
-  const predictedGradeField = useMemo(
-    () => (form.academicSystem ? gradeFieldMeta(form.academicSystem) : null),
-    [form.academicSystem],
-  );
+  const predictedGradeField = useMemo(() => {
+    if (!form.academicSystem) return null;
+    const fields = o.gradeFields as Record<string, { label: string; placeholder: string }>;
+    return fields[form.academicSystem] ?? fields.other;
+  }, [form.academicSystem, o.gradeFields]);
 
   const goNext = () => {
     if (screen === 0) {
@@ -1093,7 +1166,7 @@ export function AiUniversityMatching({
       setStepError(null);
       return;
     }
-    const err = validateStep(screen, form);
+    const err = validateStep(screen, form, t.validation);
     if (err) {
       setStepError(err);
       return;
@@ -1168,7 +1241,7 @@ export function AiUniversityMatching({
         return { ...f, mattersMost: f.mattersMost.filter((x) => x !== label) };
       }
       if (f.mattersMost.length >= 2) {
-        showToast("You can select up to 2 options");
+        showToast(t.maxTwoOptions);
         return f;
       }
       return { ...f, mattersMost: [...f.mattersMost, label] };
@@ -1176,7 +1249,7 @@ export function AiUniversityMatching({
   };
 
   const submit = async () => {
-    const err = validateStep(6, form);
+    const err = validateStep(6, form, t.validation);
     if (err) {
       setStepError(err);
       return;
@@ -1185,7 +1258,7 @@ export function AiUniversityMatching({
     setSubmitError(null);
     setLoading(true);
     try {
-      const payload = formToPayload(form);
+      const payload = formToPayload(form, locale);
       const response = await fetch("/api/ai/university-matching", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1195,11 +1268,11 @@ export function AiUniversityMatching({
         error?: string;
       };
       if (!response.ok) {
-        throw new Error(data.error ?? "Unable to generate AI matches.");
+        throw new Error(data.error ?? t.unableToGenerate);
       }
       setResult(data);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Unable to generate AI matches.");
+      setSubmitError(e instanceof Error ? e.message : t.unableToGenerate);
     } finally {
       setLoading(false);
     }
@@ -1223,15 +1296,14 @@ export function AiUniversityMatching({
             href="/student/universities"
             className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--text-mid)] no-underline transition hover:text-[var(--green)]"
           >
-            <ArrowLeft className="size-4 shrink-0" strokeWidth={2} aria-hidden />
-            Back to university search
+            <ArrowLeft className="icon-directional size-4 shrink-0" strokeWidth={2} aria-hidden />
+            {t.backToSearch}
           </Link>
         </div>
         <header className="results-header mb-6 text-center">
-          <h1 className="serif mb-1.5 text-[28px] text-[var(--text)]">Your best matches</h1>
+          <h1 className="serif mb-1.5 text-[28px] text-[var(--text)]">{t.bestMatches}</h1>
           <p className="mx-auto text-[14px] text-[var(--text-light)]">
-            Based on your academic background, preferences, lifestyle, and goals — here are
-            universities that fit you best.
+            {t.resultsSubtitle}
           </p>
         </header>
 
@@ -1241,7 +1313,7 @@ export function AiUniversityMatching({
           </div>
           <div className="min-w-0">
             <div className="profile-label mb-1 text-[11px] font-semibold uppercase tracking-[0.5px] text-[var(--green)]">
-              Your profile
+              {t.yourProfile}
             </div>
             <p className="profile-text text-[14px] leading-relaxed text-[var(--text-mid)]">
               {result.profileSummary}
@@ -1251,7 +1323,7 @@ export function AiUniversityMatching({
 
         <section className="rec-card mb-5 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-[26px] py-[22px]">
           <h2 className="rec-title mb-2.5 text-[14px] font-semibold text-[var(--text)]">
-            Recommended strategy
+            {t.recommendedStrategy}
           </h2>
           <div className="rec-pills flex flex-wrap gap-2">
             {result.recommendedStrategy.map((item) => (
@@ -1266,7 +1338,7 @@ export function AiUniversityMatching({
         </section>
 
         <div className="cat-label mb-3.5 mt-7 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[1px] text-[var(--text-hint)]">
-          <span>Your top matches</span>
+          <span>{t.topMatches}</span>
           <span className="h-px flex-1 bg-[var(--border-light)]" />
         </div>
 
@@ -1282,24 +1354,23 @@ export function AiUniversityMatching({
           <div className="global-cta-inner relative mx-auto max-w-[540px] text-center">
             <div className="global-cta-badge mb-4 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.2px] text-white">
               <Check className="size-3.5" strokeWidth={2} aria-hidden />
-              End-to-end application support
+              {t.ctaBadge}
             </div>
             <div className="global-cta-title serif mb-3 text-[30px] leading-tight tracking-[-0.3px] text-white max-[600px]:text-2xl">
-              Let us handle your applications for you
+              {t.ctaTitle}
             </div>
             <p className="global-cta-sub mx-auto mb-6 text-[14px] leading-relaxed text-white/[0.82] max-[600px]:text-[13px]">
-              We&apos;ll take care of everything — from shortlisting to submission — so you can
-              focus on what matters most.
+              {t.ctaSubtitle}
             </p>
             <Link
               href="/student"
               className="global-cta-btn inline-flex items-center gap-2 rounded-[var(--radius-pill)] bg-white px-8 py-3.5 text-[13.5px] font-bold text-[var(--green-dark)] shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(0,0,0,0.18)]"
             >
-              Start your application
-              <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+              {t.startApplication}
+              <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} aria-hidden />
             </Link>
             <p className="global-cta-line mt-5 text-[11.5px] font-medium tracking-[0.3px] text-white/[0.62]">
-              Dedicated advisor · End-to-end support · Full visibility
+              {t.ctaFootnote}
             </p>
           </div>
         </div>
@@ -1310,7 +1381,7 @@ export function AiUniversityMatching({
             onClick={retake}
             className="btn-retake cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-7 py-3 text-[13px] font-semibold text-[var(--green)] transition hover:border-[var(--green)] hover:bg-[var(--green-bg)]"
           >
-            Retake quiz
+            {t.retakeQuiz}
           </button>
         </div>
       </div>
@@ -1324,8 +1395,8 @@ export function AiUniversityMatching({
           href="/student/universities"
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--text-mid)] no-underline transition hover:text-[var(--green)]"
         >
-          <ArrowLeft className="size-4 shrink-0" strokeWidth={2} aria-hidden />
-          Back to university search
+          <ArrowLeft className="icon-directional size-4 shrink-0" strokeWidth={2} aria-hidden />
+          {t.backToSearch}
         </Link>
       </div>
       {toast ? (
@@ -1342,7 +1413,7 @@ export function AiUniversityMatching({
       >
         <div className="progress-top mb-2.5 flex items-center justify-between">
           <span className="progress-label text-[12px] font-medium text-[var(--text-light)]">
-            {PROGRESS_LABELS[screen] ?? ""}
+            {t.progressLabels[screen] ?? ""}
           </span>
           <span className="progress-step text-[12px] font-semibold text-[var(--green)]">
             {screen} / {TOTAL_PROGRESS}
@@ -1360,9 +1431,9 @@ export function AiUniversityMatching({
         {loading ? (
           <div className="loading-state flex flex-col items-center gap-4 py-14">
             <Loader2 className="size-10 animate-spin text-[var(--green)]" aria-hidden />
-            <div className="loading-title serif text-xl text-[var(--text)]">Finding your best matches...</div>
+            <div className="loading-title serif text-xl text-[var(--text)]">{t.findingMatches}</div>
             <div className="loading-sub text-[13px] text-[var(--text-light)]">
-              Analyzing universities against your profile
+              {t.analyzing}
             </div>
           </div>
         ) : (
@@ -1371,23 +1442,22 @@ export function AiUniversityMatching({
               <div className="intro flex flex-1 flex-col items-center justify-center gap-4 text-center">
                 <div className="intro-badge inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green-bg)] px-4 py-1.5 text-[12px] font-medium text-[var(--green)]">
                   <Search className="size-3.5" strokeWidth={2} aria-hidden />
-                  AI-powered matching
+                  {t.aiPowered}
                 </div>
                 <h2 className="serif text-[30px] leading-tight text-[var(--text)]">
-                  Let&apos;s find the right universities for you
+                  {t.introTitle}
                 </h2>
                 <p className="text-[15px] text-[var(--text-light)]">
-                  We&apos;ll use this to match you with the best programs based on your interests
-                  and strengths.
+                  {t.introSubtitle}
                 </p>
-                <p className="-mt-1 text-[12px] text-[var(--text-hint)]">Takes less than 5 minutes</p>
+                <p className="-mt-1 text-[12px] text-[var(--text-hint)]">{t.takesMinutes}</p>
                 <button
                   type="button"
                   onClick={goNext}
                   className="btn-start mt-2 inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--green)] px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_4px_16px_rgba(45,106,79,0.25)] transition hover:-translate-y-0.5 hover:bg-[var(--green-dark)]"
                 >
-                  Start
-                  <ArrowRight className="size-4" strokeWidth={2.5} aria-hidden />
+                  {t.start}
+                  <ArrowRight className="icon-directional size-4" strokeWidth={2.5} aria-hidden />
                 </button>
               </div>
             ) : null}
@@ -1395,20 +1465,19 @@ export function AiUniversityMatching({
             {screen === 1 ? (
               <div className="flex flex-1 flex-col">
                 <div className="q-title serif mb-1.5 text-[22px] text-[var(--text)]">
-                  Tell us about yourself
+                  {t.aboutYouTitle}
                 </div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
-                  We&apos;ll use this to find relevant opportunities for your background and region.
+                  {t.aboutYouSubtitle}
                 </div>
                 {showPrefillTip ? (
                   <p className="-mt-4 mb-6 rounded-lg border border-[var(--green-light)] bg-[rgba(45,106,79,0.06)] px-3 py-2 text-[12px] leading-snug text-[var(--text-mid)]">
-                    We&apos;ve prefilled what we know from your Univeera profile and application
-                    workspace. You can edit any field.
+                    {t.prefillTip}
                   </p>
                 ) : null}
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
-                    Full name
+                    {t.fullName}
                   </label>
                   <input
                     className={clsx(
@@ -1419,15 +1488,15 @@ export function AiUniversityMatching({
                     )}
                     value={form.fullName}
                     onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-                    placeholder="Enter your full name"
+                    placeholder={t.fullNamePlaceholder}
                   />
                   <ValidationHint show={invalidFields.has("fullName")}>
-                    Please enter your full name
+                    {t.enterFullName}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
-                    What school do you attend?
+                    {t.schoolName}
                   </label>
                   <input
                     className={clsx(
@@ -1438,38 +1507,36 @@ export function AiUniversityMatching({
                     )}
                     value={form.schoolName}
                     onChange={(e) => setForm((f) => ({ ...f, schoolName: e.target.value }))}
-                    placeholder="Enter your school name"
+                    placeholder={t.schoolNamePlaceholder}
                   />
                   <ValidationHint show={invalidFields.has("schoolName")}>
-                    Please enter your school name
+                    {t.enterSchoolName}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
-                    What country is your school in?
+                    {t.schoolCountry}
                   </label>
                   <CountryPicker
                     value={form.schoolCountry}
                     onChange={(name) => setForm((f) => ({ ...f, schoolCountry: name }))}
-                    placeholder="Search or select a country"
                     invalid={invalidFields.has("schoolCountry")}
                   />
                   <ValidationHint show={invalidFields.has("schoolCountry")}>
-                    Please select your school&apos;s country
+                    {t.selectSchoolCountry}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
-                    Where are you from?
+                    {t.nationality}
                   </label>
                   <CountryPicker
                     value={form.nationality}
                     onChange={(name) => setForm((f) => ({ ...f, nationality: name }))}
-                    placeholder="Search or select a country"
                     invalid={invalidFields.has("nationality")}
                   />
                   <ValidationHint show={invalidFields.has("nationality")}>
-                    Please select your country
+                    {t.selectCountry}
                   </ValidationHint>
                 </div>
                 <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
@@ -1479,8 +1546,8 @@ export function AiUniversityMatching({
                     onClick={goNext}
                     className="btn-next inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-7 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(45,106,79,0.2)] transition hover:-translate-y-px hover:bg-[var(--green-dark)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
                   >
-                    Next
-                    <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+                    {t.next}
+                    <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </div>
@@ -1488,13 +1555,13 @@ export function AiUniversityMatching({
 
             {screen === 2 ? (
               <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">Your academic profile</div>
+                <div className="q-title serif mb-1.5 text-[22px]">{t.academicsTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
-                  This helps us match you with universities that fit your academic level.
+                  {t.academicsSubtitle}
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What is your academic system?
+                    {t.academicSystem}
                   </label>
                   <select
                     className={clsx(
@@ -1513,15 +1580,15 @@ export function AiUniversityMatching({
                       setForm((f) => ({ ...f, academicSystem: e.target.value }))
                     }
                   >
-                    <option value="">Select system</option>
-                    {ACADEMIC_SYSTEMS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
+                    <option value="">{t.selectSystem}</option>
+                    {ACADEMIC_SYSTEM_VALUES.map((sys) => (
+                      <option key={sys} value={sys}>
+                        {optLabel(o.academicSystems as Record<string, string>, sys)}
                       </option>
                     ))}
                   </select>
                   <ValidationHint show={invalidFields.has("academicSystem")}>
-                    Please select your academic system
+                    {t.selectAcademicSystem}
                   </ValidationHint>
                 </div>
                 {predictedGradeField ? (
@@ -1554,13 +1621,13 @@ export function AiUniversityMatching({
                       aria-invalid={invalidFields.has("predictedScore")}
                     />
                     <ValidationHint show={invalidFields.has("predictedScore")}>
-                      Please enter your score
+                      {t.enterScore}
                     </ValidationHint>
                   </div>
                 ) : null}
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    Have you taken any tests?
+                    {t.testsTaken}
                   </label>
                   <div
                     className={clsx(
@@ -1569,32 +1636,38 @@ export function AiUniversityMatching({
                         "rounded-lg outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
                   >
-                    {TEST_OPTIONS.map((t) => (
+                    {TEST_OPTIONS.map((testOpt) => (
                       <PillToggle
-                        key={t}
-                        selected={form.testsTaken.includes(t)}
-                        onClick={() => toggleTest(t)}
+                        key={testOpt}
+                        selected={form.testsTaken.includes(testOpt)}
+                        onClick={() => toggleTest(testOpt)}
                       >
-                        {t}
+                        {optLabel(o.tests as Record<string, string>, testOpt)}
                       </PillToggle>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("testsTaken")}>
-                    Please select at least one option
+                    {t.selectAtLeastOne}
                   </ValidationHint>
                   {TESTS_WITH_SCORE_INPUTS.some((test) => form.testsTaken.includes(test)) ? (
                     <div className="score-inputs mt-3 grid grid-cols-1 gap-3 min-[560px]:grid-cols-2">
                       {TESTS_WITH_SCORE_INPUTS.filter((test) =>
                         form.testsTaken.includes(test),
                       ).map((test) => {
-                        const meta = testScoreFieldMeta(test);
+                        const meta = testScoreFieldFromOptions(
+                          test,
+                          o.testScores as Record<
+                            string,
+                            { label: string; placeholder: string; scoreHint?: string }
+                          >,
+                        );
                         const scoreKey = scoreFieldInvalidKey(test);
                         const scoreInvalid = invalidFields.has(scoreKey);
                         const scoreRangeErrMsg =
                           test === "SAT"
-                            ? satScoreValidationMessage(form.testScores[test] ?? "")
+                            ? satScoreValidationMessage(form.testScores[test] ?? "", scoreMsgs)
                             : test === "ACT"
-                              ? actScoreValidationMessage(form.testScores[test] ?? "")
+                              ? actScoreValidationMessage(form.testScores[test] ?? "", scoreMsgs)
                               : null;
                         const showScoreRangeValidationError =
                           scoreInvalid &&
@@ -1617,11 +1690,15 @@ export function AiUniversityMatching({
                               </span>
                               {test === "SAT" ? (
                                 <span className="ml-1.5 font-normal text-[var(--text-hint)]">
-                                  (out of {SAT_TOTAL_MAX})
+                                  {formatTemplate(t.scoreValidation.outOfMax, {
+                                    max: SAT_TOTAL_MAX,
+                                  })}
                                 </span>
                               ) : test === "ACT" ? (
                                 <span className="ml-1.5 font-normal text-[var(--text-hint)]">
-                                  (out of {ACT_COMPOSITE_MAX})
+                                  {formatTemplate(t.scoreValidation.outOfMax, {
+                                    max: ACT_COMPOSITE_MAX,
+                                  })}
                                 </span>
                               ) : null}
                             </label>
@@ -1675,7 +1752,9 @@ export function AiUniversityMatching({
                             <ValidationHint show={scoreInvalid}>
                               {showScoreRangeValidationError
                                 ? scoreRangeErrMsg
-                                : `Enter your ${meta.label.toLowerCase()}`}
+                                : formatTemplate(t.scoreValidation.enterTestScore, {
+                                    label: meta.label.toLowerCase(),
+                                  })}
                             </ValidationHint>
                           </div>
                         );
@@ -1689,15 +1768,15 @@ export function AiUniversityMatching({
                     onClick={goBack}
                     className="btn-back cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-transparent px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)] transition hover:border-[var(--text-hint)] hover:bg-[var(--sand)]"
                   >
-                    Back
+                    {t.back}
                   </button>
                   <button
                     type="button"
                     onClick={goNext}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-7 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(45,106,79,0.2)] transition hover:-translate-y-px hover:bg-[var(--green-dark)]"
                   >
-                    Next
-                    <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+                    {t.next}
+                    <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </div>
@@ -1705,29 +1784,28 @@ export function AiUniversityMatching({
 
             {screen === 3 ? (
               <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">What do you want to study?</div>
+                <div className="q-title serif mb-1.5 text-[22px]">{t.studyTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
-                  Tell us your destination, interests, and strengths so we can match you accurately.
+                  {t.studySubtitle}
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    Where would you like to study?
+                    {t.studyDestination}
                   </label>
                   <CountryPicker
                     value={form.primaryStudyDestination}
                     onChange={(name) =>
                       setForm((f) => ({ ...f, primaryStudyDestination: name }))
                     }
-                    placeholder="Search or select a country"
                     invalid={invalidFields.has("destination")}
                   />
                   <ValidationHint show={invalidFields.has("destination")}>
-                    Please select a destination
+                    {t.selectDestination}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    Degree level
+                    {t.degreeLevel}
                   </label>
                   <select
                     className={clsx(
@@ -1746,14 +1824,14 @@ export function AiUniversityMatching({
                   >
                     {DEGREE_LEVELS.map((d) => (
                       <option key={d} value={d}>
-                        {d}
+                        {optLabel(o.degreeLevels as Record<string, string>, d)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What do you want to study?
+                    {t.intendedMajor}
                   </label>
                   <MajorPicker
                     value={form.intendedMajor}
@@ -1761,14 +1839,14 @@ export function AiUniversityMatching({
                     invalid={invalidFields.has("major")}
                   />
                   <ValidationHint show={invalidFields.has("major")}>
-                    Please select a field of study
+                    {t.selectFieldOfStudy}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What excites you most?{" "}
+                    {t.excitesYou}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
-                      Select all that apply
+                      {t.selectAll}
                     </span>
                   </label>
                   <div
@@ -1784,19 +1862,19 @@ export function AiUniversityMatching({
                         selected={form.excites.includes(opt)}
                         onClick={() => toggleExcite(opt)}
                       >
-                        {opt}
+                        {optLabel(o.excites as Record<string, string>, opt)}
                       </OptTile>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("excites")}>
-                    Please select at least one option
+                    {t.selectAtLeastOne}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What are your strongest subjects?{" "}
+                    {t.strongestSubjects}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
-                      Select all that apply
+                      {t.selectAll}
                     </span>
                   </label>
                   <div
@@ -1809,7 +1887,7 @@ export function AiUniversityMatching({
                     {SUBJECT_GROUPS.map((g) => (
                       <div key={g.label}>
                         <div className="subj-group-label mb-2 text-[10px] font-bold uppercase tracking-[0.8px] text-[var(--text-hint)]">
-                          {g.label}
+                          {optLabel(o.subjectGroups as Record<string, string>, g.label)}
                         </div>
                         <div className="subj-grid flex flex-wrap gap-2">
                           {g.subjects.map((sub) => (
@@ -1818,7 +1896,7 @@ export function AiUniversityMatching({
                               selected={form.strongestSubjects.includes(sub)}
                               onClick={() => toggleSubject(sub)}
                             >
-                              {sub}
+                              {optLabel(o.subjects as Record<string, string>, sub)}
                             </SubjectChip>
                           ))}
                         </div>
@@ -1826,7 +1904,7 @@ export function AiUniversityMatching({
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("subjects")}>
-                    Please select at least one subject
+                    {t.selectSubject}
                   </ValidationHint>
                 </div>
                 <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
@@ -1835,15 +1913,15 @@ export function AiUniversityMatching({
                     onClick={goBack}
                     className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-transparent px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)] hover:bg-[var(--sand)]"
                   >
-                    Back
+                    {t.back}
                   </button>
                   <button
                     type="button"
                     onClick={goNext}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-7 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(45,106,79,0.2)] transition hover:-translate-y-px hover:bg-[var(--green-dark)]"
                   >
-                    Next
-                    <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+                    {t.next}
+                    <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </div>
@@ -1852,14 +1930,14 @@ export function AiUniversityMatching({
             {screen === 4 ? (
               <div className="flex flex-1 flex-col">
                 <div className="q-title serif mb-1.5 text-[22px]">
-                  Your lifestyle and interests
+                  {t.lifestyleTitle}
                 </div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
-                  We&apos;ll match universities that fit your lifestyle, goals, and personality.
+                  {t.lifestyleSubtitle}
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What type of campus environment suits you best?
+                    {t.campusEnvironment}
                   </label>
                   <div
                     className={clsx(
@@ -1874,19 +1952,19 @@ export function AiUniversityMatching({
                         selected={form.campusEnvironment === opt}
                         onClick={() => setForm((f) => ({ ...f, campusEnvironment: opt }))}
                       >
-                        {opt}
+                        {optLabel(o.env as Record<string, string>, opt)}
                       </OptTile>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("env")}>
-                    Please select an environment
+                    {t.selectEnvironment}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What matters most to you?{" "}
+                    {t.mattersMost}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
-                      Select up to 2
+                      {t.selectUpTo2}
                     </span>
                   </label>
                   <div
@@ -1902,19 +1980,19 @@ export function AiUniversityMatching({
                         selected={form.mattersMost.includes(opt)}
                         onClick={() => toggleMatters(opt)}
                       >
-                        {opt}
+                        {optLabel(o.matters as Record<string, string>, opt)}
                       </OptTile>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("matters")}>
-                    Please select what matters most (1–2 options)
+                    {t.selectMatters}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What do you spend time on outside school?{" "}
+                    {t.outsideSchool}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
-                      Select all that apply
+                      {t.selectAll}
                     </span>
                   </label>
                   <div
@@ -1930,17 +2008,17 @@ export function AiUniversityMatching({
                         selected={form.outsideActivities.includes(opt)}
                         onClick={() => toggleActivity(opt)}
                       >
-                        {opt}
+                        {optLabel(o.activities as Record<string, string>, opt)}
                       </PillToggle>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("activities")}>
-                    Please select at least one activity
+                    {t.selectActivity}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    How would you describe your academic ambition?
+                    {t.academicAmbition}
                   </label>
                   <div
                     className={clsx(
@@ -1955,12 +2033,12 @@ export function AiUniversityMatching({
                         selected={form.academicAmbition === opt}
                         onClick={() => setForm((f) => ({ ...f, academicAmbition: opt }))}
                       >
-                        {opt}
+                        {optLabel(o.ambition as Record<string, string>, opt)}
                       </OptTile>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("ambition")}>
-                    Please select your ambition level
+                    {t.selectAmbition}
                   </ValidationHint>
                 </div>
                 <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
@@ -1969,15 +2047,15 @@ export function AiUniversityMatching({
                     onClick={goBack}
                     className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)] hover:bg-[var(--sand)]"
                   >
-                    Back
+                    {t.back}
                   </button>
                   <button
                     type="button"
                     onClick={goNext}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-7 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(45,106,79,0.2)] transition hover:-translate-y-px hover:bg-[var(--green-dark)]"
                   >
-                    Next
-                    <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+                    {t.next}
+                    <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </div>
@@ -1985,13 +2063,13 @@ export function AiUniversityMatching({
 
             {screen === 5 ? (
               <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">Your goals</div>
+                <div className="q-title serif mb-1.5 text-[22px]">{t.goalsTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
-                  Understanding your ambitions helps us recommend the right path.
+                  {t.goalsSubtitle}
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What&apos;s your goal after university?
+                    {t.goalAfterUni}
                   </label>
                   <div
                     className={clsx(
@@ -2006,17 +2084,17 @@ export function AiUniversityMatching({
                         selected={form.goalAfterUniversity === opt}
                         onClick={() => setForm((f) => ({ ...f, goalAfterUniversity: opt }))}
                       >
-                        {opt}
+                        {optLabel(o.goals as Record<string, string>, opt)}
                       </OptTile>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("goal")}>
-                    Please select your goal
+                    {t.selectGoal}
                   </ValidationHint>
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    Where do you see yourself working?
+                    {t.workLocation}
                   </label>
                   <div
                     className={clsx(
@@ -2033,12 +2111,12 @@ export function AiUniversityMatching({
                           setForm((f) => ({ ...f, workLocationPreference: opt }))
                         }
                       >
-                        {opt}
+                        {optLabel(o.workLoc as Record<string, string>, opt)}
                       </OptTile>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("workloc")}>
-                    Please select a preference
+                    {t.selectWorkPref}
                   </ValidationHint>
                 </div>
                 <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
@@ -2047,15 +2125,15 @@ export function AiUniversityMatching({
                     onClick={goBack}
                     className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] px-6 py-2.5 text-[13px] font-medium hover:bg-[var(--sand)]"
                   >
-                    Back
+                    {t.back}
                   </button>
                   <button
                     type="button"
                     onClick={goNext}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-7 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(45,106,79,0.2)] transition hover:-translate-y-px hover:bg-[var(--green-dark)]"
                   >
-                    Next
-                    <ArrowRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+                    {t.next}
+                    <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </div>
@@ -2063,13 +2141,13 @@ export function AiUniversityMatching({
 
             {screen === 6 ? (
               <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">One last thing</div>
+                <div className="q-title serif mb-1.5 text-[22px]">{t.budgetTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
-                  This helps us factor in affordability and scholarship options.
+                  {t.budgetSubtitle}
                 </div>
                 <div className="mb-[18px]">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                    What is your budget for university?
+                    {t.budgetQuestion}
                   </label>
                   <div
                     className={clsx(
@@ -2084,22 +2162,22 @@ export function AiUniversityMatching({
                         selected={form.budgetBand === opt}
                         onClick={() => setForm((f) => ({ ...f, budgetBand: opt }))}
                       >
-                        {opt}
+                        {optLabel(o.budget as Record<string, string>, opt)}
                       </OptTile>
                     ))}
                   </div>
                   <ValidationHint show={invalidFields.has("budget")}>
-                    Please select your budget range
+                    {t.selectBudget}
                   </ValidationHint>
                 </div>
                 <label className="field-label mb-[7px] block text-[13px] font-semibold">
-                  Anything else we should know?{" "}
-                  <span className="font-medium text-[var(--text-hint)]">Optional</span>
+                  {t.anythingElse}{" "}
+                  <span className="font-medium text-[var(--text-hint)]">{t.optional}</span>
                 </label>
                 <textarea
                   rows={3}
                   className="mb-4 w-full resize-none rounded-[10px] border-[1.5px] border-[var(--border)] px-4 py-2.5 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]"
-                  placeholder="Scholarships, constraints, dream cities..."
+                  placeholder={t.extraNotesPlaceholder}
                   value={form.extraNotes}
                   onChange={(e) => setForm((f) => ({ ...f, extraNotes: e.target.value }))}
                 />
@@ -2117,8 +2195,8 @@ export function AiUniversityMatching({
                     onClick={submit}
                     className="btn-match inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--green)] px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_4px_16px_rgba(45,106,79,0.25)] transition hover:-translate-y-0.5 hover:bg-[var(--green-dark)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
                   >
-                    Find my best matches
-                    <ArrowRight className="size-4" strokeWidth={2.5} aria-hidden />
+                    {t.findMatches}
+                    <ArrowRight className="icon-directional size-4" strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </div>

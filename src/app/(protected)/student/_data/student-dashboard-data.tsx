@@ -5,7 +5,6 @@ export type SidebarNavItem =
   | {
       type: "link";
       id: string;
-      label: string;
       href: string;
     };
 
@@ -13,90 +12,75 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "dashboard",
-    label: "Dashboard",
     href: "/student",
   },
   {
     type: "link",
     id: "my-applications",
-    label: "My Applications",
     href: "/student/my-applications",
   },
   {
     type: "link",
     id: "personality-check",
-    label: "Personality Overview",
     href: "#",
   },
   {
     type: "link",
     id: "program-discovery",
-    label: "Program Discovery",
     href: "/student/ai-matching",
   },
   {
     type: "link",
     id: "university-search",
-    label: "University Search",
     href: "/student/universities",
   },
   {
     type: "link",
     id: "scholarships",
-    label: "Scholarships",
     href: "/student/scholarships",
   },
   {
     type: "link",
     id: "advisor-sessions",
-    label: "1-1 Advisors",
     href: "/student/advisor-sessions",
   },
   {
     type: "link",
     id: "ambassadors",
-    label: "Ambassadors",
     href: "/student/ambassadors",
   },
   {
     type: "link",
     id: "application-support",
-    label: "Application Support",
     href: "/student/application-support",
   },
   {
     type: "link",
     id: "post-admission-support",
-    label: "Post Admission",
     href: "#",
   },
   {
     type: "link",
     id: "webinars",
-    label: "Webinars",
     href: "/student/webinars",
   },
   { type: "divider" },
   {
     type: "link",
     id: "account-settings",
-    label: "Account Settings",
     href: "/student/settings",
   },
 ];
 
 export const activityConfig = [
-  { key: "universities_viewed" as const, label: "Universities Viewed" },
-  { key: "universities_saved" as const, label: "Universities Saved" },
-  { key: "scholarships_saved" as const, label: "Scholarships Saved" },
-  { key: "essays_reviewed" as const, label: "Essays Reviewed" },
-  { key: "advisor_sessions_booked" as const, label: "Advisor Sessions Booked" },
-  {
-    key: "ambassador_sessions_booked" as const,
-    label: "Ambassador Sessions Booked",
-  },
-  { key: "total_logins" as const, label: "Total Logins" },
-  { key: "ai_matches_generated" as const, label: "AI Matches Generated" },
+  { key: "universities_viewed" as const },
+  { key: "universities_saved" as const },
+  { key: "scholarships_saved" as const },
+  { key: "essays_reviewed" as const },
+  { key: "advisor_sessions_booked" as const },
+  { key: "ambassador_sessions_booked" as const },
+  { key: "total_logins" as const },
+  { key: "ai_matches_generated" as const },
 ];
 
 export type StudentDashboardActivityKey =
@@ -138,9 +122,18 @@ export type DashboardTaskItem = {
   createdAt: string;
 };
 
+export type QuickActionDictKey =
+  | "personalityOverview"
+  | "programDiscovery"
+  | "discoverUniversities"
+  | "scholarships"
+  | "advisorSessions"
+  | "ambassadors"
+  | "applicationSupport"
+  | "postAdmission";
+
 export type QuickAction = {
-  name: string;
-  desc: string;
+  dictKey: QuickActionDictKey;
   href: string;
   iconWrap: string;
   iconStroke: string;
@@ -149,8 +142,7 @@ export type QuickAction = {
 
 export const quickActions: QuickAction[] = [
   {
-    name: "Personality Overview",
-    desc: "Understand your profile and how you learn best",
+    dictKey: "personalityOverview",
     href: "#",
     iconWrap: "bg-[#F3E8FF]",
     iconStroke: "#6B21A8",
@@ -164,8 +156,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Program Discovery",
-    desc: "Search and filter wide range of programs",
+    dictKey: "programDiscovery",
     href: "/student/ai-matching",
     iconWrap: "bg-[#E0F2FE]",
     iconStroke: "#0369A1",
@@ -177,8 +168,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Discover Universities",
-    desc: "Search and filter 500+ universities",
+    dictKey: "discoverUniversities",
     href: "/student/universities",
     iconWrap: "bg-[var(--green-bg)]",
     iconStroke: "#2D6A4F",
@@ -190,8 +180,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Scholarships",
-    desc: "Discover funding opportunities",
+    dictKey: "scholarships",
     href: "/student/scholarships",
     iconWrap: "bg-[#FEF9C3]",
     iconStroke: "#854D0E",
@@ -200,8 +189,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "1-1 Advisors",
-    desc: "Book 1:1 guidance with an expert",
+    dictKey: "advisorSessions",
     href: "/student/advisor-sessions",
     iconWrap: "bg-[#FAEEDA]",
     iconStroke: "#854F0B",
@@ -213,8 +201,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Ambassadors",
-    desc: "Connect with past & current students",
+    dictKey: "ambassadors",
     href: "/student/ambassadors",
     iconWrap: "bg-[var(--green-bg)]",
     iconStroke: "#2D6A4F",
@@ -227,8 +214,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Application Support",
-    desc: "We handle your full application",
+    dictKey: "applicationSupport",
     href: "/student/application-support",
     iconWrap: "bg-[#FCEBEB]",
     iconStroke: "#A32D2D",
@@ -240,8 +226,7 @@ export const quickActions: QuickAction[] = [
     ),
   },
   {
-    name: "Post Admission",
-    desc: "Visa, housing, and arrival guidance",
+    dictKey: "postAdmission",
     href: "#",
     iconWrap: "bg-[#DCFCE7]",
     iconStroke: "#166534",

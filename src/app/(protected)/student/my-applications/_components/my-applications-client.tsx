@@ -4,6 +4,7 @@ import type { Database } from "@/database.types";
 import { sortApplicationDocumentsBySlotOrder } from "@/lib/ensure-student-application-documents";
 import { COUNTRIES } from "@/lib/countries";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
+import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
@@ -68,7 +69,6 @@ import {
   BUDGET_OPTIONS,
   CURRICULUM_OPTIONS,
   ESSAY_STATUSES,
-  ESSAY_STATUS_LABEL,
   ESSAY_TYPE_OPTIONS,
   GRADE_OPTIONS,
   DEFAULT_MY_APPLICATION_DOCUMENT_SLOTS,
@@ -98,42 +98,17 @@ type TabId =
   | "recommendations"
   | "tasks";
 
-const STATUS_LABEL: Record<string, string> = {
-  considering: "Considering",
-  shortlisted: "Shortlisted",
-  preparing_application: "Preparing application",
-  submitted: "Submitted",
-  interview_invited: "Interview invited",
-  withdrawn: "Withdrawn",
-};
-
-const DECISION_LABEL: Record<string, string> = {
-  "": "—",
-  pending: "Pending",
-  offer_received: "Offer received",
-  conditional_offer: "Conditional offer",
-  waitlisted: "Waitlisted",
-  rejected: "Rejected",
-  accepted: "Accepted",
-  declined_by_me: "Declined by me",
-};
-
-const REC_STATUS_LABEL: Record<string, string> = {
-  pending: "Pending",
-  drafting: "Drafting",
-  submitted: "Submitted",
-};
-
 function methodPillLabel(applicationMethod: string | null): string {
   if (!applicationMethod) return "—";
   const i = applicationMethod.indexOf(" — ");
   return i === -1 ? applicationMethod : applicationMethod.slice(0, i);
 }
 
-function formatDate(iso: string | null | undefined) {
+function formatDate(iso: string | null | undefined, locale?: string) {
   if (!iso) return "";
+  const dateLocale = locale === "ar" ? "ar" : undefined;
   try {
-    return new Date(iso).toLocaleDateString(undefined, {
+    return new Date(iso).toLocaleDateString(dateLocale, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -144,13 +119,14 @@ function formatDate(iso: string | null | undefined) {
 }
 
 /** e.g. Feb 12, or Feb 12, 2025 if not current year */
-function formatShortMonthDay(iso: string | null | undefined) {
+function formatShortMonthDay(iso: string | null | undefined, locale?: string) {
   if (!iso) return "";
+  const dateLocale = locale === "ar" ? "ar" : undefined;
   try {
     const d = new Date(iso);
     const y = d.getFullYear();
     const nowY = new Date().getFullYear();
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(dateLocale, {
       month: "short",
       day: "numeric",
       ...(y !== nowY ? { year: "numeric" as const } : {}),
@@ -215,24 +191,34 @@ function essayToForm(essay: EssayWithComments): EssayFormState {
   };
 }
 
-function formatRelativeTime(iso: string | null | undefined) {
+function formatRelativeTime(
+  iso: string | null | undefined,
+  timeLabels: {
+    justNow: string;
+    oneHourAgo: string;
+    hoursAgo: string;
+    yesterday: string;
+    daysAgo: string;
+  },
+  locale?: string,
+) {
   if (!iso) return "";
   try {
     const t = new Date(iso).getTime();
     const diffMs = Date.now() - t;
     const days = Math.floor(diffMs / 86400000);
-    if (days < 0) return formatShortMonthDay(iso);
+    if (days < 0) return formatShortMonthDay(iso, locale);
     if (days === 0) {
       const hours = Math.floor(diffMs / 3600000);
-      if (hours < 1) return "just now";
-      if (hours === 1) return "1 hour ago";
-      return `${hours} hours ago`;
+      if (hours < 1) return timeLabels.justNow;
+      if (hours === 1) return timeLabels.oneHourAgo;
+      return timeLabels.hoursAgo.replace("{count}", String(hours));
     }
-    if (days === 1) return "yesterday";
-    if (days < 7) return `${days} days ago`;
-    return formatShortMonthDay(iso);
+    if (days === 1) return timeLabels.yesterday;
+    if (days < 7) return timeLabels.daysAgo.replace("{count}", String(days));
+    return formatShortMonthDay(iso, locale);
   } catch {
-    return formatShortMonthDay(iso);
+    return formatShortMonthDay(iso, locale);
   }
 }
 
@@ -310,6 +296,8 @@ export function MyApplicationsClient({
 }: {
   initial: MyApplicationsInitialPayload;
 }) {
+  const { dict, locale } = useLocale();
+  const app = dict.student.applications;
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "tasks" ? "tasks" : "profile";
@@ -466,8 +454,8 @@ export function MyApplicationsClient({
   ]);
 
   const completionSubtitle = useMemo(
-    () => workspaceCompletionSubtitle(missingAreas),
-    [missingAreas],
+    () => workspaceCompletionSubtitle(missingAreas, app.completion),
+    [missingAreas, app.completion],
   );
 
   const ieltsScoreInvalid = useMemo(() => {
@@ -665,7 +653,7 @@ export function MyApplicationsClient({
       return;
     }
     syncSavedApplicationProfile();
-    showToast("Saved · counselor will see updates");
+    showToast(app.toasts.saved);
   };
 
   const saveGoals = async () => {
@@ -679,7 +667,7 @@ export function MyApplicationsClient({
       return;
     }
     syncSavedApplicationProfile();
-    showToast("Saved");
+    showToast(app.toasts.saved);
   };
 
   const saveScores = async () => {
@@ -693,7 +681,9 @@ export function MyApplicationsClient({
         nIelts > IELTS_SCORE_MAX)
     ) {
       showToast(
-        `IELTS band must be between ${IELTS_SCORE_MIN} and ${IELTS_SCORE_MAX}.`,
+        app.toasts.ieltsRangeToast
+          .replace("{min}", String(IELTS_SCORE_MIN))
+          .replace("{max}", String(IELTS_SCORE_MAX)),
       );
       return;
     }
@@ -705,7 +695,9 @@ export function MyApplicationsClient({
         nToefl > TOEFL_SCORE_MAX)
     ) {
       showToast(
-        `TOEFL total must be a whole number between ${TOEFL_SCORE_MIN} and ${TOEFL_SCORE_MAX}.`,
+        app.toasts.toeflRangeToast
+          .replace("{min}", String(TOEFL_SCORE_MIN))
+          .replace("{max}", String(TOEFL_SCORE_MAX)),
       );
       return;
     }
@@ -719,7 +711,9 @@ export function MyApplicationsClient({
         nSat > SAT_SCORE_MAX)
     ) {
       showToast(
-        `SAT total must be a whole number between ${SAT_SCORE_MIN} and ${SAT_SCORE_MAX}.`,
+        app.toasts.satRangeToast
+          .replace("{min}", String(SAT_SCORE_MIN))
+          .replace("{max}", String(SAT_SCORE_MAX)),
       );
       return;
     }
@@ -731,7 +725,9 @@ export function MyApplicationsClient({
         nAct > ACT_SCORE_MAX)
     ) {
       showToast(
-        `ACT composite must be a whole number between ${ACT_SCORE_MIN} and ${ACT_SCORE_MAX}.`,
+        app.toasts.actRangeToast
+          .replace("{min}", String(ACT_SCORE_MIN))
+          .replace("{max}", String(ACT_SCORE_MAX)),
       );
       return;
     }
@@ -758,7 +754,7 @@ export function MyApplicationsClient({
       return;
     }
     syncSavedApplicationProfile();
-    showToast("Saved");
+    showToast(app.toasts.saved);
   };
 
   const addUniversity = async () => {
@@ -768,7 +764,7 @@ export function MyApplicationsClient({
       !uniForm.major_program.trim() ||
       !uniForm.application_method
     ) {
-      showToast("Fill in all fields first");
+      showToast(app.toasts.fillFields);
       return;
     }
     const nextSort = shortlist.length
@@ -791,7 +787,7 @@ export function MyApplicationsClient({
       .select("*")
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Could not add");
+      showToast(error?.message ?? app.toasts.couldNotAdd);
       return;
     }
     setShortlist((prev) => [data, ...prev]);
@@ -803,7 +799,9 @@ export function MyApplicationsClient({
       application_method: "",
       application_deadline: "",
     });
-    showToast(`${data.university_name} added · counselor will see this`);
+    showToast(
+      app.toasts.addedToShortlistToast.replace("{name}", data.university_name),
+    );
   };
 
   const updateShortlistRow = async (
@@ -818,13 +816,13 @@ export function MyApplicationsClient({
   };
 
   const removeUniversity = async (id: string) => {
-    if (!confirm("Remove this university from your shortlist?")) return;
+    if (!confirm(app.toasts.removeShortlistConfirm)) return;
     const row = shortlist.find((r) => r.id === id);
     if (row?.catalog_university_id) {
       const res = await removeUniversityFromShortlist(row.catalog_university_id);
       if (res.error) {
         showToast(
-          typeof res.error === "string" ? res.error : "Could not remove.",
+          typeof res.error === "string" ? res.error : app.toasts.couldNotRemove,
         );
         return;
       }
@@ -854,7 +852,7 @@ export function MyApplicationsClient({
       showToast(
         typeof res.error === "string"
           ? res.error
-          : "Could not move to shortlist.",
+          : app.toasts.couldNotMove,
       );
       return;
     }
@@ -867,7 +865,7 @@ export function MyApplicationsClient({
       return [inserted, ...prev];
     });
     setMoveToShortlistTarget(null);
-    showToast(`${u.name} moved to your shortlist`);
+    showToast(app.toasts.movedToShortlistToast.replace("{name}", u.name));
   };
 
   const removeFavourite = async (u: ActivityCatalogUniversity) => {
@@ -878,13 +876,15 @@ export function MyApplicationsClient({
         showToast(
           typeof res.error === "string"
             ? res.error
-            : "Could not remove from favorites.",
+            : app.toasts.couldNotRemoveFav,
         );
         return;
       }
       setFavourites((prev) => prev.filter((x) => x.uniId !== u.uniId));
       setRemoveFavouriteTarget(null);
-      showToast(`${u.name} removed from favorites`);
+      showToast(
+        app.toasts.removedFromFavoritesToast.replace("{name}", u.name),
+      );
     } finally {
       setRemovingFavourite(false);
     }
@@ -892,7 +892,7 @@ export function MyApplicationsClient({
 
   const uploadDocument = async (doc: DocRow, file: File) => {
     if (doc.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY) {
-      showToast("Your school enters this — it is read-only for you.");
+      showToast(app.toasts.schoolReadOnly);
       return;
     }
     const safeName = file.name.replace(/[^\w.\-()+ ]/g, "_");
@@ -920,33 +920,35 @@ export function MyApplicationsClient({
       .select("*")
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Update failed");
+      showToast(error?.message ?? app.toasts.updateFailed);
       return;
     }
     setDocuments((prev) => prev.map((d) => (d.id === doc.id ? data : d)));
-    showToast(`${doc.display_name} uploaded`);
+    showToast(
+      app.toasts.docUploadedToast.replace("{name}", doc.display_name),
+    );
   };
 
   const saveOtherDocumentDisplayName = async (docId: string, displayName: string) => {
-    const t = displayName.trim();
-    if (!t) {
-      showToast("Enter a short name for this document.");
+    const name = displayName.trim();
+    if (!name) {
+      showToast(app.toasts.enterDocName);
       return;
     }
-    if (t.length > 120) {
-      showToast("Name is too long (max 120 characters).");
+    if (name.length > 120) {
+      showToast(app.toasts.nameTooLong);
       return;
     }
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("student_my_application_documents")
-      .update({ display_name: t, description: null, updated_at: now })
+      .update({ display_name: name, description: null, updated_at: now })
       .eq("id", docId)
       .eq("student_id", initial.studentId)
       .select("*")
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Could not save name");
+      showToast(error?.message ?? app.toasts.couldNotSaveName);
       return;
     }
     setDocuments((prev) =>
@@ -954,7 +956,7 @@ export function MyApplicationsClient({
         prev.map((d) => (d.id === docId ? data : d)),
       ),
     );
-    showToast("Document name saved");
+    showToast(app.toasts.docNameSaved);
   };
 
   const addOtherDocument = async () => {
@@ -971,13 +973,13 @@ export function MyApplicationsClient({
       .select("*")
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Could not add document row");
+      showToast(error?.message ?? app.toasts.couldNotAddDoc);
       return;
     }
     setDocuments((prev) =>
       sortApplicationDocumentsBySlotOrder([...prev, data as DocRow]),
     );
-    showToast("Added another document row");
+    showToast(app.toasts.addedDocRow);
   };
 
   const removeOtherDocument = async (doc: DocRow) => {
@@ -989,7 +991,7 @@ export function MyApplicationsClient({
       .eq("id", doc.id)
       .eq("student_id", initial.studentId);
     if (error) {
-      showToast(error.message ?? "Could not remove document");
+      showToast(error.message ?? app.toasts.couldNotRemoveDoc);
       return;
     }
     if (storagePath) {
@@ -1005,7 +1007,7 @@ export function MyApplicationsClient({
         prev.filter((d) => d.id !== doc.id),
       ),
     );
-    showToast("Document row removed");
+    showToast(app.toasts.docRowRemoved);
   };
 
   const closeEssayModal = () => {
@@ -1032,7 +1034,7 @@ export function MyApplicationsClient({
       !essayForm.for_application.trim() ||
       !essayForm.essay_type.trim()
     ) {
-      showToast("Title, university, and essay type are required");
+      showToast(app.toasts.essayRequired);
       return;
     }
     setSavingEssay(true);
@@ -1069,7 +1071,7 @@ export function MyApplicationsClient({
         .single();
       setSavingEssay(false);
       if (error || !data) {
-        showToast(error?.message ?? "Could not update essay");
+        showToast(error?.message ?? app.toasts.couldNotUpdateEssay);
         return;
       }
       setEssays((prev) =>
@@ -1078,7 +1080,7 @@ export function MyApplicationsClient({
         ),
       );
       closeEssayModal();
-      showToast("Essay updated");
+      showToast(app.toasts.essayUpdated);
       return;
     }
     const { data, error } = await supabase
@@ -1095,12 +1097,12 @@ export function MyApplicationsClient({
       .single();
     setSavingEssay(false);
     if (error || !data) {
-      showToast(error?.message ?? "Could not create");
+      showToast(error?.message ?? app.toasts.couldNotCreate);
       return;
     }
     setEssays((prev) => [data as EssayWithComments, ...prev]);
     closeEssayModal();
-    showToast("Essay created");
+    showToast(app.toasts.essayCreated);
   };
 
   const deleteEssay = async (essay: EssayWithComments) => {
@@ -1113,7 +1115,7 @@ export function MyApplicationsClient({
       .eq("student_id", initial.studentId);
     if (error) {
       setDeletingEssay(false);
-      showToast(error.message ?? "Could not delete essay");
+      showToast(error.message ?? app.toasts.couldNotDeleteEssay);
       return;
     }
     if (storagePath) {
@@ -1128,7 +1130,7 @@ export function MyApplicationsClient({
     if (essayDetailId === essay.id) setEssayDetailId(null);
     setEssayDeleteTarget(null);
     setDeletingEssay(false);
-    showToast("Essay deleted");
+    showToast(app.toasts.essayDeleted);
   };
 
   const updateEssayStatus = async (
@@ -1155,7 +1157,7 @@ export function MyApplicationsClient({
       )
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Could not update status");
+      showToast(error?.message ?? app.toasts.couldNotUpdateStatus);
       return;
     }
     setEssays((prev) =>
@@ -1206,7 +1208,7 @@ export function MyApplicationsClient({
       )
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Could not save file");
+      showToast(error?.message ?? app.toasts.couldNotSaveFile);
       return;
     }
     setEssays((prev) =>
@@ -1214,8 +1216,8 @@ export function MyApplicationsClient({
     );
     showToast(
       wasNotStarted
-        ? "File uploaded · status updated to In progress"
-        : "File uploaded",
+        ? app.toasts.fileUploadedInProgress
+        : app.toasts.fileUploaded,
     );
   };
 
@@ -1255,7 +1257,9 @@ export function MyApplicationsClient({
         personal_note: "",
         needed_by: "",
       });
-      showToast(`Request sent to ${res.row.teacher_name}`);
+      showToast(
+        app.toasts.requestSentToast.replace("{name}", res.row.teacher_name),
+      );
     } finally {
       setSendingRecRequest(false);
     }
@@ -1267,7 +1271,9 @@ export function MyApplicationsClient({
       showToast(res.error);
       return;
     }
-    showToast(`Reminder sent to ${teacherName}`);
+    showToast(
+      app.toasts.reminderSentToast.replace("{teacherName}", teacherName),
+    );
   };
 
   const viewRecLetter = async (recommendationId: string) => {
@@ -1279,8 +1285,8 @@ export function MyApplicationsClient({
     window.open(res.url, "_blank", "noopener,noreferrer");
   };
 
-  const toggleTask = async (t: TaskRow) => {
-    const next = !t.completed;
+  const toggleTask = async (task: TaskRow) => {
+    const next = !task.completed;
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("student_my_application_tasks")
@@ -1289,14 +1295,14 @@ export function MyApplicationsClient({
         completed_at: next ? now : null,
         updated_at: now,
       })
-      .eq("id", t.id)
+      .eq("id", task.id)
       .select("*")
       .single();
     if (error || !data) {
-      showToast(error?.message ?? "Update failed");
+      showToast(error?.message ?? app.toasts.updateFailed);
       return;
     }
-    setTasks((prev) => prev.map((x) => (x.id === t.id ? data : x)));
+    setTasks((prev) => prev.map((x) => (x.id === task.id ? data : x)));
   };
 
   const fieldClass =
@@ -1334,15 +1340,13 @@ export function MyApplicationsClient({
     <div className="mx-auto pb-14 text-[var(--text)]">
       <div className="mb-[18px] px-4">
         <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--green)]">
-          Your application workspace
+          {app.workspaceLabel}
         </div>
         <h1 className="font-[family-name:var(--font-dm-serif)] font-bold text-[28px] leading-tight tracking-tight text-[var(--text)] sm:text-[30px]">
-          Keep your school in the loop
+          {app.pageTitle}
         </h1>
         <p className="mt-1.5 max-w-[680px] text-sm leading-relaxed text-[var(--text-mid)]">
-          Update your profile, shortlist, documents, and application status
-          here. Your school counselor sees this in real time and can flag
-          anything that needs attention before deadlines.
+          {app.pageSubtitle}
         </p>
       </div>
 
@@ -1350,7 +1354,7 @@ export function MyApplicationsClient({
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
         <div className="relative z-[1] min-w-0 flex-1">
           <div className="font-[family-name:var(--font-dm-serif)] text-lg leading-snug">
-            Your application is {pct}% complete
+            {app.completionTitle.replace("{pct}", String(pct))}
           </div>
           <div className="mt-1 text-[12.5px] text-white/70">
             {completionSubtitle}
@@ -1372,12 +1376,12 @@ export function MyApplicationsClient({
       <div className="mb-4 flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
         {(
           [
-            ["profile", "Profile", null],
-            ["universities", "Universities", universitiesTabCount],
-            ["documents", "Documents", missingDocs > 0 ? missingDocs : null],
-            ["essays", "Essays", null],
-            ["recommendations", "Recommendations", null],
-            ["tasks", "Tasks", openTasks > 0 ? openTasks : null],
+            ["profile", app.tabs.profile, null],
+            ["universities", app.tabs.universities, universitiesTabCount],
+            ["documents", app.tabs.documents, missingDocs > 0 ? missingDocs : null],
+            ["essays", app.tabs.essays, null],
+            ["recommendations", app.tabs.recommendations, null],
+            ["tasks", app.tabs.tasks, openTasks > 0 ? openTasks : null],
           ] as const
         ).map(([id, label, badge]) => (
           <button
@@ -1408,42 +1412,25 @@ export function MyApplicationsClient({
 
       {tab === "profile" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
-          <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
-              <svg
-                className="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4M12 16h.01" />
-              </svg>
-            </div>
-            <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              <strong>Why this matters:</strong> The information you fill in
-              here is what your counselor sees on their dashboard. Better info →
-              better guidance.
-            </p>
-          </div>
+          <CalloutInfo>
+            <strong>{app.profileWhyTitle}</strong> {app.profileWhyText}
+          </CalloutInfo>
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  About you
+                  {app.aboutYou}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Basic info — most of this came from your school registration
+                  {app.aboutYouSub}
                 </div>
               </div>
             </div>
             <div className={panelBodyClass}>
               <div className="grid gap-3.5 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>First name</label>
+                  <label className={labelClass}>{app.firstName}</label>
                   <input
                     className={fieldClass}
                     value={firstName}
@@ -1451,7 +1438,7 @@ export function MyApplicationsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>Last name</label>
+                  <label className={labelClass}>{app.lastName}</label>
                   <input
                     className={fieldClass}
                     value={lastName}
@@ -1459,7 +1446,7 @@ export function MyApplicationsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>School email</label>
+                  <label className={labelClass}>{app.schoolEmail}</label>
                   <input
                     className={`${fieldClass} bg-[var(--cream)] text-[var(--text-light)]`}
                     value={initial.profile.email}
@@ -1467,13 +1454,13 @@ export function MyApplicationsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>Grade</label>
+                  <label className={labelClass}>{app.grade}</label>
                   <select
                     className={fieldClass}
                     value={grade}
                     onChange={(e) => setGrade(e.target.value)}
                   >
-                    <option value="">Select…</option>
+                    <option value="">{app.select}</option>
                     {gradeSelectOptions.map((g) => (
                       <option key={g} value={g}>
                         {g}
@@ -1482,13 +1469,13 @@ export function MyApplicationsClient({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className={labelClass}>Curriculum</label>
+                  <label className={labelClass}>{app.curriculum}</label>
                   <select
                     className={fieldClass}
                     value={curriculum}
                     onChange={(e) => setCurriculum(e.target.value)}
                   >
-                    <option value="">Select…</option>
+                    <option value="">{app.select}</option>
                     {CURRICULUM_OPTIONS.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -1497,7 +1484,7 @@ export function MyApplicationsClient({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className={labelClass}>Nationality</label>
+                  <label className={labelClass}>{app.nationality}</label>
                   <select
                     className={fieldClass}
                     value={nationalityCode}
@@ -1511,16 +1498,16 @@ export function MyApplicationsClient({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className={labelClass}>When are you looking to start University</label>
+                  <label className={labelClass}>{app.targetIntake}</label>
                   <select
                     className={fieldClass}
                     value={targetIntake}
                     onChange={(e) => setTargetIntake(e.target.value)}
                   >
-                    <option value="">Select…</option>
-                    {TARGET_INTAKE_OPTIONS.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
+                    <option value="">{app.select}</option>
+                    {TARGET_INTAKE_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
                       </option>
                     ))}
                   </select>
@@ -1532,7 +1519,7 @@ export function MyApplicationsClient({
                   className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
                   onClick={() => void saveAbout()}
                 >
-                  Save changes
+                  {app.saveChanges}
                 </button>
               </div>
             </div>
@@ -1542,11 +1529,10 @@ export function MyApplicationsClient({
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Your goals
+                  {app.yourGoals}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Where you want to study, what you want to study, and your
-                  budget
+                  {app.yourGoalsSub}
                 </div>
               </div>
             </div>
@@ -1559,22 +1545,22 @@ export function MyApplicationsClient({
               />
               <div className="mt-3.5">
                 <TagField
-                  label="Interested programs / majors"
-                  labelTooltip="Type a program or major, then press Enter to add it."
+                  label={app.interestedPrograms}
+                  labelTooltip={app.programsTooltip}
                   values={programs}
                   onChange={setPrograms}
-                  placeholder="Add a program…"
+                  placeholder={app.addProgram}
                 />
               </div>
               <div className="mt-3.5 grid gap-3.5 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>Budget range (annual)</label>
+                  <label className={labelClass}>{app.budgetRange}</label>
                   <select
                     className={fieldClass}
                     value={budgetRange}
                     onChange={(e) => setBudgetRange(e.target.value)}
                   >
-                    <option value="">Select…</option>
+                    <option value="">{app.select}</option>
                     {BUDGET_OPTIONS.map((b) => (
                       <option key={b} value={b}>
                         {b}
@@ -1583,13 +1569,13 @@ export function MyApplicationsClient({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>Need-based financial aid</label>
+                  <label className={labelClass}>{app.needAid}</label>
                   <select
                     className={fieldClass}
                     value={needAid}
                     onChange={(e) => setNeedAid(e.target.value)}
                   >
-                    <option value="">Select…</option>
+                    <option value="">{app.select}</option>
                     {AID_OPTIONS.map((a) => (
                       <option key={a} value={a}>
                         {a}
@@ -1604,7 +1590,7 @@ export function MyApplicationsClient({
                   className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
                   onClick={() => void saveGoals()}
                 >
-                  Save goals
+                  {app.saveGoals}
                 </button>
               </div>
             </div>
@@ -1614,17 +1600,17 @@ export function MyApplicationsClient({
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Test scores
+                  {app.testScores}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Add your test scores as you take them
+                  {app.testScoresSub}
                 </div>
               </div>
             </div>
             <div className={panelBodyClass}>
               <div className="grid gap-3.5 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>IELTS (overall band)</label>
+                  <label className={labelClass}>{app.ielts}</label>
                   <input
                     className={`${fieldClass} ${
                       ieltsScoreInvalid
@@ -1645,7 +1631,7 @@ export function MyApplicationsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>TOEFL iBT (total)</label>
+                  <label className={labelClass}>{app.toefl}</label>
                   <input
                     className={`${fieldClass} ${
                       toeflScoreInvalid
@@ -1666,7 +1652,7 @@ export function MyApplicationsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>SAT (total)</label>
+                  <label className={labelClass}>{app.sat}</label>
                   <input
                     className={`${fieldClass} ${
                       satScoreInvalid
@@ -1687,7 +1673,7 @@ export function MyApplicationsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>ACT (composite)</label>
+                  <label className={labelClass}>{app.act}</label>
                   <input
                     className={`${fieldClass} ${
                       actScoreInvalid
@@ -1709,7 +1695,7 @@ export function MyApplicationsClient({
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>
-                    Predicted IB / A-Level grades
+                    {app.predictedGrades}
                   </label>
                   <input
                     className={`${fieldClass} ${predictedGradesLocked ? "bg-[var(--cream)] text-[var(--text-light)]" : ""}`}
@@ -1719,18 +1705,17 @@ export function MyApplicationsClient({
                   />
                   {predictedGradesLocked ? (
                     <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
-                      Your school entered this — ask your counselor if it needs
-                      updating.
+                      {app.predictedLocked}
                     </p>
                   ) : null}
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className={labelClass}>
-                    Other tests (AP, BMAT, LNAT…)
+                    {app.otherTests}
                   </label>
                   <input
                     className={fieldClass}
-                    placeholder="e.g. AP Calc BC: 5, AP Physics: 4"
+                    placeholder={app.otherTestsPlaceholder}
                     value={otherTests}
                     onChange={(e) => setOtherTests(e.target.value)}
                   />
@@ -1742,7 +1727,7 @@ export function MyApplicationsClient({
                   className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
                   onClick={() => void saveScores()}
                 >
-                  Save scores
+                  {app.saveScores}
                 </button>
               </div>
             </div>
@@ -1752,55 +1737,26 @@ export function MyApplicationsClient({
 
       {tab === "universities" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
-          <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
-              <svg
-                className="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4M12 16h.01" />
-              </svg>
-            </div>
-            <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              Tap the star on a university in{" "}
-              <Link
-                href="/student/universities"
-                className="font-semibold text-[var(--green-dark)] underline decoration-[var(--green)] underline-offset-2 hover:text-[var(--green)]"
-              >
-                University Search
-              </Link>{" "}
-              to add it to <strong>Favorites</strong> here. Use{" "}
-              <strong>Move to shortlist</strong> when you are ready to track
-              status and decisions, or add a school manually in{" "}
-              <strong>Shortlist</strong>.
-            </p>
-          </div>
+          <CalloutInfo>{app.universitiesHint}</CalloutInfo>
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Favorites{" "}
+                  {app.favorites}{" "}
                   <span className="font-normal text-[var(--text-light)]">
                     ({favourites.length})
                   </span>
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Schools you starred in the catalog — not visible to your
-                  counselor until they are on your shortlist
+                  {app.favoritesSub}
                 </div>
               </div>
             </div>
             <div className={`${panelBodyClass} space-y-2`}>
               {favourites.length === 0 ? (
                 <p className="text-sm text-[var(--text-mid)]">
-                  No favorites yet — open University Search and tap the star on
-                  any card to save it here.
+                  {app.noFavorites}
                 </p>
               ) : (
                 favourites.map((u) => (
@@ -1811,8 +1767,8 @@ export function MyApplicationsClient({
                     <button
                       type="button"
                       className="absolute cursor-pointer right-0 top-0 z-10 flex h-5 w-5 items-center justify-center rounded-md text-[var(--text-hint)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--text-mid)]"
-                      aria-label={`Remove ${u.name} from favorites`}
-                      title="Remove from favorites"
+                      aria-label={app.removeFavoriteAria.replace("{name}", u.name)}
+                      title={app.removeFavoriteTitle}
                       onClick={() => setRemoveFavouriteTarget(u)}
                     >
                       <svg
@@ -1847,7 +1803,7 @@ export function MyApplicationsClient({
                             {u.name}
                           </span>
                           <span className="rounded-full bg-[#fffbeb] px-2 py-0.5 text-[10px] font-semibold text-[#8a6d1b]">
-                            Catalog
+                            {app.catalog}
                           </span>
                         </div>
                         <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
@@ -1871,14 +1827,14 @@ export function MyApplicationsClient({
                         href={`/student/universities/${u.uniId}`}
                         className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
                       >
-                        View in catalog
+                        {app.viewInCatalog}
                       </Link>
                       <button
                         type="button"
                         className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-colors hover:bg-[var(--green-dark)]"
                         onClick={() => setMoveToShortlistTarget(u)}
                       >
-                        Move to shortlist
+                        {app.moveToShortlist}
                       </button>
                     </div>
                   </div>
@@ -1891,14 +1847,13 @@ export function MyApplicationsClient({
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Shortlist{" "}
+                  {app.shortlist}{" "}
                   <span className="font-normal text-[var(--text-light)]">
                     ({shortlist.length})
                   </span>
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Track application status and decisions — your counselor sees
-                  this list. Add schools manually if they are not in the catalog.
+                  {app.shortlistSub}
                 </div>
               </div>
               <button
@@ -1917,15 +1872,15 @@ export function MyApplicationsClient({
                 >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                Add university
+                {app.addUniversity}
               </button>
             </div>
             <div className={`${panelBodyClass} space-y-2`}>
               {shortlist.length === 0 ? (
                 <p className="text-sm text-[var(--text-mid)]">
                   {favourites.length > 0
-                    ? "Nothing on your shortlist yet — move a favorite here when you are ready to track it, or use Add university."
-                    : "No schools on your shortlist yet — move a favorite here or add one manually."}
+                    ? app.noShortlistWithFavorites
+                    : app.noShortlist}
                 </p>
               ) : (
                 shortlist.map((u) => (
@@ -1961,7 +1916,7 @@ export function MyApplicationsClient({
                     <div className="flex w-full min-w-0 flex-col gap-2 lg:max-w-[min(100%,420px)] lg:flex-1 lg:flex-row lg:items-end lg:gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 text-[9.5px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
-                          Status
+                          {app.status}
                         </div>
                         <select
                           className={`${fieldClass} w-full py-1.5 text-[11.5px]`}
@@ -1978,14 +1933,14 @@ export function MyApplicationsClient({
                         >
                           {UNIVERSITY_APPLICATION_STATUSES.map((s) => (
                             <option key={s} value={s}>
-                              {STATUS_LABEL[s] ?? s}
+                              {app.statusLabels[s] ?? s}
                             </option>
                           ))}
                         </select>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 text-[9.5px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
-                          Decision
+                          {app.decision}
                         </div>
                         <select
                           className={`${fieldClass} w-full py-1.5 text-[11.5px]`}
@@ -2004,7 +1959,7 @@ export function MyApplicationsClient({
                         >
                           {UNIVERSITY_DECISIONS.map((d) => (
                             <option key={d || "none"} value={d}>
-                              {DECISION_LABEL[d] ?? d}
+                              {app.decisionLabels[d] ?? d}
                             </option>
                           ))}
                         </select>
@@ -2014,7 +1969,7 @@ export function MyApplicationsClient({
                         className="inline-flex w-full shrink-0 items-center justify-center self-stretch rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[#f0c4c4] hover:bg-[#FCEBEB] hover:text-[var(--red)] lg:w-auto lg:self-end"
                         onClick={() => void removeUniversity(u.id)}
                       >
-                        Remove from shortlist
+                        {app.removeFromShortlist}
                       </button>
                     </div>
                   </div>
@@ -2027,36 +1982,15 @@ export function MyApplicationsClient({
 
       {tab === "documents" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
-          <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
-              <svg
-                className="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4M12 16h.01" />
-              </svg>
-            </div>
-            <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
-              Upload each file-based document below. <strong>Predicted</strong>{" "}
-              is entered by your school and is read-only. Once uploaded, a file
-              shows as <strong>Submitted</strong> and you can replace it anytime.
-              Use <strong>Other documents</strong> at the bottom for anything
-              extra (name the row, then upload).
-            </p>
-          </div>
+          <CalloutInfo>{app.documentsHint}</CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Document checklist
+                  {app.documentChecklist}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Upload files where needed · Predicted is from your school
+                  {app.documentChecklistSub}
                 </div>
               </div>
             </div>
@@ -2065,6 +1999,7 @@ export function MyApplicationsClient({
                 <DocumentRow
                   key={d.id}
                   doc={d}
+                  locale={locale}
                   onPickFile={(file) => void uploadDocument(d, file)}
                 />
               ))}
@@ -2076,13 +2011,10 @@ export function MyApplicationsClient({
               <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="min-w-0">
                   <div className="text-[15px] font-semibold tracking-tight">
-                    Other documents
+                    {app.otherDocuments}
                   </div>
                   <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                    Name what you are uploading, then attach a file — medical
-                    forms, extra certificates, or anything else your counselor
-                    should have. Use <strong>Add another document</strong> for
-                    more files.
+                    {app.otherDocumentsSub}
                   </div>
                 </div>
                 <button
@@ -2090,7 +2022,7 @@ export function MyApplicationsClient({
                   className={`${btnSmClass(false)} shrink-0 self-start sm:mt-0.5`}
                   onClick={() => void addOtherDocument()}
                 >
-                  Add another document
+                  {app.addAnotherDocument}
                 </button>
               </div>
             </div>
@@ -2100,6 +2032,7 @@ export function MyApplicationsClient({
                   <DocumentRow
                     key={d.id}
                     doc={d}
+                    locale={locale}
                     onPickFile={(file) => void uploadDocument(d, file)}
                     allowDisplayNameEdit
                     onSaveDisplayName={(name) =>
@@ -2111,9 +2044,7 @@ export function MyApplicationsClient({
                 ))
               ) : (
                 <p className="text-sm text-[var(--text-mid)]">
-                  No extra documents yet. Use{" "}
-                  <strong>Add another document</strong> when you need to upload
-                  something outside the checklist above.
+                  {app.noOtherDocuments}
                 </p>
               )}
             </div>
@@ -2123,20 +2054,15 @@ export function MyApplicationsClient({
 
       {tab === "essays" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
-          <CalloutInfo>
-            Upload PDFs or Word files and track status.{" "}
-            <strong>
-              Your counselor&apos;s comments appear in each essay&apos;s detail view.
-            </strong>
-          </CalloutInfo>
+          <CalloutInfo>{app.essaysHint}</CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Your essays
+                  {app.yourEssays}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Linked to a university or application — counselor sees updates in their portal
+                  {app.yourEssaysSub}
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -2156,7 +2082,7 @@ export function MyApplicationsClient({
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
-                  Essay review
+                  {app.essayReview}
                 </Link>
                 <button
                   type="button"
@@ -2174,7 +2100,7 @@ export function MyApplicationsClient({
                   >
                     <path d="M12 5v14M5 12h14" />
                   </svg>
-                  Add essay
+                  {app.addEssay}
                 </button>
               </div>
             </div>
@@ -2182,8 +2108,8 @@ export function MyApplicationsClient({
               {essays.length === 0 ? (
                 <p className="text-sm text-[var(--text-mid)]">
                   {shortlistHintUniversities.length > 0
-                    ? "You have not added any essays yet."
-                    : "No essays yet — use Add essay when you are ready."}
+                    ? app.noEssaysYet
+                    : app.noEssays}
                 </p>
               ) : null}
               {essays.map((e) => {
@@ -2215,11 +2141,11 @@ export function MyApplicationsClient({
                         {e.title}
                       </div>
                       <div className="mt-1 text-[11.5px] leading-relaxed text-[var(--text-light)]">
-                        <span className="font-medium text-[var(--text-mid)]">For:</span>{" "}
+                        <span className="font-medium text-[var(--text-mid)]">{app.forLabel}</span>{" "}
                         {e.for_application ?? "—"}
                         {e.essay_type ? <> · {e.essay_type}</> : null}
-                        {e.limit_note ? <> · Limit: {e.limit_note}</> : null}
-                        {e.deadline ? <> · Due {formatDate(e.deadline)}</> : null}
+                        {e.limit_note ? <> · {app.limit} {e.limit_note}</> : null}
+                        {e.deadline ? <> · {app.due} {formatDate(e.deadline, locale)}</> : null}
                       </div>
                       {e.essay_prompt?.trim() ? (
                         <div className="mt-2 line-clamp-2 text-[12px] text-[var(--text-mid)]">
@@ -2244,10 +2170,10 @@ export function MyApplicationsClient({
                         {hasFile ? (
                           <span>
                             <span className="font-medium text-[var(--text)]">{e.file_name}</span>
-                            {e.file_uploaded_at ? <> · {formatDate(e.file_uploaded_at)}</> : null}
+                            {e.file_uploaded_at ? <> · {formatDate(e.file_uploaded_at, locale)}</> : null}
                           </span>
                         ) : (
-                          <span>No file uploaded yet</span>
+                          <span>{app.noFileUploaded}</span>
                         )}
                       </div>
                       {comments.length > 0 ? (
@@ -2255,7 +2181,9 @@ export function MyApplicationsClient({
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                           </svg>
-                          {comments.length} counselor comment{comments.length !== 1 ? "s" : ""}
+                          {comments.length === 1
+                            ? app.counselorComments.replace("{count}", String(comments.length))
+                            : app.counselorCommentsPlural.replace("{count}", String(comments.length))}
                         </div>
                       ) : null}
                     </div>
@@ -2266,11 +2194,11 @@ export function MyApplicationsClient({
                         onChange={(ev) =>
                           void updateEssayStatus(e.id, ev.target.value as EssayStatusSlug)
                         }
-                        aria-label="Essay status"
+                        aria-label={app.essayStatusAria}
                       >
                         {ESSAY_STATUSES.map((v) => (
                           <option key={v} value={v}>
-                            {ESSAY_STATUS_LABEL[v]}
+                            {app.essayStatusLabels[v]}
                           </option>
                         ))}
                       </select>
@@ -2280,14 +2208,14 @@ export function MyApplicationsClient({
                           className={studentEssayBtnRow(false)}
                           onClick={() => openEssayModalForEdit(e)}
                         >
-                          Edit
+                          {app.edit}
                         </button>
                         <button
                           type="button"
                           className={studentEssayBtnRow(false, true)}
                           onClick={() => setEssayDeleteTarget(e)}
                         >
-                          Delete
+                          {app.delete}
                         </button>
                         <button
                           type="button"
@@ -2296,7 +2224,7 @@ export function MyApplicationsClient({
                             setEssayDetailId(e.id);
                           }}
                         >
-                          Detail
+                          {app.detail}
                         </button>
                         <label className={studentEssayBtnRow(true) + " cursor-pointer"}>
                           <input
@@ -2308,7 +2236,7 @@ export function MyApplicationsClient({
                               if (f) void uploadEssayFile(e.id, f);
                             }}
                           />
-                          Upload
+                          {app.upload}
                         </label>
                       </div>
                       {hasFile ? (
@@ -2317,7 +2245,7 @@ export function MyApplicationsClient({
                           className={studentEssayBtnRow(false)}
                           onClick={() => void openEssayFile(e.id)}
                         >
-                          View file
+                          {app.viewFile}
                         </button>
                       ) : null}
                     </div>
@@ -2341,13 +2269,13 @@ export function MyApplicationsClient({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-semibold text-[var(--text-light)]">
-                      Need to write essays for:{" "}
+                      {app.needEssaysFor}{" "}
                       {shortlistHintUniversities
                         .map((u) => u.university_name)
                         .join(", ")}
                     </div>
                     <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
-                      Use Add essay above to create a requirement for these universities
+                      {app.needEssaysHint}
                     </div>
                   </div>
                 </div>
@@ -2359,22 +2287,15 @@ export function MyApplicationsClient({
 
       {tab === "recommendations" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
-          <CalloutInfo>
-            <strong>
-              Most universities require 1–2 recommendation letters
-            </strong>{" "}
-            from teachers. Request them here — your teacher gets a notification,
-            drafts the letter on Univeera, and submits it directly.
-          </CalloutInfo>
+          <CalloutInfo>{app.recHint}</CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Recommendation letters
+                  {app.recommendationLetters}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Track requests, see which letters are pending, drafting, or
-                  submitted
+                  {app.recSub}
                 </div>
               </div>
               <button
@@ -2393,13 +2314,13 @@ export function MyApplicationsClient({
                 >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                Request a letter
+                {app.requestLetter}
               </button>
             </div>
             <div className={`${panelBodyClass} space-y-[7px]`}>
               {recs.length === 0 ? (
                 <p className="text-sm text-[var(--text-mid)]">
-                  No requests yet.
+                  {app.noRequests}
                 </p>
               ) : (
                 recs.map((r) => {
@@ -2412,27 +2333,30 @@ export function MyApplicationsClient({
                   const metaTail =
                     r.status === "submitted"
                       ? r.submitted_at
-                        ? `Submitted ${formatShortMonthDay(r.submitted_at)}`
-                        : "Submitted"
+                        ? app.submittedOn.replace(
+                            "{date}",
+                            formatShortMonthDay(r.submitted_at, locale),
+                          )
+                        : app.recStatusLabels.submitted
                       : r.status === "drafting"
-                        ? "Drafting in progress"
-                        : "Awaiting response";
+                        ? app.draftingInProgress
+                        : app.awaitingResponse;
                   const teacherLine = `${r.teacher_name}${r.teacher_subject?.trim() ? ` (${r.teacher_subject.trim()})` : ""}`;
                   const pill =
                     r.status === "submitted" ? (
                       <StatusPill
                         variant="green"
-                        label={REC_STATUS_LABEL.submitted}
+                        label={app.recStatusLabels.submitted}
                       />
                     ) : r.status === "drafting" ? (
                       <StatusPill
                         variant="amber"
-                        label={REC_STATUS_LABEL.drafting}
+                        label={app.recStatusLabels.drafting}
                       />
                     ) : (
                       <StatusPill
                         variant="red"
-                        label={REC_STATUS_LABEL.pending}
+                        label={app.recStatusLabels.pending}
                       />
                     );
                   const action =
@@ -2442,7 +2366,7 @@ export function MyApplicationsClient({
                         className={btnSmClass(false)}
                         onClick={() => void viewRecLetter(r.id)}
                       >
-                        View
+                        {app.view}
                       </button>
                     ) : r.status === "drafting" ? (
                       <button
@@ -2450,11 +2374,14 @@ export function MyApplicationsClient({
                         className={btnSmClass(false)}
                         onClick={() =>
                           showToast(
-                            `Friendly nudge sent to ${r.teacher_name} (stub).`,
+                            app.toasts.nudgeSent.replace(
+                              "{name}",
+                              r.teacher_name,
+                            ),
                           )
                         }
                       >
-                        Nudge
+                        {app.nudge}
                       </button>
                     ) : (
                       <button
@@ -2464,7 +2391,7 @@ export function MyApplicationsClient({
                           void resendRecRequest(r.id, r.teacher_name)
                         }
                       >
-                        Resend
+                        {app.resend}
                       </button>
                     );
                   return (
@@ -2493,8 +2420,8 @@ export function MyApplicationsClient({
                           {teacherLine}
                         </div>
                         <div className="mt-0.5 text-[11.5px] leading-snug text-[var(--text-light)]">
-                          For: {r.for_application} · Requested{" "}
-                          {formatShortMonthDay(r.requested_at)} · {metaTail}
+                          {app.forRecLabel} {r.for_application} · {app.requestedLabel}{" "}
+                          {formatShortMonthDay(r.requested_at, locale)} · {metaTail}
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
@@ -2511,7 +2438,7 @@ export function MyApplicationsClient({
           <div className={`${panelClass} mt-3.5`}>
             <div className={panelHeadClass}>
               <div className="text-[15px] font-semibold tracking-tight">
-                Tips for great recommendation letters
+                {app.recTipsTitle}
               </div>
             </div>
             <div className={`${panelBodyClass} pt-2`}>
@@ -2521,8 +2448,7 @@ export function MyApplicationsClient({
                     →
                   </span>
                   <div>
-                    <strong>Ask early.</strong> Give teachers at least 4–6
-                    weeks. They often write 20+ letters per cycle.
+                    <strong>{app.recTip1Title}</strong> {app.recTip1}
                   </div>
                 </div>
                 <div className="flex gap-2.5">
@@ -2530,9 +2456,7 @@ export function MyApplicationsClient({
                     →
                   </span>
                   <div>
-                    <strong>Pick teachers who know you well.</strong> A B+ from
-                    a teacher who knows your story is better than an A from one
-                    who doesn&apos;t.
+                    <strong>{app.recTip2Title}</strong> {app.recTip2}
                   </div>
                 </div>
                 <div className="flex gap-2.5">
@@ -2540,9 +2464,7 @@ export function MyApplicationsClient({
                     →
                   </span>
                   <div>
-                    <strong>Add a personal note.</strong> Remind them of a
-                    specific project, presentation, or moment they could
-                    mention.
+                    <strong>{app.recTip3Title}</strong> {app.recTip3}
                   </div>
                 </div>
               </div>
@@ -2554,76 +2476,83 @@ export function MyApplicationsClient({
       {tab === "tasks" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease]">
           <CalloutInfo>
-            These tasks were assigned by{" "}
-            <strong>{counselorDisplayName ?? "your counselor"}</strong>. Tick
-            them off as you complete them.
+            {app.tasksHint.replace(
+              "{name}",
+              counselorDisplayName ?? app.yourCounselor,
+            )}
           </CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Tasks from your counselor
+                  {app.tasksFromCounselor}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  {openTasks} open
+                  {app.openTasks.replace("{count}", String(openTasks))}
                   {tasksDueThisWeek > 0
-                    ? ` · ${tasksDueThisWeek} due this week`
+                    ? app.dueThisWeek.replace(
+                        "{count}",
+                        String(tasksDueThisWeek),
+                      )
                     : ""}
                 </div>
               </div>
             </div>
             <div className={`${panelBodyClass} space-y-[7px]`}>
               {tasks.length === 0 ? (
-                <p className="text-sm text-[var(--text-mid)]">No tasks yet.</p>
+                <p className="text-sm text-[var(--text-mid)]">{app.noTasks}</p>
               ) : (
-                tasks.map((t) => {
-                  const overdue = isTaskDueOverdue(t.due_date, t.completed);
-                  const assignLabel = t.assigned_by_name?.trim()
-                    ? `Assigned by ${t.assigned_by_name.trim()}`
-                    : "Self-assigned";
+                tasks.map((task) => {
+                  const overdue = isTaskDueOverdue(task.due_date, task.completed);
+                  const assignLabel = task.assigned_by_name?.trim()
+                    ? app.assignedBy.replace(
+                        "{name}",
+                        task.assigned_by_name.trim(),
+                      )
+                    : app.selfAssigned;
                   const priorityPill =
-                    t.priority === "high" ? (
+                    task.priority === "high" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(231,76,60,0.12)] px-[7px] py-px text-[10px] font-bold text-[#8c2d22]">
                         <span
                           className="h-1 w-1 shrink-0 rounded-full bg-[var(--red)]"
                           aria-hidden
                         />
-                        High
+                        {app.high}
                       </span>
-                    ) : t.priority === "medium" ? (
+                    ) : task.priority === "medium" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(212,162,42,0.14)] px-[7px] py-px text-[10px] font-bold text-[#7a5d10]">
                         <span
                           className="h-1 w-1 shrink-0 rounded-full bg-[#D4A22A]"
                           aria-hidden
                         />
-                        Medium
+                        {app.medium}
                       </span>
-                    ) : t.priority === "low" ? (
+                    ) : task.priority === "low" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#ECEAE5] px-[7px] py-px text-[10px] font-bold text-[var(--text-mid)]">
                         <span
                           className="h-1 w-1 shrink-0 rounded-full bg-[#a0a0a0]"
                           aria-hidden
                         />
-                        Low
+                        {app.low}
                       </span>
                     ) : null;
                   return (
                     <button
-                      key={t.id}
+                      key={task.id}
                       type="button"
-                      onClick={() => void toggleTask(t)}
+                      onClick={() => void toggleTask(task)}
                       className={`flex w-full cursor-pointer items-start gap-3 rounded-[10px] border border-[var(--border-light)] px-3.5 py-3 text-left transition-colors hover:border-[var(--border)] ${
-                        t.completed ? "bg-[var(--cream)]" : "bg-white"
+                        task.completed ? "bg-[var(--cream)]" : "bg-white"
                       }`}
                     >
                       <div
                         className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] border-[var(--border)] bg-white ${
-                          t.completed
+                          task.completed
                             ? "border-[var(--green-bright)] bg-[var(--green-bright)]"
                             : ""
                         }`}
                       >
-                        {t.completed ? (
+                        {task.completed ? (
                           <svg
                             className="h-2.5 w-2.5 text-white"
                             viewBox="0 0 24 24"
@@ -2638,25 +2567,25 @@ export function MyApplicationsClient({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div
-                          className={`text-[13.5px] font-semibold ${t.completed ? "text-[var(--text-light)] line-through" : ""}`}
+                          className={`text-[13.5px] font-semibold ${task.completed ? "text-[var(--text-light)] line-through" : ""}`}
                         >
-                          {t.title}
+                          {task.title}
                         </div>
-                        {t.notes?.trim() ? (
+                        {task.notes?.trim() ? (
                           <p
                             className={`mt-1 whitespace-pre-wrap text-[12px] leading-snug text-[var(--text-mid)] ${
-                              t.completed
+                              task.completed
                                 ? "text-[var(--text-hint)] line-through"
                                 : ""
                             }`}
                           >
-                            {t.notes.trim()}
+                            {task.notes.trim()}
                           </p>
                         ) : null}
                         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px] text-[var(--text-light)]">
                           <span>{assignLabel}</span>
                           {priorityPill}
-                          {!t.completed && t.due_date ? (
+                          {!task.completed && task.due_date ? (
                             <span
                               className={
                                 overdue
@@ -2664,13 +2593,19 @@ export function MyApplicationsClient({
                                   : undefined
                               }
                             >
-                              Due {formatDate(t.due_date)}
-                              {overdue ? " — overdue" : ""}
+                              {app.dueDate.replace(
+                                "{date}",
+                                formatDate(task.due_date, locale),
+                              )}
+                              {overdue ? app.overdue : ""}
                             </span>
                           ) : null}
-                          {t.completed && t.completed_at ? (
+                          {task.completed && task.completed_at ? (
                             <span className="text-[var(--text-light)]">
-                              Completed {formatDate(t.completed_at)}
+                              {app.completed.replace(
+                                "{date}",
+                                formatDate(task.completed_at, locale),
+                              )}
                             </span>
                           ) : null}
                         </div>
@@ -2685,21 +2620,21 @@ export function MyApplicationsClient({
       ) : null}
 
       {uniModal ? (
-        <ModalVeil onClose={() => setUniModal(false)} title="Add a university">
+        <ModalVeil onClose={() => setUniModal(false)} title={app.addUniversityModal}>
           <div className="flex flex-col gap-3.5">
             <div>
-              <label className={labelClass}>University name</label>
+              <label className={labelClass}>{app.universityName}</label>
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={uniForm.university_name}
                 onChange={(e) =>
                   setUniForm((f) => ({ ...f, university_name: e.target.value }))
                 }
-                placeholder="e.g. University of Edinburgh"
+                placeholder={app.universityNamePlaceholder}
               />
             </div>
             <div>
-              <label className={labelClass}>University location</label>
+              <label className={labelClass}>{app.universityLocation}</label>
               <select
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={uniForm.country}
@@ -2707,7 +2642,7 @@ export function MyApplicationsClient({
                   setUniForm((f) => ({ ...f, country: e.target.value }))
                 }
               >
-                <option value="">Select country…</option>
+                <option value="">{app.selectCountry}</option>
                 {initial.countries.map((c) => (
                   <option key={c.id} value={c.name}>
                     {c.name}
@@ -2716,18 +2651,18 @@ export function MyApplicationsClient({
               </select>
             </div>
             <div>
-              <label className={labelClass}>Major / program</label>
+              <label className={labelClass}>{app.majorProgram}</label>
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={uniForm.major_program}
                 onChange={(e) =>
                   setUniForm((f) => ({ ...f, major_program: e.target.value }))
                 }
-                placeholder="e.g. BSc Finance"
+                placeholder={app.majorProgramPlaceholder}
               />
             </div>
             <div>
-              <label className={labelClass}>How do you apply?</label>
+              <label className={labelClass}>{app.howToApply}</label>
               <select
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={uniForm.application_method}
@@ -2738,7 +2673,7 @@ export function MyApplicationsClient({
                   }))
                 }
               >
-                <option value="">Select application system…</option>
+                <option value="">{app.selectApplicationSystem}</option>
                 {APPLICATION_METHOD_OPTIONS.map((m) => (
                   <option key={m} value={m}>
                     {m}
@@ -2747,7 +2682,7 @@ export function MyApplicationsClient({
               </select>
             </div>
             <div>
-              <label className={labelClass}>Deadline (optional)</label>
+              <label className={labelClass}>{app.deadlineOptional}</label>
               <input
                 type="date"
                 className={`${fieldClass} mt-1.5 w-full`}
@@ -2767,14 +2702,14 @@ export function MyApplicationsClient({
               className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
               onClick={() => setUniModal(false)}
             >
-              Cancel
+              {app.cancel}
             </button>
             <button
               type="button"
               className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
               onClick={() => void addUniversity()}
             >
-              Add to shortlist
+              {app.addToShortlist}
             </button>
           </div>
         </ModalVeil>
@@ -2792,18 +2727,17 @@ export function MyApplicationsClient({
 
       {removeFavouriteTarget ? (
         <ModalVeil
-          title="Remove from favorites"
+          title={app.removeFavoriteTitle}
           onClose={() => {
             if (!removingFavourite) setRemoveFavouriteTarget(null);
           }}
         >
           <div className="flex flex-col gap-5">
             <p className="text-[13.5px] leading-relaxed text-[var(--text)]">
-              Remove{" "}
-              <strong className="font-semibold">
-                {removeFavouriteTarget.name}
-              </strong>{" "}
-              from your favorites?
+              {app.removeFavoriteConfirm.replace(
+                "{name}",
+                removeFavouriteTarget.name,
+              )}
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -2812,7 +2746,7 @@ export function MyApplicationsClient({
                 onClick={() => setRemoveFavouriteTarget(null)}
                 disabled={removingFavourite}
               >
-                Cancel
+                {app.cancel}
               </button>
               <button
                 type="button"
@@ -2820,7 +2754,7 @@ export function MyApplicationsClient({
                 onClick={() => void removeFavourite(removeFavouriteTarget)}
                 disabled={removingFavourite}
               >
-                {removingFavourite ? "Removing…" : "Remove"}
+                {removingFavourite ? app.removing : app.remove}
               </button>
             </div>
           </div>
@@ -2829,18 +2763,22 @@ export function MyApplicationsClient({
 
       {essayDeleteTarget ? (
         <ModalVeil
-          title="Delete essay"
+          title={app.deleteEssay}
           onClose={() => {
             if (!deletingEssay) setEssayDeleteTarget(null);
           }}
         >
           <div className="flex flex-col gap-5">
             <p className="text-[13.5px] leading-relaxed text-[var(--text)]">
-              Delete{" "}
-              <strong className="font-semibold">{essayDeleteTarget.title}</strong>
-              ? This removes the essay entry
-              {essayDeleteTarget.file_name ? ", its uploaded file," : ""} and any
-              counselor comments. This cannot be undone.
+              {essayDeleteTarget.file_name
+                ? app.deleteEssayConfirmWithFile.replace(
+                    "{title}",
+                    essayDeleteTarget.title,
+                  )
+                : app.deleteEssayConfirmNoFile.replace(
+                    "{title}",
+                    essayDeleteTarget.title,
+                  )}
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -2849,7 +2787,7 @@ export function MyApplicationsClient({
                 onClick={() => setEssayDeleteTarget(null)}
                 disabled={deletingEssay}
               >
-                Cancel
+                {app.cancel}
               </button>
               <button
                 type="button"
@@ -2857,7 +2795,7 @@ export function MyApplicationsClient({
                 onClick={() => void deleteEssay(essayDeleteTarget)}
                 disabled={deletingEssay}
               >
-                {deletingEssay ? "Deleting…" : "Delete essay"}
+                {deletingEssay ? app.deleting : app.deleteEssay}
               </button>
             </div>
           </div>
@@ -2868,13 +2806,13 @@ export function MyApplicationsClient({
         <ModalVeil
           onClose={closeEssayModal}
           title={
-            essayEditingId ? "Edit essay" : "Add essay requirement"
+            essayEditingId ? app.editEssay : app.addEssayRequirement
           }
         >
           <div className="flex flex-col gap-3.5">
             <div>
               <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
-                Essay title <span className="text-[var(--red)]">*</span>
+                {app.essayTitle} <span className="text-[var(--red)]">*</span>
               </label>
               <input
                 className={`${fieldClass} w-full`}
@@ -2882,12 +2820,12 @@ export function MyApplicationsClient({
                 onChange={(e) =>
                   setEssayForm((f) => ({ ...f, title: e.target.value }))
                 }
-                placeholder="e.g. Why Manchester essay"
+                placeholder={app.essayTitlePlaceholder}
               />
             </div>
             <div>
               <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
-                University <span className="text-[var(--red)]">*</span>
+                {app.essayUniversity} <span className="text-[var(--red)]">*</span>
               </label>
               <input
                 className={`${fieldClass} w-full`}
@@ -2898,12 +2836,12 @@ export function MyApplicationsClient({
                     for_application: e.target.value,
                   }))
                 }
-                placeholder="e.g. University of Manchester"
+                placeholder={app.essayUniversityPlaceholder}
               />
             </div>
             <div>
               <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
-                Essay type <span className="text-[var(--red)]">*</span>
+                {app.essayType} <span className="text-[var(--red)]">*</span>
               </label>
               <select
                 className={`${fieldClass} w-full`}
@@ -2921,7 +2859,7 @@ export function MyApplicationsClient({
             </div>
             <div>
               <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
-                Essay question / prompt
+                {app.essayPromptLabel}
               </label>
               <textarea
                 className={`${fieldClass} min-h-[80px] w-full resize-y`}
@@ -2929,13 +2867,13 @@ export function MyApplicationsClient({
                 onChange={(e) =>
                   setEssayForm((f) => ({ ...f, essay_prompt: e.target.value }))
                 }
-                placeholder="Paste the essay question or prompt here…"
+                placeholder={app.essayPromptPlaceholder}
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
-                  Word / character count
+                  {app.wordCharCount}
                 </label>
                 <input
                   className={`${fieldClass} w-full`}
@@ -2943,12 +2881,12 @@ export function MyApplicationsClient({
                   onChange={(e) =>
                     setEssayForm((f) => ({ ...f, limit_note: e.target.value }))
                   }
-                  placeholder="e.g. 800 words"
+                  placeholder={app.wordCharCountPlaceholder}
                 />
               </div>
               <div>
                 <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
-                  Deadline
+                  {app.deadlineLabel}
                 </label>
                 <input
                   type="date"
@@ -2962,7 +2900,7 @@ export function MyApplicationsClient({
             </div>
             <div>
               <label className={`${labelClass} mb-1.5 block uppercase tracking-[0.05em]`}>
-                Notes / instructions
+                {app.notesInstructions}
               </label>
               <textarea
                 className={`${fieldClass} min-h-[60px] w-full resize-y`}
@@ -2973,7 +2911,7 @@ export function MyApplicationsClient({
                     instructions_note: e.target.value,
                   }))
                 }
-                placeholder="Guidance from your counselor or your own reminders…"
+                placeholder={app.instructionsPlaceholder}
               />
             </div>
           </div>
@@ -2984,7 +2922,7 @@ export function MyApplicationsClient({
               onClick={closeEssayModal}
               disabled={savingEssay}
             >
-              Cancel
+              {app.cancel}
             </button>
             <button
               type="button"
@@ -2993,10 +2931,10 @@ export function MyApplicationsClient({
               disabled={savingEssay}
             >
               {savingEssay
-                ? "Saving…"
+                ? app.saving
                 : essayEditingId
-                  ? "Save changes"
-                  : "Save essay"}
+                  ? app.saveEssayChanges
+                  : app.saveEssay}
             </button>
           </div>
         </ModalVeil>
@@ -3013,7 +2951,7 @@ export function MyApplicationsClient({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
-                  University
+                  {app.essayUniversity}
                 </div>
                 <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
                   {detailEssay.for_application ?? "—"}
@@ -3021,7 +2959,7 @@ export function MyApplicationsClient({
               </div>
               <div>
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
-                  Essay type
+                  {app.essayType}
                 </div>
                 <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
                   {detailEssay.essay_type ?? "—"}
@@ -3030,7 +2968,7 @@ export function MyApplicationsClient({
               {detailEssay.limit_note?.trim() ? (
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
-                    Word / character count
+                    {app.wordCharCount}
                   </div>
                   <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
                     {detailEssay.limit_note.trim()}
@@ -3040,16 +2978,16 @@ export function MyApplicationsClient({
               {detailEssay.deadline ? (
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
-                    Deadline
+                    {app.deadlineLabel}
                   </div>
                   <div className="mt-1 text-[13px] font-medium text-[var(--text)]">
-                    {formatDate(detailEssay.deadline)}
+                    {formatDate(detailEssay.deadline, locale)}
                   </div>
                 </div>
               ) : null}
               <div>
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
-                  Status
+                  {app.status}
                 </div>
                 <div className="mt-1">
                   <EssayDetailStatusPill
@@ -3062,7 +3000,7 @@ export function MyApplicationsClient({
           {detailEssay.essay_prompt?.trim() ? (
             <div className="border-b border-[var(--border-light)] px-[22px] py-4">
               <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                Essay question / prompt
+                {app.essayPromptLabel}
               </div>
               <div className="rounded-md border-l-[3px] border-[var(--green-light)] bg-[var(--cream)] px-3 py-2.5 text-[13px] italic leading-relaxed text-[var(--text-mid)]">
                 {detailEssay.essay_prompt.trim()}
@@ -3071,7 +3009,7 @@ export function MyApplicationsClient({
           ) : null}
           <div className="border-b border-[var(--border-light)] px-[22px] py-4">
             <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-              Uploaded file
+              {app.uploadedFile}
             </div>
             {detailEssay.file_name ? (
               <div className="text-[13px] leading-relaxed text-[var(--text)]">
@@ -3089,22 +3027,25 @@ export function MyApplicationsClient({
                 </svg>
                 <strong>{detailEssay.file_name}</strong>{" "}
                 <span className="text-[12px] text-[var(--text-hint)]">
-                  · Uploaded{" "}
+                  ·{" "}
                   {detailEssay.file_uploaded_at
-                    ? formatDate(detailEssay.file_uploaded_at)
+                    ? app.uploadedOn.replace(
+                        "{date}",
+                        formatDate(detailEssay.file_uploaded_at, locale),
+                      )
                     : ""}
                 </span>
               </div>
             ) : (
               <div className="text-[13px] italic text-[var(--text-hint)]">
-                No file uploaded yet
+                {app.noFileUploaded}
               </div>
             )}
           </div>
           {detailEssay.instructions_note?.trim() ? (
             <div className="border-b border-[var(--border-light)] px-[22px] py-4">
               <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                Notes / instructions
+                {app.notesInstructions}
               </div>
               <div className="text-[13px] leading-relaxed text-[var(--text)]">
                 {detailEssay.instructions_note.trim()}
@@ -3113,12 +3054,12 @@ export function MyApplicationsClient({
           ) : null}
           <div className="border-b border-[var(--border-light)] px-[22px] py-4">
             <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-              Counselor feedback
+              {app.counselorFeedback}
             </div>
             {(detailEssay.student_my_application_essay_comments ?? [])
               .length === 0 ? (
               <div className="text-[12px] italic text-[var(--text-hint)]">
-                No comments yet — your counselor will leave feedback here
+                {app.noCounselorComments}
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -3130,9 +3071,9 @@ export function MyApplicationsClient({
                     >
                       <div className="mb-1 flex justify-between text-[11px] text-[var(--text-light)]">
                         <span className="font-semibold text-[var(--text)]">
-                          {c.author_display_name || "Counselor"}
+                          {c.author_display_name || app.counselor}
                         </span>
-                        <span>{formatDate(c.created_at)}</span>
+                        <span>{formatDate(c.created_at, locale)}</span>
                       </div>
                       <div className="text-[12.5px] leading-relaxed whitespace-pre-wrap text-[var(--text)]">
                         {c.body}
@@ -3149,7 +3090,7 @@ export function MyApplicationsClient({
               className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
               onClick={() => setEssayDetailId(null)}
             >
-              Close
+              {app.close}
             </button>
           </div>
         </ModalVeil>
@@ -3158,11 +3099,11 @@ export function MyApplicationsClient({
       {recModal ? (
         <ModalVeil
           onClose={() => setRecModal(false)}
-          title="Request a recommendation letter"
+          title={app.requestRecTitle}
         >
           <div className="grid gap-3.5 sm:grid-cols-3">
             <div>
-              <label className={labelClass}>Teacher name</label>
+              <label className={labelClass}>{app.teacherName}</label>
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={recForm.teacher_name}
@@ -3172,18 +3113,18 @@ export function MyApplicationsClient({
               />
             </div>
             <div>
-              <label className={labelClass}>Subject (optional)</label>
+              <label className={labelClass}>{app.subjectOptional}</label>
               <input
                 className={`${fieldClass} mt-1.5 w-full`}
                 value={recForm.teacher_subject}
                 onChange={(e) =>
                   setRecForm((f) => ({ ...f, teacher_subject: e.target.value }))
                 }
-                placeholder="e.g. Mathematics"
+                placeholder={app.subjectPlaceholder}
               />
             </div>
             <div>
-              <label className={labelClass}>Teacher email</label>
+              <label className={labelClass}>{app.teacherEmail}</label>
               <input
                 type="email"
                 className={`${fieldClass} mt-1.5 w-full`}
@@ -3195,7 +3136,7 @@ export function MyApplicationsClient({
             </div>
           </div>
           <div className="mt-3.5">
-            <label className={labelClass}>For which application?</label>
+            <label className={labelClass}>{app.forWhichApplication}</label>
             <input
               className={`${fieldClass} mt-1.5 w-full`}
               value={recForm.for_application}
@@ -3205,7 +3146,7 @@ export function MyApplicationsClient({
             />
           </div>
           <div className="mt-3.5">
-            <label className={labelClass}>Personal note (optional)</label>
+            <label className={labelClass}>{app.personalNoteOptional}</label>
             <textarea
               className={`${fieldClass} mt-1.5 min-h-[60px] w-full resize-y`}
               value={recForm.personal_note}
@@ -3215,7 +3156,7 @@ export function MyApplicationsClient({
             />
           </div>
           <div className="mt-3.5">
-            <label className={labelClass}>When do you need it by?</label>
+            <label className={labelClass}>{app.neededBy}</label>
             <input
               type="date"
               className={`${fieldClass} mt-1.5 w-full`}
@@ -3232,7 +3173,7 @@ export function MyApplicationsClient({
               onClick={() => setRecModal(false)}
               disabled={sendingRecRequest}
             >
-              Cancel
+              {app.cancel}
             </button>
             <button
               type="button"
@@ -3240,7 +3181,7 @@ export function MyApplicationsClient({
               onClick={() => void sendRecRequest()}
               disabled={sendingRecRequest}
             >
-              {sendingRecRequest ? "Sending…" : "Send request"}
+              {sendingRecRequest ? app.sending : app.sendRequest}
             </button>
           </div>
         </ModalVeil>
@@ -3276,6 +3217,8 @@ function PreferredDestinationsMultiSelect({
   values: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { dict } = useLocale();
+  const app = dict.student.applications;
   const [query, setQuery] = useState("");
   const orderedCountries = useMemo(
     () => [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name, "en")),
@@ -3307,10 +3250,9 @@ function PreferredDestinationsMultiSelect({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className={labelClass}>Preferred destinations</label>
+      <label className={labelClass}>{app.preferredDestinations}</label>
       <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
-        Full country list. Tick every destination you are considering; remove
-        with the chip ×.
+        {app.preferredDestinationsSub}
       </p>
       {values.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
@@ -3323,7 +3265,10 @@ function PreferredDestinationsMultiSelect({
               <button
                 type="button"
                 className="text-[var(--green-dark)] opacity-60 hover:opacity-100"
-                aria-label={`Remove ${labelPreferredDestinationEntry(v)}`}
+                aria-label={app.removeDestinationAria.replace(
+                  "{destination}",
+                  labelPreferredDestinationEntry(v),
+                )}
                 onClick={() => onChange(values.filter((x) => x !== v))}
               >
                 <svg
@@ -3347,14 +3292,14 @@ function PreferredDestinationsMultiSelect({
         className={fieldClass}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by country name or code…"
+        placeholder={app.preferredDestinationsSearchPlaceholder}
         autoComplete="off"
-        aria-label="Filter country list"
+        aria-label={app.preferredDestinationsFilterAria}
       />
       <div
         className="max-h-[min(280px,45vh)] overflow-y-auto rounded-lg border-[1.5px] border-[var(--border)] bg-white [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]"
         role="group"
-        aria-label="Countries"
+        aria-label={app.preferredDestinationsCountriesAria}
       >
         {filtered.map((c) => {
           const checked = selectedUpper.has(c.alpha2);
@@ -3487,6 +3432,7 @@ function TagField({
 
 function DocumentRow({
   doc,
+  locale,
   onPickFile,
   allowDisplayNameEdit,
   onSaveDisplayName,
@@ -3494,17 +3440,29 @@ function DocumentRow({
   onRemove,
 }: {
   doc: DocRow;
+  locale: string;
   onPickFile: (f: File) => void;
   allowDisplayNameEdit?: boolean;
   onSaveDisplayName?: (name: string) => void | Promise<void>;
   allowRemove?: boolean;
   onRemove?: () => void | Promise<void>;
 }) {
+  const { dict } = useLocale();
+  const app = dict.student.applications;
   const nameFieldId = useId();
   const [nameDraft, setNameDraft] = useState(doc.display_name);
   useEffect(() => {
     setNameDraft(doc.display_name);
   }, [doc.display_name, doc.id]);
+
+  const slotLabels = app.documentSlotLabels as Record<string, string>;
+  const slotDescriptions = app.documentDescriptions as Record<string, string>;
+  const displayLabel =
+    allowDisplayNameEdit || isOtherDocumentSlot(doc.slot_key)
+      ? doc.display_name
+      : (slotLabels[doc.slot_key] ?? doc.display_name);
+  const descriptionText =
+    slotDescriptions[doc.slot_key] ?? doc.description ?? null;
 
   const docFieldClass =
     "rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 text-[12px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
@@ -3534,12 +3492,12 @@ function DocumentRow({
           </svg>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[13.5px] font-semibold">{doc.display_name}</div>
+          <div className="text-[13.5px] font-semibold">{displayLabel}</div>
           <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
             {has ? (
               <span className="text-[var(--text)]">{text}</span>
             ) : (
-              "Your school has not entered this yet."
+              app.schoolNotEntered
             )}
           </div>
         </div>
@@ -3552,13 +3510,13 @@ function DocumentRow({
             }`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-            {has ? "From school" : "Pending"}
+            {has ? app.fromSchool : app.pending}
           </span>
           <span
             className="inline-flex rounded-lg border border-[var(--border)] bg-[var(--cream)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-hint)]"
-            title="Read-only"
+            title={app.readOnlyTitle}
           >
-            View only
+            {app.viewOnly}
           </span>
         </div>
       </div>
@@ -3594,26 +3552,28 @@ function DocumentRow({
               htmlFor={nameFieldId}
               className="block text-[9.5px] font-semibold uppercase tracking-wide text-[var(--text-hint)]"
             >
-              Name for your counselor
+              {app.nameForCounselor}
             </label>
             <input
               id={nameFieldId}
               className={`${docFieldClass} block w-full min-w-0 py-1.5`}
               value={nameDraft}
               onChange={(e) => setNameDraft(e.target.value)}
-              placeholder="e.g. Medical certificate, national ID"
+              placeholder={app.docNamePlaceholder}
               maxLength={120}
             />
           </div>
         ) : (
-          <div className="text-[13.5px] font-semibold">{doc.display_name}</div>
+          <div className="text-[13.5px] font-semibold">{displayLabel}</div>
         )}
         <div className="mt-0.5 text-[11.5px] text-[var(--text-light)]">
           {doc.file_name && doc.uploaded_at
-            ? `${doc.file_name} · Uploaded ${formatDate(doc.uploaded_at)}`
+            ? app.uploadedFileMeta
+                .replace("{fileName}", doc.file_name)
+                .replace("{date}", formatDate(doc.uploaded_at, locale))
             : allowDisplayNameEdit
-              ? doc.description || "Not uploaded yet — use Upload when ready."
-              : doc.description || "Not uploaded yet"}
+              ? descriptionText || app.documentNotUploadedOther
+              : descriptionText || app.documentNotUploaded}
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -3623,7 +3583,7 @@ function DocumentRow({
             className={btnSmClass(false)}
             onClick={() => void onSaveDisplayName?.(nameDraft.trim())}
           >
-            Save name
+            {app.saveName}
           </button>
         ) : null}
         <span
@@ -3634,7 +3594,7 @@ function DocumentRow({
           }`}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-          {missing ? "Missing" : "Submitted"}
+          {missing ? app.missing : app.submitted}
         </span>
         <label className="cursor-pointer">
           <input
@@ -3651,7 +3611,7 @@ function DocumentRow({
                 : "border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
             }`}
           >
-            {missing ? "Upload" : "Replace"}
+            {missing ? app.upload : app.replace}
           </span>
         </label>
         {allowRemove ? (
@@ -3660,7 +3620,7 @@ function DocumentRow({
             className={`${btnSmClass(false)} border-[rgba(231,76,60,0.35)] text-[#8c2d22] hover:bg-[rgba(231,76,60,0.08)]`}
             onClick={() => void onRemove?.()}
           >
-            Remove
+            {app.remove}
           </button>
         ) : null}
       </div>
@@ -3669,6 +3629,8 @@ function DocumentRow({
 }
 
 function EssayDetailStatusPill({ status }: { status: EssayStatusSlug }) {
+  const { dict } = useLocale();
+  const labels = dict.student.applications.essayStatusLabels;
   const pillCls =
     status === "ready_for_review"
       ? "bg-[rgba(82,183,135,.13)] text-[#1B4332] [&_.jd]:bg-[var(--green-bright)]"
@@ -3680,7 +3642,7 @@ function EssayDetailStatusPill({ status }: { status: EssayStatusSlug }) {
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold leading-snug ${pillCls}`}
     >
       <span className="jd h-1.5 w-1.5 rounded-full" />
-      {ESSAY_STATUS_LABEL[status]}
+      {labels[status]}
     </span>
   );
 }

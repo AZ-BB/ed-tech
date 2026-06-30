@@ -1,6 +1,7 @@
 "use client";
 
 import { addUniversityToFavourites, addUniversityToShortlist, removeUniversityFromFavourites, removeUniversityFromShortlist } from "@/actions/universities";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { tuitionCardLabel } from "@/lib/university-cost-display";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,15 +32,20 @@ export type UniversityCardUniversity = {
     is_favourite: boolean;
 };
 
-function formatDeadline(iso: string | null, isPriority: boolean): string {
-    if (!iso) return "—";
+function formatDeadline(
+    iso: string | null,
+    isPriority: boolean,
+    emDash: string,
+    prioritySuffix: string,
+): string {
+    if (!iso) return emDash;
     const d = new Date(iso + (iso.includes("T") ? "" : "T12:00:00"));
-    if (Number.isNaN(d.getTime())) return "—";
+    if (Number.isNaN(d.getTime())) return emDash;
     const base = d.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
     });
-    return isPriority ? `${base} (priority)` : base;
+    return isPriority ? `${base} ${prioritySuffix}` : base;
 }
 
 function formatAcceptance(rate: number | null): string {
@@ -229,6 +235,8 @@ function Stat({
 }
 
 export function UniversityCard({ university: u }: { university: UniversityCardUniversity }) {
+    const { dict } = useLocale();
+    const t = dict.student.universities;
     const desc = u.description?.trim() || "";
     const router = useRouter();
     const [, startTransition] = useTransition();
@@ -250,7 +258,7 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
             setOptimisticFavourite(true);
             const res = await addUniversityToFavourites(u.id);
             if (res.error) {
-                const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                 setActionMessage(msg);
                 throw new Error(msg);
             }
@@ -264,7 +272,7 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
             setOptimisticFavourite(false);
             const res = await removeUniversityFromFavourites(u.id);
             if (res.error) {
-                const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                 setActionMessage(msg);
                 throw new Error(msg);
             }
@@ -278,7 +286,7 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
             setOptimisticListed(true);
             const res = await addUniversityToShortlist(u.id);
             if (res.error) {
-                const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                 setActionMessage(msg);
                 throw new Error(msg);
             }
@@ -292,7 +300,7 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
             setOptimisticListed(false);
             const res = await removeUniversityFromShortlist(u.id);
             if (res.error) {
-                const msg = typeof res.error === "string" ? res.error : "Something went wrong.";
+                const msg = typeof res.error === "string" ? res.error : t.somethingWentWrong;
                 setActionMessage(msg);
                 throw new Error(msg);
             }
@@ -303,7 +311,10 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
     const detailHref = `/student/universities/${u.id}`;
 
     return (
-        <article className="relative flex h-full flex-col rounded-[16px] border border-[#ece9e4] bg-white p-6 transition-all hover:-translate-y-[3px] hover:border-[#e0deda] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)]">
+        <article
+            dir="ltr"
+            className="university-card-ltr relative flex h-full flex-col rounded-[16px] border border-[#ece9e4] bg-white p-6 text-left transition-all hover:-translate-y-[3px] hover:border-[#e0deda] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)]"
+        >
             <Link
                 href={detailHref}
                 className="absolute inset-0 z-0 cursor-pointer rounded-[16px] outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] focus-visible:ring-offset-2"
@@ -319,11 +330,13 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                     >
                         {u.name}
                     </h2>
-                    <p className="text-[11.5px] text-[#7a7a7a]">{formatLocation(u)}</p>
+                    <p className="text-[11.5px] text-[#7a7a7a]">
+                        {formatLocation(u)}
+                    </p>
                 </div>
                 <div className="mt-0.5 shrink-0">
                     <span className="inline-block rounded-[50px] border border-[#ece9e4] bg-[#f4f3f0] px-3 py-1 text-[10px] font-semibold tracking-[0.2px] text-[#4a4a4a] whitespace-nowrap">
-                        {u.is_public ? "Public" : "Private"}
+                        {u.is_public ? t.public : t.private}
                     </span>
                 </div>
             </div>
@@ -334,17 +347,17 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
 
             <div className="mb-3 flex border-y border-[#ece9e4] py-2.5">
                 <Stat
-                    label="Tuition"
+                    label={t.tuition}
                     icon={<IconTuition />}
                     value={tuitionCardLabel(u.tuition_display, u.tuition_per_year)}
                 />
                 <Stat
-                    label="Deadline"
+                    label={t.deadline}
                     icon={<IconCalendar />}
-                    value={formatDeadline(u.deadline_date, u.is_priority)}
+                    value={formatDeadline(u.deadline_date, u.is_priority, t.emDash, t.prioritySuffix)}
                 />
                 <Stat
-                    label="Acceptance"
+                    label={t.acceptance}
                     icon={<IconStar />}
                     value={formatAcceptance(u.acceptance_rate)}
                     valueClassName={acceptanceTone(u.acceptance_rate)}
@@ -354,11 +367,11 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
             <div className="mb-4 flex flex-wrap gap-1.5">
                 <span className="flex items-center gap-1 rounded-[50px] border border-[#ece9e4] bg-[#f4f3f0] px-2.5 py-1 text-[10px] font-medium text-[#4a4a4a]">
                     <TagIconChat />
-                    IELTS: {formatIelts(u.ielts_min_score)}
+                    {t.ielts}: {formatIelts(u.ielts_min_score)}
                 </span>
                 <span className="flex items-center gap-1 rounded-[50px] border border-[#ece9e4] bg-[#f4f3f0] px-2.5 py-1 text-[10px] font-medium text-[#4a4a4a]">
                     <TagIconShield />
-                    SAT: {u.sat_policy?.trim() || "—"}
+                    {t.sat}: {u.sat_policy?.trim() || t.emDash}
                 </span>
             </div>
 
@@ -372,8 +385,8 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 {optimisticFavourite ? (
                     <button
                         type="button"
-                        aria-label="Remove from favourites"
-                        title="Remove from favourites"
+                        aria-label={t.removeFromFavourites}
+                        title={t.removeFromFavourites}
                         className="pointer-events-auto inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[50px] border-[1.5px] border-[#c9a227] bg-[#fffbeb] text-[#b8860b] transition-colors hover:border-[#942e2e] hover:bg-[#fdecea] hover:text-[#942e2e]"
                         onClick={(e) => {
                             e.preventDefault();
@@ -385,8 +398,8 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 ) : (
                     <button
                         type="button"
-                        aria-label="Add to favourites"
-                        title="Add to favourites"
+                        aria-label={t.addToFavourites}
+                        title={t.addToFavourites}
                         className="pointer-events-auto inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[50px] border-[1.5px] border-[#e0deda] bg-white text-[#7a7a7a] transition-colors hover:border-[#c9a227] hover:bg-[#fffbeb] hover:text-[#b8860b]"
                         onClick={(e) => {
                             e.preventDefault();
@@ -399,34 +412,34 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 {optimisticListed ? (
                     <button
                         type="button"
-                        aria-label="Remove from shortlist"
-                        title="Click to remove from shortlist"
+                        aria-label={t.removeFromShortlist}
+                        title={t.removeFromShortlistTitle}
                         className="pointer-events-auto inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center rounded-[50px] border-[1.5px] border-[#b7dcc6] bg-[#f0faf3] px-4 py-2 text-[11px] font-medium text-[#2D6A4F] transition-colors hover:border-[#c0392ba6] hover:bg-[#fdecea] hover:text-[#942e2e]"
                         onClick={(e) => {
                             e.preventDefault();
                             removeShortlist();
                         }}
                     >
-                        Shortlisted
+                        {t.shortlisted}
                     </button>
                 ) : (
                     <button
                         type="button"
-                        title="Add this university to your shortlist"
+                        title={t.addToShortlistTitle}
                         className="pointer-events-auto inline-flex min-h-9 shrink-0 cursor-pointer items-center rounded-[50px] border-[1.5px] border-[#e0deda] bg-white px-4 py-2 text-[11px] font-medium text-[#4a4a4a] transition-colors hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]"
                         onClick={(e) => {
                             e.preventDefault();
                             addShortlist();
                         }}
                     >
-                        Add to shortlist
+                        {t.addToShortlist}
                     </button>
                 )}
                 <Link
                     href={detailHref}
                     className="pointer-events-auto inline-flex cursor-pointer items-center justify-center rounded-[50px] border-0 bg-[#2D6A4F] px-5 py-2 text-[11px] !font-semibold !text-white no-underline transition-colors hover:bg-[#1B4332]"
                 >
-                    View details
+                    {t.viewDetails}
                 </Link>
             </footer>
             </div>

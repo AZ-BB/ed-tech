@@ -1,6 +1,8 @@
 "use client";
 
-import { format, formatDistanceToNow } from "date-fns";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { formatRelativeTime } from "@/lib/i18n/format-relative-time";
+import { format } from "date-fns";
 import Link from "next/link";
 import {
   quickActions,
@@ -8,15 +10,9 @@ import {
   type DashboardAnnouncementItem,
   type DashboardNewsItem,
 } from "../_data/student-dashboard-data";
+import { ArrowForwardIcon } from "../_components/directional-icons";
 import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
-
-function formatDashboardTimestamp(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return formatDistanceToNow(d, { addSuffix: true });
-}
 
 /** Student dashboard only: maps stored log copy to second-person. Does not change DB values. */
 function formatActivityLogMessageForStudent(message: string): string {
@@ -101,6 +97,9 @@ export function StudentDashboard({
   essaysReviewedCount,
   aiMatchesGeneratedCount,
 }: StudentDashboardProps) {
+  const { locale, dict } = useLocale();
+  const d = dict.student.dashboard;
+
   return (
     <div className="text-[var(--text)]">
       <div className="mb-5 grid items-start gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-[2fr_1fr]">
@@ -108,18 +107,17 @@ export function StudentDashboard({
           <div className="mb-3.5">
             <h1 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">
               {welcomeFirstName
-                ? `Welcome back, ${welcomeFirstName}`
-                : "Welcome back"}
+                ? d.welcomeBackName.replace("{name}", welcomeFirstName)
+                : d.welcomeBack}
             </h1>
             <p className="mt-1 text-[13px] text-[var(--text-light)]">
-              Here&apos;s everything you need to continue your university
-              journey.
+              {d.subtitle}
             </p>
           </div>
           <div className="flex items-center gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-5 py-4">
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold">
-                Platform completion
+                {d.platformCompletion}
                 <span className="group relative inline-flex cursor-pointer">
                   <svg
                     width="14"
@@ -130,21 +128,19 @@ export function StudentDashboard({
                     strokeWidth="2"
                     aria-hidden
                   >
-                    <title>Completion info</title>
+                    <title>{d.completionInfoTitle}</title>
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 16v-4M12 8h.01" />
                   </svg>
                   <span className="pointer-events-none absolute left-1/2 top-6 z-10 hidden w-[280px] -translate-x-1/2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 text-[11px] leading-snug text-[var(--text-mid)] shadow-[0_4px_16px_rgba(0,0,0,0.1)] group-hover:block">
-                    To unlock full value, explore all features: university
-                    search (including AI matching), essay feedback (under My
-                    applications → Essays), advisor sessions, ambassadors,
-                    scholarships, and application support.
+                    {d.completionTooltip}
                   </span>
                 </span>
               </div>
               <p className="text-xs text-[var(--text-light)]">
-                You&apos;ve explored {platformCompleted} of {platformTotal}{" "}
-                platform features
+                {d.platformExplored
+                  .replace("{completed}", String(platformCompleted))
+                  .replace("{total}", String(platformTotal))}
               </p>
               <div className="mt-2 h-2 overflow-hidden rounded bg-[var(--border-light)]">
                 <div
@@ -161,29 +157,18 @@ export function StudentDashboard({
           <div className="mt-3.5 flex flex-col gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-6">
             <div className="min-w-0">
               <h2 className="text-base font-bold text-[var(--text)]">
-                My Applications
+                {d.myApplicationsTitle}
               </h2>
               <p className="mt-1 max-w-xl text-[13px] leading-snug text-[var(--text-light)]">
-                Keep your school informed on all your university choices and
-                progress.
+                {d.myApplicationsDesc}
               </p>
             </div>
             <Link
               href="/student/my-applications"
               className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[var(--green)] px-6 py-3 text-[13px] font-semibold text-white no-underline transition-all hover:bg-[var(--green-dark)] hover:-translate-y-px sm:self-center"
             >
-              My Applications
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                aria-hidden
-              >
-                <path d="M5 12h14M13 5l7 7-7 7" />
-              </svg>
+              {d.myApplicationsCta}
+              <ArrowForwardIcon size={16} />
             </Link>
           </div>
         </div>
@@ -201,16 +186,16 @@ export function StudentDashboard({
             >
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
             </svg>
-            Announcements
+            {d.announcements}
           </div>
           <div className={`flex flex-col gap-2 ${ANNOUNCEMENTS_LIST_CLASS}`}>
             {announcementItems.length === 0 ? (
               <p className="px-0.5 text-xs text-[var(--text-hint)]">
-                No announcements yet.
+                {d.noAnnouncements}
               </p>
             ) : (
               announcementItems.map((a) => {
-                const timeLabel = formatDashboardTimestamp(a.createdAt);
+                const timeLabel = formatRelativeTime(a.createdAt, locale);
                 return (
                   <div
                     key={a.id}
@@ -250,11 +235,12 @@ export function StudentDashboard({
                     <path d="M8 12.5l2.5 2.5L16 9" />
                   </svg>
                   {openTaskCount === 1
-                    ? "1 task to complete"
-                    : `${openTaskCount} tasks to complete`}
+                    ? d.oneTaskToComplete
+                    : d.tasksToComplete.replace("{count}", String(openTaskCount))}
                 </span>
-                <span className="shrink-0 text-[11px] font-semibold text-[#854F0B]">
-                  View →
+                <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[#854F0B]">
+                  {d.viewTasks}
+                  <ArrowForwardIcon size={12} strokeWidth={2.5} />
                 </span>
               </Link>
             </div>
@@ -263,13 +249,15 @@ export function StudentDashboard({
       </div>
 
       <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-hint)]">
-        Quick actions
+        {d.quickActions}
       </div>
       <div className="mb-5 w-full min-w-0">
         <div className="grid w-full min-w-0 grid-cols-4 grid-rows-2 gap-3 max-[800px]:grid-cols-1 max-[800px]:grid-rows-none sm:max-[800px]:grid-cols-2">
-          {quickActions.map((action) => (
+          {quickActions.map((action) => {
+            const actionCopy = d.quickActionsItems[action.dictKey];
+            return (
             <Link
-              key={action.name}
+              key={action.dictKey}
               href={action.href}
               scroll={false}
               className="block min-w-0 text-inherit no-underline"
@@ -292,15 +280,16 @@ export function StudentDashboard({
                 </div>
                 <div className="min-w-0">
                   <div className="mb-0.5 text-sm font-semibold">
-                    {action.name}
+                    {actionCopy.name}
                   </div>
                   <div className="text-[11px] leading-snug text-[var(--text-light)]">
-                    {action.desc}
+                    {actionCopy.desc}
                   </div>
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -314,29 +303,17 @@ export function StudentDashboard({
 
       <div className="relative mb-5 overflow-hidden rounded-[20px] bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#40916C] px-9 py-8 text-white after:pointer-events-none after:absolute after:-right-[60px] after:-top-[60px] after:h-[200px] after:w-[200px] after:rounded-full after:bg-white/[0.04] max-[800px]:px-8">
         <h2 className="relative z-[1] font-[family-name:var(--font-dm-serif)] text-[22px]">
-          Let us handle your applications
+          {d.applicationSupportBannerTitle}
         </h2>
         <p className="relative z-[1] mt-2 max-w-[480px] text-[13px] leading-relaxed text-white/70">
-          Apply to multiple universities with full expert support — document
-          checks, deadline management, personal statement refinement, and direct
-          access to application specialists.
+          {d.applicationSupportBannerDesc}
         </p>
         <Link
           href="/student/application-support"
           className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[#40916C] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
         >
-          Start application support
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            aria-hidden
-          >
-            <path d="M5 12h14M13 5l7 7-7 7" />
-          </svg>
+          {d.startApplicationSupport}
+          <ArrowForwardIcon size={14} />
         </Link>
       </div>
 
@@ -355,11 +332,11 @@ export function StudentDashboard({
               <circle cx="12" cy="12" r="10" />
               <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
             </svg>
-            Top news & updates
+            {d.topNews}
           </div>
           <div className={`flex flex-col gap-2 ${NEWS_LIST_CLASS}`}>
             {newsItems.length === 0 ? (
-              <p className="text-xs text-[var(--text-hint)]">No news yet.</p>
+              <p className="text-xs text-[var(--text-hint)]">{d.noNews}</p>
             ) : (
               newsItems.map((n) => {
                 const dateLabel = formatNewsDate(n.createdAt);
@@ -372,10 +349,10 @@ export function StudentDashboard({
                       className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${newsTagClass[n.tag]}`}
                     >
                       {n.tag === "visa"
-                        ? "Visa"
+                        ? d.newsTagVisa
                         : n.tag === "deadline"
-                          ? "Deadline"
-                          : "Update"}
+                          ? d.newsTagDeadline
+                          : d.newsTagUpdate}
                     </span>
                     <div>
                       <div className="text-[12.5px] leading-snug text-[var(--text-mid)]">
@@ -408,16 +385,16 @@ export function StudentDashboard({
               <path d="M12 8v4l3 3" />
               <circle cx="12" cy="12" r="10" />
             </svg>
-            Recent activity
+            {d.recentActivity}
           </div>
           <div className={`flex min-h-0 flex-1 flex-col ${ACTIVITY_LIST_CLASS}`}>
             {activityLogItems.length === 0 ? (
               <p className="text-xs text-[var(--text-hint)]">
-                No recent activity yet.
+                {d.noRecentActivity}
               </p>
             ) : (
               activityLogItems.map((a) => {
-                const timeLabel = formatDashboardTimestamp(a.createdAt);
+                const timeLabel = formatRelativeTime(a.createdAt, locale);
                 const accent = activityLogAccent(a.entityType);
                 return (
                   <div
@@ -445,7 +422,7 @@ export function StudentDashboard({
                       {formatActivityLogMessageForStudent(a.message)}
                     </span>
                     {timeLabel ? (
-                      <span className="ml-auto shrink-0 whitespace-nowrap text-[10px] text-[var(--text-hint)]">
+                      <span className="ms-auto shrink-0 whitespace-nowrap text-[10px] text-[var(--text-hint)]">
                         {timeLabel}
                       </span>
                     ) : null}

@@ -3,6 +3,7 @@
 import { logAmbassadorsCatalogView } from "@/actions/ambassador-sessions";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
 import { CountryFlag } from "@/components/country-flag";
+import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -39,8 +40,12 @@ function paletteForId(id: string): { bg: string; fg: string } {
   return AVATAR_PALETTE[h % AVATAR_PALETTE.length]!;
 }
 
-function formatHeadlineSubtitle(a: AmbassadorCatalogEntry): string {
-  const status = a.isCurrentStudent ? "Student" : "Graduate";
+function formatHeadlineSubtitle(
+  a: AmbassadorCatalogEntry,
+  student: string,
+  graduate: string,
+): string {
+  const status = a.isCurrentStudent ? student : graduate;
   const majorPart = a.major?.trim();
   const yearPart = a.isCurrentStudent
     ? null
@@ -56,15 +61,20 @@ function formatHeadlineSubtitle(a: AmbassadorCatalogEntry): string {
   return status;
 }
 
-function statusPillLabel(a: AmbassadorCatalogEntry): string {
-  if (a.isCurrentStudent) return "Current student";
+function statusPillLabel(
+  a: AmbassadorCatalogEntry,
+  am:
+    | (typeof import("@/lib/i18n/dictionaries/student-en").studentEn)["ambassadors"]
+    | (typeof import("@/lib/i18n/dictionaries/student-ar").studentAr)["ambassadors"],
+): string {
+  if (a.isCurrentStudent) return am.currentStudent;
   const year =
     a.graduationYear != null
       ? String(a.graduationYear)
       : a.startYear != null
         ? String(a.startYear)
         : null;
-  return year ? `Graduate — ${year}` : "Graduate";
+  return year ? am.graduateYear.replace("{year}", year) : am.graduate;
 }
 
 function filterAmbassadors(
@@ -102,6 +112,8 @@ export function AmbassadorsClient({
   studentDefaults,
   openAmbassadorId,
 }: Props) {
+  const { dict } = useLocale();
+  const am = dict.student.ambassadors;
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -122,7 +134,7 @@ export function AmbassadorsClient({
     if (entry) {
       setDetail(entry);
     } else {
-      setToast("Ambassador no longer available in the catalog.");
+      setToast(am.toastUnavailable);
     }
     router.replace("/student/ambassadors");
   }, [openAmbassadorId, initialAmbassadors, router]);
@@ -202,11 +214,9 @@ export function AmbassadorsClient({
 
       <div className="page-header mb-5 px-4">
         <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] font-bold text-[var(--text)]">
-          Talk to someone who&apos;s been there
+          {am.pageTitle}
         </h1>
-        <p className="mt-1 text-sm leading-relaxed text-[var(--text-light)]">
-          Connect with students who have already studied at your target university — and learn from their real experience.
-        </p>
+        <p className="mt-1 text-sm leading-relaxed text-[var(--text-light)]">{am.pageSubtitle}</p>
       </div>
 
       <div className="mb-3.5 flex items-center gap-2.5 rounded-2xl border border-[var(--border-light)] bg-white px-[18px] py-3">
@@ -216,17 +226,17 @@ export function AmbassadorsClient({
         </svg>
         <input
           className="min-w-0 flex-1 border-0 bg-transparent font-[family-name:var(--font-dm-sans)] text-sm text-[var(--text)] outline-none placeholder:text-[#c0bdb8]"
-          placeholder="Search by university, country, or name..."
+          placeholder={am.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search ambassadors"
+          aria-label={am.searchAriaLabel}
         />
         {search ? (
           <button
             type="button"
             className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--sand)] text-sm text-[var(--text-hint)] transition hover:bg-[var(--border)] hover:text-[var(--text-mid)]"
             onClick={() => setSearch("")}
-            aria-label="Clear search"
+            aria-label={am.clearSearchAria}
           >
             ×
           </button>
@@ -241,9 +251,9 @@ export function AmbassadorsClient({
             style={selectChevronStyle}
             value={dest}
             onChange={(e) => setDest(e.target.value)}
-            aria-label="Study destination"
+            aria-label={am.studyDestination}
           >
-            <option value="">Study destination</option>
+            <option value="">{am.studyDestination}</option>
             {catalogCountries.map((c) => {
               const v = c.id.trim().toUpperCase();
               return (
@@ -258,9 +268,9 @@ export function AmbassadorsClient({
             style={selectChevronStyle}
             value={nat}
             onChange={(e) => setNat(e.target.value)}
-            aria-label="Ambassador nationality"
+            aria-label={am.ambassadorNationality}
           >
-            <option value="">Ambassador nationality</option>
+            <option value="">{am.ambassadorNationality}</option>
             {catalogCountries.map((c) => {
               const v = c.id.trim().toUpperCase();
               return (
@@ -275,9 +285,9 @@ export function AmbassadorsClient({
             style={selectChevronStyle}
             value={major}
             onChange={(e) => setMajor(e.target.value)}
-            aria-label="Field of study"
+            aria-label={am.fieldOfStudy}
           >
-            <option value="">Field of study</option>
+            <option value="">{am.fieldOfStudy}</option>
             {majorOptions.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -289,11 +299,11 @@ export function AmbassadorsClient({
             style={selectChevronStyle}
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            aria-label="Status"
+            aria-label={am.status}
           >
-            <option value="">Status</option>
-            <option value="current">Current student</option>
-            <option value="graduate">Graduate</option>
+            <option value="">{am.status}</option>
+            <option value="current">{am.currentStudent}</option>
+            <option value="graduate">{am.graduate}</option>
           </select>
           </div>
           {anyFilter ? (
@@ -305,7 +315,7 @@ export function AmbassadorsClient({
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
-              Clear filters
+              {am.clearFilters}
             </button>
           ) : null}
         </div>
@@ -314,15 +324,15 @@ export function AmbassadorsClient({
       <div className="mb-5 flex flex-wrap gap-3">
         <div className="flex items-center gap-1.5 rounded-[50px] border border-[var(--border-light)] bg-white px-4 py-2 text-xs font-medium text-[var(--text-mid)]">
           <strong className="text-[var(--green)]">{stats.dc}+</strong>
-          <span>countries covered</span>
+          <span>{am.countriesCovered}</span>
         </div>
         <div className="flex items-center gap-1.5 rounded-[50px] border border-[var(--border-light)] bg-white px-4 py-2 text-xs font-medium text-[var(--text-mid)]">
           <strong className="text-[var(--green)]">{stats.nc}+</strong>
-          <span>nationalities represented</span>
+          <span>{am.nationalitiesRepresented}</span>
         </div>
         <div className="flex items-center gap-1.5 rounded-[50px] border border-[var(--border-light)] bg-white px-4 py-2 text-xs font-medium text-[var(--text-mid)]">
           <strong className="text-[var(--green)]">{stats.uc}+</strong>
-          <span>universities represented</span>
+          <span>{am.universitiesRepresented}</span>
         </div>
       </div>
 
@@ -337,7 +347,8 @@ export function AmbassadorsClient({
               key={a.id}
               role="button"
               tabIndex={0}
-              className="flex h-full cursor-pointer flex-col rounded-2xl border border-[var(--border-light)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
+              dir="ltr"
+              className="ambassador-card-ltr flex h-full cursor-pointer flex-col rounded-2xl border border-[var(--border-light)] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
               onClick={() => setDetail(a)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -365,7 +376,9 @@ export function AmbassadorsClient({
                     <CountryFlag code={a.destinationCode} size={18} />
                     <span className="truncate">{a.displayUniversity}</span>
                   </div>
-                  <p className="mt-1 text-[12px] text-[var(--text-light)]">{formatHeadlineSubtitle(a)}</p>
+                  <p className="mt-1 text-[12px] text-[var(--text-light)]">
+                    {formatHeadlineSubtitle(a, am.student, am.graduate)}
+                  </p>
                 </div>
               </div>
               {a.about ? (
@@ -373,12 +386,12 @@ export function AmbassadorsClient({
               ) : null}
               {a.tags.length > 0 ? (
                 <div className="mb-3 flex flex-wrap gap-1.5">
-                  {a.tags.slice(0, 6).map((t) => (
+                  {a.tags.slice(0, 6).map((tag) => (
                     <span
-                      key={t}
+                      key={tag}
                       className="rounded-[50px] border border-[var(--border-light)] bg-[var(--sand)] px-3 py-1 text-[10.5px] font-medium text-[var(--text-mid)]"
                     >
-                      {t}
+                      {tag}
                     </span>
                   ))}
                 </div>
@@ -390,18 +403,18 @@ export function AmbassadorsClient({
                       a.isCurrentStudent ? "bg-[var(--green-bg)] text-[var(--green)]" : "border border-[var(--border-light)] bg-[var(--sand)] text-[var(--text-mid)]"
                     }`}
                   >
-                    {statusPillLabel(a)}
+                    {statusPillLabel(a, am)}
                   </span>
                   <Link
                     href={`/student/ambassadors/${a.id}/book`}
                     className="inline-flex items-center rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    Book a call
+                    {am.bookCall}
                   </Link>
                 </div>
                 <p className="mt-2 text-center text-[10px] leading-snug text-[var(--text-hint)]">
-                  Submit a booking request and we&apos;ll confirm your session within 24 hours.
+                  {am.cardFooterNote}
                 </p>
               </div>
             </div>
@@ -411,8 +424,8 @@ export function AmbassadorsClient({
 
       {filtered.length === 0 ? (
         <div className="py-12 text-center">
-          <h3 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">No ambassadors found</h3>
-          <p className="mt-2 text-[13px] text-[var(--text-light)]">Try adjusting filters or search by university or country.</p>
+          <h3 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">{am.emptyTitle}</h3>
+          <p className="mt-2 text-[13px] text-[var(--text-light)]">{am.emptySubtitle}</p>
           <button
             type="button"
             className="mt-4 cursor-pointer rounded-[50px] border-[1.5px] border-[var(--border)] bg-white px-5 py-2 text-xs font-semibold text-[var(--text-mid)] transition hover:border-[var(--green)] hover:text-[var(--green)]"
@@ -421,7 +434,7 @@ export function AmbassadorsClient({
               clearFilters();
             }}
           >
-            Clear search & filters
+            {am.clearSearchAndFilters}
           </button>
         </div>
       ) : null}

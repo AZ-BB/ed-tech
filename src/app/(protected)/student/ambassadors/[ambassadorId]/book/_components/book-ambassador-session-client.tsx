@@ -1,8 +1,10 @@
 "use client";
 
 import { createAmbassadorSessionRequest } from "@/actions/ambassador-sessions";
+import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useCallback, useState } from "react";
+import { ArrowBackIcon, ArrowForwardIcon } from "../../../../_components/directional-icons";
 
 const inputClass =
   "w-full rounded-[10px] border-[1.5px] border-[var(--border)] bg-white px-4 py-3 font-[family-name:var(--font-dm-sans)] text-sm text-[var(--text)] transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)] focus:outline-none";
@@ -43,6 +45,9 @@ type Props = {
 };
 
 export function BookAmbassadorSessionClient({ ambassador }: Props) {
+  const { dict } = useLocale();
+  const bt = dict.student.ambassadors.book;
+  const am = dict.student.ambassadors;
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,31 +74,31 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
   const goConfirm = useCallback(() => {
     setError(null);
     if (!fullName.trim()) {
-      setError("Please enter your full name.");
+      setError(bt.errors.fullName);
       return;
     }
     if (!email.trim()) {
-      setError("Please enter your email address.");
+      setError(bt.errors.email);
       return;
     }
     if (!phone.trim()) {
-      setError("Please enter your phone number.");
+      setError(bt.errors.phone);
       return;
     }
     if (!date1.trim() || !time1.trim()) {
-      setError("Please choose a date and time for your first preference.");
+      setError(bt.errors.time1);
       return;
     }
     const p1 = slotToIso(date1, time1);
     if (!p1) {
-      setError("Preferred time 1 is not a valid date and time.");
+      setError(bt.errors.invalidTime1);
       return;
     }
     let p2: string | null = null;
     if (date2.trim()) {
       p2 = slotToIso(date2, time2 || "12:00");
       if (!p2) {
-        setError("Preferred time 2 is not a valid date and time.");
+        setError(bt.errors.invalidTime2);
         return;
       }
     }
@@ -101,12 +106,12 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
     if (date3.trim()) {
       p3 = slotToIso(date3, time3 || "12:00");
       if (!p3) {
-        setError("Preferred time 3 is not a valid date and time.");
+        setError(bt.errors.invalidTime3);
         return;
       }
     }
     if (!discussion.trim()) {
-      setError("Please describe what you would like to discuss.");
+      setError(bt.errors.discussion);
       return;
     }
     setPrefIso1(p1);
@@ -114,7 +119,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
     setPrefIso3(p3);
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [date1, date2, date3, discussion, email, fullName, phone, time1, time2, time3]);
+  }, [bt.errors, date1, date2, date3, discussion, email, fullName, phone, time1, time2, time3]);
 
   const submitBooking = useCallback(async () => {
     setError(null);
@@ -154,18 +159,22 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
     <div className="mb-4">
       <div className="mb-2 block text-xs font-semibold text-[var(--text)]">
         {opts.label}{" "}
-        {opts.required ? <span className="text-[#C0392B]">*</span> : <span className="font-normal text-[var(--text-hint)]">(optional)</span>}
+        {opts.required ? (
+          <span className="text-[#C0392B]">*</span>
+        ) : (
+          <span className="font-normal text-[var(--text-hint)]">{bt.optional}</span>
+        )}
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-[11px] font-medium text-[var(--text-hint)]" htmlFor={opts.dateId}>
-            Date
+            {bt.date}
           </label>
           <input id={opts.dateId} type="date" className={inputClass} value={opts.date} onChange={(e) => opts.setDate(e.target.value)} />
         </div>
         <div>
           <label className="mb-1.5 block text-[11px] font-medium text-[var(--text-hint)]" htmlFor={opts.timeId}>
-            Time
+            {bt.time}
           </label>
           <input id={opts.timeId} type="time" className={inputClass} value={opts.time} onChange={(e) => opts.setTime(e.target.value)} />
         </div>
@@ -180,10 +189,8 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
           href="/student/ambassadors"
           className="mb-7 inline-flex cursor-pointer items-center gap-1.5 rounded-[50px] border-[1.5px] border-[var(--border)] bg-white px-[18px] py-2 text-[13px] font-medium text-[var(--text-mid)] no-underline transition hover:border-[var(--text-hint)] hover:-translate-x-0.5"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to ambassadors
+          <ArrowBackIcon size={16} />
+          {bt.backToAmbassadors}
         </Link>
 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -191,43 +198,48 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
             {step === 1 ? (
               <>
                 <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] tracking-tight text-[var(--text)]">
-                  Book a call with a university ambassador
+                  {bt.step1Title}
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a]">
-                  Tell us a bit about yourself and share preferred times for your session. This helps us confirm the call and prepare{" "}
-                  {ambassador.firstName} for your conversation about {ambassador.displayUniversity}.
+                  {bt.step1Subtitle
+                    .replace("{firstName}", ambassador.firstName)
+                    .replace("{university}", ambassador.displayUniversity)}
                 </p>
                 <div className="mt-6 rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5 max-[600px]:py-6">
-                  <p className="mb-5 border-b border-[var(--border-light)] pb-4 text-[13px] font-semibold text-[var(--text)]">Personal information</p>
+                  <p className="mb-5 border-b border-[var(--border-light)] pb-4 text-[13px] font-semibold text-[var(--text)]">
+                    {bt.personalInfo}
+                  </p>
                   <div className="mb-4">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="ab-name">
-                      Full name <span className="text-[#C0392B]">*</span>
+                      {bt.fullName} <span className="text-[#C0392B]">*</span>
                     </label>
-                    <input id="ab-name" className={inputClass} placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                    <input id="ab-name" className={inputClass} placeholder={bt.fullNamePlaceholder} value={fullName} onChange={(e) => setFullName(e.target.value)} />
                   </div>
                   <div className="mb-4">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="ab-email">
-                      Email address <span className="text-[#C0392B]">*</span>
+                      {bt.email} <span className="text-[#C0392B]">*</span>
                     </label>
                     <input
                       id="ab-email"
                       type="email"
                       className={inputClass}
-                      placeholder="your@email.com"
+                      placeholder={bt.emailPlaceholder}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
                   <div className="mb-6">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="ab-phone">
-                      Phone number <span className="text-[#C0392B]">*</span>
+                      {bt.phone} <span className="text-[#C0392B]">*</span>
                     </label>
-                    <input id="ab-phone" className={inputClass} placeholder="+971 XX XXX XXXX" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                    <input id="ab-phone" className={inputClass} placeholder={bt.phonePlaceholder} value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
 
-                  <p className="mb-5 border-b border-[var(--border-light)] pb-4 text-[13px] font-semibold text-[var(--text)]">Preferred times</p>
+                  <p className="mb-5 border-b border-[var(--border-light)] pb-4 text-[13px] font-semibold text-[var(--text)]">
+                    {bt.preferredTimes}
+                  </p>
                   {timeRow({
-                    label: "Preferred time 1",
+                    label: bt.preferredTime1,
                     required: true,
                     dateId: "ab-d1",
                     timeId: "ab-t1",
@@ -237,7 +249,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                     setTime: setTime1,
                   })}
                   {timeRow({
-                    label: "Preferred time 2",
+                    label: bt.preferredTime2,
                     required: false,
                     dateId: "ab-d2",
                     timeId: "ab-t2",
@@ -247,7 +259,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                     setTime: setTime2,
                   })}
                   {timeRow({
-                    label: "Preferred time 3",
+                    label: bt.preferredTime3,
                     required: false,
                     dateId: "ab-d3",
                     timeId: "ab-t3",
@@ -259,12 +271,12 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
 
                   <div className="mb-4">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="ab-disc">
-                      What would you like to discuss? <span className="text-[#C0392B]">*</span>
+                      {bt.discussion} <span className="text-[#C0392B]">*</span>
                     </label>
                     <textarea
                       id="ab-disc"
                       className={`${inputClass} min-h-[100px] resize-y`}
-                      placeholder="e.g. campus life, applications, scholarships, housing..."
+                      placeholder={bt.discussionPlaceholder}
                       value={discussion}
                       onChange={(e) => setDiscussion(e.target.value)}
                     />
@@ -279,10 +291,8 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                     className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-4 py-3.5 text-sm font-semibold !text-white shadow-[0_4px_14px_rgba(45,106,79,0.25)] transition hover:-translate-y-px hover:bg-[var(--green-dark)] hover:!text-white hover:shadow-[0_6px_20px_rgba(45,106,79,0.3)]"
                     onClick={goConfirm}
                   >
-                    Continue
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
-                      <path d="M5 12h14M13 5l7 7-7 7" />
-                    </svg>
+                    {bt.continue}
+                    <ArrowForwardIcon size={14} className="text-white" strokeWidth={2.5} />
                   </button>
                 </div>
               </>
@@ -291,44 +301,48 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
             {step === 2 ? (
               <>
                 <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] tracking-tight text-[var(--text)]">
-                  Confirm your booking
+                  {bt.step2Title}
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a]">
-                  Review your details before we submit this request for a call with {displayName}.
+                  {bt.step2Subtitle.replace("{name}", displayName)}
                 </p>
                 <div className="mt-6 rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5 max-[600px]:py-6">
                   <div className="mb-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-[var(--sand)] p-5">
-                    <div className="mb-3 text-sm font-semibold text-[var(--text)]">Your details</div>
+                    <div className="mb-3 text-sm font-semibold text-[var(--text)]">{bt.yourDetails}</div>
                     <ul className="mb-3 flex flex-col gap-1.5 text-[13px] text-[var(--text-mid)]">
                       <li>
-                        <span className="font-medium text-[var(--text)]">Name:</span> {fullName.trim()}
+                        <span className="font-medium text-[var(--text)]">{bt.nameLabel}</span> {fullName.trim()}
                       </li>
                       <li>
-                        <span className="font-medium text-[var(--text)]">Email:</span> {email.trim()}
+                        <span className="font-medium text-[var(--text)]">{bt.emailLabel}</span> {email.trim()}
                       </li>
                       <li>
-                        <span className="font-medium text-[var(--text)]">Phone:</span> {phone.trim()}
+                        <span className="font-medium text-[var(--text)]">{bt.phoneLabel}</span> {phone.trim()}
                       </li>
                     </ul>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-hint)]">Preferred times</div>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-hint)]">
+                      {bt.preferredTimes}
+                    </div>
                     <ul className="flex flex-col gap-2 text-[13px] text-[var(--text-mid)]">
                       <li>
-                        <span className="font-medium text-[var(--text)]">Time 1:</span> {formatSlotLabel(prefIso1)}
+                        <span className="font-medium text-[var(--text)]">{bt.time1}</span> {formatSlotLabel(prefIso1)}
                       </li>
                       {prefIso2 ? (
                         <li>
-                          <span className="font-medium text-[var(--text)]">Time 2:</span> {formatSlotLabel(prefIso2)}
+                          <span className="font-medium text-[var(--text)]">{bt.time2}</span> {formatSlotLabel(prefIso2)}
                         </li>
                       ) : null}
                       {prefIso3 ? (
                         <li>
-                          <span className="font-medium text-[var(--text)]">Time 3:</span> {formatSlotLabel(prefIso3)}
+                          <span className="font-medium text-[var(--text)]">{bt.time3}</span> {formatSlotLabel(prefIso3)}
                         </li>
                       ) : null}
                     </ul>
                     <p className="mt-3 border-t border-[var(--border-light)] pt-3 text-[13px] leading-relaxed text-[var(--text-mid)]">
-                      <span className="font-medium text-[var(--text)]">Discussion: </span>
-                      {discussion.trim()}
+                      <span className="font-medium text-[var(--text)]">{bt.discussionLabel} </span>
+                      <span className="bidi-ltr" dir="ltr">
+                        {discussion.trim()}
+                      </span>
                     </p>
                   </div>
                   {error ? (
@@ -350,7 +364,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                         <path d="M22 4L12 14.01l-3-3" />
                       </svg>
                     )}
-                    Confirm booking
+                    {bt.confirmBooking}
                   </button>
                   <button
                     type="button"
@@ -360,7 +374,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                       setError(null);
                     }}
                   >
-                    Back
+                    {bt.back}
                   </button>
                 </div>
               </>
@@ -374,15 +388,15 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                     <path d="M22 4L12 14.01l-3-3" />
                   </svg>
                 </div>
-                <h2 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">Request submitted</h2>
+                <h2 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">{bt.step3Title}</h2>
                 <p className="mx-auto mt-2 max-w-[400px] text-[13.5px] leading-relaxed text-[#8a8a8a]">
-                  We&apos;ve saved your ambassador session request. Your coordinator will help schedule a time with {displayName}.
+                  {bt.step3Subtitle.replace("{name}", displayName)}
                 </p>
                 <Link
                   href="/student/ambassadors"
                   className="mx-auto mt-6 inline-flex max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-8 py-3.5 text-sm font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
                 >
-                  Back to ambassadors
+                  {bt.backToAmbassadors}
                 </Link>
               </div>
             ) : null}
@@ -390,27 +404,37 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
 
           <aside className="w-full shrink-0 lg:w-[288px] lg:min-w-[288px] lg:sticky lg:top-6">
             <div className="rounded-2xl border border-[#EEF2EF] bg-[linear-gradient(180deg,var(--white)_0%,#FAFBFA_100%)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
-              <div className="text-sm font-bold text-[var(--text)]">Ambassador</div>
-              <div className="mt-3 text-[15px] font-semibold text-[var(--text)]">{displayName}</div>
-              <div className="mt-1 text-[12.5px] text-[var(--text-mid)]">
+              <div className="text-sm font-bold text-[var(--text)]">{bt.ambassador}</div>
+              <div className="bidi-ltr mt-3 text-[15px] font-semibold text-[var(--text)]" dir="ltr">
+                {displayName}
+              </div>
+              <div className="bidi-ltr mt-1 text-[12.5px] text-[var(--text-mid)]" dir="ltr">
                 {ambassador.destinationLabel} · {ambassador.displayUniversity}
               </div>
-              {ambassador.major ? <div className="mt-1 text-[12.5px] text-[var(--text-mid)]">{ambassador.major}</div> : null}
+              {ambassador.major ? (
+                <div className="bidi-ltr mt-1 text-[12.5px] text-[var(--text-mid)]" dir="ltr">
+                  {ambassador.major}
+                </div>
+              ) : null}
               <div className="mt-2">
                 <span
                   className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-[10px] font-semibold ${
-                    ambassador.isCurrentStudent ? "bg-[var(--green-bg)] text-[var(--green)]" : "border border-[var(--border-light)] bg-[var(--sand)] text-[var(--text-mid)]"
+                    ambassador.isCurrentStudent
+                      ? "bg-[var(--green-bg)] text-[var(--green)]"
+                      : "border border-[var(--border-light)] bg-[var(--sand)] text-[var(--text-mid)]"
                   }`}
                 >
-                  {ambassador.isCurrentStudent ? "Current student" : "Graduate"}
+                  {ambassador.isCurrentStudent ? am.currentStudent : am.graduate}
                 </span>
               </div>
-              <p className="mt-3 text-[11px] leading-snug text-[var(--text-hint)]">We&apos;ll contact this ambassador first. Subject to availability.</p>
+              <p className="mt-3 text-[11px] leading-snug text-[var(--text-hint)]">{bt.availabilityNote}</p>
 
               <div className="mt-5 border-t border-[#E8ECE9] pt-5">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[13px] font-normal leading-none text-[#8a8a8a]">Session cost</span>
-                  <span className="font-[family-name:var(--font-dm-serif)] text-[22px] font-bold leading-none tracking-tight text-[var(--green)]">1 credit</span>
+                  <span className="text-[13px] font-normal leading-none text-[#8a8a8a]">{bt.sessionCost}</span>
+                  <span className="font-[family-name:var(--font-dm-serif)] text-[22px] font-bold leading-none tracking-tight text-[var(--green)]">
+                    {bt.oneCredit}
+                  </span>
                 </div>
                 <div className="mt-4 flex gap-3 rounded-xl border border-[#c5dfc9] bg-[#ecf6ef] px-3.5 py-3.5">
                   <div
@@ -422,8 +446,8 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                     </svg>
                   </div>
                   <div className="text-[13px] leading-snug text-[#3d5247]">
-                    <p>Covered by your available credits.</p>
-                    <p className="mt-0.5">No additional payment required.</p>
+                    <p>{bt.coveredByCredits}</p>
+                    <p className="mt-0.5">{bt.noExtraPayment}</p>
                   </div>
                 </div>
               </div>

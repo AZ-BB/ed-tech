@@ -4,10 +4,12 @@ import { createAdvisorSessionBooking } from "@/actions/advisor-sessions";
 import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
 import { COUNTRIES } from "@/lib/countries";
 import { advisorSessionUtmContent, buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
+import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
+import { ArrowBackIcon, ArrowForwardIcon } from "../../../../_components/directional-icons";
 
-const STAGES = [
+const STAGE_VALUES = [
   "",
   "Just exploring",
   "Shortlisting universities",
@@ -32,6 +34,8 @@ type Props = {
 };
 
 export function BookAdvisorSessionClient({ advisor }: Props) {
+  const { dict } = useLocale();
+  const bt = dict.student.advisors.book;
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +50,16 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
   const [sessionId, setSessionId] = useState<number | null>(null);
 
   const displayName = `${advisor.firstName} ${advisor.lastName}`;
+
+  const stageLabels: Record<string, string> = useMemo(
+    () => ({
+      "Just exploring": bt.stages.exploring,
+      "Shortlisting universities": bt.stages.shortlisting,
+      "Preparing application": bt.stages.preparing,
+      "Ready to apply": bt.stages.ready,
+    }),
+    [bt],
+  );
 
   const calendlyPageUrl = useMemo(() => {
     if (sessionId == null) return "";
@@ -71,28 +85,28 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
   const goConfirm = useCallback(() => {
     setError(null);
     if (!fullName.trim() || !email.trim()) {
-      setError("Please enter your full name and email.");
+      setError(bt.errors.nameEmail);
       return;
     }
     if (!phone.trim()) {
-      setError("Please enter your phone number (WhatsApp preferred).");
+      setError(bt.errors.phone);
       return;
     }
     if (!destinationAlpha2) {
-      setError("Please select where you want to study.");
+      setError(bt.errors.destination);
       return;
     }
     if (!stage) {
-      setError("Please select your current stage.");
+      setError(bt.errors.stage);
       return;
     }
     if (!helpWith.trim()) {
-      setError("Please tell us what you would like help with.");
+      setError(bt.errors.help);
       return;
     }
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [destinationAlpha2, email, fullName, helpWith, phone, stage]);
+  }, [bt.errors, destinationAlpha2, email, fullName, helpWith, phone, stage]);
 
   const submitBooking = useCallback(async () => {
     setError(null);
@@ -130,10 +144,8 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
           href="/student/advisor-sessions"
           className="mb-7 inline-flex cursor-pointer items-center gap-1.5 rounded-[50px] border-[1.5px] border-[var(--border)] bg-white px-[18px] py-2 text-[13px] font-medium text-[var(--text-mid)] no-underline transition hover:border-[var(--text-hint)] hover:-translate-x-0.5"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to advisors
+          <ArrowBackIcon size={16} />
+          {bt.backToAdvisors}
         </Link>
 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -141,27 +153,23 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
             {step === 1 ? (
               <>
                 <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] tracking-tight text-[var(--text)]">
-                  Tell us about your goals
+                  {bt.step1Title}
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a]">
-                  This helps us prepare for your session with {displayName}.
+                  {bt.step1Subtitle.replace("{name}", displayName)}
                 </p>
-                <p className="mt-2 text-xs font-medium text-[var(--green)]">We&apos;ll make sure you get the most out of your session</p>
+                <p className="mt-2 text-xs font-medium text-[var(--green)]">{bt.step1Highlight}</p>
                 <div className="mt-4 flex flex-wrap gap-2.5">
-                  {[
-                    "Matched with your selected advisor",
-                    "Request saved to your account",
-                    "Pick your time in Calendly",
-                  ].map((t) => (
+                  {bt.badges.map((label) => (
                     <div
-                      key={t}
+                      key={label}
                       className="flex items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-pale)] px-4 py-2 text-[11.5px] font-medium text-[var(--green-dark)]"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
                         <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                         <path d="M22 4L12 14.01l-3-3" />
                       </svg>
-                      {t}
+                      {label}
                     </div>
                   ))}
                 </div>
@@ -169,19 +177,19 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                   <div className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
                     <div className="mb-4">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-name">
-                        Full name
+                        {bt.fullName}
                       </label>
-                      <input id="bk-name" className={inputClass} placeholder="Enter your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                      <input id="bk-name" className={inputClass} placeholder={bt.fullNamePlaceholder} value={fullName} onChange={(e) => setFullName(e.target.value)} />
                     </div>
                     <div className="mb-4">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-email">
-                        Email address
+                        {bt.email}
                       </label>
                       <input
                         id="bk-email"
                         type="email"
                         className={inputClass}
-                        placeholder="your@email.com"
+                        placeholder={bt.emailPlaceholder}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
@@ -189,14 +197,14 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                   </div>
                   <div className="mb-4">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-phone">
-                      Phone number <span className="font-normal text-[var(--text-hint)]">(WhatsApp preferred)</span>
+                      {bt.phone} <span className="font-normal text-[var(--text-hint)]">{bt.phoneHint}</span>
                     </label>
-                    <input id="bk-phone" className={inputClass} placeholder="+971 XX XXX XXXX" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                    <input id="bk-phone" className={inputClass} placeholder={bt.phonePlaceholder} value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
                   <div className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
                     <div className="mb-4">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-dest">
-                        Where do you want to study?
+                        {bt.destination}
                       </label>
                       <select
                         id="bk-dest"
@@ -205,7 +213,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                         value={destinationAlpha2}
                         onChange={(e) => setDestinationAlpha2(e.target.value)}
                       >
-                        <option value="">Select destination country</option>
+                        <option value="">{bt.destinationPlaceholder}</option>
                         {COUNTRIES.map((c) => (
                           <option key={c.alpha2} value={c.alpha2}>
                             {c.name}
@@ -215,7 +223,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                     </div>
                     <div className="mb-4">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-stage">
-                        Current stage
+                        {bt.currentStage}
                       </label>
                       <select
                         id="bk-stage"
@@ -224,10 +232,10 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                         value={stage}
                         onChange={(e) => setStage(e.target.value)}
                       >
-                        <option value="">Select stage</option>
-                        {STAGES.filter(Boolean).map((s) => (
+                        <option value="">{bt.stagePlaceholder}</option>
+                        {STAGE_VALUES.filter(Boolean).map((s) => (
                           <option key={s} value={s}>
-                            {s}
+                            {stageLabels[s] ?? s}
                           </option>
                         ))}
                       </select>
@@ -235,24 +243,24 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                   </div>
                   <div className="mb-4">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-unis">
-                      Do you have specific universities in mind?
+                      {bt.specificUnis}
                     </label>
                     <input
                       id="bk-unis"
                       className={inputClass}
-                      placeholder="e.g. University of Toronto, UCL, NYU..."
+                      placeholder={bt.specificUnisPlaceholder}
                       value={specificUnis}
                       onChange={(e) => setSpecificUnis(e.target.value)}
                     />
                   </div>
                   <div className="mb-4">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-help">
-                      What would you like help with?
+                      {bt.helpWith}
                     </label>
                     <textarea
                       id="bk-help"
                       className={`${inputClass} min-h-[80px] resize-y`}
-                      placeholder="Tell us what you want to get out of this session (applications, essays, scholarships, etc.)"
+                      placeholder={bt.helpWithPlaceholder}
                       value={helpWith}
                       onChange={(e) => setHelpWith(e.target.value)}
                     />
@@ -267,10 +275,8 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                     className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-4 py-3.5 text-sm font-semibold !text-white shadow-[0_4px_14px_rgba(45,106,79,0.25)] transition hover:-translate-y-px hover:bg-[var(--green-dark)] hover:!text-white hover:shadow-[0_6px_20px_rgba(45,106,79,0.3)]"
                     onClick={goConfirm}
                   >
-                    Continue
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
-                      <path d="M5 12h14M13 5l7 7-7 7" />
-                    </svg>
+                    {bt.continue}
+                    <ArrowForwardIcon size={14} className="text-white" strokeWidth={2.5} />
                   </button>
                 </div>
               </>
@@ -279,9 +285,11 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
             {step === 2 ? (
               <>
                 <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] tracking-tight text-[var(--text)]">
-                  Confirm your session
+                  {bt.step2Title}
                 </h1>
-                <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a]">Review what&apos;s included and confirm your booking with {displayName}.</p>
+                <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a]">
+                  {bt.step2Subtitle.replace("{name}", displayName)}
+                </p>
                 <div className="mt-6 rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5 max-[600px]:py-6">
                   <div className="mb-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-[var(--sand)] p-5">
                     <div className="mb-4 flex items-center gap-2.5">
@@ -292,17 +300,12 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                         </svg>
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-[var(--text)]">Advisor session request</div>
-                        <div className="text-xs text-[var(--text-light)]">We&apos;ll record this in your advisor sessions</div>
+                        <div className="text-sm font-semibold text-[var(--text)]">{bt.requestTitle}</div>
+                        <div className="text-xs text-[var(--text-light)]">{bt.requestSubtitle}</div>
                       </div>
                     </div>
                     <ul className="flex flex-col gap-2.5">
-                      {[
-                        "1:1 advisor session (45–60 min typical)",
-                        "Personalized guidance based on what you shared",
-                        "Q&A support during your session",
-                        "Follow-up recommendations after the session",
-                      ].map((line) => (
+                      {bt.includes.map((line) => (
                         <li key={line} className="flex items-start gap-2.5 text-[13px] leading-snug text-[var(--text-mid)]">
                           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)]">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
@@ -333,7 +336,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                         <path d="M22 4L12 14.01l-3-3" />
                       </svg>
                     )}
-                    Confirm booking
+                    {bt.confirmBooking}
                   </button>
                   <button
                     type="button"
@@ -343,7 +346,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                       setError(null);
                     }}
                   >
-                    Back
+                    {bt.back}
                   </button>
                 </div>
               </>
@@ -358,18 +361,17 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                       <path d="M22 4L12 14.01l-3-3" />
                     </svg>
                   </div>
-                  <h2 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">Your session request was submitted</h2>
+                  <h2 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">{bt.step3Title}</h2>
                   <p className="mx-auto mt-2 max-w-[480px] text-[13.5px] leading-relaxed text-[#8a8a8a]">
-                    We&apos;ve saved your details to advisor sessions. Choose a time below — you&apos;ll get a confirmation from Calendly, and
-                    we&apos;ll follow up on WhatsApp if needed.
+                    {bt.step3Subtitle}
                   </p>
-                  <p className="mt-2 text-xs font-medium text-[var(--green)]">You&apos;re one step closer to your university journey</p>
+                  <p className="mt-2 text-xs font-medium text-[var(--green)]">{bt.step3Highlight}</p>
                 </div>
                 {calendlyPageUrl ? (
                   <div className="mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
                     <CalendlyInlineEmbed
                       url={calendlyPageUrl}
-                      title={`Book a session with ${displayName} — Calendly`}
+                      title={bt.calendlyTitle.replace("{name}", displayName)}
                       className="min-h-[720px] w-full min-w-[280px] rounded-none border-0 bg-white"
                     />
                   </div>
@@ -379,7 +381,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                     href="/student/advisor-sessions"
                     className="mx-auto inline-flex max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-8 py-3.5 text-sm font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
                   >
-                    Back to advisors
+                    {bt.backToAdvisors}
                   </Link>
                 </div>
               </div>
@@ -388,44 +390,48 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
 
           <aside className="w-full shrink-0 lg:w-[288px] lg:min-w-[288px] lg:sticky lg:top-6">
             <div className="rounded-2xl border border-[#EEF2EF] bg-[linear-gradient(180deg,var(--white)_0%,#FAFBFA_100%)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
-              <div className="text-sm font-bold text-[var(--text)]">Session summary</div>
+              <div className="text-sm font-bold text-[var(--text)]">{bt.summaryTitle}</div>
               <div className="mt-4 flex flex-col gap-3 text-[12.5px] text-[var(--text-mid)]">
                 <div className="flex items-center gap-2.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
-                  <span>With {displayName}</span>
+                  <span>{bt.withAdvisor.replace("{name}", displayName)}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 6v6l4 2" />
                   </svg>
-                  <span>Duration: 45–60 min</span>
+                  <span>{bt.duration}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
                     <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                     <path d="M22 4L12 14.01l-3-3" />
                   </svg>
-                  <span>Personalized guidance</span>
+                  <span>{bt.personalizedGuidance}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                   </svg>
-                  <span>Q&A + follow-up recommendations</span>
+                  <span>{bt.qaFollowUp}</span>
                 </div>
               </div>
-              {advisor.title ? <p className="mt-4 text-xs text-[var(--text-light)]">{advisor.title}</p> : null}
-
-              
+              {advisor.title ? (
+                <p className="bidi-ltr mt-4 text-xs text-[var(--text-light)]" dir="ltr">
+                  {advisor.title}
+                </p>
+              ) : null}
 
               <div className="mt-5 border-t border-[#E8ECE9] pt-5">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[13px] font-normal leading-none text-[#8a8a8a]">Session cost</span>
-                  <span className="font-[family-name:var(--font-dm-serif)] text-[22px] font-bold leading-none tracking-tight text-[var(--green)]">1 credit</span>
+                  <span className="text-[13px] font-normal leading-none text-[#8a8a8a]">{bt.sessionCost}</span>
+                  <span className="font-[family-name:var(--font-dm-serif)] text-[22px] font-bold leading-none tracking-tight text-[var(--green)]">
+                    {bt.oneCredit}
+                  </span>
                 </div>
                 <div className="mt-4 flex gap-3 rounded-xl border border-[#c5dfc9] bg-[#ecf6ef] px-3.5 py-3.5">
                   <div
@@ -437,8 +443,8 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                     </svg>
                   </div>
                   <div className="text-[13px] leading-snug text-[#3d5247]">
-                    <p>Covered by your available credits.</p>
-                    <p className="mt-0.5">No additional payment required.</p>
+                    <p>{bt.coveredByCredits}</p>
+                    <p className="mt-0.5">{bt.noExtraPayment}</p>
                   </div>
                 </div>
               </div>

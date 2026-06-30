@@ -105,7 +105,7 @@
   align-items: center;
   gap: 16px;
   border: 1px solid rgba(45, 106, 79, 0.14);
-  border-left: 4px solid var(--green);
+  border-inline-start: 4px solid var(--green);
   box-shadow: 0 2px 12px rgba(45, 106, 79, 0.06);
 }
 
@@ -148,7 +148,7 @@
 #application-support-scope .as-journey-steps::before {
   content: "";
   position: absolute;
-  left: 23px;
+  inset-inline-start: 23px;
   top: 24px;
   bottom: 24px;
   width: 2px;
@@ -172,8 +172,16 @@
 
 #application-support-scope .as-journey-step:hover {
   border-color: rgba(45, 106, 79, 0.25);
-  transform: translateX(4px);
   box-shadow: 0 6px 18px rgba(27, 67, 50, 0.07);
+}
+
+html[dir="ltr"] #application-support-scope .as-journey-step:hover {
+  transform: translateX(4px);
+}
+
+html[dir="rtl"] #application-support-scope .as-journey-step:hover,
+.student-portal[dir="rtl"] #application-support-scope .as-journey-step:hover {
+  transform: translateX(-4px);
 }
 
 #application-support-scope .as-journey-num {
@@ -226,8 +234,8 @@
   background-color: var(--white);
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 14px center;
-  padding-right: 36px;
+  background-position: end 14px center;
+  padding-inline-end: 36px;
 }
 
 #application-support-scope .as-chip-grid {
@@ -264,7 +272,7 @@
 
 #application-support-scope .as-chip.as-selected::before {
   content: "✓";
-  margin-right: 6px;
+  margin-inline-end: 6px;
   font-weight: 700;
 }
 
@@ -292,7 +300,8 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 8px 7px 14px;
+  padding-block: 7px;
+  padding-inline: 14px 8px;
   background: var(--green-pale);
   border: 1px solid var(--green);
   border-radius: var(--radius-pill);
@@ -357,7 +366,7 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 
@@ -546,12 +555,13 @@
 #application-support-scope .as-summary-block.as-filled::before {
   content: "";
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 18px;
   bottom: 18px;
   width: 3px;
   background: var(--green);
-  border-radius: 0 3px 3px 0;
+  border-start-end-radius: 3px;
+  border-end-end-radius: 3px;
 }
 
 #application-support-scope .as-summary-block.as-empty {
@@ -638,7 +648,7 @@
 #application-support-scope .as-advisor-await::after {
   content: "";
   position: absolute;
-  right: -30px;
+  inset-inline-end: -30px;
   top: -30px;
   width: 120px;
   height: 120px;
@@ -772,4 +782,9 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+html[dir="rtl"] #application-support-scope .as-hr-bar,
+.student-portal[dir="rtl"] #application-support-scope .as-hr-bar {
+  direction: rtl;
 }

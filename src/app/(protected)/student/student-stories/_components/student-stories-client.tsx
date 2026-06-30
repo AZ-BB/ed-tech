@@ -1,8 +1,10 @@
 "use client";
 
 import { buildYouTubeEmbedUrl } from "@/lib/youtube";
+import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowForwardIcon } from "../../_components/directional-icons";
 
 import type { StudentStoryCard, StudentStoryTopic } from "../_lib/fetch-student-stories";
 
@@ -23,11 +25,14 @@ function highlightLeadTitle(title: string): ReactNode {
   );
 }
 
-function languageLabel(language: StudentStoryCard["language"]): string | null {
+function languageLabel(
+  language: StudentStoryCard["language"],
+  t: { langEn: string; langAr: string; langMixed: string },
+): string | null {
   if (!language) return null;
-  if (language === "en") return "EN";
-  if (language === "ar") return "AR";
-  return "Mixed";
+  if (language === "en") return t.langEn;
+  if (language === "ar") return t.langAr;
+  return t.langMixed;
 }
 
 function PlayIcon({ size = 18 }: { size?: number }) {
@@ -70,6 +75,8 @@ type StudentStoriesClientProps = {
 };
 
 export function StudentStoriesClient({ topics, stories }: StudentStoriesClientProps) {
+  const { dict } = useLocale();
+  const t = dict.student.stories;
   const [activeFilter, setActiveFilter] = useState(ALL_TOPICS_VALUE);
   const [selectedStory, setSelectedStory] = useState<StudentStoryCard | null>(null);
 
@@ -278,7 +285,7 @@ export function StudentStoriesClient({ topics, stories }: StudentStoriesClientPr
         ) : (
           <div className="grid grid-cols-1 gap-x-7 gap-y-[30px] min-[601px]:grid-cols-2 min-[901px]:grid-cols-3">
             {gridStories.map((story) => {
-              const lang = languageLabel(story.language);
+              const lang = languageLabel(story.language, t);
               return (
                 <article
                   key={story.id}
@@ -355,18 +362,8 @@ export function StudentStoriesClient({ topics, stories }: StudentStoriesClientPr
             href="/student/advisor-sessions"
             className="inline-flex shrink-0 items-center gap-2 rounded-[50px] bg-white px-8 py-[15px] text-[15px] font-bold text-[#1B4332] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
           >
-            Talk to an advisor
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              aria-hidden
-            >
-              <path d="M5 12h14M13 5l7 7-7 7" />
-            </svg>
+            {t.talkToAdvisor}
+            <ArrowForwardIcon size={16} />
           </Link>
         </div>
       </div>

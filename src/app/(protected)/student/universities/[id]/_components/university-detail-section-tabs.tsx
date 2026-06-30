@@ -1,26 +1,37 @@
 "use client";
 
 import clsx from "clsx";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const SECTION_TABS = [
-    { id: "d-overview", label: "Overview" },
-    { id: "d-requirements", label: "Requirements" },
-    { id: "d-application", label: "Application" },
-    { id: "d-costs", label: "Costs" },
-    { id: "d-majors", label: "Majors" },
-    { id: "d-alumni", label: "Alumni" },
+const SECTION_TAB_IDS = [
+    { id: "d-overview", key: "overview" },
+    { id: "d-requirements", key: "requirements" },
+    { id: "d-application", key: "application" },
+    { id: "d-costs", key: "costs" },
+    { id: "d-majors", key: "majors" },
+    { id: "d-alumni", key: "alumni" },
 ] as const;
 
-type SectionId = (typeof SECTION_TABS)[number]["id"];
+type SectionId = (typeof SECTION_TAB_IDS)[number]["id"];
 
-const SECTION_IDS: readonly SectionId[] = SECTION_TABS.map((t) => t.id);
+const SECTION_IDS: readonly SectionId[] = SECTION_TAB_IDS.map((t) => t.id);
 
 /**
  * Matches `university_search_page.html`: smooth scroll with tab-bar offset,
  * scroll-spy highlighting (tabBar height + 60px breakpoint).
  */
 export function UniversityDetailSectionTabs() {
+    const { dict } = useLocale();
+    const t = dict.student.universities;
+    const sectionTabs = useMemo(
+        () =>
+            SECTION_TAB_IDS.map((tab) => ({
+                id: tab.id,
+                label: t[tab.key],
+            })),
+        [t],
+    );
     const barRef = useRef<HTMLDivElement>(null);
     const [activeId, setActiveId] = useState<SectionId>(SECTION_IDS[0]);
 
@@ -61,14 +72,14 @@ export function UniversityDetailSectionTabs() {
         <nav
             id="detail-tabs"
             className="sticky top-0 z-10 border-b border-[#ece9e4] bg-white px-4 min-[460px]:px-6"
-            aria-label="Section navigation"
+            aria-label={t.sectionNav}
         >
             {/* Inner row scrolls; `-mb-px` + `border-b-2` on tabs overlaps the nav 1px rule so active green sits on top. */}
             <div
                 ref={barRef}
                 className="scrollbar-thin flex min-w-0 flex-wrap gap-x-0 gap-y-0 overflow-x-auto"
             >
-                {SECTION_TABS.map(({ id, label }) => {
+                {sectionTabs.map(({ id, label }) => {
                     const active = activeId === id;
                     return (
                         <button

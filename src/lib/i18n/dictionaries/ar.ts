@@ -13,6 +13,7 @@ import { forAdvisorsAr } from "./for-advisors-ar";
 import { aboutAr } from "./about-ar";
 import { webinarsAr } from "./webinars-ar";
 import { forSchoolsAr } from "./for-schools-ar";
+import { studentAr } from "./student-ar";
 
 export const ar = {
   common: commonAr,
@@ -29,4 +30,5 @@ export const ar = {
   signup: signupAr,
   forAdvisors: forAdvisorsAr,
   about: aboutAr,
+  student: studentAr,
 } as const;

@@ -1,6 +1,7 @@
 "use client";
 
 import { logout } from "@/actions/auth";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useEffect, useTransition } from "react";
 
 export type LogoutConfirmVariant = "student" | "school" | "admin";
@@ -16,7 +17,20 @@ export function LogoutConfirmDialog({
   onClose,
   variant,
 }: LogoutConfirmDialogProps) {
+  const { dict } = useLocale();
   const [pending, startTransition] = useTransition();
+
+  const copy =
+    variant === "student"
+      ? dict.student.logout
+      : {
+          title: "Log out?",
+          description: "Are you sure you want to log out?",
+          yes: "Yes",
+          no: "No",
+          loggingOut: "Logging out…",
+          cancelAria: "Cancel log out",
+        };
 
   useEffect(() => {
     if (!open) return;
@@ -61,7 +75,7 @@ export function LogoutConfirmDialog({
         type="button"
         className="absolute inset-0 cursor-default border-0 bg-black/45"
         onClick={pending ? undefined : onClose}
-        aria-label="Cancel log out"
+        aria-label={copy.cancelAria}
         disabled={pending}
       />
       <div className={`relative ${cardClass}`}>
@@ -69,7 +83,7 @@ export function LogoutConfirmDialog({
           id="logout-confirm-title"
           className="text-lg font-semibold tracking-tight"
         >
-          Log out?
+          {copy.title}
         </h2>
         <p
           id="logout-confirm-desc"
@@ -79,7 +93,7 @@ export function LogoutConfirmDialog({
               : "mt-2 text-sm text-[var(--text-light)]"
           }
         >
-          Are you sure you want to log out?
+          {copy.description}
         </p>
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           <button
@@ -88,7 +102,7 @@ export function LogoutConfirmDialog({
             onClick={onClose}
             disabled={pending}
           >
-            No
+            {copy.no}
           </button>
           <button
             type="button"
@@ -96,7 +110,7 @@ export function LogoutConfirmDialog({
             onClick={onYes}
             disabled={pending}
           >
-            {pending ? "Logging out…" : "Yes"}
+            {pending ? copy.loggingOut : copy.yes}
           </button>
         </div>
       </div>

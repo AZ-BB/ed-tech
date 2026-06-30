@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import type { StudentWebinarCard } from "../_lib/fetch-student-webinars";
+import { ArrowForwardIcon } from "../../_components/directional-icons";
 import { fontSans, fontSerif, type WebinarPageMode } from "./webinar-constants";
 import { formatWebinarDate, formatWebinarTime } from "./webinar-format";
 
@@ -305,9 +306,7 @@ export function WebinarRegisterCta({
   return (
     <button type="button" onClick={() => onRegister(webinar)} className={className}>
       {w.registerNow}
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
-        <path d="M5 12h14M13 5l7 7-7 7" />
-      </svg>
+      <ArrowForwardIcon size={13} />
     </button>
   );
 }

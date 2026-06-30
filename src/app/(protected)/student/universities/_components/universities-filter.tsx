@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import { sortCountriesForUniversitySearch } from "@/lib/university-search-gcc";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -90,6 +91,8 @@ export function UniversitiesFilter({
     shortlistOnly = false,
     favouritesOnly = false,
 }: UniversitiesFilterProps) {
+    const { dict } = useLocale();
+    const t = dict.student.universities;
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -180,12 +183,12 @@ export function UniversitiesFilter({
                     <path d="M21 21l-4.35-4.35" />
                 </svg>
                 <label htmlFor="university-search" className="sr-only">
-                    Search universities
+                    {t.searchLabel}
                 </label>
                 <input
                     id="university-search"
                     type="search"
-                    placeholder="Search by university, major, or keyword..."
+                    placeholder={t.searchPlaceholder}
                     className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[#1a1a1a] outline-none placeholder:text-[#c0bdb8]"
                     autoComplete="off"
                     value={searchDraft}
@@ -197,7 +200,7 @@ export function UniversitiesFilter({
                 <div className="flex w-full min-w-0 flex-nowrap items-center gap-3">
                     <div className="flex min-h-9 min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5">
                 <select
-                    aria-label="Major"
+                    aria-label={t.major}
                     className={filterSelectClass}
                     style={{ backgroundImage: FILTER_SELECT_CHEVRON }}
                     value={majorValue}
@@ -210,10 +213,10 @@ export function UniversitiesFilter({
                     }}
                 >
                     <option value="" disabled hidden>
-                        Major
+                        {t.major}
                     </option>
                     {sortMajors.map((m) => (
-                        <option key={m.id} value={String(m.id)}>
+                        <option key={m.id} value={String(m.id)} className="bidi-ltr" dir="ltr">
                             {m.name}
                         </option>
                     ))}
@@ -221,7 +224,7 @@ export function UniversitiesFilter({
 
                 {showProgramSelect ? (
                     <select
-                        aria-label="Program"
+                        aria-label={t.program}
                         className={filterSelectClass}
                         style={{ backgroundImage: FILTER_SELECT_CHEVRON }}
                         value={programValue}
@@ -232,10 +235,10 @@ export function UniversitiesFilter({
                         }
                     >
                         <option value="" disabled hidden>
-                            Program
+                            {t.program}
                         </option>
                         {sortPrograms.map((p) => (
-                            <option key={p.id} value={String(p.id)}>
+                            <option key={p.id} value={String(p.id)} className="bidi-ltr" dir="ltr">
                                 {p.name}
                             </option>
                         ))}
@@ -243,7 +246,7 @@ export function UniversitiesFilter({
                 ) : null}
 
                 <select
-                    aria-label="Country"
+                    aria-label={t.country}
                     className={filterSelectCountryClass}
                     style={{ backgroundImage: FILTER_SELECT_CHEVRON }}
                     value={countryValue}
@@ -254,17 +257,17 @@ export function UniversitiesFilter({
                     }
                 >
                     <option value="" disabled hidden>
-                        Country
+                        {t.country}
                     </option>
                     {sortCountries.map((c) => (
-                        <option key={c.id} value={c.id}>
+                        <option key={c.id} value={c.id} className="bidi-ltr" dir="ltr">
                             {c.name}
                         </option>
                     ))}
                 </select>
 
                 <select
-                    aria-label="Institution type"
+                    aria-label={t.institutionType}
                     className={filterSelectClass}
                     style={{ backgroundImage: FILTER_SELECT_CHEVRON }}
                     value={typeValue}
@@ -275,14 +278,14 @@ export function UniversitiesFilter({
                     }
                 >
                     <option value="" disabled hidden>
-                        Type
+                        {t.type}
                     </option>
-                    <option value="public">Public</option>
-                    <option value="private">Private</option>
+                    <option value="public">{t.public}</option>
+                    <option value="private">{t.private}</option>
                 </select>
 
                 <select
-                    aria-label="Admission difficulty"
+                    aria-label={t.admissionDifficulty}
                     className={filterSelectClass}
                     style={{ backgroundImage: FILTER_SELECT_CHEVRON }}
                     value={difficultyValue}
@@ -293,11 +296,11 @@ export function UniversitiesFilter({
                     }
                 >
                     <option value="" disabled hidden>
-                        Admission Difficulty
+                        {t.admissionDifficulty}
                     </option>
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
+                    <option value="easy">{t.easy}</option>
+                    <option value="medium">{t.medium}</option>
+                    <option value="hard">{t.hard}</option>
                 </select>
                     </div>
 
@@ -305,7 +308,7 @@ export function UniversitiesFilter({
                     <button
                         type="button"
                         aria-pressed={shortlistOnly}
-                        aria-label={shortlistOnly ? "Show all universities" : "Show shortlisted universities only"}
+                        aria-label={shortlistOnly ? t.showAllUniversities : t.showShortlistedOnly}
                         className={shortlistOnly ? filterToggleOnShortlistClass : filterToggleOffShortlistClass}
                         onClick={() =>
                             patchAndNavigate({
@@ -313,12 +316,12 @@ export function UniversitiesFilter({
                             })
                         }
                     >
-                        Shortlisted
+                        {t.shortlisted}
                     </button>
                     <button
                         type="button"
                         aria-pressed={favouritesOnly}
-                        aria-label={favouritesOnly ? "Show all universities" : "Show favourite universities only"}
+                        aria-label={favouritesOnly ? t.showAllUniversities : t.showFavouritesOnly}
                         className={favouritesOnly ? filterToggleOnFavouritesClass : filterToggleOffFavouritesClass}
                         onClick={() =>
                             patchAndNavigate({
@@ -326,7 +329,7 @@ export function UniversitiesFilter({
                             })
                         }
                     >
-                        Favourites
+                        {t.favourites}
                     </button>
                 <button
                     type="button"
@@ -337,7 +340,7 @@ export function UniversitiesFilter({
                         navigateWithParams(next);
                     }}
                 >
-                    Clear filters
+                    {t.clearFilters}
                 </button>
                     </div>
                 </div>

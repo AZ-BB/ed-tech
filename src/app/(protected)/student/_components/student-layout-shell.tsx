@@ -1,6 +1,10 @@
 "use client";
 
 import { LogoutConfirmDialog } from "@/components/logout-confirm-dialog";
+import type { Dictionary } from "@/lib/i18n/get-dictionary";
+import { getDirection, type Locale } from "@/lib/i18n/config";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { StudentLanguageSwitcher } from "@/lib/i18n/student-language-switcher";
 import {
   Brain,
   ClipboardList,
@@ -23,6 +27,26 @@ import {
   sidebarNavItems,
   type SidebarNavItem,
 } from "../_data/student-dashboard-data";
+
+const NAV_ID_TO_KEY: Record<string, keyof Dictionary["student"]["nav"]> = {
+  dashboard: "dashboard",
+  "my-applications": "myApplications",
+  "personality-check": "personalityOverview",
+  "program-discovery": "programDiscovery",
+  "university-search": "universitySearch",
+  scholarships: "scholarships",
+  "advisor-sessions": "advisorSessions",
+  ambassadors: "ambassadors",
+  "application-support": "applicationSupport",
+  "post-admission-support": "postAdmission",
+  webinars: "webinars",
+  "account-settings": "accountSettings",
+};
+
+function navLabel(dict: Dictionary, navId: string): string {
+  const key = NAV_ID_TO_KEY[navId];
+  return key ? dict.student.nav[key] : dict.student.shell.dashboard;
+}
 
 const NAV_ICON_STROKE = 1.75;
 
@@ -149,7 +173,10 @@ function shellHeaderWidthClass(pathname: string): string {
   return "";
 }
 
-function shellHeaderFromPathname(pathname: string): {
+function shellHeaderFromPathname(
+  pathname: string,
+  dict: Dictionary,
+): {
   label: string;
   navId: string;
 } {
@@ -157,16 +184,18 @@ function shellHeaderFromPathname(pathname: string): {
     if (item.type === "divider") continue;
     if (item.href === "#") continue;
     if (item.type === "link" && isSidebarNavLinkActive(pathname, item)) {
-      return { label: item.label, navId: item.id };
+      return { label: navLabel(dict, item.id), navId: item.id };
     }
   }
-  return { label: "Dashboard", navId: "dashboard" };
+  return { label: dict.student.shell.dashboard, navId: "dashboard" };
 }
 
 function SidebarNav({
+  dict,
   onNavigate,
   onRequestLogout,
 }: {
+  dict: Dictionary;
   onNavigate?: () => void;
   onRequestLogout: () => void;
 }) {
@@ -201,7 +230,7 @@ function SidebarNav({
                   : "h-[18px] w-[18px] shrink-0 text-[var(--text-hint)] transition-colors group-hover:text-[var(--text-mid)]"
               }
             />
-            {item.label}
+            {navLabel(dict, item.id)}
           </>
         );
 
@@ -243,14 +272,20 @@ function SidebarNav({
             strokeWidth={NAV_ICON_STROKE}
             aria-hidden
           />
-          Log out
+          {dict.student.shell.logOut}
         </button>
       </div>
     </nav>
   );
 }
 
-function SidebarHeader({ onClose }: { onClose?: () => void }) {
+function SidebarHeader({
+  dict,
+  onClose,
+}: {
+  dict: Dictionary;
+  onClose?: () => void;
+}) {
   return (
     <div className="flex items-center justify-between border-b border-[var(--border-light)] px-[22px] pb-4 pt-5">
       <div className="flex items-center gap-2.5">
@@ -270,16 +305,18 @@ function SidebarHeader({ onClose }: { onClose?: () => void }) {
           </svg>
         </div>
         <span className="text-[15px] font-bold text-[var(--text)]">
-          Univeera
+          {dict.common.brand}
         </span>
       </div>
-      {onClose ? (
-        <button
-          type="button"
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[var(--border-light)] bg-white transition-colors hover:border-[var(--border)] hover:bg-[var(--sand)]"
-          onClick={onClose}
-          aria-label="Close menu"
-        >
+      <div className="flex items-center gap-2">
+        <StudentLanguageSwitcher />
+        {onClose ? (
+          <button
+            type="button"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[var(--border-light)] bg-white transition-colors hover:border-[var(--border)] hover:bg-[var(--sand)]"
+            onClick={onClose}
+            aria-label={dict.student.shell.closeMenu}
+          >
           <svg
             width="14"
             height="14"
@@ -292,24 +329,29 @@ function SidebarHeader({ onClose }: { onClose?: () => void }) {
           >
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
-        </button>
-      ) : null}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 export function StudentLayoutShell({
   children,
+  locale,
 }: {
   children: React.ReactNode;
+  locale: Locale;
 }) {
   /** Collapsible drawer from the right + dimmed overlay — same pattern as dashboard.html */
+  const { dict } = useLocale();
+  const portalDir = getDirection(locale);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const pathname = usePathname();
   const shellHeader = useMemo(
-    () => shellHeaderFromPathname(pathname),
-    [pathname],
+    () => shellHeaderFromPathname(pathname, dict),
+    [pathname, dict],
   );
 
   const hideTopNav =
@@ -338,11 +380,14 @@ export function StudentLayoutShell({
 
   return (
     <div
-      className={`min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}
+      className={`student-portal min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}
+      dir={portalDir}
+      lang={locale}
     >
       <div className="mx-auto w-full px-6 md:px-10 lg:px-16 pt-6 pb-16">
         {hideTopNav ? null : (
           <header
+            dir="ltr"
             className={`relative z-10 mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5${
               headerWidthClass ? ` ${headerWidthClass}` : ""
             }`}
@@ -362,7 +407,7 @@ export function StudentLayoutShell({
               type="button"
               className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-lg border border-[var(--border)] bg-white transition-colors hover:bg-[var(--sand)]"
               onClick={openSidebar}
-              aria-label="Open menu"
+              aria-label={dict.student.shell.openMenu}
               aria-expanded={sidebarOpen}
               aria-controls="student-sidebar-panel"
             >
@@ -399,15 +444,17 @@ export function StudentLayoutShell({
         id="student-sidebar-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation"
+        aria-label={dict.student.shell.navigation}
+        dir="ltr"
         className={`fixed inset-y-0 right-0 z-[910] flex w-[300px] max-w-full flex-col rounded-l-2xl bg-white shadow-[-4px_0_24px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] max-[480px]:w-full max-[480px]:rounded-none ${
           sidebarOpen
             ? "pointer-events-auto translate-x-0"
             : "pointer-events-none translate-x-full"
         }`}
       >
-        <SidebarHeader onClose={closeSidebar} />
+        <SidebarHeader dict={dict} onClose={closeSidebar} />
         <SidebarNav
+          dict={dict}
           onNavigate={closeSidebar}
           onRequestLogout={() => {
             setLogoutConfirmOpen(true);

@@ -1,0 +1,34 @@
+/* Student portal RTL — loaded from student layout */
+
+.student-portal[dir="rtl"],
+html[dir="rtl"] .student-portal {
+  font-family: var(--font-noto-arabic), var(--font-dm-sans), sans-serif;
+}
+
+.student-portal[dir="rtl"] .bidi-ltr,
+html[dir="rtl"] .student-portal .bidi-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.student-portal[dir="rtl"] .icon-directional,
+html[dir="rtl"] .student-portal .icon-directional {
+  transform: scaleX(-1);
+}
+
+.student-portal[dir="rtl"] [data-student-align="start"],
+html[dir="rtl"] .student-portal [data-student-align="start"] {
+  text-align: right;
+}
+
+.student-portal[dir="rtl"] .university-card-ltr,
+.student-portal[dir="rtl"] .scholarship-card-ltr,
+.student-portal[dir="rtl"] .advisor-card-ltr,
+.student-portal[dir="rtl"] .ambassador-card-ltr,
+html[dir="rtl"] .student-portal .university-card-ltr,
+html[dir="rtl"] .student-portal .scholarship-card-ltr,
+html[dir="rtl"] .student-portal .advisor-card-ltr,
+html[dir="rtl"] .student-portal .ambassador-card-ltr {
+  direction: ltr;
+  text-align: left;
+}
