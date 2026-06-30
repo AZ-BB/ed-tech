@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 import type { StudentWebinarCard } from "../_lib/fetch-student-webinars";
 import {
-  FAQS,
-  FAQS_PUBLIC,
   fontSans,
   fontSerif,
-  HERO_FEATURES,
-  TOPICS,
+  HERO_FEATURE_ICONS,
+  TOPIC_ICONS,
   type WebinarPageMode,
 } from "./webinar-constants";
 import { ChevronIcon } from "./webinar-ui";
@@ -25,31 +24,34 @@ export function WebinarHero({
   featuredWebinar,
   onRegisterFeatured,
   primaryCtaHref = "#upcoming-webinars",
-  primaryCtaLabel = "View upcoming webinars",
+  primaryCtaLabel,
 }: WebinarHeroProps) {
+  const { dict } = useLocale();
+  const w = dict.webinars;
+
   return (
     <section className="relative mb-12 overflow-hidden rounded-[24px] border border-[var(--border-light)] bg-gradient-to-br from-[#fffefb] to-[var(--green-pale)] px-11 py-[60px] max-[900px]:px-6 max-[900px]:py-10">
       <div
         className={`relative z-[1] mb-[18px] inline-flex items-center gap-1.5 rounded-full border border-[rgba(45,106,79,0.15)] bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--green)] ${fontSans}`}
       >
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--green)]" />
-        Live Webinars & Expert Sessions
+        {w.heroBadge}
       </div>
       <h1
         className={`relative z-[1] mb-3.5 max-w-[760px] ${fontSerif} text-[48px] leading-[1.05] tracking-[-0.5px] text-[var(--text)] max-[900px]:text-[34px] max-[600px]:text-[26px]`}
       >
-        Join live webinars led by <em className="italic text-[var(--green)]">advisors, alumni and professionals</em>.
+        {w.heroTitle}{" "}
+        <em className="italic text-[var(--green)]">{w.heroTitleEmphasis}</em>.
       </h1>
       <p className="relative z-[1] mb-8 max-w-[600px] text-[16px] leading-[1.6] text-[var(--text-mid)]">
-        Every two weeks, Univeera hosts live sessions to help students across the Middle East understand university
-        applications, study destinations, scholarships, majors, career pathways and student life.
+        {w.heroSubtitle}
       </p>
       <div className="relative z-[1] mb-8 flex flex-wrap gap-2.5">
         <a
           href={primaryCtaHref}
           className={`inline-flex items-center gap-2 rounded-full bg-[var(--green)] px-[22px] py-3.5 text-[14px] font-semibold text-white shadow-[0_4px_14px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] ${fontSans}`}
         >
-          {primaryCtaLabel}
+          {primaryCtaLabel ?? w.heroCtaViewUpcoming}
         </a>
         {featuredWebinar && onRegisterFeatured ? (
           <button
@@ -57,43 +59,46 @@ export function WebinarHero({
             onClick={() => onRegisterFeatured(featuredWebinar)}
             className={`inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-[22px] py-3.5 text-[14px] font-semibold text-[var(--text)] transition hover:border-[var(--green)] hover:text-[var(--green)] ${fontSans}`}
           >
-            Register for next session
+            {w.heroCtaRegisterNext}
           </button>
         ) : null}
       </div>
       <div className="relative z-[1] flex flex-wrap gap-2">
-        {HERO_FEATURES.map(({ icon: Icon, label }) => (
+        {HERO_FEATURE_ICONS.map((Icon, index) => (
           <div
-            key={label}
+            key={w.heroFeatures[index]}
             className="inline-flex items-center gap-2 rounded-full border border-[var(--border-light)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)]"
           >
             <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--text-mid)]" strokeWidth={1.75} aria-hidden />
-            {label}
+            {w.heroFeatures[index]}
           </div>
         ))}
       </div>
       <p className="relative z-[1] mt-3.5 text-[12px] italic text-[var(--text-light)]">
-        New sessions added every month.
+        {w.heroFootnote}
       </p>
     </section>
   );
 }
 
 export function WebinarTopicsSection() {
+  const { dict } = useLocale();
+  const w = dict.webinars;
+
   return (
     <section className="mb-[60px]">
       <p
         className={`mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--green)] before:h-[1.5px] before:w-6 before:bg-[var(--green)] ${fontSans}`}
       >
-        What we cover
+        {w.topicsSectionLabel}
       </p>
-      <h2 className={`mb-2 ${fontSerif} text-[32px] leading-[1.15] tracking-[-0.3px]`}>Topics we cover</h2>
+      <h2 className={`mb-2 ${fontSerif} text-[32px] leading-[1.15] tracking-[-0.3px]`}>{w.topicsTitle}</h2>
       <p className="mb-7 max-w-[640px] text-[14.5px] leading-[1.55] text-[var(--text-light)]">
-        Our webinars are designed to support students at every stage of the university journey.
+        {w.topicsSubtitle}
       </p>
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-        {TOPICS.map((topic) => {
-          const Icon = topic.icon;
+        {w.topics.map((topic, index) => {
+          const Icon = TOPIC_ICONS[index];
           return (
             <div
               key={topic.title}
@@ -113,7 +118,9 @@ export function WebinarTopicsSection() {
 }
 
 export function WebinarFaqSection({ mode }: { mode: WebinarPageMode }) {
-  const faqs = mode === "public" ? FAQS_PUBLIC : FAQS;
+  const { dict } = useLocale();
+  const w = dict.webinars;
+  const faqs = mode === "public" ? w.faqsPublic : w.faqsStudent;
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   return (
@@ -121,11 +128,11 @@ export function WebinarFaqSection({ mode }: { mode: WebinarPageMode }) {
       <p
         className={`mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--green)] before:h-[1.5px] before:w-6 before:bg-[var(--green)] ${fontSans}`}
       >
-        Questions
+        {w.faqSectionLabel}
       </p>
-      <h2 className={`mb-2 ${fontSerif} text-[32px] leading-[1.15] tracking-[-0.3px]`}>Frequently asked</h2>
+      <h2 className={`mb-2 ${fontSerif} text-[32px] leading-[1.15] tracking-[-0.3px]`}>{w.faqTitle}</h2>
       <p className="mb-7 max-w-[640px] text-[14.5px] leading-[1.55] text-[var(--text-light)]">
-        Quick answers to the most common questions about our webinars.
+        {w.faqSubtitle}
       </p>
       <div className="flex flex-col gap-2">
         {faqs.map((faq, index) => (

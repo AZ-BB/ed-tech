@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 import type { StudentWebinarCard } from "../_lib/fetch-student-webinars";
 import {
@@ -35,13 +36,16 @@ export function WebinarFeaturedCard({
   onToggleAgenda,
   onRegister,
   titleAsLink = false,
-  sectionLabel = "Next session",
-  sectionTitle = "Featured upcoming webinar",
-  sectionDescription = "Our next live session — register early as seats are limited.",
+  sectionLabel,
+  sectionTitle,
+  sectionDescription,
 }: WebinarFeaturedCardProps) {
+  const { locale, dict } = useLocale();
+  const w = dict.webinars;
+  const detailHref = webinarDetailHref(webinar.id, mode, locale);
   const titleContent = titleAsLink ? (
     <Link
-      href={webinarDetailHref(webinar.id, mode)}
+      href={detailHref}
       className={`${fontSerif} text-[30px] leading-[1.15] tracking-[-0.3px] transition hover:text-[var(--green)]`}
     >
       {webinar.title}
@@ -55,11 +59,13 @@ export function WebinarFeaturedCard({
       <p
         className={`mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--green)] before:h-[1.5px] before:w-6 before:bg-[var(--green)] ${fontSans}`}
       >
-        {sectionLabel}
+        {sectionLabel ?? w.featuredSectionLabel}
       </p>
-      <h2 className={`mb-2 ${fontSerif} text-[32px] leading-[1.15] tracking-[-0.3px]`}>{sectionTitle}</h2>
+      <h2 className={`mb-2 ${fontSerif} text-[32px] leading-[1.15] tracking-[-0.3px]`}>
+        {sectionTitle ?? w.featuredSectionTitle}
+      </h2>
       <p className="mb-7 max-w-[640px] text-[14.5px] leading-[1.55] text-[var(--text-light)]">
-        {sectionDescription}
+        {sectionDescription ?? w.featuredSectionDescription}
       </p>
 
       <div className="grid overflow-hidden rounded-[24px] border border-[var(--border-light)] bg-white lg:grid-cols-[1.4fr_1fr]">
@@ -69,7 +75,7 @@ export function WebinarFeaturedCard({
               className={`inline-flex items-center gap-2 rounded-full bg-[var(--amber-bg)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-[var(--amber)] ${fontSans}`}
             >
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--amber)]" />
-              Next session
+              {w.nextSessionBadge}
             </span>
             <WebinarTags tags={webinar.tags} />
           </div>
@@ -109,7 +115,7 @@ export function WebinarFeaturedCard({
             onClick={onToggleAgenda}
             className={`flex w-full items-center justify-between rounded-[14px] border border-[rgba(45,106,79,0.15)] bg-white px-[18px] py-3.5 text-[13px] font-semibold text-[var(--text)] ${fontSans}`}
           >
-            What will be covered
+            {w.agendaLabel}
             <ChevronIcon open={agendaOpen} />
           </button>
           {agendaOpen ? (
@@ -145,12 +151,15 @@ export function WebinarGridCard({
   onToggleAgenda,
   onRegister,
 }: WebinarGridCardProps) {
+  const { locale, dict } = useLocale();
+  const w = dict.webinars;
+  const detailHref = webinarDetailHref(webinar.id, mode, locale);
   return (
     <article className="flex flex-col gap-3.5 rounded-[18px] border border-[var(--border-light)] bg-white p-6 transition hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
       <WebinarTags tags={webinar.tags} />
       <h3 className={`${fontSerif} text-[20px] leading-[1.2] tracking-[-0.2px]`}>
         <Link
-          href={webinarDetailHref(webinar.id, mode)}
+          href={detailHref}
           className="transition hover:text-[var(--green)]"
         >
           {webinar.title}
@@ -182,7 +191,7 @@ export function WebinarGridCard({
         onClick={onToggleAgenda}
         className={`flex w-full items-center justify-between border-t border-[var(--border-light)] pt-3 text-[12.5px] font-semibold text-[var(--text-mid)] transition hover:text-[var(--green)] ${fontSans}`}
       >
-        What will be covered
+        {w.agendaLabel}
         <ChevronIcon open={agendaOpen} />
       </button>
       {agendaOpen ? (

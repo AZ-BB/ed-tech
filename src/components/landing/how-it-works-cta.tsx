@@ -1,9 +1,16 @@
+"use client";
+
+import { LocalizedLink } from "@/lib/i18n/localized-link";
+import { useLocale } from "@/lib/i18n/locale-context";
+
 export function HowItWorksCta() {
+  const { dict } = useLocale();
+
   return (
     <div className="how-cta">
-      <a href="/signup" style={{ textDecoration: "none" }}>
+      <LocalizedLink href="/signup" style={{ textDecoration: "none" }}>
         <button type="button" className="btn-hero" style={{ margin: "0 auto" }}>
-          Start your journey{" "}
+          {dict.nav.startJourney}{" "}
           <svg
             width="16"
             height="16"
@@ -11,12 +18,13 @@ export function HowItWorksCta() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
+            className="icon-directional"
             aria-hidden
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
           </svg>
         </button>
-      </a>
+      </LocalizedLink>
     </div>
   );
 }

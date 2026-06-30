@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, DM_Serif_Display } from "next/font/google";
+import { DM_Sans, DM_Serif_Display, Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import "./landing-page.css";
 
@@ -14,6 +14,12 @@ const dmSerif = DM_Serif_Display({
   subsets: ["latin"],
   weight: "400",
   style: ["normal", "italic"],
+});
+
+const notoSansArabic = Noto_Sans_Arabic({
+  variable: "--font-noto-arabic",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -34,8 +40,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${dmSans.variable} ${dmSerif.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${dmSerif.variable} ${notoSansArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>
     </html>

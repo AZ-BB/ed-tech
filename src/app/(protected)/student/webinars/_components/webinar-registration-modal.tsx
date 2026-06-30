@@ -2,6 +2,7 @@
 
 import { registerForWebinar } from "@/actions/student-webinars";
 import { registerForWebinarAsGuest } from "@/actions/public-webinars";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -140,6 +141,8 @@ export function WebinarRegistrationModal({
   onConfirm,
 }: WebinarRegistrationModalProps) {
   const isPublic = mode === "public";
+  const { dict } = useLocale();
+  const w = dict.webinars;
 
   return (
     <div
@@ -156,7 +159,7 @@ export function WebinarRegistrationModal({
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)]"
-          aria-label="Close"
+          aria-label={w.close}
         >
           ✕
         </button>
@@ -166,22 +169,22 @@ export function WebinarRegistrationModal({
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--green-pale)] text-[var(--green)]">
               ✓
             </div>
-            <h3 className={`mb-2.5 ${fontSerif} text-[22px] leading-[1.2]`}>You&apos;re registered!</h3>
+            <h3 className={`mb-2.5 ${fontSerif} text-[22px] leading-[1.2]`}>{w.registeredSuccess}</h3>
             <p className="mb-5 text-[13.5px] leading-[1.6] text-[var(--text-mid)]">
-              We&apos;ll send you a reminder the day before the session, and the meeting link when it starts.
+              {w.registeredSuccessHint}
             </p>
             <button
               type="button"
               onClick={onClose}
               className={`inline-flex w-full items-center justify-center rounded-full bg-[var(--green)] px-5 py-3.5 text-[14px] font-bold text-white ${fontSans}`}
             >
-              Got it
+              {w.gotIt}
             </button>
           </div>
         ) : (
           <>
             <p className={`mb-2 text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--green)] ${fontSans}`}>
-              Register for webinar
+              {w.registerForWebinar}
             </p>
             <h3 className={`mb-3.5 ${fontSerif} text-[22px] leading-[1.2]`}>{webinar.title}</h3>
             <div className="mb-[18px] flex flex-col gap-1.5 rounded-[11px] bg-[var(--sand)] p-3.5 text-[12.5px] leading-normal text-[var(--text-mid)]">
@@ -192,9 +195,7 @@ export function WebinarRegistrationModal({
               <span>{webinar.speakerName}</span>
             </div>
             <p className="mb-[18px] text-[13px] leading-[1.5] text-[var(--text-mid)]">
-              {isPublic
-                ? "Enter your details to reserve your spot. We'll email you a reminder the day before and the meeting link when the session starts."
-                : "Confirm your spot for this live session. No extra details needed — you're registering as your logged-in student account."}
+              {isPublic ? w.registerPublicHint : w.registerStudentHint}
             </p>
             {isPublic ? (
               <div className="mb-[18px] flex flex-col gap-3">
@@ -203,7 +204,7 @@ export function WebinarRegistrationModal({
                     htmlFor="webinar-guest-name"
                     className="mb-1 block text-[12px] font-semibold text-[var(--text)]"
                   >
-                    Full name
+                    {w.fullName}
                   </label>
                   <input
                     id="webinar-guest-name"
@@ -211,7 +212,7 @@ export function WebinarRegistrationModal({
                     autoComplete="name"
                     value={guestName}
                     onChange={(e) => onGuestNameChange(e.target.value)}
-                    placeholder="Enter your full name"
+                    placeholder={w.fullNamePlaceholder}
                     required
                     disabled={isSubmitting}
                     className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
@@ -222,7 +223,7 @@ export function WebinarRegistrationModal({
                     htmlFor="webinar-guest-email"
                     className="mb-1 block text-[12px] font-semibold text-[var(--text)]"
                   >
-                    Email address
+                    {w.emailAddress}
                   </label>
                   <input
                     id="webinar-guest-email"
@@ -230,7 +231,7 @@ export function WebinarRegistrationModal({
                     autoComplete="email"
                     value={guestEmail}
                     onChange={(e) => onGuestEmailChange(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder={w.emailPlaceholder}
                     required
                     disabled={isSubmitting}
                     className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
@@ -241,7 +242,8 @@ export function WebinarRegistrationModal({
                     htmlFor="webinar-guest-phone"
                     className="mb-1 block text-[12px] font-semibold text-[var(--text)]"
                   >
-                    Phone number <span className="font-normal text-[var(--text-light)]">(optional)</span>
+                    {w.phoneNumber}{" "}
+                    <span className="font-normal text-[var(--text-light)]">{w.phoneOptional}</span>
                   </label>
                   <input
                     id="webinar-guest-phone"
@@ -249,7 +251,7 @@ export function WebinarRegistrationModal({
                     autoComplete="tel"
                     value={guestPhone}
                     onChange={(e) => onGuestPhoneChange(e.target.value)}
-                    placeholder="Enter your phone number"
+                    placeholder={w.phonePlaceholder}
                     disabled={isSubmitting}
                     className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
                   />
@@ -265,7 +267,7 @@ export function WebinarRegistrationModal({
               onClick={onConfirm}
               className={`inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--green)] px-5 py-3.5 text-[14px] font-bold text-white disabled:opacity-60 ${fontSans}`}
             >
-              {isSubmitting ? "Registering…" : "Confirm registration"}
+              {isSubmitting ? w.registering : w.confirmRegistration}
             </button>
           </>
         )}
@@ -283,23 +285,26 @@ export function WebinarRegisterCta({
   className: string;
   onRegister: (webinar: StudentWebinarCard) => void;
 }) {
+  const { dict } = useLocale();
+  const w = dict.webinars;
+
   if (webinar.isRegistered) {
     return (
       <button type="button" disabled className={`${className} opacity-70`}>
-        Registered
+        {w.registered}
       </button>
     );
   }
   if (webinar.isFull) {
     return (
       <button type="button" disabled className={`${className} opacity-70`}>
-        Full
+        {w.full}
       </button>
     );
   }
   return (
     <button type="button" onClick={() => onRegister(webinar)} className={className}>
-      Register now
+      {w.registerNow}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
         <path d="M5 12h14M13 5l7 7-7 7" />
       </svg>

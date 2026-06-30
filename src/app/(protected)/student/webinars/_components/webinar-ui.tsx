@@ -1,3 +1,7 @@
+"use client";
+
+import { useLocale } from "@/lib/i18n/locale-context";
+
 export function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -24,20 +28,23 @@ export function WebinarRegistrationProgress({
   capacity: number;
   variant?: "card" | "featured";
 }) {
+  const { dict } = useLocale();
+  const w = dict.webinars;
   const pct = capacity > 0 ? Math.round((registered / capacity) * 100) : 0;
+  const remaining = Math.max(capacity - registered, 0);
 
   if (variant === "featured") {
     return (
       <div className="rounded-[14px] bg-white p-[18px]">
         <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[1px] text-[var(--text-hint)] font-[family-name:var(--font-dm-sans)]">
-          Registration
+          {w.registrationLabel}
         </p>
         <div className="mb-2 flex items-baseline justify-between">
           <span className="font-[family-name:var(--font-dm-serif)] text-[28px] leading-none text-[var(--green)]">
             {registered}
           </span>
           <span className="text-[13px] font-medium text-[var(--text-light)]">
-            of {capacity} seats
+            {w.seatsOf} {capacity} {w.seatsUnit}
           </span>
         </div>
         <div className="mb-2 h-2 overflow-hidden rounded bg-[var(--border-light)]">
@@ -47,7 +54,7 @@ export function WebinarRegistrationProgress({
           />
         </div>
         <p className="mt-2 text-[11.5px] text-[var(--text-light)]">
-          {Math.max(capacity - registered, 0)} seats remaining
+          {remaining} {w.seatsRemaining}
         </p>
       </div>
     );
@@ -57,10 +64,10 @@ export function WebinarRegistrationProgress({
     <>
       <div className="mb-2 flex items-baseline justify-between text-[11.5px]">
         <span className="font-semibold text-[var(--text)]">
-          {registered} / {capacity} registered
+          {registered} / {capacity} {w.registeredOf}
         </span>
         <span className="font-medium text-[var(--text-hint)]">
-          {Math.max(capacity - registered, 0)} seats left
+          {remaining} {w.seatsLeft}
         </span>
       </div>
       <div className="h-[5px] overflow-hidden rounded-[3px] bg-[var(--border-light)]">

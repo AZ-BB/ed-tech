@@ -1,58 +1,60 @@
-import Link from "next/link";
+"use client";
+
+import { LocalizedLink } from "@/lib/i18n/localized-link";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 export function LandingFooter() {
+  const { dict } = useLocale();
+
   return (
     <footer className="footer">
       <div className="footer-inner">
         <div>
-          <div className="footer-brand">Univeera</div>
-          <p className="footer-tagline">
-            A MENA-focused university guidance platform built for schools,
-            students, and families.
-          </p>
+          <div className="footer-brand">{dict.common.brand}</div>
+          <p className="footer-tagline">{dict.footer.tagline}</p>
         </div>
         <div className="footer-col">
-          <h5>Platform</h5>
+          <h5>{dict.footer.platform}</h5>
           <ul>
             <li>
-              <Link href="/for-schools">For Schools</Link>
+              <LocalizedLink href="/for-schools">{dict.nav.forSchools}</LocalizedLink>
             </li>
             <li>
-              <Link href="/webinars">Webinars</Link>
+              <LocalizedLink href="/webinars">{dict.nav.webinars}</LocalizedLink>
             </li>
             <li>
-              <Link href="/for-advisors">For Advisors</Link>
+              <LocalizedLink href="/for-advisors">{dict.nav.forAdvisors}</LocalizedLink>
             </li>
           </ul>
         </div>
         <div className="footer-col">
-          <h5>Company</h5>
+          <h5>{dict.footer.company}</h5>
           <ul>
             <li>
-              <Link href="/about">About</Link>
+              <LocalizedLink href="/about">{dict.nav.about}</LocalizedLink>
             </li>
             <li>
-              <Link href="/blog">Blog</Link>
+              <LocalizedLink href="/blog">{dict.footer.blog}</LocalizedLink>
             </li>
             <li>
-              <Link href="/contact">Contact</Link>
+              <LocalizedLink href="/contact">{dict.footer.contact}</LocalizedLink>
             </li>
           </ul>
         </div>
         <div className="footer-col">
-          <h5>Legal</h5>
+          <h5>{dict.footer.legal}</h5>
           <ul>
             <li>
-              <Link href="/privacy">Privacy</Link>
+              <LocalizedLink href="/privacy">{dict.footer.privacy}</LocalizedLink>
             </li>
             <li>
-              <Link href="/terms">Terms</Link>
+              <LocalizedLink href="/terms">{dict.footer.terms}</LocalizedLink>
             </li>
           </ul>
         </div>
       </div>
       <div className="footer-bottom">
-        <div>© 2026 Univeera. All rights reserved.</div>
+        <div>{dict.footer.copyright}</div>
       </div>
     </footer>
   );
