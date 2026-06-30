@@ -17,6 +17,8 @@ export const navEn = {
   logIn: "Log in",
   startJourney: "Start your journey",
   bookDemo: "Book a demo",
+  openMenu: "Open menu",
+  closeMenu: "Close menu",
 } as const;
 
 export const footerEn = {

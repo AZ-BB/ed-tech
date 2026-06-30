@@ -648,16 +648,20 @@
   box-shadow: 0 8px 24px rgba(27, 67, 50, 0.06);
 }
 
+html[dir="rtl"] .about-route .stair-step:hover {
+  transform: translateX(-6px);
+}
+
 .about-route .stair-step:nth-child(2) {
-  margin-left: 24px;
+  margin-inline-start: 24px;
 }
 
 .about-route .stair-step:nth-child(3) {
-  margin-left: 48px;
+  margin-inline-start: 48px;
 }
 
 .about-route .stair-step:nth-child(4) {
-  margin-left: 72px;
+  margin-inline-start: 72px;
 }
 
 .about-route .stair-num {
@@ -987,8 +991,16 @@
     padding: 12px 20px;
   }
 
-  .about-route .nav-links {
-    gap: 16px;
+  .about-route .nav.scrolled {
+    padding: 10px 20px;
+  }
+
+  .about-route .nav .nav-links--desktop {
+    display: none;
+  }
+
+  .about-route .nav-menu-btn {
+    display: flex;
   }
 
   .about-route .hero {
@@ -1059,7 +1071,7 @@
   .about-route .stair-step:nth-child(2),
   .about-route .stair-step:nth-child(3),
   .about-route .stair-step:nth-child(4) {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 
   .about-route .stair-num {
@@ -1090,12 +1102,13 @@
 }
 
 @media (max-width: 600px) {
-  .about-route .nav-link {
-    display: none;
+  .about-route .about-hero h1 {
+    font-size: 30px;
   }
 
-  .about-route .problem-grid {
+  .about-route .hj-row {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .about-route .advisors-grid {
@@ -1106,5 +1119,9 @@
   .about-route .advisor-avatar {
     width: 84px;
     height: 84px;
+  }
+
+  .about-route .problem-grid {
+    grid-template-columns: 1fr;
   }
 }

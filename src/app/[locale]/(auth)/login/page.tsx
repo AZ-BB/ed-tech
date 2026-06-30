@@ -92,7 +92,7 @@ function ForgotPasswordModal({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-3.5 right-4 m-0 inline-flex size-9 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-xl leading-none text-[var(--text-hint)] appearance-none hover:text-[var(--text-mid)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2 [&::-moz-focus-inner]:border-0 [&::-moz-focus-inner]:p-0"
+                    className="absolute top-3.5 end-4 m-0 inline-flex size-9 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-xl leading-none text-[var(--text-hint)] appearance-none hover:text-[var(--text-mid)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2 [&::-moz-focus-inner]:border-0 [&::-moz-focus-inner]:p-0"
                     aria-label="Close"
                 >
                     ×
@@ -257,12 +257,12 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                             autoComplete="current-password"
                             required
                             placeholder="••••••••"
-                            className="m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl border-[1.5px] border-[var(--border)] bg-white py-3 pr-12 pl-4 text-sm leading-normal text-[var(--text)] antialiased transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:outline-none focus:ring-0 focus:shadow-[0_0_0_4px_rgba(45,106,79,0.07)]"
+                            className="m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl border-[1.5px] border-[var(--border)] bg-white py-3 pe-12 ps-4 text-sm leading-normal text-[var(--text)] antialiased transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:outline-none focus:ring-0 focus:shadow-[0_0_0_4px_rgba(45,106,79,0.07)]"
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword((s) => !s)}
-                            className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer border-0 bg-transparent p-1 text-[var(--text-hint)] hover:text-[var(--text-mid)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-1"
+                            className="absolute top-1/2 end-3 -translate-y-1/2 cursor-pointer border-0 bg-transparent p-1 text-[var(--text-hint)] hover:text-[var(--text-mid)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-1"
                             aria-pressed={showPassword}
                             aria-label={showPassword ? a.hidePassword : a.showPassword}
                         >
@@ -305,7 +305,7 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                 className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full border-[1.5px] border-[var(--border)] bg-white text-sm font-semibold text-[var(--text-mid)] antialiased transition hover:border-[#c8c4bc] hover:bg-[#faf9f7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2"
             >
                 {a.createAccount}
-                <ArrowRight className="size-4" strokeWidth={2} aria-hidden />
+                <ArrowRight className="icon-directional size-4" strokeWidth={2} aria-hidden />
             </LocalizedLink>
         </div>
     );
@@ -318,7 +318,7 @@ function LoginPageContent() {
 
     return (
         <div
-            className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-right-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-left-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
+            className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-end-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-start-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
             data-page="login"
         >
             <div className="relative z-10 flex w-full max-w-[min(100%,28rem)] flex-col items-center px-4 py-10 sm:px-5 sm:py-12">
@@ -354,7 +354,7 @@ function LoginPageContent() {
 function LoginPageFallback() {
     return (
         <div
-            className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-right-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-left-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
+            className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-end-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-start-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
             data-page="login"
         >
             <div className="relative z-10 w-full max-w-[min(100%,28rem)] px-4 py-10 sm:px-5 sm:py-12">

@@ -280,13 +280,35 @@
   transform: translateX(-50%) translateY(0);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 900px) {
   .contact-route .nav {
     padding: 12px 20px;
   }
 
-  .contact-route .nav-links {
-    gap: 16px;
+  .contact-route .nav .nav-links--desktop {
+    display: none;
+  }
+
+  .contact-route .nav-menu-btn {
+    display: flex;
+  }
+
+  .contact-route .page-wrap {
+    padding: 100px 20px 48px;
+  }
+
+  .contact-route .page-hero h1 {
+    font-size: 34px;
+  }
+
+  .contact-route .form-card {
+    padding: 36px 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .contact-route .nav {
+    padding: 12px 20px;
   }
 
   .contact-route .page-wrap {

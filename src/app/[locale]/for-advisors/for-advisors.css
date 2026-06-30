@@ -694,16 +694,20 @@
   box-shadow: 0 8px 24px rgba(27, 67, 50, 0.06);
 }
 
+html[dir="rtl"] .for-advisors-route .stair-step:hover {
+  transform: translateX(-6px);
+}
+
 .for-advisors-route .stair-step:nth-child(2) {
-  margin-left: 24px;
+  margin-inline-start: 24px;
 }
 
 .for-advisors-route .stair-step:nth-child(3) {
-  margin-left: 48px;
+  margin-inline-start: 48px;
 }
 
 .for-advisors-route .stair-step:nth-child(4) {
-  margin-left: 72px;
+  margin-inline-start: 72px;
 }
 
 .for-advisors-route .stair-num {
@@ -1695,8 +1699,16 @@
     padding: 12px 20px;
   }
 
-  .for-advisors-route .nav-links {
-    gap: 16px;
+  .for-advisors-route .nav.scrolled {
+    padding: 10px 20px;
+  }
+
+  .for-advisors-route .nav .nav-links--desktop {
+    display: none;
+  }
+
+  .for-advisors-route .nav-menu-btn {
+    display: flex;
   }
 
   .for-advisors-route .hero {
@@ -1824,7 +1836,7 @@
   .for-advisors-route .stair-step:nth-child(2),
   .for-advisors-route .stair-step:nth-child(3),
   .for-advisors-route .stair-step:nth-child(4) {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 
   .for-advisors-route .stair-num {
@@ -1855,8 +1867,8 @@
 }
 
 @media (max-width: 600px) {
-  .for-advisors-route .nav-link {
-    display: none;
+  .for-advisors-route .av-hero-visual {
+    min-height: 280px;
   }
 
   .for-advisors-route .problem-grid {

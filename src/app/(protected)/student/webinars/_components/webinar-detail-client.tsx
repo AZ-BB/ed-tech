@@ -46,7 +46,7 @@ export function WebinarDetailClient({ initialWebinar, mode = "student" }: Webina
         href={webinarsListHref(mode, locale)}
         className={`mb-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text-mid)] transition hover:text-[var(--green)] ${fontSans}`}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="icon-directional" aria-hidden>
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
         {w.allWebinars}

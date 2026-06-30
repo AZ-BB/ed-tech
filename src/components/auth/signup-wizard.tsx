@@ -103,20 +103,22 @@ function strengthLabels(s: {
 type SplitProps = {
   left: ReactNode;
   right: ReactNode;
+  brand: ReactNode;
 };
 
-function SplitLayout({ left, right }: SplitProps) {
+function SplitLayout({ left, right, brand }: SplitProps) {
   return (
     <div className="flex min-h-screen flex-col lg:min-h-0 lg:flex-row">
-      <div className="relative flex w-full flex-col justify-center overflow-hidden bg-gradient-to-br from-[#1B4332] from-0% via-[#2D6A4F] via-50% to-[#40916C] to-100% px-7 py-10 text-white lg:w-[42%] lg:min-h-screen lg:px-12 lg:py-16">
+      <div className="relative flex w-full shrink-0 flex-col justify-center overflow-hidden bg-gradient-to-br from-[#1B4332] from-0% via-[#2D6A4F] via-50% to-[#40916C] to-100% px-5 pb-8 pt-5 text-white sm:px-7 sm:pb-10 sm:pt-6 lg:w-[42%] lg:min-h-screen lg:px-12 lg:py-16">
         <div
-          className="pointer-events-none absolute -top-24 -right-24 size-[300px] rounded-full bg-white/[0.04]"
+          className="pointer-events-none absolute -top-24 -end-24 size-[300px] rounded-full bg-white/[0.04]"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -bottom-20 -left-16 size-[220px] rounded-full bg-white/[0.03]"
+          className="pointer-events-none absolute -bottom-20 -start-16 size-[220px] rounded-full bg-white/[0.03]"
           aria-hidden
         />
+        <div className="relative z-[1] mb-5 sm:mb-6 lg:mb-8">{brand}</div>
         <div className="relative z-[1]">{left}</div>
       </div>
       <div className="flex flex-1 items-start justify-center overflow-y-auto bg-[var(--sand)] px-4 py-7 sm:px-6 sm:py-9 lg:items-center lg:px-8">
@@ -149,7 +151,8 @@ const btnPrimary =
 const btnBack =
   "m-0 cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-[var(--text-light)] transition hover:text-[var(--text)] focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2";
 
-const slHint = "text-sm leading-relaxed text-white/65 max-w-xs";
+const slHint =
+  "text-sm leading-relaxed text-white/65 max-w-full sm:max-w-xs";
 
 const feat = "flex items-center gap-2.5 text-[13px] text-white/80";
 
@@ -330,12 +333,12 @@ export function SignupWizard() {
 
   const profileLeft = (
     <>
-      <p className="mb-3 text-[11px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase">
+      <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
         {s.step1of3}
       </p>
-      <h1 className="serif mb-2 text-2xl leading-snug sm:text-[28px]">{s.profileLeftTitle}</h1>
+      <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">{s.profileLeftTitle}</h1>
       <p className={slHint}>{s.profileLeftSub}</p>
-      <ul className="mt-7 flex list-none flex-col gap-2.5">
+      <ul className="mt-5 hidden list-none flex-col gap-2 sm:mt-7 sm:flex">
         <li className={feat}>
           <div className={featIcon} aria-hidden>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#52B788]" stroke="currentColor" strokeWidth="2">
@@ -368,20 +371,20 @@ export function SignupWizard() {
 
   const accountLeft = (
     <>
-      <p className="mb-3 text-[11px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase">
+      <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
         {s.step2of3}
       </p>
-      <h1 className="serif mb-2 text-2xl leading-snug sm:text-[28px]">{s.accountLeftTitle}</h1>
+      <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">{s.accountLeftTitle}</h1>
       <p className={slHint}>{s.accountLeftSub}</p>
     </>
   );
 
   const schoolLeft = (
     <>
-      <p className="mb-3 text-[11px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase">
+      <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
         {s.step3of3}
       </p>
-      <h1 className="serif mb-2 text-2xl leading-snug sm:text-[28px]">{s.schoolLeftTitle}</h1>
+      <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">{s.schoolLeftTitle}</h1>
       <p className={slHint}>{s.schoolLeftSub}</p>
     </>
   );
@@ -390,11 +393,11 @@ export function SignupWizard() {
     step === "profile" ? profileLeft : step === "account" ? accountLeft : schoolLeft;
 
   const rightPanel = (
-    <div className="w-full max-w-md pb-8 lg:py-0">
+    <div className="w-full max-w-md pb-8 pt-1 sm:pt-0 lg:py-0">
       {step === "profile" && (
         <>
           <ProgressBar label={s.progressProfile} stepText={s.step1of3} pct={33} />
-          <h2 className="serif text-2xl text-[var(--text)]">{s.tellAboutYou}</h2>
+          <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{s.tellAboutYou}</h2>
           <p className="mb-5 text-sm text-[var(--text-light)]">{s.tellAboutYouSub}</p>
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -473,7 +476,7 @@ export function SignupWizard() {
               }}
             >
               {s.next}
-              <ArrowRight className="size-3.5" strokeWidth={2.5} />
+              <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} />
             </button>
           </div>
         </>
@@ -482,7 +485,7 @@ export function SignupWizard() {
       {step === "account" && (
         <>
           <ProgressBar label={s.progressAccount} stepText={s.step2of3} pct={66} />
-          <h2 className="serif text-2xl text-[var(--text)]">{a.signupCreateAccount}</h2>
+          <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{a.signupCreateAccount}</h2>
           <p className="mb-5 text-sm text-[var(--text-light)]">{a.signupCredentials}</p>
           <div className="flex flex-col gap-4">
             <div>
@@ -527,7 +530,7 @@ export function SignupWizard() {
                   placeholder={s.createPassword}
                   autoComplete="new-password"
                   className={clsx(
-                    "m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl py-3 pr-12 pl-4 text-sm leading-normal text-[var(--text)] antialiased transition focus:outline-none focus:ring-0",
+                    "m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl py-3 pe-12 ps-4 text-sm leading-normal text-[var(--text)] antialiased transition focus:outline-none focus:ring-0",
                     ae.pw
                       ? fieldErr
                       : getPasswordStrength(password) >= MIN_PASSWORD_STRENGTH
@@ -537,7 +540,7 @@ export function SignupWizard() {
                 />
                 <button
                   type="button"
-                  className="absolute top-1/2 right-3 -translate-y-1/2 border-0 bg-transparent p-1 text-[var(--text-hint)] hover:text-[var(--text-mid)]"
+                  className="absolute top-1/2 end-3 -translate-y-1/2 border-0 bg-transparent p-1 text-[var(--text-hint)] hover:text-[var(--text-mid)]"
                   onClick={() => setShowPw((s) => !s)}
                   aria-label={showPw ? a.hidePassword : a.showPassword}
                 >
@@ -587,13 +590,13 @@ export function SignupWizard() {
                   placeholder={s.confirmYourPassword}
                   autoComplete="new-password"
                   className={clsx(
-                    "m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl py-3 pr-12 pl-4 text-sm leading-normal text-[var(--text)] antialiased transition focus:outline-none focus:ring-0",
+                    "m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl py-3 pe-12 ps-4 text-sm leading-normal text-[var(--text)] antialiased transition focus:outline-none focus:ring-0",
                     ae.c ? fieldErr : matchOk ? fieldOk : fieldNormal,
                   )}
                 />
                 <button
                   type="button"
-                  className="absolute top-1/2 right-3 -translate-y-1/2 border-0 bg-transparent p-1 text-[var(--text-hint)]"
+                  className="absolute top-1/2 end-3 -translate-y-1/2 border-0 bg-transparent p-1 text-[var(--text-hint)]"
                   onClick={() => setShowCpw((s) => !s)}
                   aria-label={showCpw ? a.hidePassword : a.showPassword}
                 >
@@ -644,7 +647,7 @@ export function SignupWizard() {
               }}
             >
               {s.next}
-              <ArrowRight className="size-3.5" strokeWidth={2.5} />
+              <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} />
             </button>
           </div>
         </>
@@ -653,7 +656,7 @@ export function SignupWizard() {
       {step === "school" && (
         <>
           <ProgressBar label={s.progressAccess} stepText={s.step3of3} pct={100} />
-          <h2 className="serif text-2xl text-[var(--text)]">{s.schoolQuestion}</h2>
+          <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{s.schoolQuestion}</h2>
           <p className="mb-5 text-sm text-[var(--text-light)]">{s.schoolQuestionSub}</p>
           <div className="flex flex-col gap-3">
             <button
@@ -753,7 +756,7 @@ export function SignupWizard() {
               ) : (
                 <>
                   {s.continue}
-                  <ArrowRight className="size-3.5" strokeWidth={2.5} />
+                  <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} />
                 </>
               )}
             </button>
@@ -763,23 +766,23 @@ export function SignupWizard() {
     </div>
   );
 
+  const brandLink = (
+    <LocalizedLink href="/" className="inline-flex items-center gap-2.5">
+      <div
+        className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-white/15 ring-1 ring-white/20"
+        aria-hidden
+      >
+        <LogoIcon />
+      </div>
+      <span className="text-[0.95rem] font-bold text-white">{dict.common.brand}</span>
+    </LocalizedLink>
+  );
+
   return (
     <div
       className="relative min-h-screen bg-[var(--sand)]"
       data-page="signup"
     >
-      <LocalizedLink
-        href="/"
-        className="absolute top-4 left-4 z-20 flex items-center gap-2.5 sm:top-6 sm:left-6"
-      >
-        <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2D634D]"
-          aria-hidden
-        >
-          <LogoIcon />
-        </div>
-        <span className="text-[0.95rem] font-bold text-white">{dict.common.brand}</span>
-      </LocalizedLink>
       {legal ? (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4 sm:p-8"
@@ -803,7 +806,7 @@ export function SignupWizard() {
                 </svg>
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 text-sm leading-relaxed text-[var(--text-mid)] sm:px-7 [&_h3]:mt-4 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-[var(--text)] [&_h3]:first:mt-0 [&_p]:mb-2 [&_ul]:my-1.5 [&_ul]:ml-4 [&_li]:mb-0.5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 text-sm leading-relaxed text-[var(--text-mid)] sm:px-7 [&_h3]:mt-4 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-[var(--text)] [&_h3]:first:mt-0 [&_p]:mb-2 [&_ul]:my-1.5 [&_ul]:ms-4 [&_li]:mb-0.5">
               <LegalModalBody doc={legal === "terms" ? dict.terms : dict.privacy} />
             </div>
             <div className="shrink-0 border-t border-[var(--border-light)] px-6 py-3.5 text-right sm:px-7">
@@ -818,7 +821,7 @@ export function SignupWizard() {
           </div>
         </div>
       ) : null}
-      <SplitLayout left={leftContent} right={rightPanel} />
+      <SplitLayout left={leftContent} right={rightPanel} brand={brandLink} />
     </div>
   );
 }

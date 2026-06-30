@@ -17,6 +17,8 @@ export const navAr = {
   logIn: "تسجيل الدخول",
   startJourney: "ابدأ رحلتك",
   bookDemo: "احجز عرضاً",
+  openMenu: "فتح القائمة",
+  closeMenu: "إغلاق القائمة",
 } as const;
 
 export const footerAr = {
