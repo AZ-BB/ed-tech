@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 import type { StudentWebinarCard } from "../_lib/fetch-student-webinars";
 import { WebinarFeaturedCard, WebinarPageShell } from "./webinar-featured-card";
@@ -15,6 +16,8 @@ type WebinarDetailClientProps = {
 };
 
 export function WebinarDetailClient({ initialWebinar, mode = "student" }: WebinarDetailClientProps) {
+  const { locale, dict } = useLocale();
+  const w = dict.webinars;
   const [webinar, setWebinar] = useState(initialWebinar);
   const [agendaOpen, setAgendaOpen] = useState(true);
 
@@ -40,20 +43,20 @@ export function WebinarDetailClient({ initialWebinar, mode = "student" }: Webina
   return (
     <WebinarPageShell>
       <Link
-        href={webinarsListHref(mode)}
+        href={webinarsListHref(mode, locale)}
         className={`mb-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text-mid)] transition hover:text-[var(--green)] ${fontSans}`}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
-        All webinars
+        {w.allWebinars}
       </Link>
 
       <WebinarHero
         featuredWebinar={webinar}
         onRegisterFeatured={openRegistration}
         primaryCtaHref="#webinar-detail"
-        primaryCtaLabel="View session details"
+        primaryCtaLabel={w.viewSessionDetails}
       />
 
       <div id="webinar-detail">
@@ -63,9 +66,9 @@ export function WebinarDetailClient({ initialWebinar, mode = "student" }: Webina
           agendaOpen={agendaOpen}
           onToggleAgenda={() => setAgendaOpen((open) => !open)}
           onRegister={openRegistration}
-          sectionLabel="This session"
-          sectionTitle="Session details"
-          sectionDescription="Register early as seats are limited for this live session."
+          sectionLabel={w.thisSession}
+          sectionTitle={w.sessionDetails}
+          sectionDescription={w.sessionDescription}
         />
       </div>
 

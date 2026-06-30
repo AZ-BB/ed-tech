@@ -1,27 +1,83 @@
-import { createServerClient } from "@supabase/ssr"
-import { NextResponse, type NextRequest } from "next/server"
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import {
+  defaultLocale,
+  isLocale,
+  isLocalizedPublicPath,
+  locales,
+  stripLocaleFromPath,
+} from "@/lib/i18n/config";
+
+const LOCALE_COOKIE = "NEXT_LOCALE";
 
 /** Maps Supabase `user_metadata.type` to the app home for that role. */
 function authedHomePath(type: unknown): string | null {
   switch (type) {
     case "student":
-      return "/student"
+      return "/student";
     case "school":
     case "school_admin":
-      return "/school"
+      return "/school";
     case "admin":
-      return "/admin"
+      return "/admin";
     case "advisor":
-      return "/advisor"
+      return "/advisor";
     default:
-      return null
+      return null;
   }
 }
 
+function shouldSkipLocale(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/student") ||
+    pathname.startsWith("/school") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/advisor") ||
+    pathname.startsWith("/application-support") ||
+    pathname.startsWith("/recommendation") ||
+    /\.[^/]+$/.test(pathname)
+  );
+}
+
+function localeRedirect(request: NextRequest, pathname: string): NextResponse | null {
+  if (shouldSkipLocale(pathname)) return null;
+
+  const { locale } = stripLocaleFromPath(pathname);
+  if (locale) return null;
+
+  if (!isLocalizedPublicPath(pathname)) return null;
+
+  const preferredCookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  const preferred =
+    preferredCookie && isLocale(preferredCookie) ? preferredCookie : defaultLocale;
+
+  const url = request.nextUrl.clone();
+  url.pathname = pathname === "/" ? `/${preferred}` : `/${preferred}${pathname}`;
+  return NextResponse.redirect(url);
+}
+
+function loginPath(request: NextRequest): string {
+  const preferredCookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  const locale =
+    preferredCookie && isLocale(preferredCookie) ? preferredCookie : defaultLocale;
+  return `/${locale}/login`;
+}
+
+function pathMatches(pathname: string, route: string): boolean {
+  const { pathnameWithoutLocale } = stripLocaleFromPath(pathname);
+  if (route === "/") return pathnameWithoutLocale === "/";
+  return pathnameWithoutLocale === route || pathnameWithoutLocale.startsWith(`${route}/`);
+}
+
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  const { pathname } = request.nextUrl;
+
+  const localeRedirectResponse = localeRedirect(request, pathname);
+  if (localeRedirectResponse) return localeRedirectResponse;
+
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,42 +85,33 @@ export async function proxy(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+            supabaseResponse.cookies.set(name, value, options),
+          );
         },
       },
-    }
-  )
+    },
+  );
 
-  // Validates the JWT with Supabase Auth (do not use getSession() here — cookie payload may be stale)
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
-  const authedHome = authedHomePath(user?.user_metadata?.type)
+  const authedHome = authedHomePath(user?.user_metadata?.type);
+  const { locale, pathnameWithoutLocale } = stripLocaleFromPath(pathname);
 
-  const { pathname } = request.nextUrl
+  if (locale) {
+    supabaseResponse.cookies.set(LOCALE_COOKIE, locale, { path: "/" });
+  }
 
-  // Open to everyone (guest or signed-in) — e.g. payment links, webhooks, token flows.
-  const publicOpenRoutes = [
-    "/application-support",
-    "/api/webhooks",
-    "/recommendation",
-    "/webinars",
-  ]
-  const isPublicOpenRoute = publicOpenRoutes.some((route) =>
-    pathname.startsWith(route),
-  )
+  const publicOpenRoutes = ["/application-support", "/api/webhooks", "/recommendation", "/webinars"];
+  const isPublicOpenRoute = publicOpenRoutes.some((route) => pathMatches(pathname, route));
 
-  // Marketing/auth pages guests may visit; signed-in users are redirected to their dashboard.
   const publicGuestOnlyRoutes = [
     "/login",
     "/signup",
@@ -79,52 +126,39 @@ export async function proxy(request: NextRequest) {
     "/for-schools",
     "/for-advisors",
     "/blog",
-  ]
+  ];
   const isPublicGuestOnlyRoute = publicGuestOnlyRoutes.some((route) =>
-    pathname.startsWith(route),
-  )
+    pathMatches(pathname, route),
+  );
 
-  // Landing is public for guests; do not use pathname.startsWith("/") — that matches every path.
   const isPublicForGuests =
-    pathname === "/" || isPublicOpenRoute || isPublicGuestOnlyRoute
+    pathnameWithoutLocale === "/" || isPublicOpenRoute || isPublicGuestOnlyRoute;
 
-  // Auth recovery/callback routes must complete even when a session exists.
   const isAuthFlowRoute =
-    pathname.startsWith("/auth/callback") ||
-    pathname.startsWith("/auth/confirm") ||
-    pathname.startsWith("/auth/reset-password")
+    pathMatches(pathname, "/auth/callback") ||
+    pathMatches(pathname, "/auth/confirm") ||
+    pathMatches(pathname, "/auth/reset-password");
 
-  // If user is not authenticated and trying to access a protected route
   if (!user && !isPublicForGuests) {
-    const redirectUrl = new URL('/login', request.url)
-    // Add the current path as a query parameter to redirect back after login
-    redirectUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(redirectUrl)
+    const redirectUrl = new URL(loginPath(request), request.url);
+    redirectUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // Authed user on app root → role dashboard (when type is set)
-  if (user && pathname === "/" && authedHome) {
-    return NextResponse.redirect(new URL(authedHome, request.url))
+  if (user && pathnameWithoutLocale === "/" && authedHome) {
+    return NextResponse.redirect(new URL(authedHome, request.url));
   }
 
-  // Signed-in users on login/signup/marketing → dashboard (not payment/token links).
   if (user && isPublicGuestOnlyRoute && !isAuthFlowRoute) {
-    const dest = authedHome ?? "/"
-    return NextResponse.redirect(new URL(dest, request.url))
+    const dest = authedHome ?? (locale ? `/${locale}` : `/${defaultLocale}`);
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
-  return supabaseResponse
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};

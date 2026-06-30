@@ -1063,3 +1063,56 @@ body {
     flex-direction: column;
   }
 }
+
+/* i18n / RTL */
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lang-switcher-link {
+  color: var(--text-mid);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.lang-switcher-link:hover,
+.lang-switcher-link.active {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.lang-switcher-sep {
+  color: var(--text-hint);
+  user-select: none;
+}
+
+html[dir="rtl"] body {
+  font-family: var(--font-noto-arabic), var(--font-dm-sans), sans-serif;
+}
+
+html[dir="rtl"] .serif {
+  font-family: var(--font-noto-arabic), var(--font-dm-serif), serif;
+}
+
+html[dir="rtl"] .icon-directional {
+  transform: scaleX(-1);
+}
+
+/* Keep marketing navbar layout LTR; only page content follows RTL */
+html[dir="rtl"] .nav {
+  direction: ltr;
+}
+
+html[dir="rtl"] .hero-left,
+html[dir="rtl"] .section-inner,
+html[dir="rtl"] .footer-inner {
+  text-align: right;
+}
+
+html[dir="rtl"] .form-row {
+  direction: rtl;
+}

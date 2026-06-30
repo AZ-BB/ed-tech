@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
+import { LanguageSwitcher } from "@/lib/i18n/language-switcher";
+import { LocalizedLink } from "@/lib/i18n/localized-link";
+import { useLocale, useLocaleContext } from "@/lib/i18n/locale-context";
 
 const SECTIONS = ["how-it-works", "features", "testimonials", "faq"] as const;
 
 export function LandingNav() {
+  const { dict } = useLocale();
+  const hasLocale = useLocaleContext() !== null;
+
   useEffect(() => {
     const nav = document.getElementById("navbar");
     const navLinks = document.querySelectorAll<HTMLAnchorElement>(".nav-link");
@@ -23,7 +29,7 @@ export function LandingNav() {
       }
       for (const link of navLinks) {
         link.classList.remove("active");
-        if (link.getAttribute("href") === `#${currentSection}`) {
+        if (link.getAttribute("href")?.endsWith(`#${currentSection}`)) {
           link.classList.add("active");
         }
       }
@@ -33,20 +39,23 @@ export function LandingNav() {
       const target = (e.target as HTMLElement).closest("a.nav-link");
       if (!target) return;
       const href = target.getAttribute("href");
-      if (href?.startsWith("#") && href.length > 1) {
-        e.preventDefault();
-        for (const p of document.querySelectorAll(".sub-page")) {
-          p.classList.remove("active");
-        }
-        document.getElementById("main-content")?.classList.remove("hidden");
-        setTimeout(() => {
-          const id = href.slice(1);
-          const sectionEl = document.getElementById(id);
-          if (sectionEl) {
-            const offset = sectionEl.offsetTop - 70;
-            window.scrollTo({ top: offset, behavior: "smooth" });
+      if (href?.includes("#") && href.length > 1) {
+        const hash = href.slice(href.indexOf("#"));
+        if (hash.startsWith("#") && hash.length > 1) {
+          e.preventDefault();
+          for (const p of document.querySelectorAll(".sub-page")) {
+            p.classList.remove("active");
           }
-        }, 50);
+          document.getElementById("main-content")?.classList.remove("hidden");
+          setTimeout(() => {
+            const id = hash.slice(1);
+            const sectionEl = document.getElementById(id);
+            if (sectionEl) {
+              const offset = sectionEl.offsetTop - 70;
+              window.scrollTo({ top: offset, behavior: "smooth" });
+            }
+          }, 50);
+        }
       }
     };
 
@@ -60,8 +69,8 @@ export function LandingNav() {
   }, []);
 
   return (
-    <nav className="nav" id="navbar">
-      <a className="nav-logo" href="/">
+    <nav className="nav" id="navbar" dir="ltr">
+      <LocalizedLink className="nav-logo" href="/">
         <div className="nav-logo-icon">
           <svg
             width="18"
@@ -79,27 +88,28 @@ export function LandingNav() {
             <path d="M2 12l10 5 10-5" />
           </svg>
         </div>
-        Univeera
-      </a>
+        {dict.common.brand}
+      </LocalizedLink>
       <div className="nav-links">
-        <a className="nav-link" href="#how-it-works">
-          How it works
-        </a>
-        <a className="nav-link" href="#features">
-          Features
-        </a>
-        <a className="nav-link" href="#testimonials">
-          Testimonials
-        </a>
-        <a className="nav-link" href="#faq">
-          FAQ
-        </a>
-        <a className="nav-login" href="/login">
-          Log in
-        </a>
-        <a className="nav-cta" href="/signup">
-          Start your journey
-        </a>
+        <LocalizedLink className="nav-link" href="/#how-it-works">
+          {dict.nav.howItWorks}
+        </LocalizedLink>
+        <LocalizedLink className="nav-link" href="/#features">
+          {dict.nav.features}
+        </LocalizedLink>
+        <LocalizedLink className="nav-link" href="/#testimonials">
+          {dict.nav.testimonials}
+        </LocalizedLink>
+        <LocalizedLink className="nav-link" href="/#faq">
+          {dict.nav.faq}
+        </LocalizedLink>
+        {hasLocale ? <LanguageSwitcher /> : null}
+        <LocalizedLink className="nav-login" href="/login">
+          {dict.nav.logIn}
+        </LocalizedLink>
+        <LocalizedLink className="nav-cta" href="/signup">
+          {dict.nav.startJourney}
+        </LocalizedLink>
       </div>
     </nav>
   );
