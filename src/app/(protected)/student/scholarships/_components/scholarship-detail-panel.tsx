@@ -77,7 +77,7 @@ export function ScholarshipDetailPanel({
   return (
     <div
       className={clsx(
-        "fixed inset-0 z-[100] overflow-y-auto bg-black/30 px-5 py-10 transition-opacity",
+        "fixed inset-0 z-[100] overflow-y-auto bg-black/30 px-3 py-4 transition-opacity sm:px-5 sm:py-8 md:py-10",
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0 invisible",
       )}
       role="presentation"
@@ -87,14 +87,14 @@ export function ScholarshipDetailPanel({
     >
       <div
         className={clsx(
-          "mx-auto max-w-[920px] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--sand)] shadow-[0_8px_40px_rgba(0,0,0,0.12)] transition-transform",
+          "mx-auto w-full min-w-0 max-w-[920px] overflow-x-clip rounded-[var(--radius-lg)] bg-[var(--sand)] shadow-[0_8px_40px_rgba(0,0,0,0.12)] transition-transform",
           open ? "translate-y-0" : "translate-y-3",
         )}
         role="dialog"
         aria-modal="true"
         aria-labelledby="sch-detail-title"
       >
-        <div className="relative h-[170px] overflow-visible rounded-t-[var(--radius-lg)] bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#52B788]">
+        <div className="relative h-[140px] overflow-visible rounded-t-[var(--radius-lg)] bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#52B788] sm:h-[170px]">
           <div
             className="pointer-events-none absolute inset-0 rounded-t-[var(--radius-lg)] opacity-[0.04]"
             style={{
@@ -120,7 +120,7 @@ export function ScholarshipDetailPanel({
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
-          <div className="absolute right-14 top-3.5 z-[5] flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-white/90 px-3.5 py-1.5 text-[11px] font-semibold text-[var(--green)]">
+          <div className="absolute bottom-3 left-4 right-14 z-[4] flex max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-[var(--radius-pill)] bg-white/90 px-3 py-1.5 text-[10px] font-semibold text-[var(--green)] sm:right-auto sm:bottom-auto sm:left-auto sm:top-3.5 sm:right-14 sm:max-w-none sm:px-3.5 sm:text-[11px]">
             <svg
               width="12"
               height="12"
@@ -128,14 +128,15 @@ export function ScholarshipDetailPanel({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              className="shrink-0"
               aria-hidden
             >
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" />
             </svg>
-            <span>{t.deadlineLabel}: {s.deadline}</span>
+            <span className="min-w-0 truncate">{t.deadlineLabel}: {s.deadline}</span>
           </div>
-          <div className="absolute -bottom-6 left-7 z-[3] flex h-14 w-14 items-center justify-center rounded-[14px] border-[3px] border-white bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+          <div className="absolute -bottom-6 left-4 z-[3] flex h-14 w-14 items-center justify-center rounded-[14px] border-[3px] border-white bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] sm:left-7">
             <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[11px] bg-[var(--green-bg)]">
               <svg
                 width="20"
@@ -152,10 +153,10 @@ export function ScholarshipDetailPanel({
           </div>
         </div>
 
-        <div className="bg-white px-7 pb-4 pt-8">
+        <div className="bg-white px-4 pb-4 pt-8 sm:px-7">
           <h2
             id="sch-detail-title"
-            className="serif mb-1 text-[22px] font-bold leading-tight text-[var(--text)]"
+            className="serif mb-1 text-[19px] font-bold leading-tight text-[var(--text)] break-words sm:text-[22px]"
           >
             {s.name}
           </h2>
@@ -173,14 +174,14 @@ export function ScholarshipDetailPanel({
           </div>
         </div>
 
-        <div className="sticky top-0 z-[5] flex flex-wrap gap-0 border-b border-[var(--border-light)] bg-white px-7">
+        <div className="sticky top-0 z-[5] flex min-w-0 snap-x snap-mandatory gap-0 overflow-x-auto border-b border-[var(--border-light)] bg-white px-4 [scrollbar-width:thin] sm:px-7 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]">
           {tabIds.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => scrollToSection(tab.id)}
               className={clsx(
-                "inline-block cursor-pointer border-b-2 border-transparent px-[18px] py-3 text-[13px] font-medium transition-colors",
+                "inline-block shrink-0 snap-start cursor-pointer border-b-2 border-transparent px-3 py-3 text-[12px] font-medium transition-colors sm:px-[18px] sm:text-[13px]",
                 activeTab === tab.id
                   ? "border-[var(--green)] font-medium text-[var(--green-dark)]"
                   : "text-[var(--text-light)] hover:text-[var(--text-mid)]",
@@ -191,7 +192,7 @@ export function ScholarshipDetailPanel({
           ))}
         </div>
 
-        <div className="flex flex-col gap-4 p-5 max-[700px]:flex-col lg:flex-row lg:gap-4 lg:p-5">
+        <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:gap-4">
           <div className="min-w-0 flex-1 space-y-3.5">
             <DetailCard id="d-overview" title={t.overview} icon={<InfoIcon />}>
               <p className="mb-1 text-[13.5px] leading-relaxed text-[var(--text-mid)]">
@@ -259,7 +260,7 @@ export function ScholarshipDetailPanel({
             </DetailCard>
 
             <DetailCard id="d-coverage" title={t.whatsCovered} icon={<MoneyIcon />}>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 max-[700px]:grid-cols-1">
+              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
                 <CovItem label={t.tuition} value={s.coverageDetails.tuition} highlight />
                 <CovItem
                   label={t.livingStipend}
@@ -288,8 +289,8 @@ export function ScholarshipDetailPanel({
             </DetailCard>
           </div>
 
-          <aside className="w-full shrink-0 lg:w-[220px]">
-            <div className="sticky top-5 rounded-[var(--radius)] border border-[var(--border-light)] bg-white p-5">
+          <aside className="w-full min-w-0 shrink-0 lg:w-[220px]">
+            <div className="rounded-[var(--radius)] border border-[var(--border-light)] bg-white p-4 sm:p-5 lg:sticky lg:top-5">
               <div className="mb-3.5 text-[14px] font-semibold">{t.yourActions}</div>
               <SideBtn
                 tone={isSaved ? "saved" : "neutral"}
@@ -372,7 +373,7 @@ function DetailCard({
   return (
     <div
       id={id}
-      className="scroll-mt-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-white px-[22px] py-5"
+      className="scroll-mt-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-white px-4 py-4 sm:px-[22px] sm:py-5"
     >
       <div className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-[var(--text)]">
         <span className="opacity-40">{icon}</span>
@@ -391,11 +392,11 @@ function DetailRow({
   value: ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2.5 border-b border-[var(--border-light)] py-1.5 text-[13px] last:border-b-0">
-      <span className="min-w-[110px] shrink-0 font-medium text-[var(--text-light)]">
+    <div className="flex flex-col gap-1 border-b border-[var(--border-light)] py-1.5 text-[13px] last:border-b-0 sm:flex-row sm:items-start sm:gap-2.5">
+      <span className="shrink-0 font-medium text-[var(--text-light)] sm:min-w-[110px]">
         {label}
       </span>
-      <span className="font-medium text-[var(--text)]">{value}</span>
+      <span className="min-w-0 font-medium text-[var(--text)] break-words [overflow-wrap:anywhere]">{value}</span>
     </div>
   );
 }

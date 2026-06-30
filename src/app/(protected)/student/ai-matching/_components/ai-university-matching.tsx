@@ -28,6 +28,18 @@ import type { AiMatchingProfileDefaults } from "../_lib/load-ai-matching-profile
 
 const TOTAL_PROGRESS = 7;
 
+const PAGE_SHELL = "mx-auto min-w-0 w-full max-w-full pb-[60px] pt-1";
+const PROGRESS_PANEL =
+  "mb-5 min-w-0 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-4 py-3.5 min-[600px]:px-6 min-[600px]:py-4";
+const QUIZ_CARD =
+  "quiz-card flex min-h-[360px] min-w-0 flex-col overflow-x-clip rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] min-[600px]:p-7 min-[720px]:px-11 min-[720px]:py-10";
+const QUIZ_STEP = "flex min-w-0 flex-1 flex-col";
+const Q_TITLE =
+  "q-title serif mb-1.5 text-xl leading-snug text-[var(--text)] min-[600px]:text-[22px]";
+const QUIZ_NAV =
+  "quiz-nav mt-auto flex flex-wrap items-center justify-between gap-3 pt-7";
+const RESULTS_SECTION_PAD = "px-5 py-5 min-[600px]:px-[26px] min-[600px]:py-[22px]";
+
 function formatTemplate(template: string, vars: Record<string, string | number>): string {
   let out = template;
   for (const [key, val] of Object.entries(vars)) {
@@ -559,12 +571,12 @@ function CountryPicker({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative w-full">
+    <div ref={rootRef} className="relative min-w-0 w-full">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={clsx(
-          "flex min-h-11 w-full cursor-pointer items-center justify-between rounded-[10px] border-[1.5px] bg-white px-4 text-left text-sm transition",
+          "flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between rounded-[10px] border-[1.5px] bg-white px-4 text-left text-sm transition",
           invalid
             ? "border-[#E53935] shadow-[0_0_0_3px_rgba(229,57,53,0.08)]"
             : open
@@ -575,14 +587,14 @@ function CountryPicker({
       >
         <span
           className={clsx(
-            "flex items-center gap-2",
+            "flex min-w-0 items-center gap-2",
             selected ? "font-medium text-[var(--text)]" : "text-[var(--text-hint)]",
           )}
         >
           {selected ? (
             <>
-              <span className="text-base leading-none">{selected.flag}</span>
-              <span className="bidi-ltr" dir="ltr">
+              <span className="shrink-0 text-base leading-none">{selected.flag}</span>
+              <span className="bidi-ltr truncate" dir="ltr">
                 {selected.name}
               </span>
             </>
@@ -682,12 +694,12 @@ function MajorPicker({
   }, [query]);
 
   return (
-    <div ref={rootRef} className="relative w-full">
+    <div ref={rootRef} className="relative min-w-0 w-full">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={clsx(
-          "flex min-h-11 w-full cursor-pointer items-center justify-between rounded-[10px] border-[1.5px] bg-white px-4 text-left text-sm transition",
+          "flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between rounded-[10px] border-[1.5px] bg-white px-4 text-left text-sm transition",
           invalid
             ? "border-[#E53935] shadow-[0_0_0_3px_rgba(229,57,53,0.08)]"
             : open
@@ -698,11 +710,12 @@ function MajorPicker({
       >
         <span
           className={clsx(
+            "min-w-0 flex-1 truncate text-left",
             value ? "font-medium text-[var(--text)]" : "text-[var(--text-hint)]",
           )}
         >
           {value ? (
-            <span className="bidi-ltr" dir="ltr">
+            <span className="bidi-ltr block truncate" dir="ltr">
               {value}
             </span>
           ) : (
@@ -786,7 +799,7 @@ function OptTile({
       type="button"
       onClick={onClick}
       className={clsx(
-        "cursor-pointer rounded-[var(--radius)] border-[1.5px] px-4 py-3.5 text-center text-[13px] font-medium transition",
+        "min-w-0 w-full cursor-pointer rounded-[var(--radius)] border-[1.5px] px-3 py-3 text-center text-[12.5px] font-medium leading-snug break-words transition min-[600px]:px-4 min-[600px]:py-3.5 min-[600px]:text-[13px]",
         selected
           ? "border-[var(--green)] bg-[var(--green-bg)] font-semibold text-[var(--green)]"
           : "border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--text-hint)] hover:bg-[var(--sand)]",
@@ -811,7 +824,7 @@ function PillToggle({
       type="button"
       onClick={onClick}
       className={clsx(
-        "cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] px-[18px] py-2 text-[12px] font-medium transition",
+        "shrink-0 cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] px-3.5 py-2 text-[11.5px] font-medium transition min-[600px]:px-[18px] min-[600px]:text-[12px]",
         selected
           ? "border-[var(--green)] bg-[var(--green-bg)] font-semibold text-[var(--green)]"
           : "border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--text-hint)]",
@@ -853,7 +866,7 @@ function MatchCard({ match }: { match: UniversityMatch }) {
   const fitLabels = t.admissionFitLabels as Record<string, string>;
   const admissionFitLabel = fitLabels[match.admissionFit] ?? match.admissionFit;
   return (
-    <article className="rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-7 transition hover:border-[#d5dbd8] hover:shadow-[0_6px_22px_rgba(0,0,0,0.05)] max-[600px]:px-5 max-[600px]:py-[22px]">
+    <article className="min-w-0 overflow-x-clip rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-5 transition hover:border-[#d5dbd8] hover:shadow-[0_6px_22px_rgba(0,0,0,0.05)] min-[600px]:p-7">
       <p className="mb-[18px] text-[13px] text-[var(--text-light)]">
         {t.programAligned}
       </p>
@@ -904,7 +917,7 @@ function MatchCard({ match }: { match: UniversityMatch }) {
         <span>{match.considerations}</span>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-[var(--border-light)] pt-4 min-[640px]:flex-row min-[640px]:items-start min-[640px]:justify-between min-[640px]:gap-4">
+      <div className="flex flex-col gap-3 border-t border-[var(--border-light)] pt-4 md:flex-row md:items-start md:justify-between md:gap-4">
         <div className="flex min-w-0 flex-1 flex-row flex-wrap items-start gap-x-5 gap-y-2">
           {match.nextSteps.slice(0, 2).map((step) => (
             <span
@@ -920,7 +933,7 @@ function MatchCard({ match }: { match: UniversityMatch }) {
           href={match.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-[var(--radius-pill)] bg-[var(--green)] px-[22px] py-2.5 text-[12.5px] font-semibold text-white! no-underline transition hover:bg-[var(--green-dark)] hover:text-white! min-[640px]:self-center"
+          className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-[var(--radius-pill)] bg-[var(--green)] px-[22px] py-2.5 text-[12.5px] font-semibold text-white! no-underline transition hover:bg-[var(--green-dark)] hover:text-white! md:w-auto md:self-center"
         >
           {t.visitOfficialPage}
           <ExternalLink className="size-3.5 shrink-0 text-white!" strokeWidth={2} aria-hidden />
@@ -1290,7 +1303,7 @@ export function AiUniversityMatching({
 
   if (result) {
     return (
-      <div className="mx-auto w-full px-5 pb-[60px] pt-1">
+      <div className={PAGE_SHELL}>
         <div className="mb-4">
           <Link
             href="/student/universities"
@@ -1301,13 +1314,13 @@ export function AiUniversityMatching({
           </Link>
         </div>
         <header className="results-header mb-6 text-center">
-          <h1 className="serif mb-1.5 text-[28px] text-[var(--text)]">{t.bestMatches}</h1>
+          <h1 className="serif mb-1.5 text-2xl text-[var(--text)] min-[600px]:text-[28px]">{t.bestMatches}</h1>
           <p className="mx-auto text-[14px] text-[var(--text-light)]">
             {t.resultsSubtitle}
           </p>
         </header>
 
-        <div className="mb-3.5 flex gap-4 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-[26px] py-[22px] max-[600px]:flex-col">
+        <div className={`mb-3.5 flex min-w-0 gap-4 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white max-[600px]:flex-col ${RESULTS_SECTION_PAD}`}>
           <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-[#d5e8db] bg-white">
             <Sparkles className="size-5 text-[var(--green)]" aria-hidden />
           </div>
@@ -1321,7 +1334,7 @@ export function AiUniversityMatching({
           </div>
         </div>
 
-        <section className="rec-card mb-5 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-[26px] py-[22px]">
+        <section className={`rec-card mb-5 min-w-0 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white ${RESULTS_SECTION_PAD}`}>
           <h2 className="rec-title mb-2.5 text-[14px] font-semibold text-[var(--text)]">
             {t.recommendedStrategy}
           </h2>
@@ -1342,7 +1355,7 @@ export function AiUniversityMatching({
           <span className="h-px flex-1 bg-[var(--border-light)]" />
         </div>
 
-        <div className="match-grid flex flex-col gap-4">
+        <div className="match-grid flex min-w-0 flex-col gap-4">
           {result.matches.map((m) => (
             <MatchCard key={`${m.universityName}-${m.programName}`} match={m} />
           ))}
@@ -1389,7 +1402,7 @@ export function AiUniversityMatching({
   }
 
   return (
-    <div className="mx-auto w-full  px-5 pb-[60px] pt-1">
+    <div className={PAGE_SHELL}>
       <div className="mb-4">
         <Link
           href="/student/universities"
@@ -1400,16 +1413,13 @@ export function AiUniversityMatching({
         </Link>
       </div>
       {toast ? (
-        <div className="fixed bottom-8 left-1/2 z-[1000] -translate-x-1/2 rounded-[50px] bg-[var(--green-dark)] px-[22px] py-2.5 text-[12.5px] font-medium text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+        <div className="fixed inset-x-4 bottom-4 z-[1000] rounded-[50px] bg-[var(--green-dark)] px-[22px] py-2.5 text-center text-[12.5px] font-medium text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-[600px]:inset-x-auto min-[600px]:bottom-8 min-[600px]:left-1/2 min-[600px]:-translate-x-1/2 min-[600px]:text-left">
           {toast}
         </div>
       ) : null}
 
       <section
-        className={clsx(
-          "mb-5 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-4",
-          screen === 0 && "hidden",
-        )}
+        className={clsx(PROGRESS_PANEL, screen === 0 && "hidden")}
       >
         <div className="progress-top mb-2.5 flex items-center justify-between">
           <span className="progress-label text-[12px] font-medium text-[var(--text-light)]">
@@ -1427,7 +1437,7 @@ export function AiUniversityMatching({
         </div>
       </section>
 
-      <div className="quiz-card flex min-h-[360px] flex-col rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] min-[720px]:px-11 min-[720px]:py-10 max-[600px]:px-[22px] max-[600px]:py-7">
+      <div className={QUIZ_CARD}>
         {loading ? (
           <div className="loading-state flex flex-col items-center gap-4 py-14">
             <Loader2 className="size-10 animate-spin text-[var(--green)]" aria-hidden />
@@ -1439,12 +1449,12 @@ export function AiUniversityMatching({
         ) : (
           <>
             {screen === 0 ? (
-              <div className="intro flex flex-1 flex-col items-center justify-center gap-4 text-center">
+              <div className="intro flex min-w-0 flex-1 flex-col items-center justify-center gap-4 px-1 text-center">
                 <div className="intro-badge inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green-bg)] px-4 py-1.5 text-[12px] font-medium text-[var(--green)]">
                   <Search className="size-3.5" strokeWidth={2} aria-hidden />
                   {t.aiPowered}
                 </div>
-                <h2 className="serif text-[30px] leading-tight text-[var(--text)]">
+                <h2 className="serif text-2xl leading-tight text-[var(--text)] min-[600px]:text-[30px]">
                   {t.introTitle}
                 </h2>
                 <p className="text-[15px] text-[var(--text-light)]">
@@ -1463,8 +1473,8 @@ export function AiUniversityMatching({
             ) : null}
 
             {screen === 1 ? (
-              <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px] text-[var(--text)]">
+              <div className={QUIZ_STEP}>
+                <div className={Q_TITLE}>
                   {t.aboutYouTitle}
                 </div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
@@ -1475,13 +1485,13 @@ export function AiUniversityMatching({
                     {t.prefillTip}
                   </p>
                 ) : null}
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
                     {t.fullName}
                   </label>
                   <input
                     className={clsx(
-                      "field-input w-full rounded-[10px] border-[1.5px] px-4 py-2.5 text-sm transition outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
+                      "field-input box-border w-full min-w-0 max-w-full rounded-[10px] border-[1.5px] px-4 py-2.5 text-sm transition outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
                       invalidFields.has("fullName")
                         ? "border-[#E53935] shadow-[0_0_0_3px_rgba(229,57,53,0.08)]"
                         : "border-[var(--border)]",
@@ -1494,13 +1504,13 @@ export function AiUniversityMatching({
                     {t.enterFullName}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
                     {t.schoolName}
                   </label>
                   <input
                     className={clsx(
-                      "field-input w-full rounded-[10px] border-[1.5px] px-4 py-2.5 text-sm outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
+                      "field-input box-border w-full min-w-0 max-w-full rounded-[10px] border-[1.5px] px-4 py-2.5 text-sm outline-none placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
                       invalidFields.has("schoolName")
                         ? "border-[#E53935]"
                         : "border-[var(--border)]",
@@ -1513,7 +1523,7 @@ export function AiUniversityMatching({
                     {t.enterSchoolName}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
                     {t.schoolCountry}
                   </label>
@@ -1526,7 +1536,7 @@ export function AiUniversityMatching({
                     {t.selectSchoolCountry}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]">
                     {t.nationality}
                   </label>
@@ -1539,7 +1549,7 @@ export function AiUniversityMatching({
                     {t.selectCountry}
                   </ValidationHint>
                 </div>
-                <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
+                <div className={QUIZ_NAV}>
                   <div />
                   <button
                     type="button"
@@ -1554,18 +1564,18 @@ export function AiUniversityMatching({
             ) : null}
 
             {screen === 2 ? (
-              <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">{t.academicsTitle}</div>
+              <div className={QUIZ_STEP}>
+                <div className={Q_TITLE}>{t.academicsTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
                   {t.academicsSubtitle}
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.academicSystem}
                   </label>
                   <select
                     className={clsx(
-                      "field-select w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] bg-white py-2.5 pl-4 pr-10 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
+                      "field-select box-border w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] bg-white py-2.5 pl-4 pr-10 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
                       invalidFields.has("academicSystem")
                         ? "border-[#E53935]"
                         : "border-[var(--border)]",
@@ -1592,7 +1602,7 @@ export function AiUniversityMatching({
                   </ValidationHint>
                 </div>
                 {predictedGradeField ? (
-                  <div className="mb-[18px]">
+                  <div className="mb-[18px] min-w-0">
                     <label
                       className="field-label mb-[7px] block text-[13px] font-semibold text-[var(--text)]"
                       htmlFor="predicted-grade-input"
@@ -1613,7 +1623,7 @@ export function AiUniversityMatching({
                       }
                       placeholder={predictedGradeField.placeholder}
                       className={clsx(
-                        "w-full rounded-[10px] border-[1.5px] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
+                        "box-border w-full min-w-0 max-w-full rounded-[10px] border-[1.5px] px-4 py-2.5 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
                         invalidFields.has("predictedScore")
                           ? "border-[#E53935] shadow-[0_0_0_3px_rgba(229,57,53,0.08)]"
                           : "border-[var(--border)]",
@@ -1625,7 +1635,7 @@ export function AiUniversityMatching({
                     </ValidationHint>
                   </div>
                 ) : null}
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.testsTaken}
                   </label>
@@ -1650,7 +1660,7 @@ export function AiUniversityMatching({
                     {t.selectAtLeastOne}
                   </ValidationHint>
                   {TESTS_WITH_SCORE_INPUTS.some((test) => form.testsTaken.includes(test)) ? (
-                    <div className="score-inputs mt-3 grid grid-cols-1 gap-3 min-[560px]:grid-cols-2">
+                    <div className="score-inputs mt-3 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
                       {TESTS_WITH_SCORE_INPUTS.filter((test) =>
                         form.testsTaken.includes(test),
                       ).map((test) => {
@@ -1678,7 +1688,7 @@ export function AiUniversityMatching({
                           (test === "SAT" && satScoreInValidRange(form)) ||
                           (test === "ACT" && actScoreInValidRange(form));
                         return (
-                          <div key={test} className="score-field">
+                          <div key={test} className="score-field min-w-0">
                             <label
                               className="mb-1 block text-[11px] font-medium text-[var(--text-light)]"
                               htmlFor={`test-score-${test}`}
@@ -1727,7 +1737,7 @@ export function AiUniversityMatching({
                               }}
                               placeholder={meta.placeholder}
                               className={clsx(
-                                "w-full rounded-lg border-[1.5px] px-3 py-2 text-[13px] outline-none transition focus:border-[var(--green-light)]",
+                                "box-border w-full min-w-0 max-w-full rounded-lg border-[1.5px] px-3 py-2 text-[13px] outline-none transition focus:border-[var(--green-light)]",
                                 scoreInvalid
                                   ? "border-[#E53935] shadow-[0_0_0_3px_rgba(229,57,53,0.08)]"
                                   : scoreLooksValidInRange
@@ -1762,7 +1772,7 @@ export function AiUniversityMatching({
                     </div>
                   ) : null}
                 </div>
-                <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
+                <div className={QUIZ_NAV}>
                   <button
                     type="button"
                     onClick={goBack}
@@ -1783,12 +1793,12 @@ export function AiUniversityMatching({
             ) : null}
 
             {screen === 3 ? (
-              <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">{t.studyTitle}</div>
+              <div className={QUIZ_STEP}>
+                <div className={Q_TITLE}>{t.studyTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
                   {t.studySubtitle}
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.studyDestination}
                   </label>
@@ -1803,13 +1813,13 @@ export function AiUniversityMatching({
                     {t.selectDestination}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.degreeLevel}
                   </label>
                   <select
                     className={clsx(
-                      "w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] bg-white py-2.5 pl-4 pr-10 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
+                      "box-border w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] bg-white py-2.5 pl-4 pr-10 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]",
                       invalidFields.has("degreeLevel")
                         ? "border-[#E53935]"
                         : "border-[var(--border)]",
@@ -1829,7 +1839,7 @@ export function AiUniversityMatching({
                     ))}
                   </select>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.intendedMajor}
                   </label>
@@ -1842,7 +1852,7 @@ export function AiUniversityMatching({
                     {t.selectFieldOfStudy}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.excitesYou}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
@@ -1851,7 +1861,7 @@ export function AiUniversityMatching({
                   </label>
                   <div
                     className={clsx(
-                      "grid grid-cols-2 gap-2.5 min-[860px]:grid-cols-4",
+                      "grid min-w-0 grid-cols-1 gap-2.5 min-[480px]:grid-cols-2 lg:grid-cols-4",
                       invalidFields.has("excites") &&
                         "rounded-lg p-1 outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
@@ -1870,7 +1880,7 @@ export function AiUniversityMatching({
                     {t.selectAtLeastOne}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.strongestSubjects}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
@@ -1907,7 +1917,7 @@ export function AiUniversityMatching({
                     {t.selectSubject}
                   </ValidationHint>
                 </div>
-                <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
+                <div className={QUIZ_NAV}>
                   <button
                     type="button"
                     onClick={goBack}
@@ -1928,20 +1938,20 @@ export function AiUniversityMatching({
             ) : null}
 
             {screen === 4 ? (
-              <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">
+              <div className={QUIZ_STEP}>
+                <div className={Q_TITLE}>
                   {t.lifestyleTitle}
                 </div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
                   {t.lifestyleSubtitle}
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.campusEnvironment}
                   </label>
                   <div
                     className={clsx(
-                      "grid grid-cols-1 gap-2.5 min-[560px]:grid-cols-3",
+                      "grid min-w-0 grid-cols-1 gap-2.5 md:grid-cols-3",
                       invalidFields.has("env") &&
                         "rounded-lg outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
@@ -1960,7 +1970,7 @@ export function AiUniversityMatching({
                     {t.selectEnvironment}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.mattersMost}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
@@ -1969,7 +1979,7 @@ export function AiUniversityMatching({
                   </label>
                   <div
                     className={clsx(
-                      "grid grid-cols-1 gap-2.5 min-[560px]:grid-cols-3",
+                      "grid min-w-0 grid-cols-1 gap-2.5 md:grid-cols-3",
                       invalidFields.has("matters") &&
                         "rounded-lg outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
@@ -1988,7 +1998,7 @@ export function AiUniversityMatching({
                     {t.selectMatters}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.outsideSchool}{" "}
                     <span className="field-meta font-medium text-[var(--text-hint)]">
@@ -2016,13 +2026,13 @@ export function AiUniversityMatching({
                     {t.selectActivity}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.academicAmbition}
                   </label>
                   <div
                     className={clsx(
-                      "grid grid-cols-1 gap-2.5 min-[560px]:grid-cols-3",
+                      "grid min-w-0 grid-cols-1 gap-2.5 md:grid-cols-3",
                       invalidFields.has("ambition") &&
                         "rounded-lg outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
@@ -2041,7 +2051,7 @@ export function AiUniversityMatching({
                     {t.selectAmbition}
                   </ValidationHint>
                 </div>
-                <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
+                <div className={QUIZ_NAV}>
                   <button
                     type="button"
                     onClick={goBack}
@@ -2062,18 +2072,18 @@ export function AiUniversityMatching({
             ) : null}
 
             {screen === 5 ? (
-              <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">{t.goalsTitle}</div>
+              <div className={QUIZ_STEP}>
+                <div className={Q_TITLE}>{t.goalsTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
                   {t.goalsSubtitle}
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.goalAfterUni}
                   </label>
                   <div
                     className={clsx(
-                      "grid grid-cols-1 gap-2.5 min-[560px]:grid-cols-3",
+                      "grid min-w-0 grid-cols-1 gap-2.5 md:grid-cols-3",
                       invalidFields.has("goal") &&
                         "rounded-lg outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
@@ -2092,13 +2102,13 @@ export function AiUniversityMatching({
                     {t.selectGoal}
                   </ValidationHint>
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.workLocation}
                   </label>
                   <div
                     className={clsx(
-                      "grid grid-cols-2 gap-2.5",
+                      "grid min-w-0 grid-cols-1 gap-2.5 min-[480px]:grid-cols-2",
                       invalidFields.has("workloc") &&
                         "rounded-lg outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
@@ -2119,7 +2129,7 @@ export function AiUniversityMatching({
                     {t.selectWorkPref}
                   </ValidationHint>
                 </div>
-                <div className="quiz-nav mt-auto flex items-center justify-between pt-7">
+                <div className={QUIZ_NAV}>
                   <button
                     type="button"
                     onClick={goBack}
@@ -2140,18 +2150,18 @@ export function AiUniversityMatching({
             ) : null}
 
             {screen === 6 ? (
-              <div className="flex flex-1 flex-col">
-                <div className="q-title serif mb-1.5 text-[22px]">{t.budgetTitle}</div>
+              <div className={QUIZ_STEP}>
+                <div className={Q_TITLE}>{t.budgetTitle}</div>
                 <div className="q-sub mb-6 text-[13px] text-[var(--text-light)]">
                   {t.budgetSubtitle}
                 </div>
-                <div className="mb-[18px]">
+                <div className="mb-[18px] min-w-0">
                   <label className="field-label mb-[7px] block text-[13px] font-semibold">
                     {t.budgetQuestion}
                   </label>
                   <div
                     className={clsx(
-                      "grid grid-cols-1 gap-2.5 min-[560px]:grid-cols-3",
+                      "grid min-w-0 grid-cols-1 gap-2.5 md:grid-cols-3",
                       invalidFields.has("budget") &&
                         "rounded-lg outline outline-[1.5px] outline-[#E53935] outline-offset-[4px]",
                     )}
@@ -2176,7 +2186,7 @@ export function AiUniversityMatching({
                 </label>
                 <textarea
                   rows={3}
-                  className="mb-4 w-full resize-none rounded-[10px] border-[1.5px] border-[var(--border)] px-4 py-2.5 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]"
+                  className="mb-4 box-border w-full min-w-0 max-w-full resize-none rounded-[10px] border-[1.5px] border-[var(--border)] px-4 py-2.5 text-sm outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)]"
                   placeholder={t.extraNotesPlaceholder}
                   value={form.extraNotes}
                   onChange={(e) => setForm((f) => ({ ...f, extraNotes: e.target.value }))}
@@ -2189,7 +2199,7 @@ export function AiUniversityMatching({
                     {submitError}
                   </div>
                 ) : null}
-                <div className="quiz-nav mt-auto flex justify-center pt-9">
+                <div className={`${QUIZ_NAV} justify-center`}>
                   <button
                     type="button"
                     onClick={submit}

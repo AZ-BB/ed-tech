@@ -8,7 +8,7 @@ export function ScholarshipEmptyCatalog() {
 
   return (
     <div className="mx-auto">
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--border-light)] bg-white px-8 py-12 text-center shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <div className="relative overflow-x-clip rounded-2xl border border-[var(--border-light)] bg-white px-5 py-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:px-8 sm:py-12">
         <div
           className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[var(--sand)] opacity-60"
           aria-hidden
@@ -22,7 +22,7 @@ export function ScholarshipEmptyCatalog() {
           <ScholarshipIllustration className="h-[72px] w-[72px] text-[#2D6A4F]" />
         </div>
 
-        <h2 className="serif relative mb-2 text-[22px] font-bold leading-tight text-[var(--text)]">
+        <h2 className="serif relative mb-2 text-[19px] font-bold leading-tight text-[var(--text)] sm:text-[22px]">
           {t.emptyTitle}
         </h2>
         <p className="relative mb-6 text-[15px] leading-relaxed text-[var(--text-mid)]">

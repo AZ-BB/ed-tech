@@ -13,7 +13,7 @@ export function ModalVeil({
 }) {
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(15,30,20,0.5)] p-5"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(15,30,20,0.5)] p-4 sm:p-5"
       role="dialog"
       aria-modal
       onClick={(e) => e.target === e.currentTarget && onClose()}

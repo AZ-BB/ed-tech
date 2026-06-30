@@ -18,9 +18,17 @@ const STAGE_VALUES = [
 ] as const;
 
 const inputClass =
-  "w-full rounded-[10px] border-[1.5px] border-[var(--border)] bg-white px-4 py-3 font-[family-name:var(--font-dm-sans)] text-sm text-[var(--text)] transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)] focus:outline-none";
+  "box-border w-full min-w-0 max-w-full rounded-[10px] border-[1.5px] border-[var(--border)] bg-white px-4 py-3 font-[family-name:var(--font-dm-sans)] text-sm text-[var(--text)] transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.08)] focus:outline-none";
 
 const selectClass = `${inputClass} cursor-pointer appearance-none bg-[length:10px_6px] bg-[position:right_12px_center] bg-no-repeat pr-8`;
+
+const formCardClass =
+  "rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)] sm:p-6 md:p-8";
+
+const formGridClass = "grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2";
+
+const pageTitleClass =
+  "font-[family-name:var(--font-dm-serif)] text-[22px] tracking-tight text-[var(--text)] break-words sm:text-[26px] md:text-[28px]";
 
 type AdvisorBrief = {
   id: string;
@@ -138,32 +146,32 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
     "data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7a7a' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E";
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#F7FBF8_0%,var(--sand)_280px)]">
-      <div className="relative mx-auto max-w-[880px] px-5 py-8 pb-16">
+    <div className="-mx-6 min-h-[calc(100dvh-4rem)] bg-[linear-gradient(180deg,#F7FBF8_0%,var(--sand)_280px)] md:-mx-10 lg:-mx-16">
+      <div className="relative mx-auto w-full min-w-0 max-w-[880px] overflow-x-clip px-6 py-6 pb-16 md:px-10 md:py-8 lg:px-16">
         <Link
           href="/student/advisor-sessions"
-          className="mb-7 inline-flex cursor-pointer items-center gap-1.5 rounded-[50px] border-[1.5px] border-[var(--border)] bg-white px-[18px] py-2 text-[13px] font-medium text-[var(--text-mid)] no-underline transition hover:border-[var(--text-hint)] hover:-translate-x-0.5"
+          className="mb-5 inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-[50px] border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12px] font-medium text-[var(--text-mid)] no-underline transition hover:border-[var(--text-hint)] hover:-translate-x-0.5 sm:mb-7 sm:px-[18px] sm:text-[13px]"
         >
           <ArrowBackIcon size={16} />
           {bt.backToAdvisors}
         </Link>
 
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
           <div className="min-w-0 flex-1">
             {step === 1 ? (
               <>
-                <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] tracking-tight text-[var(--text)]">
+                <h1 className={pageTitleClass}>
                   {bt.step1Title}
                 </h1>
-                <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a]">
+                <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a] break-words">
                   {bt.step1Subtitle.replace("{name}", displayName)}
                 </p>
-                <p className="mt-2 text-xs font-medium text-[var(--green)]">{bt.step1Highlight}</p>
-                <div className="mt-4 flex flex-wrap gap-2.5">
+                <p className="mt-2 text-xs font-medium text-[var(--green)] break-words">{bt.step1Highlight}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
                   {bt.badges.map((label) => (
                     <div
                       key={label}
-                      className="flex items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-pale)] px-4 py-2 text-[11.5px] font-medium text-[var(--green-dark)]"
+                      className="flex max-w-full items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-pale)] px-3 py-1.5 text-[11px] font-medium text-[var(--green-dark)] sm:px-4 sm:py-2 sm:text-[11.5px]"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
                         <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
@@ -173,15 +181,15 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5 max-[600px]:py-6">
-                  <div className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
-                    <div className="mb-4">
+                <div className={`mt-5 sm:mt-6 ${formCardClass}`}>
+                  <div className={formGridClass}>
+                    <div className="mb-4 min-w-0">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-name">
                         {bt.fullName}
                       </label>
                       <input id="bk-name" className={inputClass} placeholder={bt.fullNamePlaceholder} value={fullName} onChange={(e) => setFullName(e.target.value)} />
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 min-w-0">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-email">
                         {bt.email}
                       </label>
@@ -195,14 +203,14 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                       />
                     </div>
                   </div>
-                  <div className="mb-4">
+                  <div className="mb-4 min-w-0">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-phone">
                       {bt.phone} <span className="font-normal text-[var(--text-hint)]">{bt.phoneHint}</span>
                     </label>
                     <input id="bk-phone" className={inputClass} placeholder={bt.phonePlaceholder} value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
-                  <div className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
-                    <div className="mb-4">
+                  <div className={formGridClass}>
+                    <div className="mb-4 min-w-0">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-dest">
                         {bt.destination}
                       </label>
@@ -221,7 +229,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                         ))}
                       </select>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 min-w-0">
                       <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-stage">
                         {bt.currentStage}
                       </label>
@@ -241,7 +249,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                       </select>
                     </div>
                   </div>
-                  <div className="mb-4">
+                  <div className="mb-4 min-w-0">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-unis">
                       {bt.specificUnis}
                     </label>
@@ -253,7 +261,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                       onChange={(e) => setSpecificUnis(e.target.value)}
                     />
                   </div>
-                  <div className="mb-4">
+                  <div className="mb-4 min-w-0">
                     <label className="mb-2 block text-xs font-semibold text-[var(--text)]" htmlFor="bk-help">
                       {bt.helpWith}
                     </label>
@@ -284,24 +292,24 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
 
             {step === 2 ? (
               <>
-                <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] tracking-tight text-[var(--text)]">
+                <h1 className={pageTitleClass}>
                   {bt.step2Title}
                 </h1>
-                <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a]">
+                <p className="mt-2 text-sm leading-relaxed text-[#8a8a8a] break-words">
                   {bt.step2Subtitle.replace("{name}", displayName)}
                 </p>
-                <div className="mt-6 rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5 max-[600px]:py-6">
-                  <div className="mb-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-[var(--sand)] p-5">
-                    <div className="mb-4 flex items-center gap-2.5">
+                <div className={`mt-5 sm:mt-6 ${formCardClass}`}>
+                  <div className="mb-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-[var(--sand)] p-4 sm:p-5">
+                    <div className="mb-4 flex items-start gap-2.5">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--green-bg)]">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                           <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                           <path d="M22 4L12 14.01l-3-3" />
                         </svg>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-sm font-semibold text-[var(--text)]">{bt.requestTitle}</div>
-                        <div className="text-xs text-[var(--text-light)]">{bt.requestSubtitle}</div>
+                        <div className="text-xs text-[var(--text-light)] break-words">{bt.requestSubtitle}</div>
                       </div>
                     </div>
                     <ul className="flex flex-col gap-2.5">
@@ -353,33 +361,33 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
             ) : null}
 
             {step === 3 ? (
-              <div className="rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white px-8 py-12 shadow-[0_10px_30px_rgba(0,0,0,0.04)] max-[600px]:px-5">
+              <div className={`${formCardClass} px-5 py-8 sm:px-6 sm:py-10 md:px-8 md:py-12`}>
                 <div className="text-center">
-                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--green-bg)]">
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--green-bg)] sm:h-20 sm:w-20">
                     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" aria-hidden>
                       <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                       <path d="M22 4L12 14.01l-3-3" />
                     </svg>
                   </div>
-                  <h2 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">{bt.step3Title}</h2>
-                  <p className="mx-auto mt-2 max-w-[480px] text-[13.5px] leading-relaxed text-[#8a8a8a]">
+                  <h2 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)] sm:text-2xl">{bt.step3Title}</h2>
+                  <p className="mx-auto mt-2 max-w-[480px] text-[13px] leading-relaxed text-[#8a8a8a] sm:text-[13.5px]">
                     {bt.step3Subtitle}
                   </p>
-                  <p className="mt-2 text-xs font-medium text-[var(--green)]">{bt.step3Highlight}</p>
+                  <p className="mt-2 text-xs font-medium text-[var(--green)] break-words">{bt.step3Highlight}</p>
                 </div>
                 {calendlyPageUrl ? (
-                  <div className="mt-8 overflow-hidden rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+                  <div className="mt-6 min-w-0 overflow-x-clip rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] sm:mt-8">
                     <CalendlyInlineEmbed
                       url={calendlyPageUrl}
                       title={bt.calendlyTitle.replace("{name}", displayName)}
-                      className="min-h-[720px] w-full min-w-[280px] rounded-none border-0 bg-white"
+                      className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[720px]"
                     />
                   </div>
                 ) : null}
-                <div className="mt-8 text-center">
+                <div className="mt-6 text-center sm:mt-8">
                   <Link
                     href="/student/advisor-sessions"
-                    className="mx-auto inline-flex max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-8 py-3.5 text-sm font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
+                    className="mx-auto inline-flex w-full max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-6 py-3 text-sm font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white sm:px-8 sm:py-3.5"
                   >
                     {bt.backToAdvisors}
                   </Link>
@@ -388,36 +396,36 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
             ) : null}
           </div>
 
-          <aside className="w-full shrink-0 lg:w-[288px] lg:min-w-[288px] lg:sticky lg:top-6">
-            <div className="rounded-2xl border border-[#EEF2EF] bg-[linear-gradient(180deg,var(--white)_0%,#FAFBFA_100%)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+          <aside className="w-full min-w-0 shrink-0 lg:w-[288px] lg:sticky lg:top-6">
+            <div className="rounded-2xl border border-[#EEF2EF] bg-[linear-gradient(180deg,var(--white)_0%,#FAFBFA_100%)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-5 md:p-6">
               <div className="text-sm font-bold text-[var(--text)]">{bt.summaryTitle}</div>
               <div className="mt-4 flex flex-col gap-3 text-[12.5px] text-[var(--text-mid)]">
-                <div className="flex items-center gap-2.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
+                <div className="flex items-start gap-2.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden>
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
-                  <span>{bt.withAdvisor.replace("{name}", displayName)}</span>
+                  <span className="min-w-0 break-words">{bt.withAdvisor.replace("{name}", displayName)}</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
+                <div className="flex items-start gap-2.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden>
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 6v6l4 2" />
                   </svg>
-                  <span>{bt.duration}</span>
+                  <span className="min-w-0 break-words">{bt.duration}</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
+                <div className="flex items-start gap-2.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden>
                     <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                     <path d="M22 4L12 14.01l-3-3" />
                   </svg>
-                  <span>{bt.personalizedGuidance}</span>
+                  <span className="min-w-0 break-words">{bt.personalizedGuidance}</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" aria-hidden>
+                <div className="flex items-start gap-2.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden>
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                   </svg>
-                  <span>{bt.qaFollowUp}</span>
+                  <span className="min-w-0 break-words">{bt.qaFollowUp}</span>
                 </div>
               </div>
               {advisor.title ? (
@@ -427,22 +435,22 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
               ) : null}
 
               <div className="mt-5 border-t border-[#E8ECE9] pt-5">
-                <div className="flex items-baseline justify-between gap-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 gap-y-1">
                   <span className="text-[13px] font-normal leading-none text-[#8a8a8a]">{bt.sessionCost}</span>
-                  <span className="font-[family-name:var(--font-dm-serif)] text-[22px] font-bold leading-none tracking-tight text-[var(--green)]">
+                  <span className="font-[family-name:var(--font-dm-serif)] text-[20px] font-bold leading-none tracking-tight text-[var(--green)] sm:text-[22px]">
                     {bt.oneCredit}
                   </span>
                 </div>
-                <div className="mt-4 flex gap-3 rounded-xl border border-[#c5dfc9] bg-[#ecf6ef] px-3.5 py-3.5">
+                <div className="mt-4 flex gap-3 rounded-xl border border-[#c5dfc9] bg-[#ecf6ef] px-3 py-3 sm:px-3.5 sm:py-3.5">
                   <div
-                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[1.5px] border-[var(--green)] bg-white/80"
+                    className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-[var(--green)] bg-white/80 sm:h-9 sm:w-9"
                     aria-hidden
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
                   </div>
-                  <div className="text-[13px] leading-snug text-[#3d5247]">
+                  <div className="min-w-0 text-[12px] leading-snug text-[#3d5247] sm:text-[13px]">
                     <p>{bt.coveredByCredits}</p>
                     <p className="mt-0.5">{bt.noExtraPayment}</p>
                   </div>

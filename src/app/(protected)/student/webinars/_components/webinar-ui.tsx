@@ -39,11 +39,11 @@ export function WebinarRegistrationProgress({
         <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[1px] text-[var(--text-hint)] font-[family-name:var(--font-dm-sans)]">
           {w.registrationLabel}
         </p>
-        <div className="mb-2 flex items-baseline justify-between">
-          <span className="font-[family-name:var(--font-dm-serif)] text-[28px] leading-none text-[var(--green)]">
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <span className="font-[family-name:var(--font-dm-serif)] text-[24px] leading-none text-[var(--green)] sm:text-[28px]">
             {registered}
           </span>
-          <span className="text-[13px] font-medium text-[var(--text-light)]">
+          <span className="text-[12px] font-medium text-[var(--text-light)] sm:text-[13px]">
             {w.seatsOf} {capacity} {w.seatsUnit}
           </span>
         </div>
@@ -62,7 +62,7 @@ export function WebinarRegistrationProgress({
 
   return (
     <>
-      <div className="mb-2 flex items-baseline justify-between text-[11.5px]">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-1 text-[11px] sm:text-[11.5px]">
         <span className="font-semibold text-[var(--text)]">
           {registered} / {capacity} {w.registeredOf}
         </span>

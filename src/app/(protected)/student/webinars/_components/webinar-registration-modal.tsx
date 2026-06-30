@@ -147,13 +147,13 @@ export function WebinarRegistrationModal({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[rgba(26,26,26,0.55)] p-5 backdrop-blur-[4px]"
+      className="fixed inset-0 z-[200] flex items-end justify-center overflow-y-auto bg-[rgba(26,26,26,0.55)] p-3 backdrop-blur-[4px] sm:items-center sm:p-5"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal
-        className={`relative w-full max-w-[480px] rounded-[20px] bg-white p-8 ${fontSans}`}
+        className={`relative my-auto w-full min-w-0 max-w-[480px] rounded-[16px] bg-white p-5 sm:rounded-[20px] sm:p-8 ${fontSans}`}
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -187,7 +187,7 @@ export function WebinarRegistrationModal({
             <p className={`mb-2 text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--green)] ${fontSans}`}>
               {w.registerForWebinar}
             </p>
-            <h3 className={`mb-3.5 ${fontSerif} text-[22px] leading-[1.2]`}>{webinar.title}</h3>
+            <h3 className={`mb-3.5 break-words ${fontSerif} text-[19px] leading-[1.2] sm:text-[22px]`}>{webinar.title}</h3>
             <div className="mb-[18px] flex flex-col gap-1.5 rounded-[11px] bg-[var(--sand)] p-3.5 text-[12.5px] leading-normal text-[var(--text-mid)]">
               <span>{formatWebinarDate(webinar.scheduledAt)}</span>
               <span>
@@ -216,7 +216,7 @@ export function WebinarRegistrationModal({
                     placeholder={w.fullNamePlaceholder}
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
+                    className="box-border w-full min-w-0 max-w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
                   />
                 </div>
                 <div>
@@ -235,7 +235,7 @@ export function WebinarRegistrationModal({
                     placeholder={w.emailPlaceholder}
                     required
                     disabled={isSubmitting}
-                    className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
+                    className="box-border w-full min-w-0 max-w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
                   />
                 </div>
                 <div>
@@ -254,7 +254,7 @@ export function WebinarRegistrationModal({
                     onChange={(e) => onGuestPhoneChange(e.target.value)}
                     placeholder={w.phonePlaceholder}
                     disabled={isSubmitting}
-                    className="w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
+                    className="box-border w-full min-w-0 max-w-full rounded-[10px] border border-[var(--border)] px-3.5 py-2.5 text-[13px] outline-none focus:border-[var(--green)]"
                   />
                 </div>
               </div>
