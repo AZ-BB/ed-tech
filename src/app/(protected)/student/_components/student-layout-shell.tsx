@@ -384,7 +384,7 @@ export function StudentLayoutShell({
       dir={portalDir}
       lang={locale}
     >
-      <div className="mx-auto w-full px-6 md:px-10 lg:px-16 pt-6 pb-16">
+      <div className="mx-auto w-full min-w-0 px-6 md:px-10 lg:px-16 pt-6 pb-16">
         {hideTopNav ? null : (
           <header
             dir="ltr"

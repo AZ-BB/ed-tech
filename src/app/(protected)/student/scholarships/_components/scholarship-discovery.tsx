@@ -290,9 +290,9 @@ export function ScholarshipDiscovery({
 
   if (pageData.totalCatalog === 0) {
     return (
-      <div className="mx-auto w-full px-2 pb-16 pt-0">
+      <div className="w-full min-w-0 max-w-full overflow-x-clip pb-16 pt-0">
         <header className="mb-8">
-          <h1 className="serif mb-1 text-[26px] font-bold text-[var(--text)]">
+          <h1 className="serif mb-1 text-[22px] font-bold text-[var(--text)] sm:text-[26px]">
             {t.title}
           </h1>
           <p className="text-[14px] text-[var(--text-light)]">{t.subtitle}</p>
@@ -303,9 +303,9 @@ export function ScholarshipDiscovery({
   }
 
   return (
-    <div className="mx-auto w-full px-2 pb-16 pt-0">
+    <div className="w-full min-w-0 max-w-full overflow-x-clip pb-16 pt-0">
       <header className="mb-6">
-        <h1 className="serif mb-1 text-[26px] font-bold text-[var(--text)]">
+        <h1 className="serif mb-1 text-[22px] font-bold text-[var(--text)] sm:text-[26px]">
           {t.title}
         </h1>
         <p className="text-[14px] text-[var(--text-light)]">{t.subtitle}</p>
@@ -334,7 +334,7 @@ export function ScholarshipDiscovery({
 
       {totalMatches > 0 ? (
         <>
-          <p className="mb-3 text-[12px] text-[var(--text-hint)]">
+          <p className="mb-3 break-words text-[12px] text-[var(--text-hint)]">
             {t.matchSummary
               .replace("{total}", String(totalMatches))
               .replace("{plural}", totalMatches === 1 ? "" : "s")
@@ -343,7 +343,7 @@ export function ScholarshipDiscovery({
           </p>
 
           <div
-            className="mb-4 flex gap-1 rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[#faf9f7] p-1"
+            className="mb-4 flex min-w-0 flex-col gap-1 rounded-[var(--radius-sm)] border border-[var(--border-light)] bg-[#faf9f7] p-1 sm:flex-row"
             role="tablist"
             aria-label={t.scholarshipType}
           >
@@ -351,7 +351,7 @@ export function ScholarshipDiscovery({
               type="button"
               role="tab"
               aria-selected={activeTab === "government"}
-              className={`min-w-0 flex-1 cursor-pointer rounded-[8px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+              className={`min-w-0 flex-1 cursor-pointer rounded-[8px] px-2.5 py-2 text-center text-[12px] font-medium transition-colors break-words sm:px-3 sm:text-left sm:text-[13px] ${
                 activeTab === "government"
                   ? "border border-[var(--green-dark)] bg-[var(--green-pale)] text-[var(--green-dark)] shadow-sm"
                   : "text-[var(--text-mid)] hover:text-[var(--text)]"
@@ -367,7 +367,7 @@ export function ScholarshipDiscovery({
               type="button"
               role="tab"
               aria-selected={activeTab === "other"}
-              className={`min-w-0 flex-1 cursor-pointer rounded-[8px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+              className={`min-w-0 flex-1 cursor-pointer rounded-[8px] px-2.5 py-2 text-center text-[12px] font-medium transition-colors break-words sm:px-3 sm:text-left sm:text-[13px] ${
                 activeTab === "other"
                   ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-200"
                   : "text-[var(--text-mid)] hover:text-[var(--text)]"
@@ -381,7 +381,7 @@ export function ScholarshipDiscovery({
             </button>
           </div>
 
-          <div className="relative">
+          <div className="relative min-w-0">
             {isPending && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/70">
                 <Loader2
@@ -401,7 +401,7 @@ export function ScholarshipDiscovery({
                     <button
                       type="button"
                       onClick={() => setTab("other")}
-                      className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] bg-[#faf9f7] px-4 py-3 text-[13px] text-[var(--text-mid)] transition-colors hover:border-[var(--border-dark)] hover:bg-[#f5f3ef] hover:text-[var(--text)]"
+                      className="mt-1 flex w-full min-w-0 cursor-pointer flex-wrap items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] bg-[#faf9f7] px-3 py-3 text-center text-[12px] text-[var(--text-mid)] transition-colors hover:border-[var(--border-dark)] hover:bg-[#f5f3ef] hover:text-[var(--text)] sm:px-4 sm:text-[13px]"
                     >
                       <svg
                         width="16"
@@ -458,7 +458,7 @@ export function ScholarshipDiscovery({
                         <button
                           type="button"
                           onClick={() => setTab("other")}
-                          className="mb-3 mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] bg-[#faf9f7] px-4 py-3 text-[13px] text-[var(--text-mid)] transition-colors hover:border-[var(--border-dark)] hover:bg-[#f5f3ef] hover:text-[var(--text)]"
+                          className="mb-3 mt-1 flex w-full min-w-0 cursor-pointer flex-wrap items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border)] bg-[#faf9f7] px-3 py-3 text-center text-[12px] text-[var(--text-mid)] transition-colors hover:border-[var(--border-dark)] hover:bg-[#f5f3ef] hover:text-[var(--text)] sm:px-4 sm:text-[13px]"
                         >
                           <svg
                             width="16"

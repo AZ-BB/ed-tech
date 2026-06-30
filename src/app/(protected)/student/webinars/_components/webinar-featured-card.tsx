@@ -8,6 +8,9 @@ import type { StudentWebinarCard } from "../_lib/fetch-student-webinars";
 import {
   fontSans,
   fontSerif,
+  sectionDescClass,
+  sectionEyebrowClass,
+  sectionTitleClass,
   webinarDetailHref,
   type WebinarPageMode,
 } from "./webinar-constants";
@@ -46,30 +49,28 @@ export function WebinarFeaturedCard({
   const titleContent = titleAsLink ? (
     <Link
       href={detailHref}
-      className={`${fontSerif} text-[30px] leading-[1.15] tracking-[-0.3px] transition hover:text-[var(--green)]`}
+      className={`${fontSerif} text-[22px] leading-[1.15] tracking-[-0.3px] break-words transition hover:text-[var(--green)] sm:text-[26px] md:text-[30px]`}
     >
       {webinar.title}
     </Link>
   ) : (
-    <h3 className={`${fontSerif} text-[30px] leading-[1.15] tracking-[-0.3px]`}>{webinar.title}</h3>
+    <h3 className={`${fontSerif} text-[22px] leading-[1.15] tracking-[-0.3px] break-words sm:text-[26px] md:text-[30px]`}>{webinar.title}</h3>
   );
 
   return (
-    <section className="mb-[60px]">
-      <p
-        className={`mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--green)] before:h-[1.5px] before:w-6 before:bg-[var(--green)] ${fontSans}`}
-      >
+    <section className="mb-10 min-w-0 md:mb-[60px]">
+      <p className={sectionEyebrowClass}>
         {sectionLabel ?? w.featuredSectionLabel}
       </p>
-      <h2 className={`mb-2 ${fontSerif} text-[32px] leading-[1.15] tracking-[-0.3px]`}>
+      <h2 className={sectionTitleClass}>
         {sectionTitle ?? w.featuredSectionTitle}
       </h2>
-      <p className="mb-7 max-w-[640px] text-[14.5px] leading-[1.55] text-[var(--text-light)]">
+      <p className={sectionDescClass}>
         {sectionDescription ?? w.featuredSectionDescription}
       </p>
 
-      <div className="grid overflow-hidden rounded-[24px] border border-[var(--border-light)] bg-white lg:grid-cols-[1.4fr_1fr]">
-        <div className="flex flex-col gap-[18px] p-9 max-[600px]:p-6">
+      <div className="grid min-w-0 overflow-x-clip rounded-[20px] border border-[var(--border-light)] bg-white sm:rounded-[24px] lg:grid-cols-[1.4fr_1fr]">
+        <div className="flex min-w-0 flex-col gap-4 p-5 sm:gap-[18px] sm:p-7 md:p-9">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <span
               className={`inline-flex items-center gap-2 rounded-full bg-[var(--amber-bg)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-[var(--amber)] ${fontSans}`}
@@ -80,26 +81,26 @@ export function WebinarFeaturedCard({
             <WebinarTags tags={webinar.tags} />
           </div>
           {titleContent}
-          <div className="flex flex-wrap gap-6 border-y border-[var(--border-light)] py-3.5 text-[13px] font-medium leading-none text-[var(--text-mid)]">
-            <span>{formatWebinarDate(webinar.scheduledAt)}</span>
-            <span>
+          <div className="flex min-w-0 flex-wrap gap-3 border-y border-[var(--border-light)] py-3.5 text-[12px] font-medium leading-snug text-[var(--text-mid)] sm:gap-6 sm:text-[13px]">
+            <span className="shrink-0">{formatWebinarDate(webinar.scheduledAt)}</span>
+            <span className="min-w-0 break-words">
               {formatWebinarTime(webinar.scheduledAt)} {webinar.timezoneLabel}
             </span>
-            <span>{webinar.format}</span>
+            <span className="min-w-0 break-words">{webinar.format}</span>
           </div>
-          <p className="text-[14px] leading-[1.6] text-[var(--text-mid)]">{webinar.description}</p>
-          <div className="flex items-center gap-3.5 rounded-[14px] bg-[var(--sand)] p-3.5">
+          <p className="text-[13.5px] leading-[1.6] text-[var(--text-mid)] break-words sm:text-[14px]">{webinar.description}</p>
+          <div className="flex min-w-0 items-start gap-3.5 rounded-[14px] bg-[var(--sand)] p-3.5">
             <WebinarSpeakerAvatar webinar={webinar} size="featured" />
-            <div>
-              <p className="text-[14.5px] font-bold leading-[1.2]">{webinar.speakerName}</p>
-              <p className="mt-0.5 text-[12.5px] leading-[1.3] text-[var(--text-light)]">{webinar.speakerTitle}</p>
+            <div className="min-w-0">
+              <p className="text-[14px] font-bold leading-[1.2] break-words sm:text-[14.5px]">{webinar.speakerName}</p>
+              <p className="mt-0.5 text-[12px] leading-[1.3] text-[var(--text-light)] break-words sm:text-[12.5px]">{webinar.speakerTitle}</p>
               {webinar.speakerBio ? (
-                <p className="mt-1.5 text-[12.5px] leading-[1.5] text-[var(--text-mid)]">{webinar.speakerBio}</p>
+                <p className="mt-1.5 text-[12px] leading-[1.5] text-[var(--text-mid)] break-words sm:text-[12.5px]">{webinar.speakerBio}</p>
               ) : null}
             </div>
           </div>
         </div>
-        <div className="flex flex-col justify-center gap-6 bg-gradient-to-br from-[var(--green-pale)] to-[var(--green-bg)] p-9 max-[600px]:p-6">
+        <div className="flex min-w-0 flex-col justify-center gap-5 bg-gradient-to-br from-[var(--green-pale)] to-[var(--green-bg)] p-5 sm:gap-6 sm:p-7 md:p-9">
           <WebinarRegistrationProgress
             registered={webinar.registeredCount}
             capacity={webinar.maxStudents}
@@ -155,9 +156,9 @@ export function WebinarGridCard({
   const w = dict.webinars;
   const detailHref = webinarDetailHref(webinar.id, mode, locale);
   return (
-    <article className="flex flex-col gap-3.5 rounded-[18px] border border-[var(--border-light)] bg-white p-6 transition hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+    <article className="flex min-w-0 flex-col gap-3.5 rounded-[18px] border border-[var(--border-light)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-6">
       <WebinarTags tags={webinar.tags} />
-      <h3 className={`${fontSerif} text-[20px] leading-[1.2] tracking-[-0.2px]`}>
+      <h3 className={`${fontSerif} text-[18px] leading-[1.2] tracking-[-0.2px] break-words sm:text-[20px]`}>
         <Link
           href={detailHref}
           className="transition hover:text-[var(--green)]"
@@ -165,18 +166,18 @@ export function WebinarGridCard({
           {webinar.title}
         </Link>
       </h3>
-      <div className="flex flex-wrap gap-3.5 text-[12.5px] text-[var(--text-light)]">
-        <span>{formatWebinarDate(webinar.scheduledAt)}</span>
-        <span>
+      <div className="flex min-w-0 flex-wrap gap-2.5 text-[12px] text-[var(--text-light)] sm:gap-3.5 sm:text-[12.5px]">
+        <span className="shrink-0">{formatWebinarDate(webinar.scheduledAt)}</span>
+        <span className="min-w-0 break-words">
           {formatWebinarTime(webinar.scheduledAt)} {webinar.timezoneLabel}
         </span>
       </div>
-      <p className="text-[13.5px] leading-[1.55] text-[var(--text-mid)]">{webinar.description}</p>
-      <div className="flex items-center gap-2.5 rounded-[11px] bg-[var(--sand)] p-3">
+      <p className="text-[13px] leading-[1.55] text-[var(--text-mid)] break-words sm:text-[13.5px]">{webinar.description}</p>
+      <div className="flex min-w-0 items-center gap-2.5 rounded-[11px] bg-[var(--sand)] p-3">
         <WebinarSpeakerAvatar webinar={webinar} size="card" />
-        <div>
-          <p className="text-[13px] font-bold leading-[1.2]">{webinar.speakerName}</p>
-          <p className="mt-0.5 text-[11.5px] leading-[1.2] text-[var(--text-light)]">{webinar.speakerTitle}</p>
+        <div className="min-w-0">
+          <p className="text-[12.5px] font-bold leading-[1.2] break-words sm:text-[13px]">{webinar.speakerName}</p>
+          <p className="mt-0.5 text-[11px] leading-[1.2] text-[var(--text-light)] break-words sm:text-[11.5px]">{webinar.speakerTitle}</p>
         </div>
       </div>
       <div>
@@ -217,7 +218,7 @@ export function WebinarGridCard({
 
 export function WebinarPageShell({ children }: { children: ReactNode }) {
   return (
-    <div className={`mx-auto max-w-[1180px] pb-20 pt-6 ${fontSans} antialiased text-[var(--text)]`}>
+    <div className={`mx-auto w-full min-w-0 max-w-[1180px] overflow-x-clip pb-12 pt-2 sm:pb-16 sm:pt-4 md:pb-20 md:pt-6 ${fontSans} antialiased text-[var(--text)]`}>
       {children}
     </div>
   );

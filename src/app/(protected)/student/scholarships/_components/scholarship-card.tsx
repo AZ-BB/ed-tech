@@ -37,14 +37,14 @@ export function ScholarshipCard({
           onOpenDetail();
         }
       }}
-      className="scholarship-card-ltr relative w-full cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-5 text-left transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:px-[22px]"
+      className="scholarship-card-ltr relative w-full min-w-0 max-w-full cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-4 text-left transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:p-5 sm:px-[22px]"
       dir="ltr"
     >
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-[var(--text)]">
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-[var(--text)] break-words">
           {s.name}
         </div>
-        <span className={cardBadgeClass(s.badgeClass)}>{s.type}</span>
+        <span className={clsx(cardBadgeClass(s.badgeClass), "shrink-0")}>{s.type}</span>
       </div>
       <div className="mb-2.5 flex items-center gap-1.5 text-[12px] text-[var(--text-light)]">
         <span
@@ -58,33 +58,33 @@ export function ScholarshipCard({
       <p className="mb-3.5 line-clamp-2 text-[12.5px] leading-normal text-[var(--text-mid)]">
         {s.shortSummary}
       </p>
-      <div className="mb-3.5 flex border-y border-[var(--border-light)]">
-        <div className="flex-1 border-r border-[var(--border-light)] py-2.5 text-center last:border-r-0">
+      <div className="mb-3.5 flex min-w-0 border-y border-[var(--border-light)]">
+        <div className="min-w-0 flex-1 border-r border-[var(--border-light)] px-1 py-2.5 text-center last:border-r-0">
           <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
             {t.coverage}
           </div>
-          <div className={clsx("text-[12px] font-semibold text-[var(--text)]", covClass)}>
+          <div className={clsx("text-[11px] font-semibold leading-snug text-[var(--text)] break-words sm:text-[12px]", covClass)}>
             {s.coverageLabel}
           </div>
         </div>
-        <div className="flex-1 border-r border-[var(--border-light)] py-2.5 text-center last:border-r-0">
+        <div className="min-w-0 flex-1 border-r border-[var(--border-light)] px-1 py-2.5 text-center last:border-r-0">
           <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
             {t.deadline}
           </div>
-          <div className="text-[12px] font-semibold text-[var(--text)]">
+          <div className="text-[11px] font-semibold leading-snug text-[var(--text)] break-words sm:text-[12px]">
             {s.deadline}
           </div>
         </div>
-        <div className="flex-1 py-2.5 text-center">
+        <div className="min-w-0 flex-1 px-1 py-2.5 text-center">
           <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-hint)]">
             {t.eligibility}
           </div>
-          <div className="text-[12px] font-semibold text-[var(--text)]">
+          <div className="line-clamp-2 text-[11px] font-semibold leading-snug text-[var(--text)] sm:text-[12px]">
             {s.eligSummary}
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <button
           type="button"
           className="flex cursor-pointer h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-white transition-colors hover:border-[var(--green-bg)] hover:bg-[var(--green-bg)]"
@@ -106,7 +106,7 @@ export function ScholarshipCard({
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
           </svg>
         </button>
-        <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-[18px] py-2 text-[12px] font-semibold text-white">
+        <span className="inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--green)] px-4 py-2 text-[12px] font-semibold text-white sm:w-auto sm:px-[18px]">
           {t.viewDetails}
           <ArrowForwardIcon size={12} />
         </span>

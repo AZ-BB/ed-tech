@@ -36,8 +36,8 @@ export function ScholarshipCategorySection({
   if (scholarships.length === 0 && !footer) return null;
 
   return (
-    <section className="mb-7">
-      <div className="mb-3.5 flex items-center gap-3">
+    <section className="mb-7 min-w-0">
+      <div className="mb-3.5 flex flex-wrap items-start gap-3">
         <div
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${iconWrapClass}`}
         >
@@ -54,7 +54,7 @@ export function ScholarshipCategorySection({
         ) : null}
       </div>
       {scholarships.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-3.5 md:grid-cols-2">
           {scholarships.map((s) => (
             <ScholarshipCard
               key={s.id}

@@ -1,27 +1,45 @@
 /* Scoped styles ported from application_support_18.html */
 
+#application-support-scope {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#application-support-scope:not(.as-has-page-orb) {
+  overflow-x: clip;
+}
+
+/* Decorative orb — page-level, not clipped by the hero */
+#application-support-scope .as-page-orb {
+  position: fixed;
+  top: 5.5rem;
+  right: 0;
+  z-index: 0;
+  width: min(560px, 88vw);
+  height: min(560px, 88vw);
+  border-radius: 50%;
+  background: rgba(45, 106, 79, 0.06);
+  pointer-events: none;
+  transform: translate(28%, -18%);
+}
+
+#application-support-scope.as-has-page-orb > :not(.as-page-orb) {
+  position: relative;
+  z-index: 1;
+}
+
 #application-support-scope .as-hero {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  /* Extend behind the shell header so green + top-right orb reach the page top */
+  position: relative;
+  box-sizing: border-box;
+  background: transparent;
+  /* Vertical bleed behind shell header — horizontal bleed via -mx-* on the section */
   margin-top: calc(-1 * (1.5rem + 4.25rem + 1.25rem));
   padding-top: calc(5rem + 1.5rem + 4.25rem + 1.25rem);
 }
 
-#application-support-scope .as-hero::before {
-  content: "";
-  position: absolute;
-  top: -200px;
-  right: -150px;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: rgba(45, 106, 79, 0.06);
-  pointer-events: none;
-}
-
 #application-support-scope .as-hero-inner {
+  width: 100%;
+  min-width: 0;
   max-width: 1140px;
   margin: 0 auto;
   display: grid;
@@ -30,6 +48,16 @@
   align-items: center;
   position: relative;
   z-index: 1;
+}
+
+#application-support-scope .as-hero-copy {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#application-support-scope .as-hero-visual {
+  min-width: 0;
+  max-width: 100%;
 }
 
 #application-support-scope .as-hero-card {
@@ -229,15 +257,6 @@ html[dir="rtl"] #application-support-scope .as-journey-step:hover,
   transform: translateY(-2px);
 }
 
-#application-support-scope select.as-select {
-  appearance: none;
-  background-color: var(--white);
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: end 14px center;
-  padding-inline-end: 36px;
-}
-
 #application-support-scope .as-chip-grid {
   display: flex;
   flex-wrap: wrap;
@@ -333,7 +352,7 @@ html[dir="rtl"] #application-support-scope .as-journey-step:hover,
 
 #application-support-scope .as-tag-input {
   flex: 1;
-  min-width: 160px;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
@@ -716,37 +735,94 @@ html[dir="rtl"] #application-support-scope .as-journey-step:hover,
 }
 
 @media (max-width: 768px) {
+  #application-support-scope .as-page-orb {
+    top: 4.75rem;
+    width: min(380px, 82vw);
+    height: min(380px, 82vw);
+    transform: translate(22%, -12%);
+  }
+
   #application-support-scope .as-hero {
-    padding-top: calc(3.75rem + 1.5rem + 4.25rem + 1.25rem);
+    margin-top: calc(-1 * (1.5rem + 4.25rem + 1.25rem));
+    padding-top: calc(3.5rem + 1.5rem + 4.25rem + 1.25rem);
   }
 
   #application-support-scope .as-hero-inner {
     grid-template-columns: 1fr;
-    gap: 36px;
+    gap: 24px;
+  }
+
+  #application-support-scope .as-hero-card {
+    padding: 18px 16px;
+  }
+
+  #application-support-scope .as-hr-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px 10px;
+    padding: 10px 0;
+  }
+
+  #application-support-scope .as-hr-row > .as-hr-stage {
+    width: 100%;
+    padding-inline-start: 45px;
+    text-align: start;
+    white-space: normal;
   }
 
   #application-support-scope .as-value-section {
-    padding: 50px 20px 30px;
+    padding: 40px 16px 24px;
   }
 
   #application-support-scope .as-journey-section {
-    padding: 32px 20px 20px;
+    padding: 28px 16px 16px;
   }
 
   #application-support-scope .as-journey-title {
-    font-size: 26px;
+    font-size: 24px;
+  }
+
+  #application-support-scope .as-journey-step {
+    padding: 12px 14px;
+    gap: 14px;
+  }
+
+  #application-support-scope .as-journey-text {
+    font-size: 13.5px;
   }
 
   #application-support-scope .as-clarity-banner {
-    margin: 24px 20px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 20px 0 0;
+    padding: 16px 18px;
+    gap: 12px;
+  }
+
+  #application-support-scope .as-clarity-text {
+    font-size: 13px;
   }
 
   #application-support-scope .as-cta-section {
-    padding: 12px 20px 32px;
+    padding: 12px 16px 28px;
+  }
+
+  #application-support-scope .as-cta-box {
+    padding: 28px 20px;
+  }
+
+  #application-support-scope .as-chip {
+    padding: 8px 14px;
+    font-size: 12.5px;
+  }
+
+  #application-support-scope .as-opt-card {
+    padding: 14px 16px;
+    gap: 12px;
   }
 
   #application-support-scope .as-included-compact-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   #application-support-scope .as-summary-grid {
@@ -754,26 +830,35 @@ html[dir="rtl"] #application-support-scope .as-journey-step:hover,
   }
 
   #application-support-scope .as-summary-headline {
-    font-size: 24px;
+    font-size: 22px;
+  }
+
+  #application-support-scope .as-summary-block {
+    padding: 14px 16px;
   }
 
   #application-support-scope .as-pay-layout {
     grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  #application-support-scope .as-pay-summary {
+    position: static;
   }
 
   #application-support-scope .as-calendly-wrap {
-    padding: 0 8px;
+    padding: 0 12px;
   }
 
   #application-support-scope .as-calendly-embed-box {
-    min-height: 1000px;
+    min-height: 560px;
   }
 
   #application-support-scope .as-advisor-await {
     flex-direction: column;
     text-align: center;
     gap: 12px;
-    padding: 20px 22px;
+    padding: 18px 16px;
   }
 
   #application-support-scope .as-btn-cta-hero {
@@ -784,7 +869,31 @@ html[dir="rtl"] #application-support-scope .as-journey-step:hover,
   }
 }
 
+@media (min-width: 769px) and (max-width: 1024px) {
+  #application-support-scope .as-value-section {
+    padding: 56px 24px 32px;
+  }
+
+  #application-support-scope .as-included-compact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 html[dir="rtl"] #application-support-scope .as-hr-bar,
 .student-portal[dir="rtl"] #application-support-scope .as-hr-bar {
   direction: rtl;
+}
+
+html[dir="rtl"] #application-support-scope .as-page-orb,
+.student-portal[dir="rtl"] #application-support-scope .as-page-orb {
+  right: auto;
+  left: 0;
+  transform: translate(-28%, -18%);
+}
+
+@media (max-width: 768px) {
+  html[dir="rtl"] #application-support-scope .as-page-orb,
+  .student-portal[dir="rtl"] #application-support-scope .as-page-orb {
+    transform: translate(-22%, -12%);
+  }
 }

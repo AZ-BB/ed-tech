@@ -44,7 +44,7 @@ export function WebinarDetailClient({ initialWebinar, mode = "student" }: Webina
     <WebinarPageShell>
       <Link
         href={webinarsListHref(mode, locale)}
-        className={`mb-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text-mid)] transition hover:text-[var(--green)] ${fontSans}`}
+        className={`mb-5 inline-flex max-w-full items-center gap-1.5 text-[12px] font-semibold text-[var(--text-mid)] transition hover:text-[var(--green)] sm:mb-6 sm:text-[13px] ${fontSans}`}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="icon-directional" aria-hidden>
           <path d="M19 12H5M12 19l-7-7 7-7" />

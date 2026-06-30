@@ -31,6 +31,13 @@ export const TOPIC_ICONS = [MapPin, FileText, DollarSign, Clock, Users, Trending
 export const fontSans = "font-[family-name:var(--font-dm-sans)]";
 export const fontSerif = "font-[family-name:var(--font-dm-serif)]";
 
+export const sectionEyebrowClass = `mb-2 flex min-w-0 items-center gap-2 text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--green)] before:h-[1.5px] before:w-6 before:shrink-0 before:bg-[var(--green)] ${fontSans}`;
+
+export const sectionTitleClass = `mb-2 break-words ${fontSerif} text-[24px] leading-[1.15] tracking-[-0.3px] sm:text-[28px] md:text-[32px]`;
+
+export const sectionDescClass =
+  "mb-6 max-w-[640px] break-words text-[14px] leading-[1.55] text-[var(--text-light)] sm:mb-7 sm:text-[14.5px]";
+
 import { localizePath, type Locale } from "@/lib/i18n/config";
 
 export type WebinarPageMode = "student" | "public";

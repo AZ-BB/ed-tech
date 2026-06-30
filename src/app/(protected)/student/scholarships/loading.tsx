@@ -2,14 +2,14 @@ import { Loader2 } from "lucide-react";
 
 export default function ScholarshipsLoading() {
   return (
-    <div className="mx-auto w-full px-2 pb-16 pt-0">
+    <div className="w-full min-w-0 max-w-full overflow-x-clip pb-16 pt-0">
       <header className="mb-6">
         <div className="mb-1 h-[30px] w-52 animate-pulse rounded bg-[var(--sand)]" />
         <div className="h-4 w-80 animate-pulse rounded bg-[var(--sand)]" />
       </header>
 
-      <div className="mb-5 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-[18px]">
-        <div className="flex flex-wrap items-center gap-2.5">
+      <div className="mb-5 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-4 py-4 md:px-6 md:py-[18px]">
+        <div className="flex flex-col gap-2.5 md:flex-row md:flex-wrap md:items-center">
           <div className="h-5 w-12 animate-pulse rounded bg-[var(--sand)]" />
           <div className="h-10 w-[160px] animate-pulse rounded-[var(--radius-pill)] bg-[var(--sand)]" />
           <div className="h-5 w-24 animate-pulse rounded bg-[var(--sand)]" />
@@ -29,7 +29,7 @@ export default function ScholarshipsLoading() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-3.5 md:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}

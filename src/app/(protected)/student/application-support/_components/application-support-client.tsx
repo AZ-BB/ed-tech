@@ -155,6 +155,26 @@ const HERO_TRACKER_META = [
   { pct: 0, kind: "up" as const },
 ];
 
+const inputClass =
+  "box-border w-full min-w-0 max-w-full rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]";
+
+const formShellClass =
+  "mx-auto w-full min-w-0 max-w-[760px] overflow-x-clip px-0 py-3 sm:py-4";
+
+const formWideShellClass =
+  "mx-auto w-full min-w-0 max-w-[1000px] overflow-x-clip px-0 py-3 sm:py-4";
+
+const formCardClass =
+  "rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-4 py-5 sm:px-6 sm:py-6";
+
+const formGridClass = "grid min-w-0 grid-cols-1 gap-3.5 md:grid-cols-2";
+
+const selectWrapClass = "relative w-full min-w-0";
+
+const selectClass = `${inputClass} appearance-none pe-9 cursor-pointer`;
+
+const selectClassLtr = `${selectClass} bidi-ltr`;
+
 function ChevronRight({ className }: { className?: string }) {
   return (
     <svg
@@ -168,6 +188,29 @@ function ChevronRight({ className }: { className?: string }) {
       aria-hidden
     >
       <path d="M5 12h14M13 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+function SelectChevron({ className }: { className?: string }) {
+  return (
+    <svg
+      className={clsx(
+        "pointer-events-none absolute top-1/2 -translate-y-1/2",
+        className,
+      )}
+      width="10"
+      height="6"
+      viewBox="0 0 10 6"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M1 1l4 4 4-4"
+        stroke="#7a7a7a"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -191,15 +234,15 @@ function ProgressTracker({
   };
   const p = { pct: pctMap[step], ...steps[step] };
   return (
-    <div className="mb-[18px] rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-[22px] py-4">
+    <div className="mb-4 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-3.5 py-3 sm:px-4 sm:py-3.5">
       <div className="mb-2.5 h-1.5 overflow-hidden rounded bg-[var(--border-light)]">
         <div
           className="h-full rounded bg-[var(--green)] transition-[width] duration-300 ease-out"
           style={{ width: `${p.pct}%` }}
         />
       </div>
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] font-semibold text-[var(--text-mid)]">
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <span className="min-w-0 text-[12.5px] font-semibold text-[var(--text-mid)] sm:text-[13px]">
           {p.label}
         </span>
         <span className="text-xs font-medium text-[var(--text-hint)]">
@@ -441,17 +484,17 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
   ]);
 
   const sectionLabel = (children: ReactNode) => (
-    <div className="mb-3.5 mt-7 border-t border-[var(--border-light)] pt-5 text-[11px] font-bold uppercase tracking-wide text-[var(--green)] first:mt-0 first:border-t-0 first:pt-0">
+    <div className="mb-3.5 mt-5 border-t border-[var(--border-light)] pt-4 text-[11px] font-bold uppercase tracking-wide text-[var(--green)] first:mt-0 first:border-t-0 first:pt-0">
       {children}
     </div>
   );
 
   const formNav = (back: () => void, next: () => void, nextDisabled?: boolean) => (
-    <div className="mt-8 flex items-center justify-between border-t border-[var(--border-light)] pt-5">
+    <div className="mt-6 flex flex-col-reverse items-stretch gap-3 border-t border-[var(--border-light)] pt-4 sm:flex-row sm:items-center sm:justify-between sm:pt-5">
       <button
         type="button"
         onClick={back}
-        className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)] transition-colors hover:border-[var(--text-mid)] hover:text-[var(--text)]"
+        className="w-full cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)] transition-colors hover:border-[var(--text-mid)] hover:text-[var(--text)] sm:w-auto"
       >
         {as.back}
       </button>
@@ -459,7 +502,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
         type="button"
         disabled={nextDisabled}
         onClick={next}
-        className={`inline-flex items-center gap-2 rounded-[var(--radius-pill)] px-7 py-2.5 text-[13px] font-semibold transition-colors ${
+        className={`inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] px-7 py-2.5 text-[13px] font-semibold transition-colors sm:w-auto ${
           nextDisabled
             ? "cursor-not-allowed bg-[var(--border)] text-[var(--text-hint)]"
             : "cursor-pointer bg-[var(--green)] text-white hover:bg-[var(--green-dark)]"
@@ -472,11 +515,14 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
   );
 
   return (
-    <div id="application-support-scope" className="pb-16 font-[family-name:var(--font-dm-sans)]">
+    <div
+      id="application-support-scope"
+      className={`min-w-0 max-w-full pb-16 font-[family-name:var(--font-dm-sans)]${step === "landing" ? " as-has-page-orb" : " overflow-x-clip"}`}
+    >
       {toast ? (
         <div
           role="status"
-          className="fixed bottom-8 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-[var(--green-dark)] px-6 py-2.5 text-[12.5px] font-medium text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
+          className="fixed inset-x-4 bottom-6 z-[1000] mx-auto max-w-md rounded-full bg-[var(--green-dark)] px-5 py-2.5 text-center text-[12px] font-medium text-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] sm:inset-x-auto sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2 sm:px-6 sm:text-[12.5px]"
         >
           {toast}
         </div>
@@ -484,41 +530,42 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
       {step === "landing" ? (
         <>
-          <section className="as-hero relative overflow-x-hidden bg-[var(--green-pale)] px-10 pb-20 pt-20 max-[768px]:px-5 max-[768px]:pb-[60px]">
+          <div className="as-page-orb" aria-hidden />
+          <section className="as-hero relative -mx-6 px-6 pb-12 sm:pb-14 md:-mx-10 md:px-10 md:pb-16 lg:-mx-16 lg:px-16 lg:pb-20">
             <div className="as-hero-inner">
-              <div className="max-[768px]:text-center">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[rgba(45,106,79,0.12)] bg-white px-[18px] py-1.5 text-xs font-semibold text-[var(--green)]">
+              <div className="as-hero-copy text-center md:text-start">
+                <div className="mb-4 inline-flex max-w-full items-center gap-2 rounded-[var(--radius-pill)] border border-[rgba(45,106,79,0.12)] bg-white px-3.5 py-1.5 text-[10.5px] font-semibold text-[var(--green)] sm:mb-5 sm:px-4 sm:text-[11px] md:mb-6 md:px-[18px] md:text-xs">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                     <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                     <path d="M22 4L12 14.01l-3-3" />
                   </svg>
                   {as.landing.badge}
                 </div>
-                <h1 className="mb-[18px] font-[family-name:var(--font-dm-serif)] text-[48px] leading-[1.1] text-[var(--text)] max-[768px]:text-[34px]">
+                <h1 className="mb-3 break-words font-[family-name:var(--font-dm-serif)] text-[24px] leading-[1.15] text-[var(--text)] sm:mb-4 sm:text-[28px] md:mb-[18px] md:text-[34px] lg:text-[42px] xl:text-[48px]">
                   {as.landing.title}{" "}
                   <em className="italic text-[var(--green)]">{as.landing.titleEmphasis}</em>
                 </h1>
-                <p className="max-w-[480px] text-[17px] leading-[1.7] text-[var(--text-light)] max-[768px]:mx-auto">
+                <p className="mx-auto max-w-[480px] text-[14px] leading-[1.65] text-[var(--text-light)] break-words [overflow-wrap:anywhere] sm:text-[15px] md:mx-0 md:text-[17px]">
                   {as.landing.subtitle}
                 </p>
-                <div className="mt-7 flex flex-wrap items-center gap-[18px] max-[768px]:justify-center">
+                <div className="mt-5 flex w-full min-w-0 flex-col items-stretch gap-2.5 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 md:mt-7 md:justify-start md:gap-[18px]">
                   <button
                     type="button"
                     onClick={() => goToStep("basic")}
-                    className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
+                    className="inline-flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)] sm:w-auto sm:px-7 sm:text-sm md:px-8 md:py-3.5"
                   >
                     {as.landing.cta}
                     <ChevronRight />
                   </button>
-                  <span className="text-xs text-[var(--text-hint)]">{as.landing.ctaTime}</span>
+                  <span className="text-center text-[11px] text-[var(--text-hint)] sm:text-xs">{as.landing.ctaTime}</span>
                 </div>
               </div>
 
-              <div className="as-hero-visual max-[768px]:hidden">
-                <div className="as-hero-card">
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <div className="text-sm font-bold text-[var(--text)]">{as.landing.journeyTitle}</div>
-                    <div className="rounded-[var(--radius-pill)] bg-[var(--green-bg)] px-2.5 py-1 text-[10.5px] font-bold tracking-wide text-[var(--green)]">
+              <div className="as-hero-visual">
+                <div className="as-hero-card min-w-0">
+                  <div className="mb-1.5 flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0 text-sm font-bold text-[var(--text)]">{as.landing.journeyTitle}</div>
+                    <div className="shrink-0 rounded-[var(--radius-pill)] bg-[var(--green-bg)] px-2.5 py-1 text-[10px] font-bold tracking-wide text-[var(--green)] sm:text-[10.5px]">
                       {as.landing.onTrack}
                     </div>
                   </div>
@@ -544,13 +591,13 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="mb-1.5 text-[13px] font-semibold text-[var(--text)]">{row.label}</div>
+                        <div className="mb-1.5 text-[12.5px] font-semibold leading-snug text-[var(--text)] break-words sm:text-[13px]">{row.label}</div>
                         <div className="as-hr-bar">
                           <span style={{ width: `${row.pct}%` }} />
                         </div>
                       </div>
                       <div
-                        className={`shrink-0 whitespace-nowrap text-[10.5px] font-bold tracking-wide ${
+                        className={`as-hr-stage shrink-0 text-end text-[10px] font-bold tracking-wide sm:text-[10.5px] ${
                           row.kind === "done"
                             ? "text-[var(--green)]"
                             : row.kind === "prog"
@@ -571,31 +618,31 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             <div className="text-xs font-bold uppercase tracking-[1.5px] text-[var(--green)]">
               {as.landing.includedLabel}
             </div>
-            <h2 className="mb-2.5 mt-3 font-[family-name:var(--font-dm-serif)] text-4xl leading-[1.15] text-[var(--text)] max-[768px]:text-center max-[768px]:text-[26px]">
+            <h2 className="mb-2.5 mt-3 break-words text-center font-[family-name:var(--font-dm-serif)] text-[26px] leading-[1.15] text-[var(--text)] md:text-start md:text-4xl">
               {as.landing.includedTitle}
             </h2>
-            <p className="mb-10 text-[15px] text-[var(--text-light)] max-[768px]:text-center">
+            <p className="mb-8 text-[14px] text-[var(--text-light)] break-words text-center md:mb-10 md:text-center md:text-[15px]">
               {as.landing.includedSub}
             </p>
-            <div className="mb-10 grid grid-cols-3 gap-4 max-[768px]:grid-cols-1">
+            <div className="mb-8 grid min-w-0 grid-cols-1 gap-4 md:mb-10 md:grid-cols-2 lg:grid-cols-3">
               {valueCards.map((c) => (
                 <div
                   key={c.title}
-                  className="flex flex-col items-start rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white p-7 text-start transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
+                  className="flex min-w-0 flex-col items-start rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white p-5 text-start transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] sm:p-7"
                 >
                   <div className={`mb-[18px] flex h-11 w-11 items-center justify-center rounded-xl ${c.tint}`}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.stroke} strokeWidth="1.8" aria-hidden>
                       {c.icon}
                     </svg>
                   </div>
-                  <h3 className="mb-2 text-base font-bold text-[var(--text)]">{c.title}</h3>
-                  <p className="text-[13.5px] leading-snug text-[var(--text-light)]">{c.desc}</p>
+                  <h3 className="mb-2 text-[15px] font-bold text-[var(--text)] break-words sm:text-base">{c.title}</h3>
+                  <p className="text-[13px] leading-snug text-[var(--text-light)] break-words sm:text-[13.5px]">{c.desc}</p>
                 </div>
               ))}
             </div>
-            <div className="flex flex-wrap justify-center gap-8 py-5">
+            <div className="flex flex-col flex-wrap items-center justify-center gap-4 py-4 sm:flex-row sm:gap-8 sm:py-5">
               {as.landing.trustItems.map((item) => (
-                <div key={item} className="flex items-center gap-2 text-[13px] font-medium text-[var(--text-light)]">
+                <div key={item} className="flex max-w-full items-center gap-2 text-center text-[12.5px] font-medium text-[var(--text-light)] sm:text-[13px]">
                   <span className="h-[7px] w-[7px] rounded-full bg-[var(--green-bright)]" />
                   {item}
                 </div>
@@ -631,16 +678,16 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
           <div className="as-cta-section">
             <div className="as-cta-box">
-              <h3 className="mb-3 font-[family-name:var(--font-dm-serif)] text-[30px] leading-[1.2] text-[var(--text)] max-[768px]:text-2xl">
+              <h3 className="mb-3 break-words font-[family-name:var(--font-dm-serif)] text-2xl leading-[1.2] text-[var(--text)] sm:text-[30px]">
                 {as.landing.ctaTitle}
               </h3>
-              <p className="mx-auto mb-7 max-w-[480px] text-[14.5px] leading-[1.65] text-[var(--text-light)]">
+              <p className="mx-auto mb-6 max-w-[480px] text-[14px] leading-[1.65] text-[var(--text-light)] break-words sm:mb-7 sm:text-[14.5px]">
                 {as.landing.ctaSub}
               </p>
               <button
                 type="button"
                 onClick={() => goToStep("basic")}
-                className="inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-12 py-[18px] text-base font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)]"
+                className="inline-flex w-full max-w-sm cursor-pointer items-center justify-center gap-2.5 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-8 py-4 text-[15px] font-semibold text-white shadow-[0_2px_12px_rgba(45,106,79,0.15)] transition-all hover:-translate-y-px hover:bg-[var(--green-dark)] sm:w-auto sm:px-12 sm:py-[18px] sm:text-base"
               >
                 {as.landing.cta}
                 <ChevronRight className="scale-110" />
@@ -651,100 +698,109 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
       ) : null}
 
       {step === "basic" ? (
-        <div className="mx-auto max-w-[760px] px-5 py-6">
+        <div className={formShellClass}>
           <ProgressTracker step="basic" steps={as.steps} />
-          <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-8 py-9 max-[768px]:px-5">
-            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">{as.basic.title}</h2>
-            <p className="mb-7 text-sm leading-snug text-[var(--text-light)]">
+          <div className={formCardClass}>
+            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)] sm:text-2xl">{as.basic.title}</h2>
+            <p className="mb-5 text-sm leading-snug text-[var(--text-light)]">
               {as.basic.subtitle}
             </p>
-            <label className="mb-4 block">
+            <label className="mb-4 block min-w-0">
               <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">{as.basic.fullName}</span>
               <input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder={as.basic.fullNamePlaceholder}
-                className="w-full rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
+                className={inputClass}
               />
             </label>
-            <div className="grid grid-cols-2 gap-3.5 max-[768px]:grid-cols-1">
-              <label className="mb-4 block">
+            <div className={formGridClass}>
+              <label className="mb-4 block min-w-0">
                 <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">{as.basic.email}</span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={as.basic.emailPlaceholder}
-                  className="w-full rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
+                  className={inputClass}
                 />
               </label>
-              <label className="mb-4 block">
+              <label className="mb-4 block min-w-0">
                 <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">{as.basic.phone}</span>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder={as.basic.phonePlaceholder}
-                  className="w-full rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
+                  className={inputClass}
                 />
               </label>
             </div>
-            <div className="grid grid-cols-2 gap-3.5 max-[768px]:grid-cols-1">
-              <label className="mb-4 block">
+            <div className={formGridClass}>
+              <label className="mb-4 block min-w-0">
                 <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">{as.basic.nationality}</span>
-                <select
-                  value={nationality}
-                  onChange={(e) => setNationality(e.target.value)}
-                  className="as-select bidi-ltr w-full cursor-pointer rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
-                >
-                  <option value="">{as.basic.select}</option>
-                  {NATIONALITY_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+                <div className={selectWrapClass}>
+                  <select
+                    value={nationality}
+                    onChange={(e) => setNationality(e.target.value)}
+                    className={selectClassLtr}
+                  >
+                    <option value="">{as.basic.select}</option>
+                    {NATIONALITY_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                  <SelectChevron className="right-3.5" />
+                </div>
               </label>
-              <label className="mb-4 block">
+              <label className="mb-4 block min-w-0">
                 <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">{as.basic.country}</span>
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="as-select bidi-ltr w-full cursor-pointer rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
-                >
-                  <option value="">{as.basic.select}</option>
-                  {COUNTRY_OPTIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <div className={selectWrapClass}>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className={selectClassLtr}
+                  >
+                    <option value="">{as.basic.select}</option>
+                    {COUNTRY_OPTIONS.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <SelectChevron className="right-3.5" />
+                </div>
               </label>
             </div>
-            <div className="grid grid-cols-2 gap-3.5 max-[768px]:grid-cols-1">
-              <label className="mb-4 block">
+            <div className={formGridClass}>
+              <label className="mb-4 block min-w-0">
                 <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">{as.basic.schoolName}</span>
                 <input
                   value={schoolName}
                   onChange={(e) => setSchoolName(e.target.value)}
                   placeholder={as.basic.schoolPlaceholder}
-                  className="w-full rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
+                  className={inputClass}
                 />
               </label>
-              <label className="mb-4 block">
+              <label className="mb-4 block min-w-0">
                 <span className="mb-1.5 block text-[13px] font-semibold text-[var(--text-mid)]">{as.basic.gradeYear}</span>
-                <select
-                  value={gradeYear}
-                  onChange={(e) => setGradeYear(e.target.value)}
-                  className="as-select w-full cursor-pointer rounded-[var(--radius)] border-[1.5px] border-[var(--border)] px-4 py-3 text-sm outline-none transition focus:border-[var(--green-light)] focus:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]"
-                >
-                  <option value="">{as.basic.select}</option>
-                  {VF_GRADE_YEAR_OPTIONS.map((g) => (
-                    <option key={g} value={g}>
-                      {optLabel(gradeYearLabels, g)}
-                    </option>
-                  ))}
-                </select>
+                <div className={selectWrapClass}>
+                  <select
+                    value={gradeYear}
+                    onChange={(e) => setGradeYear(e.target.value)}
+                    className={selectClass}
+                  >
+                    <option value="">{as.basic.select}</option>
+                    {VF_GRADE_YEAR_OPTIONS.map((g) => (
+                      <option key={g} value={g}>
+                        {optLabel(gradeYearLabels, g)}
+                      </option>
+                    ))}
+                  </select>
+                  <SelectChevron className="end-3.5" />
+                </div>
               </label>
             </div>
             {formNav(() => goToStep("landing"), () => goToStep("direction"), !basicValid)}
@@ -753,11 +809,11 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
       ) : null}
 
       {step === "direction" ? (
-        <div className="mx-auto max-w-[760px] px-5 py-6">
+        <div className={formShellClass}>
           <ProgressTracker step="direction" steps={as.steps} />
-          <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-8 py-9 max-[768px]:px-5">
-            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-2xl">{as.direction.title}</h2>
-            <p className="mb-7 text-sm text-[var(--text-light)]">
+          <div className={formCardClass}>
+            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-xl sm:text-2xl">{as.direction.title}</h2>
+            <p className="mb-5 text-sm text-[var(--text-light)]">
               {as.direction.subtitle}
             </p>
 
@@ -859,15 +915,15 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
       ) : null}
 
       {step === "strategy" ? (
-        <div className="mx-auto max-w-[760px] px-5 py-6">
+        <div className={formShellClass}>
           <ProgressTracker step="strategy" steps={as.steps} />
-          <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-8 py-9 max-[768px]:px-5">
-            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-2xl">{as.strategy.title}</h2>
+          <div className={formCardClass}>
+            <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-xl sm:text-2xl">{as.strategy.title}</h2>
             <p className="mb-6 text-sm text-[var(--text-light)]">
               {as.strategy.subtitle}
             </p>
 
-            <div className="mb-4 grid grid-cols-3 gap-4 max-[768px]:grid-cols-1">
+            <div className="mb-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
               {(
                 [
                   { n: 5 as const, desc: as.strategy.pack5, badge: false },
@@ -883,7 +939,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                     type="button"
                     disabled={!available}
                     onClick={() => available && setSelectedPack(n)}
-                    className={`as-pack-card relative rounded-[var(--radius-xl)] border-2 px-[22px] pb-6 pt-8 text-center transition-all ${
+                    className={`as-pack-card relative rounded-[var(--radius-xl)] border-2 px-4 pb-5 pt-7 text-center transition-all sm:px-[22px] sm:pb-6 sm:pt-8 ${
                       !available
                         ? "cursor-not-allowed opacity-45"
                         : "cursor-pointer hover:border-[var(--green-light)]"
@@ -894,7 +950,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                         {as.strategy.mostPopular}
                       </span>
                     ) : null}
-                    <div className="font-[family-name:var(--font-dm-serif)] text-[44px] leading-none text-[var(--green)]">{n}</div>
+                    <div className="font-[family-name:var(--font-dm-serif)] text-[36px] leading-none text-[var(--green)] sm:text-[44px]">{n}</div>
                     <div className="mt-1 text-sm font-bold text-[var(--text)]">{as.strategy.universities}</div>
                     <p className="mx-auto mb-4 mt-2 min-h-[58px] max-w-[200px] text-[13px] leading-snug text-[var(--text-light)]">{desc}</p>
                     <span
@@ -931,9 +987,9 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
       ) : null}
 
       {step === "summary" ? (
-        <div className="mx-auto max-w-[760px] px-5 py-6">
+        <div className={formShellClass}>
           <ProgressTracker step="summary" steps={as.steps} />
-          <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-8 py-9 max-[768px]:px-5">
+          <div className={formCardClass}>
             <div className="as-summary-hero">
               <div className="as-progress-pill">
                 <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--green)]" />
@@ -1030,7 +1086,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                   );
                 })}
               </div>
-              <div className="relative z-[1] min-w-0 flex-1 max-[768px]:text-center">
+              <div className="relative z-[1] min-w-0 flex-1 text-center md:text-start">
                 <div className="mb-1 text-[10.5px] font-bold uppercase tracking-wide text-[var(--green)]">
                   {as.summary.advisorReady}
                 </div>
@@ -1044,7 +1100,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               <span className="mb-3.5 inline-block text-[11px] font-bold uppercase tracking-[1.6px] text-[var(--green)]">
                 {as.summary.readyWhen}
               </span>
-              <h3 className="mb-4 font-[family-name:var(--font-dm-serif)] text-[26px] leading-tight text-[var(--text)]">
+              <h3 className="mb-4 font-[family-name:var(--font-dm-serif)] text-[22px] leading-tight text-[var(--text)] break-words sm:text-[26px]">
                 {as.summary.bookOnboarding}
               </h3>
               {submitError ? (
@@ -1080,12 +1136,12 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
       ) : null}
 
       {step === "pay" ? (
-        <div className="mx-auto max-w-[1000px] px-5 py-6">
+        <div className={formWideShellClass}>
           <ProgressTracker step="pay" steps={as.steps} />
-          <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white p-10 max-[768px]:p-6">
+          <div className={`${formCardClass} md:px-7 md:py-7`}>
             <div className="as-pay-layout">
               <div className="min-w-0">
-                <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-2xl">{as.pay.title}</h2>
+                <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-xl sm:text-2xl">{as.pay.title}</h2>
                 <p className="mb-6 text-sm text-[var(--text-light)]">
                   {as.pay.subtitle}
                 </p>
@@ -1117,11 +1173,11 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
               <div className="min-w-0">
                 <div className="as-pay-summary">
                   <div className="mb-[18px] text-[15px] font-bold text-[var(--text)]">{as.pay.sessionDetails}</div>
-                  <div className="flex items-center justify-between py-2 text-[13px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 py-2 text-[12.5px] sm:text-[13px]">
                     <span className="text-[var(--text-light)]">{as.pay.onboardingSession}</span>
                     <span className="font-semibold text-[var(--text)]">{as.pay.minutes45}</span>
                   </div>
-                  <div className="flex items-center justify-between py-2 text-[13px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 py-2 text-[12.5px] sm:text-[13px]">
                     <span className="text-[var(--text-light)]">{as.pay.selectedStrategy}</span>
                     <span className="rounded-[var(--radius-pill)] bg-[var(--sand)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-light)]">
                       {selectedPack
@@ -1129,7 +1185,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                         : "—"}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between py-2 text-[13px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 py-2 text-[12.5px] sm:text-[13px]">
                     <span className="text-[var(--text-light)]">{as.pay.format}</span>
                     <span className="font-semibold text-[var(--text)]">{as.pay.oneOnOne}</span>
                   </div>
@@ -1167,15 +1223,15 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
       {step === "done" ? (
         <>
-          <div className="mx-auto max-w-[1000px] px-5 py-6">
-            <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-9 py-10 text-center max-[768px]:px-6">
-              <div className="mx-auto mb-5 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--green-bg)]">
+          <div className={formWideShellClass}>
+            <div className={`${formCardClass} text-center`}>
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--green-bg)] sm:h-[72px] sm:w-[72px]">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                   <rect x="3" y="4" width="18" height="18" rx="2" />
                   <path d="M16 2v4M8 2v4M3 10h18" />
                 </svg>
               </div>
-              <h2 className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[28px] text-[var(--text)]">
+              <h2 className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[24px] text-[var(--text)] sm:text-[28px]">
                 {as.done.title}
               </h2>
               <p className="mx-auto max-w-[420px] text-sm leading-relaxed text-[var(--text-light)]">
@@ -1186,7 +1242,11 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
 
           <div className="as-calendly-wrap">
             <div className="as-calendly-embed-box shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-              <CalendlyInlineEmbed url={calendlyUrl} title={as.done.calendlyTitle} />
+              <CalendlyInlineEmbed
+                url={calendlyUrl}
+                title={as.done.calendlyTitle}
+                className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[780px]"
+              />
             </div>
             <p className="mt-4 text-center text-xs text-[var(--text-hint)]">
               <a href={calendlyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--green)] underline-offset-2 hover:underline">
@@ -1195,9 +1255,9 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
             </p>
           </div>
 
-          <div className="mx-auto max-w-[1000px] px-5 pb-16">
-            <div className="rounded-[var(--radius-xl)] border border-[var(--border-light)] bg-white px-9 py-9 max-[768px]:px-6">
-              <div className="rounded-[14px] bg-[var(--sand)] px-6 py-6">
+          <div className={`${formWideShellClass} pb-12 sm:pb-16`}>
+            <div className={formCardClass}>
+              <div className="rounded-[14px] bg-[var(--sand)] px-4 py-4 sm:px-5 sm:py-5">
                 <div className="mb-3.5 text-[13px] font-bold uppercase tracking-wide text-[var(--text)]">
                   {as.done.whatNext}
                 </div>
@@ -1212,10 +1272,10 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                   ))}
                 </div>
               </div>
-              <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
+              <div className="mt-6 flex flex-col items-stretch gap-3 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
                 <Link
                   href="/student"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--green)] px-9 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)]"
+                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--green)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)] sm:w-auto sm:px-9"
                 >
                   {as.done.goToDashboard}
                   <ChevronRight />
@@ -1223,7 +1283,7 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
                 <button
                   type="button"
                   onClick={() => goToStep("pay")}
-                  className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-3 text-sm font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)]"
+                  className="w-full cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-3 text-sm font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)] sm:w-auto"
                 >
                   {as.back}
                 </button>

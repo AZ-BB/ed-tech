@@ -17,8 +17,11 @@ const scrollRowClass =
 const cardOuterClass =
   "min-w-[200px] max-w-[200px] shrink-0 cursor-pointer rounded-xl border border-[var(--border-light)] bg-[var(--sand)] p-3.5 transition-colors hover:border-[var(--border)] hover:bg-white";
 
+const tabRowClass =
+  "mb-3.5 flex min-w-0 snap-x snap-mandatory gap-0 overflow-x-auto border-b border-[var(--border-light)] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]";
+
 const tabBtnClass =
-  "cursor-pointer border-b-2 px-[18px] py-2.5 text-xs font-medium transition-colors";
+  "shrink-0 snap-start cursor-pointer whitespace-nowrap border-b-2 px-3 py-2.5 text-xs font-medium transition-colors sm:px-4 md:px-[18px]";
 
 function CollectionCardsRow({
   items,
@@ -161,7 +164,7 @@ export function StudentDashboardCollections() {
           {loadError}
         </div>
       ) : null}
-      <div className="mb-5 rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
+      <div className="mb-5 min-w-0 overflow-x-clip rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
         <div className="mb-3.5 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
           <svg
             width="14"
@@ -176,7 +179,7 @@ export function StudentDashboardCollections() {
           </svg>
           {t.yourSavedItems}
         </div>
-        <div className="mb-3.5 flex gap-0 border-b border-[var(--border-light)]">
+        <div className={tabRowClass}>
           {savedTabLabels.map((label, idx) => (
             <button
               key={label}
@@ -200,7 +203,7 @@ export function StudentDashboardCollections() {
         />
       </div>
 
-      <div className="mb-5 rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
+      <div className="mb-5 min-w-0 overflow-x-clip rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
         <div className="mb-3.5 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
           <svg
             width="14"
@@ -218,7 +221,7 @@ export function StudentDashboardCollections() {
         <p className="mb-3.5 px-0.5 text-[11px] leading-snug text-[var(--text-light)]">
           {t.shortlistSub}
         </p>
-        <div className="mb-3.5 flex gap-0 border-b border-[var(--border-light)]">
+        <div className={tabRowClass}>
           {shortlistTabLabels.map((label, idx) => (
             <button
               key={label}

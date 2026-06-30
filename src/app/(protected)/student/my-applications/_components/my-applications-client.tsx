@@ -1306,14 +1306,15 @@ export function MyApplicationsClient({
   };
 
   const fieldClass =
-    "rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
+    "box-border w-full min-w-0 max-w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
   const labelClass =
     "text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]";
+  const fieldWrapClass = "flex min-w-0 flex-col gap-1.5";
   const panelClass =
-    "mb-3.5 overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white";
+    "mb-3.5 min-w-0 overflow-x-clip rounded-[14px] border border-[var(--border-light)] bg-white";
   const panelHeadClass =
-    "flex items-center justify-between gap-2.5 border-b border-[var(--border-light)] px-5 py-4";
-  const panelBodyClass = "px-5 py-[18px]";
+    "flex min-w-0 flex-col gap-3 border-b border-[var(--border-light)] px-5 py-4 md:flex-row md:items-start md:justify-between md:gap-4";
+  const panelBodyClass = "min-w-0 px-5 py-5 sm:py-[18px]";
 
   const missingDocs = documents.filter(
     (d) => d.status === "missing" && !isOtherDocumentSlot(d.slot_key),
@@ -1337,8 +1338,8 @@ export function MyApplicationsClient({
   );
 
   return (
-    <div className="mx-auto pb-14 text-[var(--text)]">
-      <div className="mb-[18px] px-4">
+    <div className="mx-auto min-w-0 max-w-full pb-14 text-[var(--text)]">
+      <div className="mb-[18px]">
         <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--green)]">
           {app.workspaceLabel}
         </div>
@@ -1350,7 +1351,7 @@ export function MyApplicationsClient({
         </p>
       </div>
 
-      <div className="relative mb-[18px] flex flex-col gap-3 overflow-hidden rounded-[14px] bg-gradient-to-br from-[var(--green-dark)] to-[var(--green)] px-5 py-5 text-white sm:flex-row sm:items-center sm:gap-[18px]">
+      <div className="relative mb-[18px] flex flex-col gap-3 overflow-hidden rounded-[14px] bg-gradient-to-br from-[var(--green-dark)] to-[var(--green)] px-5 py-5 text-white md:flex-row md:items-center md:gap-[18px]">
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
         <div className="relative z-[1] min-w-0 flex-1">
           <div className="font-[family-name:var(--font-dm-serif)] text-lg leading-snug">
@@ -1360,7 +1361,7 @@ export function MyApplicationsClient({
             {completionSubtitle}
           </div>
         </div>
-        <div className="relative z-[1] flex flex-col items-start gap-1.5 sm:items-end">
+        <div className="relative z-[1] flex flex-col items-start gap-1.5 md:items-end">
           <div className="font-[family-name:var(--font-dm-serif)] text-3xl leading-none">
             {pct}%
           </div>
@@ -1373,7 +1374,7 @@ export function MyApplicationsClient({
         </div>
       </div>
 
-      <div className="mb-4 flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
+      <div className="mb-4 flex snap-x snap-mandatory gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]">
         {(
           [
             ["profile", app.tabs.profile, null],
@@ -1388,7 +1389,7 @@ export function MyApplicationsClient({
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-[7px] px-3.5 py-2 text-[12.5px] font-medium whitespace-nowrap transition-colors ${
+            className={`flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2.5 py-1.5 text-[12px] font-medium transition-colors sm:px-3.5 sm:py-2 sm:text-[12.5px] ${
               tab === id
                 ? "bg-[var(--green)] text-white"
                 : "text-[var(--text-light)] hover:text-[var(--text)]"
@@ -1411,14 +1412,14 @@ export function MyApplicationsClient({
       </div>
 
       {tab === "profile" ? (
-        <div className="animate-[my-apps-fade-in_0.2s_ease]">
+        <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
           <CalloutInfo>
             <strong>{app.profileWhyTitle}</strong> {app.profileWhyText}
           </CalloutInfo>
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.aboutYou}
                 </div>
@@ -1428,8 +1429,8 @@ export function MyApplicationsClient({
               </div>
             </div>
             <div className={panelBodyClass}>
-              <div className="grid gap-3.5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
+              <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.firstName}</label>
                   <input
                     className={fieldClass}
@@ -1437,7 +1438,7 @@ export function MyApplicationsClient({
                     onChange={(e) => setFirstName(e.target.value)}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.lastName}</label>
                   <input
                     className={fieldClass}
@@ -1445,7 +1446,7 @@ export function MyApplicationsClient({
                     onChange={(e) => setLastName(e.target.value)}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.schoolEmail}</label>
                   <input
                     className={`${fieldClass} bg-[var(--cream)] text-[var(--text-light)]`}
@@ -1453,7 +1454,7 @@ export function MyApplicationsClient({
                     disabled
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.grade}</label>
                   <select
                     className={fieldClass}
@@ -1468,7 +1469,7 @@ export function MyApplicationsClient({
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <div className={`${fieldWrapClass} md:col-span-2`}>
                   <label className={labelClass}>{app.curriculum}</label>
                   <select
                     className={fieldClass}
@@ -1483,7 +1484,7 @@ export function MyApplicationsClient({
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <div className={`${fieldWrapClass} md:col-span-2`}>
                   <label className={labelClass}>{app.nationality}</label>
                   <select
                     className={fieldClass}
@@ -1497,7 +1498,7 @@ export function MyApplicationsClient({
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <div className={`${fieldWrapClass} md:col-span-2`}>
                   <label className={labelClass}>{app.targetIntake}</label>
                   <select
                     className={fieldClass}
@@ -1513,10 +1514,10 @@ export function MyApplicationsClient({
                   </select>
                 </div>
               </div>
-              <div className="mt-3.5 flex justify-end border-t border-[var(--border-light)] pt-3.5">
+              <div className="mt-4 flex justify-end border-t border-[var(--border-light)] pt-4">
                 <button
                   type="button"
-                  className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
+                  className="w-full rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] sm:w-auto"
                   onClick={() => void saveAbout()}
                 >
                   {app.saveChanges}
@@ -1527,7 +1528,7 @@ export function MyApplicationsClient({
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.yourGoals}
                 </div>
@@ -1552,8 +1553,8 @@ export function MyApplicationsClient({
                   placeholder={app.addProgram}
                 />
               </div>
-              <div className="mt-3.5 grid gap-3.5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
+              <div className="mt-3.5 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.budgetRange}</label>
                   <select
                     className={fieldClass}
@@ -1568,7 +1569,7 @@ export function MyApplicationsClient({
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.needAid}</label>
                   <select
                     className={fieldClass}
@@ -1584,10 +1585,10 @@ export function MyApplicationsClient({
                   </select>
                 </div>
               </div>
-              <div className="mt-3.5 flex justify-end border-t border-[var(--border-light)] pt-3.5">
+              <div className="mt-4 flex justify-end border-t border-[var(--border-light)] pt-4">
                 <button
                   type="button"
-                  className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
+                  className="w-full rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] sm:w-auto"
                   onClick={() => void saveGoals()}
                 >
                   {app.saveGoals}
@@ -1598,7 +1599,7 @@ export function MyApplicationsClient({
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.testScores}
                 </div>
@@ -1608,8 +1609,8 @@ export function MyApplicationsClient({
               </div>
             </div>
             <div className={panelBodyClass}>
-              <div className="grid gap-3.5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
+              <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.ielts}</label>
                   <input
                     className={`${fieldClass} ${
@@ -1630,7 +1631,7 @@ export function MyApplicationsClient({
                     aria-invalid={ieltsScoreInvalid}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.toefl}</label>
                   <input
                     className={`${fieldClass} ${
@@ -1651,7 +1652,7 @@ export function MyApplicationsClient({
                     aria-invalid={toeflScoreInvalid}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.sat}</label>
                   <input
                     className={`${fieldClass} ${
@@ -1672,7 +1673,7 @@ export function MyApplicationsClient({
                     aria-invalid={satScoreInvalid}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldWrapClass}>
                   <label className={labelClass}>{app.act}</label>
                   <input
                     className={`${fieldClass} ${
@@ -1693,7 +1694,7 @@ export function MyApplicationsClient({
                     aria-invalid={actScoreInvalid}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <div className={`${fieldWrapClass} md:col-span-2`}>
                   <label className={labelClass}>
                     {app.predictedGrades}
                   </label>
@@ -1709,7 +1710,7 @@ export function MyApplicationsClient({
                     </p>
                   ) : null}
                 </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <div className={`${fieldWrapClass} md:col-span-2`}>
                   <label className={labelClass}>
                     {app.otherTests}
                   </label>
@@ -1721,10 +1722,10 @@ export function MyApplicationsClient({
                   />
                 </div>
               </div>
-              <div className="mt-3.5 flex justify-end border-t border-[var(--border-light)] pt-3.5">
+              <div className="mt-4 flex justify-end border-t border-[var(--border-light)] pt-4">
                 <button
                   type="button"
-                  className="rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)]"
+                  className="w-full rounded-lg border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:border-[var(--green-dark)] hover:bg-[var(--green-dark)] sm:w-auto"
                   onClick={() => void saveScores()}
                 >
                   {app.saveScores}
@@ -1736,12 +1737,12 @@ export function MyApplicationsClient({
       ) : null}
 
       {tab === "universities" ? (
-        <div className="animate-[my-apps-fade-in_0.2s_ease]">
+        <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
           <CalloutInfo>{app.universitiesHint}</CalloutInfo>
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.favorites}{" "}
                   <span className="font-normal text-[var(--text-light)]">
@@ -1762,7 +1763,7 @@ export function MyApplicationsClient({
                 favourites.map((u) => (
                   <div
                     key={u.uniId}
-                    className=" relative flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                    className=" relative flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 md:flex-row md:items-center md:justify-between"
                   >
                     <button
                       type="button"
@@ -1822,7 +1823,7 @@ export function MyApplicationsClient({
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center justify-end gap-2">
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2 md:w-auto">
                       <Link
                         href={`/student/universities/${u.uniId}`}
                         className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
@@ -1845,7 +1846,7 @@ export function MyApplicationsClient({
 
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.shortlist}{" "}
                   <span className="font-normal text-[var(--text-light)]">
@@ -1981,11 +1982,11 @@ export function MyApplicationsClient({
       ) : null}
 
       {tab === "documents" ? (
-        <div className="animate-[my-apps-fade-in_0.2s_ease]">
+        <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
           <CalloutInfo>{app.documentsHint}</CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.documentChecklist}
                 </div>
@@ -2053,7 +2054,7 @@ export function MyApplicationsClient({
       ) : null}
 
       {tab === "essays" ? (
-        <div className="animate-[my-apps-fade-in_0.2s_ease]">
+        <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
           <CalloutInfo>{app.essaysHint}</CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
@@ -2119,7 +2120,7 @@ export function MyApplicationsClient({
                 return (
                   <div
                     key={e.id}
-                    className={`flex flex-col gap-3 rounded-[10px] border px-3.5 py-3.5 transition-colors hover:border-[var(--border)] sm:flex-row sm:items-start ${studentEssayRowTone(st, hasFile)}`}
+                    className={`flex flex-col gap-3 rounded-[10px] border px-3.5 py-3.5 transition-colors hover:border-[var(--border)] lg:flex-row lg:items-start ${studentEssayRowTone(st, hasFile)}`}
                   >
                     <div
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${studentEssayIconWrap(st, hasFile)}`}
@@ -2187,7 +2188,7 @@ export function MyApplicationsClient({
                         </div>
                       ) : null}
                     </div>
-                    <div className="flex w-full shrink-0 flex-col gap-1.5 sm:w-[170px]">
+                    <div className="flex w-full shrink-0 flex-col gap-1.5 lg:w-[170px]">
                       <select
                         className={`w-full cursor-pointer rounded-md border-[1.5px] px-2.5 py-1.5 text-[11.5px] font-semibold outline-none focus:border-[var(--green-light)] ${studentStatusSelectCls(st)}`}
                         value={st}
@@ -2253,7 +2254,7 @@ export function MyApplicationsClient({
                 );
               })}
               {shortlistHintUniversities.length > 0 ? (
-                <div className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] px-3.5 py-3 sm:flex-row sm:items-center">
+                <div className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] px-3.5 py-3 md:flex-row md:items-center">
                   <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[var(--green-bg)] text-[var(--green)]">
                     <svg
                       width="14"
@@ -2286,11 +2287,11 @@ export function MyApplicationsClient({
       ) : null}
 
       {tab === "recommendations" ? (
-        <div className="animate-[my-apps-fade-in_0.2s_ease]">
+        <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
           <CalloutInfo>{app.recHint}</CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.recommendationLetters}
                 </div>
@@ -2397,7 +2398,7 @@ export function MyApplicationsClient({
                   return (
                     <div
                       key={r.id}
-                      className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-3 transition-colors hover:border-[var(--border)] sm:flex-row sm:items-center"
+                      className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-3 transition-colors hover:border-[var(--border)] md:flex-row md:items-center"
                     >
                       <div
                         className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${iconWrap}`}
@@ -2419,12 +2420,12 @@ export function MyApplicationsClient({
                         <div className="text-[13.5px] font-semibold">
                           {teacherLine}
                         </div>
-                        <div className="mt-0.5 text-[11.5px] leading-snug text-[var(--text-light)]">
+                        <div className="mt-0.5 break-words text-[11.5px] leading-snug text-[var(--text-light)]">
                           {app.forRecLabel} {r.for_application} · {app.requestedLabel}{" "}
                           {formatShortMonthDay(r.requested_at, locale)} · {metaTail}
                         </div>
                       </div>
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                      <div className="flex shrink-0 flex-wrap items-center gap-2 md:justify-end">
                         {pill}
                         {action}
                       </div>
@@ -2474,7 +2475,7 @@ export function MyApplicationsClient({
       ) : null}
 
       {tab === "tasks" ? (
-        <div className="animate-[my-apps-fade-in_0.2s_ease]">
+        <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
           <CalloutInfo>
             {app.tasksHint.replace(
               "{name}",
@@ -2483,7 +2484,7 @@ export function MyApplicationsClient({
           </CalloutInfo>
           <div className={panelClass}>
             <div className={panelHeadClass}>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
                   {app.tasksFromCounselor}
                 </div>
@@ -2696,7 +2697,7 @@ export function MyApplicationsClient({
               />
             </div>
           </div>
-          <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
+          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px] sm:flex-row sm:justify-end">
             <button
               type="button"
               className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
@@ -2915,7 +2916,7 @@ export function MyApplicationsClient({
               />
             </div>
           </div>
-          <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
+          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px] sm:flex-row sm:justify-end">
             <button
               type="button"
               className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold"
@@ -2948,7 +2949,7 @@ export function MyApplicationsClient({
           title={detailEssay.title}
         >
           <div className="border-b border-[var(--border-light)] px-[22px] py-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--text-light)]">
                   {app.essayUniversity}
@@ -3101,7 +3102,7 @@ export function MyApplicationsClient({
           onClose={() => setRecModal(false)}
           title={app.requestRecTitle}
         >
-          <div className="grid gap-3.5 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label className={labelClass}>{app.teacherName}</label>
               <input
@@ -3166,7 +3167,7 @@ export function MyApplicationsClient({
               }
             />
           </div>
-          <div className="mt-5 flex justify-end gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px]">
+          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--border-light)] bg-[var(--cream)] px-[22px] py-3.5 -mx-[22px] -mb-[18px] rounded-b-[14px] sm:flex-row sm:justify-end">
             <button
               type="button"
               className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[11.5px] font-semibold"
@@ -3188,7 +3189,7 @@ export function MyApplicationsClient({
       ) : null}
 
       {toast ? (
-        <div className="fixed bottom-6 right-6 z-[200] flex items-center gap-2 rounded-[10px] bg-[var(--green-dark)] px-4 py-3 text-[13px] font-medium text-white shadow-lg">
+        <div className="fixed inset-x-4 bottom-4 z-[200] flex items-center gap-2 rounded-[10px] bg-[var(--green-dark)] px-4 py-3 text-[13px] font-medium text-white shadow-lg sm:inset-x-auto sm:bottom-6 sm:right-6">
           <svg
             className="h-3.5 w-3.5 text-[var(--green-bright)]"
             viewBox="0 0 24 24"
@@ -3249,7 +3250,7 @@ function PreferredDestinationsMultiSelect({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <label className={labelClass}>{app.preferredDestinations}</label>
       <p className="text-[11.5px] leading-snug text-[var(--text-hint)]">
         {app.preferredDestinationsSub}
@@ -3351,7 +3352,7 @@ function TagField({
     setInput("");
   };
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
         <label className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--text-mid)]">
           {label}
@@ -3411,7 +3412,7 @@ function TagField({
           </span>
         ))}
         <input
-          className="min-w-[120px] flex-1 border-none bg-transparent py-0.5 text-[13px] outline-none"
+          className="min-w-0 flex-1 border-none bg-transparent py-0.5 text-[13px] outline-none"
           value={input}
           placeholder={placeholder}
           onChange={(e) => setInput(e.target.value)}
@@ -3465,13 +3466,13 @@ function DocumentRow({
     slotDescriptions[doc.slot_key] ?? doc.description ?? null;
 
   const docFieldClass =
-    "rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 text-[12px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
+    "box-border w-full min-w-0 max-w-full rounded-lg border-[1.5px] border-[var(--border)] bg-white px-3 py-2 text-[12px] text-[var(--text)] outline-none focus:border-[var(--green-light)] focus:shadow-[0_0_0_3px_rgba(45,106,79,0.07)]";
 
   if (doc.slot_key === SCHOOL_TEXT_ONLY_DOCUMENT_SLOT_KEY) {
     const text = doc.school_text_value?.trim();
     const has = !!text;
     return (
-      <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3 md:flex-row md:items-center">
         <div
           className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${
             has
@@ -3501,7 +3502,7 @@ function DocumentRow({
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex w-full shrink-0 items-center gap-2 border-t border-[var(--border-light)] pt-2 md:w-auto md:justify-end md:border-0 md:pt-0">
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
               has
@@ -3525,7 +3526,7 @@ function DocumentRow({
 
   const missing = doc.status === "missing";
   return (
-    <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 md:flex-row md:items-center">
       <div
         className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${
           missing
@@ -3576,7 +3577,7 @@ function DocumentRow({
               : descriptionText || app.documentNotUploaded}
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+      <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--border-light)] pt-2 md:w-auto md:border-0 md:pt-0">
         {allowDisplayNameEdit ? (
           <button
             type="button"
@@ -3663,7 +3664,7 @@ function ModalVeil({
 }) {
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(15,30,20,0.5)] p-5"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(15,30,20,0.5)] p-4 sm:p-5"
       role="dialog"
       aria-modal
       onClick={(e) => e.target === e.currentTarget && onClose()}

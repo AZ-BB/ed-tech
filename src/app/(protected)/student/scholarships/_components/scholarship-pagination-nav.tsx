@@ -27,7 +27,7 @@ export function ScholarshipPaginationNav({
 
   return (
     <nav
-      className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-light)] pt-4 text-[13px] text-[var(--text-mid)]"
+      className="mt-4 flex min-w-0 flex-col gap-3 border-t border-[var(--border-light)] pt-4 text-[13px] text-[var(--text-mid)] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2"
       aria-label={ariaLabel}
     >
       <span className="text-[var(--text-light)]">
@@ -36,12 +36,12 @@ export function ScholarshipPaginationNav({
           .replace("{total}", String(totalPages))
           .replace("{items}", String(totalItems))}
       </span>
-      <div className="flex gap-2">
+      <div className="flex w-full gap-2 sm:w-auto">
         {prev ? (
           <button
             type="button"
             onClick={() => onPageChange?.(prev)}
-            className="cursor-pointer rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3 py-1.5 font-medium text-[var(--text)] hover:bg-[var(--sand)]"
+            className="flex-1 cursor-pointer rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3 py-1.5 text-center font-medium text-[var(--text)] hover:bg-[var(--sand)] sm:flex-none"
           >
             {t.previous}
           </button>
@@ -54,7 +54,7 @@ export function ScholarshipPaginationNav({
           <button
             type="button"
             onClick={() => onPageChange?.(next)}
-            className="cursor-pointer rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3 py-1.5 font-medium text-[var(--text)] hover:bg-[var(--sand)]"
+            className="flex-1 cursor-pointer rounded-[var(--radius-sm)] border border-[var(--border)] bg-white px-3 py-1.5 text-center font-medium text-[var(--text)] hover:bg-[var(--sand)] sm:flex-none"
           >
             {t.next}
           </button>

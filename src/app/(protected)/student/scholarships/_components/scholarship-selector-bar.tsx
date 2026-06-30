@@ -105,10 +105,12 @@ function demonym(c: Country): string {
 }
 
 const selectClass =
-  "min-w-[160px] cursor-pointer appearance-none rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white py-2.5 pl-4 pr-9 text-[13px] text-[var(--text)] focus:border-[var(--green-light)] focus:outline-none";
+  "box-border w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white py-2.5 pl-4 pr-9 text-[13px] text-[var(--text)] focus:border-[var(--green-light)] focus:outline-none md:min-w-[160px] md:w-auto";
 
 const inputClass =
-  "min-w-[200px] flex-1 rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none";
+  "box-border w-full min-w-0 max-w-full flex-1 rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-3 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text-hint)] focus:border-[var(--green-light)] focus:outline-none md:min-w-[200px]";
+
+const selectWrapClass = "relative w-full min-w-0 md:w-auto";
 
 const favouritesToggleBase =
   "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-pill)] border-[1.5px] px-4 py-2.5 text-[13px] font-medium transition-all";
@@ -182,11 +184,11 @@ export function ScholarshipSelectorBar({
     !destinationNameSet.has(destination);
 
   return (
-    <div className="mb-5 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-6 py-[18px] text-[14px] text-[var(--text-mid)] max-[700px]:items-stretch">
-      <div className="flex w-full min-w-0 flex-wrap items-center gap-2.5 max-[700px]:flex-col max-[700px]:items-stretch">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2.5 max-[700px]:w-full max-[700px]:flex-col max-[700px]:items-stretch">
-        <span>{t.iAmA}</span>
-        <div className="relative inline-block">
+    <div className="mb-5 flex min-w-0 flex-col gap-3 overflow-x-clip rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white px-4 py-4 text-[14px] text-[var(--text-mid)] md:px-6 md:py-[18px]">
+      <div className="flex w-full min-w-0 flex-col items-stretch gap-2.5 md:flex-row md:flex-wrap md:items-center">
+        <div className="flex min-w-0 w-full flex-col items-stretch gap-2.5 md:flex-1 md:flex-row md:flex-wrap md:items-center">
+        <span className="shrink-0">{t.iAmA}</span>
+        <div className={selectWrapClass}>
           <select
             className={selectClass}
             value={nationality}
@@ -221,8 +223,8 @@ export function ScholarshipSelectorBar({
           </select>
           <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
-        <span>{t.lookingToStudyIn}</span>
-        <div className="relative inline-block">
+        <span className="shrink-0">{t.lookingToStudyIn}</span>
+        <div className={selectWrapClass}>
           <select
             className={selectClass}
             value={destination}
@@ -243,8 +245,8 @@ export function ScholarshipSelectorBar({
           </select>
           <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
-        <span>{t.andWantA}</span>
-        <div className="relative inline-block">
+        <span className="shrink-0">{t.andWantA}</span>
+        <div className={selectWrapClass}>
           <select
             className={selectClass}
             value={coverage}
@@ -261,7 +263,7 @@ export function ScholarshipSelectorBar({
         {hasActiveFilters ? (
           <button
             type="button"
-            className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-[50px] px-3 py-1.5 text-[11px] font-medium text-[var(--text-hint)] transition hover:bg-[var(--green-pale)] hover:text-[var(--green)] max-[700px]:ml-0 max-[700px]:self-end"
+            className="inline-flex shrink-0 cursor-pointer items-center gap-1 self-end rounded-[50px] px-3 py-1.5 text-[11px] font-medium text-[var(--text-hint)] transition hover:bg-[var(--green-pale)] hover:text-[var(--green)] md:ml-auto"
             onClick={onClearFilters}
           >
             <svg
@@ -279,8 +281,8 @@ export function ScholarshipSelectorBar({
           </button>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-end gap-2 border-t border-[var(--border-light)] pt-3 max-[700px]:flex-col">
-        <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-[12px] font-medium text-[var(--text-light)]">
+      <div className="flex min-w-0 flex-col items-stretch gap-2.5 border-t border-[var(--border-light)] pt-3 md:flex-row md:flex-wrap md:items-end">
+        <label className="flex min-w-0 w-full flex-1 flex-col gap-1 text-[12px] font-medium text-[var(--text-light)] md:min-w-[220px]">
           {t.search}
           <input
             key={q}
@@ -304,14 +306,14 @@ export function ScholarshipSelectorBar({
           aria-label={
             favouritesOnly ? t.showAllScholarships : t.showFavouritesOnly
           }
-          className={favouritesOnly ? favouritesToggleOnClass : favouritesToggleOffClass}
+          className={`w-full md:w-auto ${favouritesOnly ? favouritesToggleOnClass : favouritesToggleOffClass}`}
           onClick={onFavouritesToggle}
         >
           {t.favourites}
         </button>
         <button
           type="button"
-          className="rounded-[var(--radius-pill)] bg-[var(--green)] px-5 py-2.5 text-[13px] font-medium text-white hover:opacity-95"
+          className="w-full rounded-[var(--radius-pill)] bg-[var(--green)] px-5 py-2.5 text-[13px] font-medium text-white hover:opacity-95 md:w-auto"
           onClick={() => onSearchSubmit(searchRef.current?.value ?? "")}
         >
           {t.search}
