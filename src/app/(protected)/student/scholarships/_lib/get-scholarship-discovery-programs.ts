@@ -12,6 +12,7 @@ import {
   scholarshipFromPayloadRow,
 } from "./scholarship-row-to-scholarship";
 import { scholarshipLinkFieldsFromApplicationUrl } from "@/lib/scholarship-application-url";
+import { overlayScholarshipCoreRequirementFields } from "@/lib/scholarship-requirement-fields";
 
 export const SCHOLARSHIP_PAGE_SIZE = 12;
 
@@ -176,8 +177,9 @@ function mapDiscoveryRow(row: ScholarshipDiscoveryRow): Scholarship | null {
     scholarship = scholarshipDiscoveryRowToScholarship(row);
   }
   if (!scholarship) return null;
+  const merged = overlayScholarshipCoreRequirementFields(scholarship, row);
   return overlayTooltipFromColumn(
-    overlayApplicationUrlFromColumn(scholarship, row.application_url),
+    overlayApplicationUrlFromColumn(merged, row.application_url),
     row.tooltip,
   );
 }
@@ -543,14 +545,9 @@ export async function getScholarshipDiscoveryPageData(
     };
   }
 
-  const combinedLoaded = [...government.scholarships, ...other.scholarships];
-
-  let detailScholarship: Scholarship | null = null;
-  if (query.detail) {
-    detailScholarship =
-      combinedLoaded.find((s) => s.id === query.detail) ??
-      (await fetchScholarshipByDetailId(query.detail));
-  }
+  const detailScholarship = query.detail
+    ? await fetchScholarshipByDetailId(query.detail)
+    : null;
 
   return {
     tab: resolvedTab,

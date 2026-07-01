@@ -1,5 +1,6 @@
 import { flagFromCountryCode } from "@/lib/country-flag-emoji";
 import { scholarshipLinkFieldsFromApplicationUrl } from "@/lib/scholarship-application-url";
+import { overlayScholarshipCoreRequirementFields } from "@/lib/scholarship-requirement-fields";
 
 import type { Scholarship } from "../_components/types";
 
@@ -35,6 +36,11 @@ export type ScholarshipDiscoveryRow = {
   other_benefits: string | null;
   living_stipend: string | null;
   academic_eligibility: string | null;
+  ielts_min_score?: number | null;
+  toefl_min_score?: number | null;
+  sat_policy?: string | null;
+  other?: string | null;
+  documents?: unknown;
   method: string | null;
   deadline: string | null;
   application_url?: string | null;
@@ -83,49 +89,52 @@ export function scholarshipDiscoveryRowToScholarship(
   const eligibleNationalities = code ? [code] : ["other"];
   const linkFields = scholarshipLinkFieldsFromApplicationUrl(row.application_url ?? "");
 
-  return {
-    id: slug,
-    name: row.name,
-    provider: "",
-    country: "",
-    flag: flagFromCountryCode(row.nationality_country_code),
-    type: formatTypeLabel(row.type),
-    badgeClass: typeToBadgeClass(row.type),
-    eligibleNationalities,
-    destinations: ["Global"],
-    coverage: coverageFromRow(row.coverage),
-    coverageLabel: "Full ride",
-    deadline: row.deadline ?? "",
-    eligSummary: row.target_students ?? "",
-    shortSummary: row.description ?? "",
-    degreeLevels: row.level ?? "",
-    fieldsOfStudy: formatFieldsColumn(row.fields),
-    academicElig: row.academic_eligibility ?? "",
-    englishReq: "",
-    otherElig: "",
-    requiredDocs: ["—"],
-    applicationMethod: row.method ?? "",
-    coverageDetails: {
-      tuition: row.tuition?.trim() || "—",
-      stipend: row.living_stipend?.trim() || "—",
-      travel: row.travel?.trim() || "—",
-      other: row.other_benefits?.trim() || "—",
+  return overlayScholarshipCoreRequirementFields(
+    {
+      id: slug,
+      name: row.name,
+      provider: "",
+      country: "",
+      flag: flagFromCountryCode(row.nationality_country_code),
+      type: formatTypeLabel(row.type),
+      badgeClass: typeToBadgeClass(row.type),
+      eligibleNationalities,
+      destinations: ["Global"],
+      coverage: coverageFromRow(row.coverage),
+      coverageLabel: "Full ride",
+      deadline: row.deadline ?? "",
+      eligSummary: row.target_students ?? "",
+      shortSummary: row.description ?? "",
+      degreeLevels: row.level ?? "",
+      fieldsOfStudy: formatFieldsColumn(row.fields),
+      academicElig: row.academic_eligibility ?? "",
+      englishReq: "",
+      otherElig: "",
+      requiredDocs: ["—"],
+      applicationMethod: row.method ?? "",
+      coverageDetails: {
+        tuition: row.tuition?.trim() || "—",
+        stipend: row.living_stipend?.trim() || "—",
+        travel: row.travel?.trim() || "—",
+        other: row.other_benefits?.trim() || "—",
+      },
+      tooltip: row.tooltip?.trim() ?? "",
+      competition: row.competition
+        ? String(row.competition)
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+        : "Medium",
+      renewable: row.is_renewable ? "Yes" : "No",
+      applicationUrl: linkFields.applicationUrl,
+      applicationWebsiteName: "",
+      applicationWebsiteDomain: linkFields.applicationWebsiteDomain,
+      isOfficialSource: Boolean(linkFields.applicationUrl),
+      linkStatus: linkFields.linkStatus,
+      linkNotes: "",
+      fallbackUrl: "",
     },
-    tooltip: row.tooltip?.trim() ?? "",
-    competition: row.competition
-      ? String(row.competition)
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase())
-      : "Medium",
-    renewable: row.is_renewable ? "Yes" : "No",
-    applicationUrl: linkFields.applicationUrl,
-    applicationWebsiteName: "",
-    applicationWebsiteDomain: linkFields.applicationWebsiteDomain,
-    isOfficialSource: Boolean(linkFields.applicationUrl),
-    linkStatus: linkFields.linkStatus,
-    linkNotes: "",
-    fallbackUrl: "",
-  };
+    row,
+  );
 }
 
 /** Map `discovery_payload` (full UI shape) to `Scholarship`. */

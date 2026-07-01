@@ -16,6 +16,7 @@ import {
   normalizeScholarshipApplicationUrl,
   scholarshipLinkFieldsFromApplicationUrl,
 } from "@/lib/scholarship-application-url";
+import { buildEnglishReqFromMinScores } from "@/lib/scholarship-requirement-fields";
 import { csvToRecords } from "@/lib/university-csv-import";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -215,8 +216,11 @@ function buildDiscoveryPayloadFromImportRow(
     degreeLevels: cell(row, "level") || "",
     fieldsOfStudy: cell(row, "fields") || "",
     academicElig: cell(row, "academic_eligibility") || "",
-    englishReq: "",
-    otherElig: "",
+    englishReq: buildEnglishReqFromMinScores(
+      parseOptionalFloat(cell(row, "ielts_min")),
+      parseOptionalInt(cell(row, "toefl_min")),
+    ),
+    otherElig: cell(row, "other") || "",
     requiredDocs: docs.length ? docs : ["—"],
     applicationMethod: cell(row, "method") || "",
     coverageDetails: {

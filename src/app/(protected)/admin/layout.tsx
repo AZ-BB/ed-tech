@@ -4,6 +4,7 @@ import {
 } from "@/utils/supabase-server";
 import { redirect } from "next/navigation";
 
+import { ForceLtrDocument } from "@/lib/i18n/force-ltr-document";
 import { permissionsFromUserMetadata } from "@/lib/admin-permissions";
 import { fetchAdminRolePermissionTemplates } from "@/lib/admin-role-permissions";
 
@@ -90,6 +91,7 @@ export default async function AdminLayout({
       userRole={userRole}
       permissions={permissions}
     >
+      <ForceLtrDocument />
       {children}
     </AdminPortalShell>
   );

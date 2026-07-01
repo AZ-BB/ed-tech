@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Serif_Display, Noto_Sans_Arabic } from "next/font/google";
-import { cookies } from "next/headers";
-import { defaultLocale, getDirection, isLocale } from "@/lib/i18n/config";
+import { cookies, headers } from "next/headers";
+import { defaultLocale, getDocumentDirection, isLocale } from "@/lib/i18n/config";
 import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import "./globals.css";
 import "./landing-page.css";
@@ -41,9 +41,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
+  const headersList = await headers();
   const rawLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = rawLocale && isLocale(rawLocale) ? rawLocale : defaultLocale;
-  const dir = getDirection(locale);
+  const pathname = headersList.get("x-pathname");
+  const dir = getDocumentDirection(locale, pathname);
 
   return (
     <html
