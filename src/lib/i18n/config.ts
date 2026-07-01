@@ -11,6 +11,30 @@ export function getDirection(locale: Locale): "ltr" | "rtl" {
   return locale === "ar" ? "rtl" : "ltr";
 }
 
+/** Staff portals are English-only; never inherit RTL from the locale cookie. */
+export const ltrOnlyPathPrefixes = ["/school", "/admin", "/advisor"] as const;
+
+export function isLtrOnlyPath(pathname: string): boolean {
+  const normalized =
+    pathname.endsWith("/") && pathname.length > 1
+      ? pathname.slice(0, -1)
+      : pathname;
+
+  return ltrOnlyPathPrefixes.some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`),
+  );
+}
+
+export function getDocumentDirection(
+  locale: Locale,
+  pathname?: string | null,
+): "ltr" | "rtl" {
+  if (pathname && isLtrOnlyPath(pathname)) {
+    return "ltr";
+  }
+  return getDirection(locale);
+}
+
 /** Routes that use the /[locale] prefix in this phase. */
 export const localizedPublicPaths = [
   "/",

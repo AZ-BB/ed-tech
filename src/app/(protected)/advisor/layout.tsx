@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { ForceLtrDocument } from "@/lib/i18n/force-ltr-document";
 import { fetchAdvisorSessionProfile } from "@/lib/advisor-access";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
@@ -87,6 +88,7 @@ export default async function AdvisorLayout({
 
   return (
     <Suspense fallback={null}>
+      <ForceLtrDocument />
       <AdvisorPortalShell
         displayName={displayName}
         avatarInitials={avatarInitials}

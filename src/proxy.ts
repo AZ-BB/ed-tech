@@ -41,6 +41,14 @@ function shouldSkipLocale(pathname: string): boolean {
   );
 }
 
+function nextWithPathname(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+}
+
 function localeRedirect(request: NextRequest, pathname: string): NextResponse | null {
   if (shouldSkipLocale(pathname)) return null;
 
@@ -77,7 +85,7 @@ export async function proxy(request: NextRequest) {
   const localeRedirectResponse = localeRedirect(request, pathname);
   if (localeRedirectResponse) return localeRedirectResponse;
 
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = nextWithPathname(request);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -89,7 +97,7 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = nextWithPathname(request);
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );

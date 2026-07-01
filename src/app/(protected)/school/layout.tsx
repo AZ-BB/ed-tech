@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { ForceLtrDocument } from "@/lib/i18n/force-ltr-document";
 import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
@@ -106,6 +107,7 @@ export default async function SchoolLayout({
 
   return (
     <Suspense fallback={null}>
+      <ForceLtrDocument />
       <SchoolPortalShell
         schoolName={schoolName}
         displayName={displayName}

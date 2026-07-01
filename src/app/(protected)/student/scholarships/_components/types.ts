@@ -21,6 +21,9 @@ export type Scholarship = {
   fieldsOfStudy: string;
   academicElig: string;
   englishReq: string;
+  ieltsMinScore?: number | null;
+  toeflMinScore?: number | null;
+  satPolicy?: string | null;
   otherElig: string;
   requiredDocs: string[];
   applicationMethod: string;

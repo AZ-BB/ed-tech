@@ -32,6 +32,7 @@ export function ScholarshipDetailPanel({
 }: Props) {
   const { dict } = useLocale();
   const t = dict.student.scholarships;
+  const uniT = dict.student.universities;
   const tabIds = useMemo(
     () =>
       [
@@ -120,7 +121,7 @@ export function ScholarshipDetailPanel({
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
-          <div className="absolute bottom-3 left-4 right-14 z-[4] flex max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-[var(--radius-pill)] bg-white/90 px-3 py-1.5 text-[10px] font-semibold text-[var(--green)] sm:right-auto sm:bottom-auto sm:left-auto sm:top-3.5 sm:right-14 sm:max-w-none sm:px-3.5 sm:text-[11px]">
+          <div className="absolute ml-4 bottom-3 left-4 right-14 z-[4] flex max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-[var(--radius-pill)] bg-white/90 px-3 py-1.5 text-[10px] font-semibold text-[var(--green)] sm:right-auto sm:bottom-auto sm:left-auto sm:top-3.5 sm:right-14 sm:max-w-none sm:px-3.5 sm:text-[11px]">
             <svg
               width="12"
               height="12"
@@ -174,7 +175,7 @@ export function ScholarshipDetailPanel({
           </div>
         </div>
 
-        <div className="sticky top-0 z-[5] flex min-w-0 snap-x snap-mandatory gap-0 overflow-x-auto border-b border-[var(--border-light)] bg-white px-4 [scrollbar-width:thin] sm:px-7 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]">
+        <div className="flex min-w-0 snap-x snap-mandatory gap-0 overflow-x-auto border-b border-[var(--border-light)] bg-white px-4 [scrollbar-width:thin] sm:px-7 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]">
           {tabIds.map((tab) => (
             <button
               key={tab.id}
@@ -219,7 +220,12 @@ export function ScholarshipDetailPanel({
                 }
               />
               <DetailRow label={t.academic} value={s.academicElig} />
-              <DetailRow label={t.english} value={s.englishReq} />
+              {s.englishReq.trim() ? (
+                <DetailRow label={t.english} value={s.englishReq} />
+              ) : null}
+              {s.satPolicy?.trim() ? (
+                <DetailRow label={uniT.satAct} value={s.satPolicy.trim()} />
+              ) : null}
               <DetailRow label={t.otherField} value={s.otherElig} />
             </DetailCard>
 
