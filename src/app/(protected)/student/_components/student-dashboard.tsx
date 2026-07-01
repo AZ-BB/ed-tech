@@ -1,5 +1,6 @@
 "use client";
 
+import type { Locale } from "@/lib/i18n/config";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { formatRelativeTime } from "@/lib/i18n/format-relative-time";
 import { format } from "date-fns";
@@ -79,7 +80,7 @@ function DashboardAnnouncementsList({
   emptyLabel,
 }: {
   items: DashboardAnnouncementItem[];
-  locale: string;
+  locale: Locale;
   emptyLabel: string;
 }) {
   return (
@@ -166,7 +167,7 @@ function DashboardAnnouncementsPanel({
   className,
 }: {
   items: DashboardAnnouncementItem[];
-  locale: string;
+  locale: Locale;
   emptyLabel: string;
   titleLabel: string;
   openTaskCount: number;
