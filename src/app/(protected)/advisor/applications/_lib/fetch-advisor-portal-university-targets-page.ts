@@ -23,7 +23,6 @@ type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 type PlanEmbed = {
   name: string;
-  price: number;
   universities_count: number;
 };
 
@@ -49,7 +48,6 @@ export type AdvisorPortalUniversityTargetRow = ApplicationUniversityTargetRow & 
   studentEmail: string;
   applicationStatus: string;
   packageLabel: string;
-  packagePrice: number;
 };
 
 export type AdvisorPortalUniversityTargetsPanelProps = {
@@ -95,11 +93,6 @@ function resolvePackageLabel(application: ApplicationEmbed | null): string {
   }
 
   return plan.name?.trim() || "—";
-}
-
-function resolvePackagePrice(application: ApplicationEmbed | null): number {
-  const plan = application ? firstEmbed(application.applications_plans) : null;
-  return plan?.price ?? 0;
 }
 
 async function fetchMatchingStudentIds(
@@ -162,7 +155,6 @@ function mapTargetRow(raw: TargetRowRaw): AdvisorPortalUniversityTargetRow {
     studentEmail,
     applicationStatus: application?.status?.trim() || "lead",
     packageLabel: resolvePackageLabel(application),
-    packagePrice: resolvePackagePrice(application),
   };
 }
 
@@ -192,7 +184,7 @@ async function fetchAdvisorUniversityTargetsPage(
         status,
         assigned_to,
         package_data,
-        applications_plans ( name, price, universities_count ),
+        applications_plans ( name, universities_count ),
         student_profiles ( first_name, last_name, email )
       )
     `,

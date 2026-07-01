@@ -71,13 +71,13 @@ export function UniversityDetailSectionTabs() {
     return (
         <nav
             id="detail-tabs"
-            className="sticky top-0 z-10 border-b border-[#ece9e4] bg-white px-4 min-[460px]:px-6"
+            className="sticky top-0 z-10 border-b border-[#ece9e4] bg-white px-3 sm:px-4 min-[460px]:px-6"
             aria-label={t.sectionNav}
         >
             {/* Inner row scrolls; `-mb-px` + `border-b-2` on tabs overlaps the nav 1px rule so active green sits on top. */}
             <div
                 ref={barRef}
-                className="scrollbar-thin flex min-w-0 flex-wrap gap-x-0 gap-y-0 overflow-x-auto"
+                className="scrollbar-thin flex min-w-0 snap-x snap-mandatory gap-x-0 gap-y-0 overflow-x-auto [-webkit-overflow-scrolling:touch]"
             >
                 {sectionTabs.map(({ id, label }) => {
                     const active = activeId === id;
@@ -87,7 +87,7 @@ export function UniversityDetailSectionTabs() {
                             type="button"
                             onClick={() => scrollToSection(id)}
                             className={clsx(
-                                "relative -mb-px shrink-0 cursor-pointer border-x-0 border-t-0 border-b-2 border-solid border-transparent bg-white px-[18px] py-3 text-[13px] font-medium text-[#7a7a7a] transition-[color,border-color,font-weight] duration-150 focus-visible:z-3 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+                                "relative -mb-px shrink-0 snap-start cursor-pointer border-x-0 border-t-0 border-b-2 border-solid border-transparent bg-white px-3 py-3 text-[12px] font-medium text-[#7a7a7a] transition-[color,border-color,font-weight] duration-150 focus-visible:z-3 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:px-[18px] sm:text-[13px]",
                                 active
                                     ? "z-2 border-b-[#2D6A4F] font-semibold text-[#1B4332]"
                                     : "hover:border-b-[#e0deda]/80 hover:text-[#4a4a4a]",

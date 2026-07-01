@@ -192,7 +192,13 @@ export function AdvisorApplicationsUniversitiesTab({
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-[13px] text-[#4a4a4a]">
-                  <div>{row.studentName}</div>
+                  <Link
+                    href={`/advisor/applications/${row.applicationId}?tab=universities`}
+                    className="font-semibold text-[var(--green-dark)] hover:underline"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {row.studentName}
+                  </Link>
                   {row.studentEmail !== "—" ? (
                     <div className="mt-0.5 text-[var(--text-hint)]">
                       {row.studentEmail}
@@ -200,12 +206,7 @@ export function AdvisorApplicationsUniversitiesTab({
                   ) : null}
                 </td>
                 <td className="px-4 py-3 text-[13px] text-[#4a4a4a]">
-                  <div>{row.packageLabel}</div>
-                  {row.packagePrice > 0 ? (
-                    <div className="mt-0.5 whitespace-nowrap font-medium text-[#2D6A4F]">
-                      AED {row.packagePrice.toLocaleString()}
-                    </div>
-                  ) : null}
+                  {row.packageLabel}
                 </td>
               </>
             );

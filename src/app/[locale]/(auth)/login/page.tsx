@@ -5,7 +5,57 @@ import { LocalizedLink } from "@/lib/i18n/localized-link";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { ArrowRight } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState, useState } from "react";
+import { Suspense, useActionState, useLayoutEffect, useRef, useState } from "react";
+
+const LOGIN_VIEWPORT_PADDING_PX = 16;
+
+function LoginScaleFit({ children }: { children: React.ReactNode }) {
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    useLayoutEffect(() => {
+        const node = contentRef.current;
+        if (!node) return;
+
+        const fitToViewport = () => {
+            const availableHeight =
+                (window.visualViewport?.height ?? window.innerHeight) -
+                LOGIN_VIEWPORT_PADDING_PX;
+
+            node.style.zoom = "1";
+            const contentHeight = node.getBoundingClientRect().height;
+            if (contentHeight <= 0) return;
+
+            const nextScale = Math.min(1, availableHeight / contentHeight);
+            node.style.zoom = String(nextScale);
+            setScale(nextScale);
+        };
+
+        fitToViewport();
+
+        const resizeObserver = new ResizeObserver(fitToViewport);
+        resizeObserver.observe(node);
+
+        window.visualViewport?.addEventListener("resize", fitToViewport);
+        window.addEventListener("resize", fitToViewport);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.visualViewport?.removeEventListener("resize", fitToViewport);
+            window.removeEventListener("resize", fitToViewport);
+        };
+    }, []);
+
+    return (
+        <div
+            ref={contentRef}
+            className="login-fit-content flex w-full max-w-[min(100%,28rem)] flex-col items-center"
+            style={{ zoom: scale }}
+        >
+            {children}
+        </div>
+    );
+}
 
 function LogoIcon() {
     return (
@@ -192,25 +242,25 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
     const [state, formAction, isPending] = useActionState(login, null);
 
     return (
-        <div className="w-full rounded-[20px] border border-[var(--border-light)] bg-white p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] sm:p-9">
+        <div className="w-full rounded-[20px] border border-[var(--border-light)] bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] sm:p-8 md:p-9">
             {/* Log in */}
-            <h1 className="serif text-[1.65rem] leading-tight text-[var(--text)] sm:text-[1.75rem]">
+            <h1 className="serif text-xl leading-tight text-[var(--text)] sm:text-[1.65rem] md:text-[1.75rem]">
                 {a.welcomeBack}
             </h1>
-            <p className="mt-1.5 text-sm text-[#6a6a6a]">{a.logInSubtitle}</p>
+            <p className="mt-1 text-xs text-[#6a6a6a] sm:mt-1.5 sm:text-sm">{a.logInSubtitle}</p>
 
-            <form className="mt-6 space-y-4" action={formAction}>
+            <form className="mt-4 space-y-3 sm:mt-6 sm:space-y-4" action={formAction}>
                 <input name="next" type="hidden" value={next} />
                 {schoolDeactivated ? (
                     <p
-                        className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                        className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 sm:px-3 sm:py-2 sm:text-sm"
                         role="alert"
                     >
                         {a.schoolDeactivated}
                     </p>
                 ) : deactivated ? (
                     <p
-                        className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                        className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 sm:px-3 sm:py-2 sm:text-sm"
                         role="alert"
                     >
                         {a.accountDeactivated}
@@ -218,7 +268,7 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                 ) : null}
                 {state?.error ? (
                     <p
-                        className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+                        className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-800 sm:px-3 sm:py-2 sm:text-sm"
                         role="alert"
                     >
                         {String(state.error)}
@@ -227,7 +277,7 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                 <div>
                     <label
                         htmlFor="login-email"
-                        className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]"
+                        className="mb-1 block text-xs font-semibold text-[var(--text-mid)] sm:mb-1.5"
                     >
                         {a.email}
                     </label>
@@ -238,14 +288,14 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                         autoComplete="email"
                         required
                         placeholder={a.emailPlaceholder}
-                        className="m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl border-[1.5px] border-[var(--border)] bg-white px-4 py-3 text-sm leading-normal text-[var(--text)] antialiased transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:outline-none focus:ring-0 focus:shadow-[0_0_0_4px_rgba(45,106,79,0.07)]"
+                        className="m-0 box-border min-h-10 w-full max-w-full appearance-none rounded-xl border-[1.5px] border-[var(--border)] bg-white px-3.5 py-2 text-sm leading-normal text-[var(--text)] antialiased transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:outline-none focus:ring-0 focus:shadow-[0_0_0_4px_rgba(45,106,79,0.07)] sm:min-h-12 sm:px-4 sm:py-3"
                     />
                 </div>
 
                 <div>
                     <label
                         htmlFor="login-password"
-                        className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]"
+                        className="mb-1 block text-xs font-semibold text-[var(--text-mid)] sm:mb-1.5"
                     >
                         {a.password}
                     </label>
@@ -257,7 +307,7 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                             autoComplete="current-password"
                             required
                             placeholder="••••••••"
-                            className="m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl border-[1.5px] border-[var(--border)] bg-white py-3 pe-12 ps-4 text-sm leading-normal text-[var(--text)] antialiased transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:outline-none focus:ring-0 focus:shadow-[0_0_0_4px_rgba(45,106,79,0.07)]"
+                            className="m-0 box-border min-h-10 w-full max-w-full appearance-none rounded-xl border-[1.5px] border-[var(--border)] bg-white py-2 pe-11 ps-3.5 text-sm leading-normal text-[var(--text)] antialiased transition placeholder:text-[#c0bdb8] focus:border-[var(--green-light)] focus:outline-none focus:ring-0 focus:shadow-[0_0_0_4px_rgba(45,106,79,0.07)] sm:min-h-12 sm:py-3 sm:pe-12 sm:ps-4"
                         />
                         <button
                             type="button"
@@ -271,11 +321,11 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                     </div>
                 </div>
 
-                <div className="flex justify-end pt-0.5">
+                <div className="flex justify-end">
                     <button
                         type="button"
                         onClick={onRequestForgot}
-                        className="m-0 cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-[var(--green)] hover:underline focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2"
+                        className="m-0 cursor-pointer border-0 bg-transparent p-0 text-xs font-medium text-[var(--green)] hover:underline focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2 sm:text-sm"
                     >
                         {a.forgotPassword}
                     </button>
@@ -284,25 +334,25 @@ function LoginFormCard({ onRequestForgot }: { onRequestForgot: () => void }) {
                 <button
                     type="submit"
                     disabled={isPending}
-                    className="m-0 box-border flex h-12 w-full max-w-full cursor-pointer items-center justify-center rounded-full border-0 border-transparent bg-[#2D634D] px-5 text-sm font-semibold leading-normal text-white antialiased shadow-[0_3px_14px_rgba(45,99,77,0.25)] transition hover:bg-[var(--green-dark)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D634D] focus-visible:ring-offset-2 focus:ring-0 disabled:cursor-wait disabled:opacity-70"
+                    className="m-0 box-border flex h-10 w-full max-w-full cursor-pointer items-center justify-center rounded-full border-0 border-transparent bg-[#2D634D] px-4 text-sm font-semibold leading-normal text-white antialiased shadow-[0_3px_14px_rgba(45,99,77,0.25)] transition hover:bg-[var(--green-dark)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2D634D] focus-visible:ring-offset-2 focus:ring-0 disabled:cursor-wait disabled:opacity-70 sm:h-12 sm:px-5"
                 >
                     {isPending ? a.loggingIn : a.logIn}
                 </button>
             </form>
 
-            <div className="my-8 flex w-full items-center gap-3">
+            <div className="my-4 flex w-full items-center gap-2.5 sm:my-8 sm:gap-3">
                 <div className="h-px min-w-0 flex-1 bg-[var(--border)]" />
-                <span className="shrink-0 text-xs font-medium text-[#9a9a9a]">{a.newHere}</span>
+                <span className="shrink-0 text-[11px] font-medium text-[#9a9a9a] sm:text-xs">{a.newHere}</span>
                 <div className="h-px min-w-0 flex-1 bg-[var(--border)]" />
             </div>
 
-            <h2 className="serif text-[1.35rem] leading-tight text-[var(--text)] sm:text-[1.45rem]">
+            <h2 className="serif text-lg leading-tight text-[var(--text)] sm:text-[1.35rem] md:text-[1.45rem]">
                 {a.startUniversityJourney}
             </h2>
-            <p className="mt-1.5 text-sm text-[#6a6a6a]">{a.createAccountSubtitle}</p>
+            <p className="mt-1 text-xs text-[#6a6a6a] sm:mt-1.5 sm:text-sm">{a.createAccountSubtitle}</p>
             <LocalizedLink
                 href="/signup"
-                className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full border-[1.5px] border-[var(--border)] bg-white text-sm font-semibold text-[var(--text-mid)] antialiased transition hover:border-[#c8c4bc] hover:bg-[#faf9f7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2"
+                className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-full border-[1.5px] border-[var(--border)] bg-white text-sm font-semibold text-[var(--text-mid)] antialiased transition hover:border-[#c8c4bc] hover:bg-[#faf9f7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] focus-visible:ring-offset-2 sm:mt-5 sm:h-12"
             >
                 {a.createAccount}
                 <ArrowRight className="icon-directional size-4" strokeWidth={2} aria-hidden />
@@ -318,28 +368,30 @@ function LoginPageContent() {
 
     return (
         <div
-            className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-end-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-start-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
+            className="relative flex h-dvh items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-end-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-start-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
             data-page="login"
         >
-            <div className="relative z-10 flex w-full max-w-[min(100%,28rem)] flex-col items-center px-4 py-10 sm:px-5 sm:py-12">
-                <LocalizedLink href="/" className="mb-8 flex items-center gap-2.5">
-                    <div
-                        className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#2D634D]"
-                        aria-hidden
-                    >
-                        <LogoIcon />
-                    </div>
-                    <span className="text-[1.15rem] font-bold tracking-tight text-[var(--text)]">
-                        {dict.common.brand}
-                    </span>
-                </LocalizedLink>
+            <div className="relative z-10 flex h-full w-full items-center justify-center px-4 py-2">
+                <LoginScaleFit>
+                    <LocalizedLink href="/" className="mb-4 flex items-center gap-2 sm:mb-6 sm:gap-2.5">
+                        <div
+                            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-[#2D634D] sm:size-10 sm:rounded-[10px]"
+                            aria-hidden
+                        >
+                            <LogoIcon />
+                        </div>
+                        <span className="text-base font-bold tracking-tight text-[var(--text)] sm:text-[1.15rem]">
+                            {dict.common.brand}
+                        </span>
+                    </LocalizedLink>
 
-                <LoginFormCard
-                    onRequestForgot={() => {
-                        setForgotKey((k) => k + 1);
-                        setForgotOpen(true);
-                    }}
-                />
+                    <LoginFormCard
+                        onRequestForgot={() => {
+                            setForgotKey((k) => k + 1);
+                            setForgotOpen(true);
+                        }}
+                    />
+                </LoginScaleFit>
             </div>
 
             <ForgotPasswordModal
@@ -354,11 +406,11 @@ function LoginPageContent() {
 function LoginPageFallback() {
     return (
         <div
-            className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-end-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-start-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
+            className="relative flex h-dvh items-center justify-center overflow-hidden bg-[#F4F9F4] before:pointer-events-none before:absolute before:-top-[180px] before:-end-[120px] before:h-[500px] before:w-[500px] before:rounded-full before:bg-[rgba(45,106,79,0.05)] before:content-[''] after:pointer-events-none after:absolute after:-bottom-[140px] after:-start-[100px] after:h-[380px] after:w-[380px] after:rounded-full after:bg-[rgba(45,106,79,0.04)] after:content-['']"
             data-page="login"
         >
-            <div className="relative z-10 w-full max-w-[min(100%,28rem)] px-4 py-10 sm:px-5 sm:py-12">
-                <div className="h-96 w-full animate-pulse rounded-[20px] border border-[var(--border-light)] bg-white/80" />
+            <div className="relative z-10 flex h-full w-full items-center justify-center px-4 py-2">
+                <div className="h-96 w-full max-w-[min(100%,28rem)] animate-pulse rounded-[20px] border border-[var(--border-light)] bg-white/80" />
             </div>
         </div>
     );

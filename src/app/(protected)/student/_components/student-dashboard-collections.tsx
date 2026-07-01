@@ -8,6 +8,7 @@ import {
   fetchDashboardShortlistedUniScholarship,
   type DashboardCollectionCard,
 } from "../_lib/dashboard-collections";
+import { CountryFlag } from "@/components/country-flag";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useLocale } from "@/lib/i18n/locale-context";
 
@@ -58,7 +59,9 @@ function CollectionCardsRow({
             scroll={false}
             className={`block text-inherit no-underline ${cardOuterClass}`}
           >
-            <div className="mb-1.5 text-sm">{item.flag}</div>
+            <div className="mb-1.5 flex h-5 items-center">
+              <CountryFlag code={item.countryCode} size={18} />
+            </div>
             <div className="bidi-ltr truncate text-[13px] font-semibold" dir="ltr">
               {item.name}
             </div>
@@ -68,7 +71,9 @@ function CollectionCardsRow({
           </Link>
         ) : (
           <div key={item.key} className={cardOuterClass}>
-            <div className="mb-1.5 text-sm">{item.flag}</div>
+            <div className="mb-1.5 flex h-5 items-center">
+              <CountryFlag code={item.countryCode} size={18} />
+            </div>
             <div className="bidi-ltr truncate text-[13px] font-semibold" dir="ltr">
               {item.name}
             </div>

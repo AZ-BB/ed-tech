@@ -1,4 +1,3 @@
-import { flagFromCountryCode } from "@/lib/country-flag-emoji";
 import {
   discoveryUiIdFromScholarshipRow,
   type ScholarshipDiscoveryRow,
@@ -10,7 +9,7 @@ export type DashboardSupabaseClient = ReturnType<
 
 export type DashboardCollectionCard = {
   key: string;
-  flag: string;
+  countryCode: string | null;
   name: string;
   sub: string;
   href: string | null;
@@ -165,7 +164,7 @@ export async function fetchDashboardSavedByTab(
         if (!u?.id) return null;
         return {
           key: `uni-save-${u.id}`,
-          flag: flagFromCountryCode(u.country_code),
+          countryCode: u.country_code,
           name: u.name?.trim() || "University",
           sub: formatUniversityLocation({
             city: u.city,
@@ -196,7 +195,7 @@ export async function fetchDashboardSavedByTab(
         });
         return {
           key: `sch-save-${row.id}`,
-          flag: flagFromCountryCode(row.nationality_country_code),
+          countryCode: row.nationality_country_code,
           name: row.name?.trim() || "Scholarship",
           sub: formatScholarshipSub({ type: row.type, coverage: row.coverage }),
           href: `/student/scholarships?detail=${encodeURIComponent(detailId)}`,
@@ -219,7 +218,7 @@ export async function fetchDashboardSavedByTab(
           `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Advisor";
         return {
           key: `adv-save-${a.id}`,
-          flag: flagFromCountryCode(a.nationality_country_code),
+          countryCode: a.nationality_country_code,
           name,
           sub: formatAdvisorSub(a.experience_years),
           href: "/student/advisor-sessions",
@@ -246,7 +245,7 @@ export async function fetchDashboardSavedByTab(
           [uni, maj].filter(Boolean).join(" · ") || "Student ambassador";
         return {
           key: `amb-save-${m.id}`,
-          flag: flagFromCountryCode(m.destination_country_code),
+          countryCode: m.destination_country_code,
           name,
           sub,
           href: "/student/ambassadors",
@@ -310,7 +309,7 @@ export async function fetchDashboardShortlistedUniScholarship(
         if (!u?.id) return null;
         return {
           key: `uni-shortlist-${u.id}`,
-          flag: flagFromCountryCode(u.country_code),
+          countryCode: u.country_code,
           name: u.name?.trim() || "University",
           sub: formatUniversityLocation({
             city: u.city,
@@ -341,7 +340,7 @@ export async function fetchDashboardShortlistedUniScholarship(
         });
         return {
           key: `sch-shortlist-${row.id}`,
-          flag: flagFromCountryCode(row.nationality_country_code),
+          countryCode: row.nationality_country_code,
           name: row.name?.trim() || "Scholarship",
           sub: formatScholarshipSub({ type: row.type, coverage: row.coverage }),
           href: `/student/scholarships?detail=${encodeURIComponent(detailId)}`,

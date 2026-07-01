@@ -4,6 +4,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowBackIcon } from "../../../_components/directional-icons";
+import { UniversityLocation } from "../../_components/university-location";
 import { UniversityDetailSectionTabs } from "./university-detail-section-tabs";
 import {
     DetailHeaderFavouriteButton,
@@ -19,7 +20,10 @@ export type MajorProgramBlock = {
 export type UniversityDetailModel = {
     id: string;
     name: string;
-    locationLine: string;
+    city: string;
+    state: string | null;
+    countryName: string;
+    countryCode: string;
     isPublic: boolean;
     logoUrl: string | null;
     coverImageUrl: string | null;
@@ -136,17 +140,17 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
             initialShortlisted={uni.is_shortlisted}
             initialFavourite={uni.is_favourite}
         >
-        <div className="mx-auto px-5 py-6 pb-[60px]">
+        <div className="mx-auto py-4 pb-[60px] sm:py-6">
             <Link
                 href="/student/universities"
-                className="mb-4 inline-flex items-center gap-1.5 rounded-[50px] border border-[#ece9e4] bg-white px-[18px] py-2 text-xs font-medium text-[#4a4a4a] transition-colors hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F]"
+                className="mb-4 inline-flex items-center gap-1.5 rounded-[50px] border border-[#ece9e4] bg-white px-4 py-2 text-xs font-medium text-[#4a4a4a] transition-colors hover:border-[#2D6A4F] hover:bg-[#f0f7f2] hover:text-[#2D6A4F] sm:px-[18px]"
             >
                 <ArrowBackIcon />
                 {t.backToSearch}
             </Link>
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-[12px] border border-[#ece9e4] bg-white px-5 py-3.5">
-                <div className="flex min-w-0 items-center gap-3">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#ece9e4] bg-white px-4 py-3 sm:gap-4 sm:px-5 sm:py-3.5">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-[#E8F5EE] p-1">
                         {uni.logoUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element -- remote logos; domains vary
@@ -159,7 +163,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             <CrestSvg className="h-[18px] w-[18px]" />
                         )}
                     </div>
-                    <span className="bidi-ltr truncate text-base font-semibold text-[#1a1a1a]" dir="ltr">{uni.name}</span>
+                    <span className="bidi-ltr min-w-0 truncate text-sm font-semibold text-[#1a1a1a] sm:text-base" dir="ltr">{uni.name}</span>
                 </div>
                 <div className="flex gap-2">
                     <DetailHeaderFavouriteButton />
@@ -179,17 +183,17 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
                 <div className="min-w-0 flex-1">
                     <div className="relative mb-4 overflow-visible rounded-[12px] border border-[#ece9e4] bg-white">
-                        <div className="relative h-[190px] overflow-hidden rounded-t-[12px]">
+                        <div className="relative h-[150px] overflow-visible rounded-t-[12px] sm:h-[190px]">
                             {uni.coverImageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element -- remote cover images; domains vary
                                 <img
                                     src={uni.coverImageUrl}
                                     alt=""
-                                    className="absolute inset-0 h-full w-full object-cover"
+                                    className="absolute inset-0 h-full w-full rounded-t-[12px] object-cover"
                                 />
                             ) : (
                                 <div
-                                    className="absolute inset-0"
+                                    className="absolute inset-0 rounded-t-[12px]"
                                     style={{
                                         background:
                                             "linear-gradient(135deg, #1B4332 0%, #2D6A4F 35%, #40916C 70%, #52B788 100%)",
@@ -197,7 +201,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 />
                             )}
                             <div
-                                className="pointer-events-none absolute inset-0"
+                                className="pointer-events-none absolute inset-0 rounded-t-[12px]"
                                 style={{
                                     background:
                                         "linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.15) 100%)",
@@ -205,32 +209,40 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             />
                             {!uni.coverImageUrl ? (
                                 <div
-                                    className="pointer-events-none absolute inset-0 opacity-30"
+                                    className="pointer-events-none absolute inset-0 rounded-t-[12px] opacity-30"
                                     style={{ backgroundImage: bannerPatternSvg }}
                                 />
                             ) : null}
-                        </div>
 
-                        <div className="absolute top-[162px] left-6 z-[5] flex h-16 w-16 items-center justify-center rounded-2xl border-[3px] border-white bg-white shadow-[0_2px_12px_rgba(0,0,0,0.1)]">
-                            <div className="flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-xl bg-[#E8F5EE] p-2">
-                                {uni.logoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                        src={uni.logoUrl}
-                                        alt=""
-                                        className="h-full w-full object-contain"
-                                    />
-                                ) : (
-                                    <CrestSvg />
-                                )}
+                            <div className="absolute -bottom-7 left-4 z-[5] flex h-14 w-14 items-center justify-center rounded-2xl border-[3px] border-white bg-white shadow-[0_2px_12px_rgba(0,0,0,0.1)] sm:-bottom-8 sm:left-6 sm:h-16 sm:w-16">
+                                <div className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-xl bg-[#E8F5EE] p-2 sm:h-[52px] sm:w-[52px]">
+                                    {uni.logoUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                            src={uni.logoUrl}
+                                            alt=""
+                                            className="h-full w-full object-contain"
+                                        />
+                                    ) : (
+                                        <CrestSvg />
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="px-6 pb-4 pt-[40px]">
-                            <h1 className="serif bidi-ltr mb-0.5 text-[22px] font-bold leading-tight text-[#1a1a1a]" dir="ltr">
+                        <div className="px-4 pb-4 pt-10 sm:px-6 sm:pt-12">
+                            <h1 className="serif bidi-ltr mb-0.5 text-[19px] font-bold leading-tight text-[#1a1a1a] break-words sm:text-[22px]" dir="ltr">
                                 {uni.name}
                             </h1>
-                            <p className="bidi-ltr mb-2.5 text-sm text-[#7a7a7a]" dir="ltr">{uni.locationLine}</p>
+                            <p className="bidi-ltr mb-2.5 text-sm text-[#7a7a7a]" dir="ltr">
+                                <UniversityLocation
+                                    city={uni.city}
+                                    state={uni.state}
+                                    countryName={uni.countryName}
+                                    countryCode={uni.countryCode}
+                                    flagSize={20}
+                                />
+                            </p>
                             <span className="inline-block rounded-[20px] bg-[#E8F5EE] px-3 py-1 text-xs font-medium text-[#2D6A4F]">
                                 {uni.isPublic ? t.publicUniversity : t.privateUniversity}
                             </span>
@@ -240,7 +252,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-overview"
-                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-4 py-4 sm:px-6 sm:py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -285,18 +297,18 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 text-sm font-medium text-[#1a1a1a]">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
+                            <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[#1a1a1a]">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8" className="shrink-0">
                                     <line x1="12" y1="1" x2="12" y2="23" />
                                     <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
                                 </svg>
-                                {t.tuitionLabel}: <span className="bidi-ltr" dir="ltr">{uni.tuitionSentence}</span>
+                                <span>{t.tuitionLabel}: <span className="bidi-ltr break-words" dir="ltr">{uni.tuitionSentence}</span></span>
                             </div>
                         </section>
 
                         <section
                             id="d-requirements"
-                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-4 py-4 sm:px-6 sm:py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -308,24 +320,24 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             >
                                 {t.requirements}
                             </SectionTitle>
-                            <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
-                                <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">{t.gpa}</span>
-                                <span className="font-semibold text-[#1a1a1a]">
+                            <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2 text-[13.5px] sm:flex-row sm:items-center sm:gap-2.5">
+                                <span className="shrink-0 font-medium text-[#7a7a7a] sm:w-[100px] sm:min-w-[100px]">{t.gpa}</span>
+                                <span className="min-w-0 font-semibold text-[#1a1a1a] break-words">
                                     {t.competitiveAcademic}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
-                                <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">{t.satAct}</span>
-                                <span className="bidi-ltr font-semibold text-[#1a1a1a]" dir="ltr">{satMiddle}</span>
+                            <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2 text-[13.5px] sm:flex-row sm:items-center sm:gap-2.5">
+                                <span className="shrink-0 font-medium text-[#7a7a7a] sm:w-[100px] sm:min-w-[100px]">{t.satAct}</span>
+                                <span className="bidi-ltr min-w-0 font-semibold text-[#1a1a1a] break-words" dir="ltr">{satMiddle}</span>
                             </div>
-                            <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
-                                <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">{t.ielts}</span>
-                                <span className="bidi-ltr font-semibold text-[#1a1a1a]" dir="ltr">{t.ieltsMinimum} {uni.ieltsFormatted}</span>
+                            <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2 text-[13.5px] sm:flex-row sm:items-center sm:gap-2.5">
+                                <span className="shrink-0 font-medium text-[#7a7a7a] sm:w-[100px] sm:min-w-[100px]">{t.ielts}</span>
+                                <span className="bidi-ltr min-w-0 font-semibold text-[#1a1a1a] break-words" dir="ltr">{t.ieltsMinimum} {uni.ieltsFormatted}</span>
                             </div>
                             {uni.toeflFormatted ? (
-                                <div className="flex items-center gap-2.5 border-b border-[#ece9e4] py-2 text-[13.5px]">
-                                    <span className="w-[100px] min-w-[100px] font-medium text-[#7a7a7a]">{t.toefl}</span>
-                                    <span className="bidi-ltr font-semibold text-[#1a1a1a]" dir="ltr">{t.ieltsMinimum} {uni.toeflFormatted}</span>
+                                <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2 text-[13.5px] sm:flex-row sm:items-center sm:gap-2.5">
+                                    <span className="shrink-0 font-medium text-[#7a7a7a] sm:w-[100px] sm:min-w-[100px]">{t.toefl}</span>
+                                    <span className="bidi-ltr min-w-0 font-semibold text-[#1a1a1a] break-words" dir="ltr">{t.ieltsMinimum} {uni.toeflFormatted}</span>
                                 </div>
                             ) : null}
                             <div className="mb-3 mt-4 text-[13px] font-semibold text-[#1a1a1a]">
@@ -343,7 +355,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-application"
-                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-4 py-4 sm:px-6 sm:py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -385,7 +397,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-costs"
-                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-4 py-4 sm:px-6 sm:py-5"
                         >
                             <SectionTitle
                                 icon={
@@ -397,15 +409,15 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             >
                                 {t.costsScholarships}
                             </SectionTitle>
-                            <div className="flex items-center justify-between border-b border-[#ece9e4] py-2.5 text-[13.5px]">
+                            <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <span className="text-[#7a7a7a]">{t.tuitionPerYear}</span>
-                                <span className="bidi-ltr font-semibold" dir="ltr">{uni.tuitionDisplay}</span>
+                                <span className="bidi-ltr font-semibold break-words" dir="ltr">{uni.tuitionDisplay}</span>
                             </div>
-                            <div className="flex items-center justify-between border-b border-[#ece9e4] py-2.5 text-[13.5px]">
+                            <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <span className="text-[#7a7a7a]">{t.estimatedLiving}</span>
-                                <span className="bidi-ltr font-semibold" dir="ltr">{uni.livingFormatted}</span>
+                                <span className="bidi-ltr font-semibold break-words" dir="ltr">{uni.livingFormatted}</span>
                             </div>
-                            <div className="flex items-center justify-between py-2.5 text-[13.5px]">
+                            <div className="flex flex-col gap-2 py-2.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <span className="text-[#7a7a7a]">{t.scholarshipsAvailable}</span>
                                 {uni.scholarshipsAvailable ? (
                                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#E8F5EE] px-3 py-0.5 text-xs font-semibold text-[#2D6A4F]">
@@ -427,7 +439,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
 
                         <section
                             id="d-majors"
-                            className="scroll-mt-28 border-b border-[#ece9e4] px-6 py-5"
+                            className="scroll-mt-28 border-b border-[#ece9e4] px-4 py-4 sm:px-6 sm:py-5"
                         >
                             <div className="mb-3 flex flex-wrap items-center gap-2">
                                 <div className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold text-[#1a1a1a]">
@@ -474,7 +486,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                                     </span>
                                                 </span>
                                             </summary>
-                                            <div className="space-y-1.5 border-t border-[#ece9e4] px-4 py-3 pl-[56px]">
+                                            <div className="space-y-1.5 border-t border-[#ece9e4] px-4 py-3 pl-4 sm:pl-[56px]">
                                                 {block.programs.map((p) => (
                                                     <div
                                                         key={p}
@@ -491,7 +503,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             </div>
                         </section>
 
-                        <section id="d-alumni" className="relative scroll-mt-28 overflow-hidden px-6 py-5">
+                        <section id="d-alumni" className="relative scroll-mt-28 overflow-hidden px-4 py-4 sm:px-6 sm:py-5">
                             <div
                                 aria-hidden
                                 className="pointer-events-none absolute top-5 right-[-32px] z-[3] rotate-[35deg] bg-[#2D6A4F] px-10 py-1 text-[11px] font-bold tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.15)]"
@@ -517,7 +529,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                 </div>
 
                 <aside className="w-full shrink-0 lg:w-[220px] lg:min-w-[220px]">
-                    <div className="sticky top-6 rounded-[12px] border border-[#ece9e4] bg-white p-5">
+                    <div className="rounded-[12px] border border-[#ece9e4] bg-white p-4 sm:p-5 lg:sticky lg:top-6">
                         <div className="mb-3.5 text-sm font-semibold text-[#1a1a1a]">{t.yourActions}</div>
                         <DetailSidebarActivityButtons />
                         {uni.websiteUrl ? (

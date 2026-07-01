@@ -121,7 +121,7 @@ export function ScholarshipDetailPanel({
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
-          <div className="absolute ml-4 bottom-3 left-4 right-14 z-[4] flex max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-[var(--radius-pill)] bg-white/90 px-3 py-1.5 text-[10px] font-semibold text-[var(--green)] sm:right-auto sm:bottom-auto sm:left-auto sm:top-3.5 sm:right-14 sm:max-w-none sm:px-3.5 sm:text-[11px]">
+          <div className="absolute top-3.5 left-4 right-14 z-[4] flex min-w-0 items-center gap-1.5 rounded-[var(--radius-pill)] bg-white/90 px-3 py-1.5 text-[10px] font-semibold text-[var(--green)] sm:left-auto sm:right-14 sm:max-w-none sm:px-3.5 sm:text-[11px]">
             <svg
               width="12"
               height="12"
@@ -457,7 +457,7 @@ function SideBtn({
       disabled={disabled}
       aria-pressed={ariaPressed}
       className={clsx(
-        "mb-2 flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--radius-sm)] border px-3.5 py-2.5 text-left text-[13px] font-medium transition-[background-color,border-color,color,box-shadow]",
+        "mb-2 flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[var(--radius-sm)] border px-3.5 py-2.5 text-start text-[13px] font-medium transition-[background-color,border-color,color,box-shadow]",
         disabled && "cursor-not-allowed opacity-50",
         primary
           ? "border-[var(--green)] bg-[var(--green)] font-semibold text-white shadow-sm hover:bg-[var(--green-dark)]"
@@ -481,7 +481,7 @@ function SideBtn({
       >
         {icon}
       </span>
-      {children}
+      <span className="min-w-0 text-start leading-snug">{children}</span>
     </button>
   );
 }

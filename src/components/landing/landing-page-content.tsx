@@ -29,8 +29,8 @@ const FEATURE_ICONS: { bg: string; stroke: string; paths: ReactNode }[] = [
     ),
   },
   {
-    bg: "#E6F1FB",
-    stroke: "#185FA5",
+    bg: "#F7F1D9",
+    stroke: "#9A7B0A",
     paths: <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />,
   },
   {
@@ -65,8 +65,8 @@ const FEATURE_ICONS: { bg: string; stroke: string; paths: ReactNode }[] = [
     ),
   },
   {
-    bg: "#FAEEDA",
-    stroke: "#854F0B",
+    bg: "#F4E8E3",
+    stroke: "#C26A4A",
     paths: (
       <>
         <path d="M22 2L11 13" />
@@ -160,6 +160,66 @@ export function LandingPageContent() {
                     <div style={{ fontSize: "13px", fontWeight: 600 }}>Essay score</div>
                     <div className="hv-score-text">Strong intro, improve conclusion</div>
                   </div>
+                </div>
+                <div
+                  style={{
+                    height: "4px",
+                    background: "var(--border-light)",
+                    borderRadius: "2px",
+                    marginTop: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "75%",
+                      height: "100%",
+                      background: "var(--green)",
+                      borderRadius: "2px",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="hv-card hv-3">
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      background: "var(--green-bg)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#2D6A4F"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
+                      <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "12px", fontWeight: 600 }}>Scholarship found</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-light)" }}>
+                      Full ride — UAE nationals
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--green)", fontWeight: 600 }}>
+                  MOHESR Program →
                 </div>
               </div>
             </div>
