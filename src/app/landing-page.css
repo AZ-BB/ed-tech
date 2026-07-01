@@ -145,6 +145,12 @@ body {
   padding: 10px 40px;
 }
 
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .nav-logo {
   display: flex;
   align-items: center;

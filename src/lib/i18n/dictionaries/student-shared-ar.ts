@@ -10,5 +10,5 @@ export const studentSharedAr = {
   search: "بحث",
   filter: "تصفية",
   emptyTitle: "لا يوجد شيء هنا بعد",
-  emptyDescription: "عد لاحقاً للاطلاع على التحديثات.",
+  emptyDescription: "تحقق مرة أخرى لاحقاً للاطلاع على التحديثات.",
 } as const;
