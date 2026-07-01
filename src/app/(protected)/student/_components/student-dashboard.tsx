@@ -57,6 +57,145 @@ function activityLogAccent(entityType: string): {
   }
 }
 
+function AnnouncementsBellIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    </svg>
+  );
+}
+
+function DashboardAnnouncementsList({
+  items,
+  locale,
+  emptyLabel,
+}: {
+  items: DashboardAnnouncementItem[];
+  locale: string;
+  emptyLabel: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-2 ${ANNOUNCEMENTS_LIST_CLASS}`}>
+      {items.length === 0 ? (
+        <p className="px-0.5 text-xs text-[var(--text-hint)]">{emptyLabel}</p>
+      ) : (
+        items.map((a) => {
+          const timeLabel = formatRelativeTime(a.createdAt, locale);
+          return (
+            <div
+              key={a.id}
+              className="flex items-start gap-2.5 rounded-lg bg-[var(--sand)] px-2.5 py-2 text-xs leading-snug text-[var(--text-mid)]"
+            >
+              <span className={announcementDotClass} aria-hidden />
+              <div className="min-w-0">
+                <div className="break-words">{a.title}</div>
+                {timeLabel ? (
+                  <div className="mt-0.5 text-[10px] text-[var(--text-hint)]">
+                    {timeLabel}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+function DashboardOpenTasksLink({
+  openTaskCount,
+  oneTaskLabel,
+  tasksLabel,
+  viewTasksLabel,
+}: {
+  openTaskCount: number;
+  oneTaskLabel: string;
+  tasksLabel: string;
+  viewTasksLabel: string;
+}) {
+  if (openTaskCount <= 0) return null;
+
+  return (
+    <div className="mt-3 border-t border-[var(--border-light)] pt-3">
+      <Link
+        href="/student/my-applications?tab=tasks"
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-[#FAEEDA] bg-[#FFFBEB] px-3 py-2.5 text-inherit no-underline transition-colors hover:border-[#F5D78E] hover:bg-[#FEF3C7]"
+      >
+        <span className="flex min-w-0 items-center gap-2 text-xs font-semibold text-[#854F0B]">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 12.5l2.5 2.5L16 9" />
+          </svg>
+          {openTaskCount === 1 ? oneTaskLabel : tasksLabel}
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[#854F0B]">
+          {viewTasksLabel}
+          <ArrowForwardIcon size={12} strokeWidth={2.5} />
+        </span>
+      </Link>
+    </div>
+  );
+}
+
+function DashboardAnnouncementsPanel({
+  items,
+  locale,
+  emptyLabel,
+  titleLabel,
+  openTaskCount,
+  oneTaskLabel,
+  tasksLabel,
+  viewTasksLabel,
+  className,
+}: {
+  items: DashboardAnnouncementItem[];
+  locale: string;
+  emptyLabel: string;
+  titleLabel: string;
+  openTaskCount: number;
+  oneTaskLabel: string;
+  tasksLabel: string;
+  viewTasksLabel: string;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
+        <AnnouncementsBellIcon />
+        {titleLabel}
+      </div>
+      <DashboardAnnouncementsList
+        items={items}
+        locale={locale}
+        emptyLabel={emptyLabel}
+      />
+      <DashboardOpenTasksLink
+        openTaskCount={openTaskCount}
+        oneTaskLabel={oneTaskLabel}
+        tasksLabel={tasksLabel}
+        viewTasksLabel={viewTasksLabel}
+      />
+    </div>
+  );
+}
+
 function formatNewsDate(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -173,78 +312,17 @@ export function StudentDashboard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden
-            >
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            </svg>
-            {d.announcements}
-          </div>
-          <div className={`flex flex-col gap-2 ${ANNOUNCEMENTS_LIST_CLASS}`}>
-            {announcementItems.length === 0 ? (
-              <p className="px-0.5 text-xs text-[var(--text-hint)]">
-                {d.noAnnouncements}
-              </p>
-            ) : (
-              announcementItems.map((a) => {
-                const timeLabel = formatRelativeTime(a.createdAt, locale);
-                return (
-                  <div
-                    key={a.id}
-                    className="flex items-start gap-2.5 rounded-lg bg-[var(--sand)] px-2.5 py-2 text-xs leading-snug text-[var(--text-mid)]"
-                  >
-                    <span className={announcementDotClass} aria-hidden />
-                    <div className="min-w-0">
-                      <div className="break-words">{a.title}</div>
-                      {timeLabel ? (
-                        <div className="mt-0.5 text-[10px] text-[var(--text-hint)]">
-                          {timeLabel}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-          {openTaskCount > 0 ? (
-            <div className="mt-3 border-t border-[var(--border-light)] pt-3">
-              <Link
-                href="/student/my-applications?tab=tasks"
-                className="flex w-full items-center justify-between gap-2 rounded-lg border border-[#FAEEDA] bg-[#FFFBEB] px-3 py-2.5 text-inherit no-underline transition-colors hover:border-[#F5D78E] hover:bg-[#FEF3C7]"
-              >
-                <span className="flex min-w-0 items-center gap-2 text-xs font-semibold text-[#854F0B]">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    aria-hidden
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M8 12.5l2.5 2.5L16 9" />
-                  </svg>
-                  {openTaskCount === 1
-                    ? d.oneTaskToComplete
-                    : d.tasksToComplete.replace("{count}", String(openTaskCount))}
-                </span>
-                <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[#854F0B]">
-                  {d.viewTasks}
-                  <ArrowForwardIcon size={12} strokeWidth={2.5} />
-                </span>
-              </Link>
-            </div>
-          ) : null}
+        <div className="hidden rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 min-[801px]:block">
+          <DashboardAnnouncementsPanel
+            items={announcementItems}
+            locale={locale}
+            emptyLabel={d.noAnnouncements}
+            titleLabel={d.announcements}
+            openTaskCount={openTaskCount}
+            oneTaskLabel={d.oneTaskToComplete}
+            tasksLabel={d.tasksToComplete.replace("{count}", String(openTaskCount))}
+            viewTasksLabel={d.viewTasks}
+          />
         </div>
       </div>
 
@@ -372,6 +450,17 @@ export function StudentDashboard({
         </div>
 
         <div className="flex h-full flex-col rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
+          <DashboardAnnouncementsPanel
+            className="mb-4 border-b border-[var(--border-light)] pb-4 min-[801px]:hidden"
+            items={announcementItems}
+            locale={locale}
+            emptyLabel={d.noAnnouncements}
+            titleLabel={d.announcements}
+            openTaskCount={openTaskCount}
+            oneTaskLabel={d.oneTaskToComplete}
+            tasksLabel={d.tasksToComplete.replace("{count}", String(openTaskCount))}
+            viewTasksLabel={d.viewTasks}
+          />
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
             <svg
               width="14"

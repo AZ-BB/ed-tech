@@ -42,12 +42,6 @@ function documentListFromJson(doc: Json | null): string[] {
     return DEFAULT_DOCS;
 }
 
-function formatLocation(city: string, state: string | null, countryName: string, countryCode: string): string {
-    const country = countryName?.trim() || countryCode;
-    if (state?.trim()) return `${city}, ${state}, ${country}`;
-    return `${city}, ${country}`;
-}
-
 function formatApplicationFee(n: number | null): string {
     if (n == null || Number.isNaN(n)) return "—";
     if (n === 0) return "Waived";
@@ -249,7 +243,10 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
     const model = {
         id: row.id,
         name: row.name,
-        locationLine: formatLocation(row.city, row.state, countryName, row.country_code),
+        city: row.city,
+        state: row.state,
+        countryName,
+        countryCode: row.country_code,
         isPublic: row.is_public,
         logoUrl: row.logo_url,
         coverImageUrl: row.cover_image_url?.trim() || null,

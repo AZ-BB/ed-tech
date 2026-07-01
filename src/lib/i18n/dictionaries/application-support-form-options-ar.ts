@@ -1,6 +1,6 @@
 /** Arabic display labels for application-support form chips (values stay English for the API). */
 export const applicationSupportFormOptionsAr = {
-  notSureYet: "Not sure yet",
+  notSureYet: "لست متأكداً بعد",
   destinations: {
     "United States": "الولايات المتحدة",
     "United Kingdom": "المملكة المتحدة",
@@ -22,14 +22,14 @@ export const applicationSupportFormOptionsAr = {
     "Grade 10": "الصف 10",
     "Grade 11": "الصف 11",
     "Grade 12": "الصف 12",
-    "Gap year": "سنة فجوة",
+    "Gap year": "سنة فاصلة",
     "Already graduated": "تخرجت بالفعل",
   },
 } as const;
 
 export const applicationSupportJourneyStepsAr = [
-  "أخبرنا عن نفسك",
-  "شارك اتجاهك — أين وماذا تريد أن تدرس",
+  "أخبرنا عنك",
+  "شارك اتجاهك: أين تريد الدراسة وماذا تريد أن تدرس",
   "اختر استراتيجية التقديم",
   "راجع خطتك المخصصة",
   "احجز جلسة التأهيل",
@@ -38,7 +38,7 @@ export const applicationSupportJourneyStepsAr = [
 export const applicationSupportIncludedCompactAr = [
   "استراتيجية جامعات مخصصة",
   "عصف ذهني ومراجعة للمقالات",
-  "إرشاد وفحص التقديمات",
+  "إرشاد ومراجعة لطلبات التقديم",
   "ملاحظات على السيرة والمستندات",
   "تخطيط المواعيد النهائية",
   "دعم المنح",
@@ -46,6 +46,6 @@ export const applicationSupportIncludedCompactAr = [
   "متابعات مستمرة مع المستشار",
   "تواصل مع مجتمع الطلاب",
   "متابعة خطابات التوصية",
-  "التحضير للمقابلات وجلسات تجريبية",
+  "التحضير للمقابلات من خلال جلسات تجريبية",
   "دعم ما بعد القبول والتسجيل",
 ] as const;

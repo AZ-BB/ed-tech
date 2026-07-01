@@ -29,9 +29,11 @@ const FEATURE_ICONS: { bg: string; stroke: string; paths: ReactNode }[] = [
     ),
   },
   {
-    bg: "#E6F1FB",
-    stroke: "#185FA5",
-    paths: <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />,
+    bg: "#F7F1D9",
+    stroke: "#9A7B0A",
+    paths: (
+      <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
+    ),
   },
   {
     bg: "#EEEDFE",
@@ -65,8 +67,8 @@ const FEATURE_ICONS: { bg: string; stroke: string; paths: ReactNode }[] = [
     ),
   },
   {
-    bg: "#FAEEDA",
-    stroke: "#854F0B",
+    bg: "#F4E8E3",
+    stroke: "#C26A4A",
     paths: (
       <>
         <path d="M22 2L11 13" />
@@ -90,6 +92,32 @@ const FEATURE_ICONS: { bg: string; stroke: string; paths: ReactNode }[] = [
 export function LandingPageContent() {
   const { dict, locale } = useLocale();
   const h = dict.home;
+  const heroCards =
+    locale === "ar"
+      ? {
+          university: "جامعة تورنتو",
+          location: "تورنتو، كندا",
+          match: "توافق 95%",
+          business: "إدارة أعمال",
+          topRank: "ضمن أفضل 30",
+          essayScore: "درجة المقال",
+          essayFeedback: "مقدمة قوية، حسّن الخاتمة",
+          scholarshipFound: "تم العثور على منحة",
+          scholarshipDetails: "منحة كاملة — لمواطني الإمارات",
+          scholarshipProgram: "برنامج وزارة التعليم العالي ←",
+        }
+      : {
+          university: "University of Toronto",
+          location: "Toronto, Canada",
+          match: "95% match",
+          business: "Business",
+          topRank: "Top 30",
+          essayScore: "Essay score",
+          essayFeedback: "Strong intro, improve conclusion",
+          scholarshipFound: "Scholarship found",
+          scholarshipDetails: "Full ride — UAE nationals",
+          scholarshipProgram: "MOHESR Program →",
+        };
 
   return (
     <>
@@ -143,23 +171,97 @@ export function LandingPageContent() {
                 <div className="hv-uni">
                   <div className="hv-uni-icon">🇨🇦</div>
                   <div>
-                    <div className="hv-uni-name">University of Toronto</div>
-                    <div className="hv-uni-loc">Toronto, Canada</div>
+                    <div className="hv-uni-name">{heroCards.university}</div>
+                    <div className="hv-uni-loc">{heroCards.location}</div>
                   </div>
                 </div>
                 <div>
-                  <span className="hv-pill hv-match">95% match</span>
-                  <span className="hv-pill hv-tag">Business</span>
-                  <span className="hv-pill hv-tag">Top 30</span>
+                  <span className="hv-pill hv-match">{heroCards.match}</span>
+                  <span className="hv-pill hv-tag">{heroCards.business}</span>
+                  <span className="hv-pill hv-tag">{heroCards.topRank}</span>
                 </div>
               </div>
               <div className="hv-card hv-2">
                 <div className="hv-score">
                   <div className="hv-score-circle">7.5</div>
                   <div>
-                    <div style={{ fontSize: "13px", fontWeight: 600 }}>Essay score</div>
-                    <div className="hv-score-text">Strong intro, improve conclusion</div>
+                    <div style={{ fontSize: "13px", fontWeight: 600 }}>
+                      {heroCards.essayScore}
+                    </div>
+                    <div className="hv-score-text">
+                      {heroCards.essayFeedback}
+                    </div>
                   </div>
+                </div>
+                <div
+                  style={{
+                    height: "4px",
+                    background: "var(--border-light)",
+                    borderRadius: "2px",
+                    marginTop: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "75%",
+                      height: "100%",
+                      background: "var(--green)",
+                      borderRadius: "2px",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="hv-card hv-3">
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      background: "var(--green-bg)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#2D6A4F"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
+                      <path d="M12 2l3 6.5L22 9l-5 4.9L18.2 21 12 17.3 5.8 21 7 13.9 2 9l7-0.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "12px", fontWeight: 600 }}>
+                      {heroCards.scholarshipFound}
+                    </div>
+                    <div
+                      style={{ fontSize: "10px", color: "var(--text-light)" }}
+                    >
+                      {heroCards.scholarshipDetails}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--green)",
+                    fontWeight: 600,
+                  }}
+                >
+                  {heroCards.scholarshipProgram}
                 </div>
               </div>
             </div>
@@ -228,7 +330,14 @@ export function LandingPageContent() {
           <div className="section-label" style={{ textAlign: "center" }}>
             {h.proofLabel}
           </div>
-          <div className="section-title serif" style={{ maxWidth: "100%", textAlign: "center", margin: "0 auto 0" }}>
+          <div
+            className="section-title serif"
+            style={{
+              maxWidth: "100%",
+              textAlign: "center",
+              margin: "0 auto 0",
+            }}
+          >
             {h.proofTitle}
           </div>
           <div className="proof-grid">
@@ -251,7 +360,17 @@ export function LandingPageContent() {
               <div key={t.name} className="testi-card">
                 <div className="testi-quote">{t.quote}</div>
                 <div className="testi-author">
-                  <div className="testi-avatar" style={{ background: i === 0 ? "var(--green-bg)" : i === 1 ? "#E6F1FB" : "#FAEEDA" }}>
+                  <div
+                    className="testi-avatar"
+                    style={{
+                      background:
+                        i === 0
+                          ? "var(--green-bg)"
+                          : i === 1
+                            ? "#E6F1FB"
+                            : "#FAEEDA",
+                    }}
+                  >
                     {t.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
@@ -283,7 +402,16 @@ export function LandingPageContent() {
             <LocalizedLink href="/signup" style={{ textDecoration: "none" }}>
               <button type="button" className="btn-hero">
                 {h.signUp}{" "}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="icon-directional" aria-hidden>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className="icon-directional"
+                  aria-hidden
+                >
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
               </button>

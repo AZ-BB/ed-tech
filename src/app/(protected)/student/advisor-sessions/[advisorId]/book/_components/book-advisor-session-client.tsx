@@ -23,9 +23,9 @@ const inputClass =
 const selectClass = `${inputClass} cursor-pointer appearance-none bg-[length:10px_6px] bg-[position:right_12px_center] bg-no-repeat pr-8`;
 
 const formCardClass =
-  "rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)] sm:p-6 md:p-8";
+  "min-w-0 overflow-x-clip rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)] sm:p-6 md:p-8";
 
-const formGridClass = "grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2";
+const formGridClass = "grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2";
 
 const pageTitleClass =
   "font-[family-name:var(--font-dm-serif)] text-[22px] tracking-tight text-[var(--text)] break-words sm:text-[26px] md:text-[28px]";
@@ -171,13 +171,13 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                   {bt.badges.map((label) => (
                     <div
                       key={label}
-                      className="flex max-w-full items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-pale)] px-3 py-1.5 text-[11px] font-medium text-[var(--green-dark)] sm:px-4 sm:py-2 sm:text-[11.5px]"
+                      className="flex max-w-full min-w-0 items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-pale)] px-3 py-1.5 text-[11px] font-medium text-[var(--green-dark)] sm:px-4 sm:py-2 sm:text-[11.5px]"
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" className="shrink-0" aria-hidden>
                         <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                         <path d="M22 4L12 14.01l-3-3" />
                       </svg>
-                      {label}
+                      <span className="min-w-0 break-words">{label}</span>
                     </div>
                   ))}
                 </div>
@@ -299,7 +299,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                   {bt.step2Subtitle.replace("{name}", displayName)}
                 </p>
                 <div className={`mt-5 sm:mt-6 ${formCardClass}`}>
-                  <div className="mb-4 rounded-[var(--radius)] border border-[var(--border-light)] bg-[var(--sand)] p-4 sm:p-5">
+                  <div className="mb-4 min-w-0 rounded-[var(--radius)] border border-[var(--border-light)] bg-[var(--sand)] p-4 sm:p-5">
                     <div className="mb-4 flex items-start gap-2.5">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--green-bg)]">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
@@ -314,13 +314,13 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                     </div>
                     <ul className="flex flex-col gap-2.5">
                       {bt.includes.map((line) => (
-                        <li key={line} className="flex items-start gap-2.5 text-[13px] leading-snug text-[var(--text-mid)]">
+                        <li key={line} className="flex min-w-0 items-start gap-2.5 text-[13px] leading-snug text-[var(--text-mid)]">
                           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)]">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
                               <path d="M20 6L9 17l-5-5" />
                             </svg>
                           </span>
-                          {line}
+                          <span className="min-w-0 break-words">{line}</span>
                         </li>
                       ))}
                     </ul>
@@ -370,7 +370,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                     </svg>
                   </div>
                   <h2 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)] sm:text-2xl">{bt.step3Title}</h2>
-                  <p className="mx-auto mt-2 max-w-[480px] text-[13px] leading-relaxed text-[#8a8a8a] sm:text-[13.5px]">
+                  <p className="mx-auto mt-2 max-w-[480px] text-[13px] leading-relaxed text-[#8a8a8a] break-words sm:text-[13.5px]">
                     {bt.step3Subtitle}
                   </p>
                   <p className="mt-2 text-xs font-medium text-[var(--green)] break-words">{bt.step3Highlight}</p>
@@ -429,7 +429,7 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
                 </div>
               </div>
               {advisor.title ? (
-                <p className="bidi-ltr mt-4 text-xs text-[var(--text-light)]" dir="ltr">
+                <p className="bidi-ltr mt-4 break-words text-xs text-[var(--text-light)]" dir="ltr">
                   {advisor.title}
                 </p>
               ) : null}

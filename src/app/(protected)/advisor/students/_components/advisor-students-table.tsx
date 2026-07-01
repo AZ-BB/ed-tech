@@ -164,7 +164,7 @@ export function AdvisorStudentsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1180px] border-collapse text-[13px]">
+        <table className="w-full min-w-[980px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
               <th className="px-4 py-3">Name</th>
@@ -173,7 +173,6 @@ export function AdvisorStudentsTable({
               <th className="px-4 py-3">Package</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Initial meeting</th>
-              <th className="px-4 py-3">Destinations</th>
               <th className="px-4 py-3">Deadline risk</th>
             </tr>
           </thead>
@@ -181,7 +180,7 @@ export function AdvisorStudentsTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={7}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {search.trim()
@@ -238,23 +237,6 @@ export function AdvisorStudentsTable({
                   </td>
                   <td className="px-4 py-3 text-[var(--text-light)]">
                     {formatDate(row.initialMeetingDate)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {row.destinations.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {row.destinations.map((dest) => (
-                          <span
-                            key={`${row.applicationId}-${dest.countryCode}`}
-                            className="inline-flex rounded-full border border-[var(--border-light)] bg-[#faf9f4] px-2 py-0.5 text-[10px] font-medium text-[var(--text-mid)]"
-                          >
-                            {dest.label}
-                            {dest.count > 1 ? ` ×${dest.count}` : ""}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-[var(--text-hint)]">—</span>
-                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span

@@ -264,7 +264,7 @@ function SidebarNav({
       <div className="mt-1 pb-2">
         <button
           type="button"
-          className="group mb-0.5 flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-left text-[13.5px] font-medium text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] hover:text-[var(--text)]"
+          className="group mb-0.5 flex w-full cursor-pointer items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-start text-[13.5px] font-medium text-[var(--text-mid)] transition-colors hover:bg-[var(--sand)] hover:text-[var(--text)]"
           onClick={onRequestLogout}
         >
           <LogOut
@@ -387,7 +387,6 @@ export function StudentLayoutShell({
       <div className="mx-auto w-full min-w-0 px-6 md:px-10 lg:px-16 pt-6 pb-16">
         {hideTopNav ? null : (
           <header
-            dir="ltr"
             className={`relative z-10 mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5${
               headerWidthClass ? ` ${headerWidthClass}` : ""
             }`}
@@ -445,7 +444,7 @@ export function StudentLayoutShell({
         role="dialog"
         aria-modal="true"
         aria-label={dict.student.shell.navigation}
-        dir="ltr"
+        dir={portalDir}
         className={`fixed inset-y-0 right-0 z-[910] flex w-[300px] max-w-full flex-col rounded-l-2xl bg-white shadow-[-4px_0_24px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] max-[480px]:w-full max-[480px]:rounded-none ${
           sidebarOpen
             ? "pointer-events-auto translate-x-0"

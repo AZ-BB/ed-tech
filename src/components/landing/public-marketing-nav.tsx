@@ -238,11 +238,6 @@ export function PublicMarketingNav({
 
   const renderActions = (inDrawer: boolean) => (
     <>
-      {hasLocale ? (
-        <div className={inDrawer ? "nav-drawer-lang" : undefined}>
-          <LanguageSwitcher />
-        </div>
-      ) : null}
       <LocalizedLink
         className={inDrawer ? "nav-drawer-login" : "nav-login"}
         href="/login"
@@ -303,12 +298,15 @@ export function PublicMarketingNav({
   return (
     <>
       <nav className="nav" id="navbar" dir="ltr">
-        <LocalizedLink className="nav-logo" href="/">
-          <div className="nav-logo-icon">
-            <NavLogoIcon />
-          </div>
-          {dict.common.brand}
-        </LocalizedLink>
+        <div className="nav-brand">
+          <LocalizedLink className="nav-logo" href="/">
+            <div className="nav-logo-icon">
+              <NavLogoIcon />
+            </div>
+            {dict.common.brand}
+          </LocalizedLink>
+          {hasLocale ? <LanguageSwitcher /> : null}
+        </div>
 
         <div className="nav-links nav-links--desktop">
           {renderNavLinks(false)}

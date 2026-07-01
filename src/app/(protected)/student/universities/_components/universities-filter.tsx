@@ -169,7 +169,7 @@ export function UniversitiesFilter({
             className={`relative z-10 mb-5 flex flex-col gap-0 ${isPending ? "opacity-75" : ""}`}
             aria-busy={isPending}
         >
-            <div className="mb-3.5 flex items-center gap-3 rounded-[16px] border-[1.5px] border-[#ece9e4] bg-white px-5 py-4 transition-[border-color,box-shadow] focus-within:border-[#40916C] focus-within:shadow-[0_0_0_4px_rgba(45,106,79,0.06)]">
+            <div className="mb-3.5 flex items-center gap-3 rounded-[16px] border-[1.5px] border-[#ece9e4] bg-white px-4 py-3.5 transition-[border-color,box-shadow] focus-within:border-[#40916C] focus-within:shadow-[0_0_0_4px_rgba(45,106,79,0.06)] sm:px-5 sm:py-4">
                 <svg
                     width="18"
                     height="18"
@@ -196,9 +196,9 @@ export function UniversitiesFilter({
                 />
             </div>
 
-            <div className="rounded-[16px] border border-[#ece9e4] bg-white px-5 py-3">
-                <div className="flex w-full min-w-0 flex-nowrap items-center gap-3">
-                    <div className="flex min-h-9 min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5">
+            <div className="rounded-[16px] border border-[#ece9e4] bg-white px-4 py-3 sm:px-5">
+                <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="flex min-h-9 min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]">
                 <select
                     aria-label={t.major}
                     className={filterSelectClass}
@@ -304,7 +304,7 @@ export function UniversitiesFilter({
                 </select>
                     </div>
 
-                    <div className="flex shrink-0 flex-nowrap items-center gap-2">
+                    <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:flex-nowrap">
                     <button
                         type="button"
                         aria-pressed={shortlistOnly}

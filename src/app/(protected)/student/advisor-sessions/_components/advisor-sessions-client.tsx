@@ -348,20 +348,20 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
         ) : null}
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-2.5">
-        <div className="flex cursor-default items-center gap-1.5 rounded-[50px] border-[1.5px] border-[#c8e6d0] bg-[var(--green-pale)] px-[18px] py-2 text-xs font-medium text-[#2F5D50] transition hover:-translate-y-px hover:border-[#a8d5b8] hover:bg-[var(--green-bg)] hover:shadow-[0_2px_8px_rgba(45,106,79,0.08)]">
-          <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden>
+      <div className="mb-5 flex flex-nowrap items-stretch gap-2 max-[520px]:gap-1.5 sm:gap-2.5">
+        <div className="flex min-w-0 flex-1 cursor-default items-center justify-center gap-1.5 rounded-[50px] border-[1.5px] border-[#c8e6d0] bg-[var(--green-pale)] px-[18px] py-2 text-xs font-medium text-[#2F5D50] transition hover:-translate-y-px hover:border-[#a8d5b8] hover:bg-[var(--green-bg)] hover:shadow-[0_2px_8px_rgba(45,106,79,0.08)] max-[520px]:gap-1 max-[520px]:px-2.5 max-[520px]:py-1.5 max-[520px]:text-[11px]">
+          <svg className="shrink-0" width="8" height="8" viewBox="0 0 8 8" aria-hidden>
             <circle cx="4" cy="4" r="4" fill="#52B788" />
           </svg>
           <strong className="font-bold text-[var(--green-dark)]">{initialAdvisors.length}</strong>
-          <span>{at.advisorsAvailable}</span>
+          <span className="leading-tight text-[10px] sm:text-sm">{at.advisorsAvailable}</span>
         </div>
-        <div className="flex cursor-default items-center gap-1.5 rounded-[50px] border-[1.5px] border-[#c8e6d0] bg-[var(--green-pale)] px-[18px] py-2 text-xs font-medium text-[#2F5D50] transition hover:-translate-y-px hover:border-[#a8d5b8] hover:bg-[var(--green-bg)] hover:shadow-[0_2px_8px_rgba(45,106,79,0.08)]">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
+        <div className="flex min-w-0 flex-1 cursor-default items-center justify-center gap-1.5 rounded-[50px] border-[1.5px] border-[#c8e6d0] bg-[var(--green-pale)] px-[18px] py-2 text-xs font-medium text-[#2F5D50] transition hover:-translate-y-px hover:border-[#a8d5b8] hover:bg-[var(--green-bg)] hover:shadow-[0_2px_8px_rgba(45,106,79,0.08)] max-[520px]:gap-1 max-[520px]:px-2.5 max-[520px]:py-1.5 max-[520px]:text-[11px]">
+          <svg className="shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" aria-hidden>
             <path d="M20 6L9 17l-5-5" />
           </svg>
           <strong className="font-bold text-[var(--green-dark)]">150+</strong>
-          <span>{at.sessionsCompleted}</span>
+          <span className="leading-tight text-[10px] sm:text-sm">{at.sessionsCompleted}</span>
         </div>
       </div>
 

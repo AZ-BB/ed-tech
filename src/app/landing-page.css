@@ -145,6 +145,12 @@ body {
   padding: 10px 40px;
 }
 
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .nav-logo {
   display: flex;
   align-items: center;
@@ -1151,7 +1157,9 @@ html[dir="rtl"] .nav-drawer--open {
 @media (max-width: 900px) {
   .hero {
     padding: 100px 24px 64px;
-    min-height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+    justify-content: center;
   }
 
   .hero-inner {
@@ -1421,8 +1429,42 @@ html[dir="rtl"] .nav-drawer--open {
     grid-template-columns: 1fr 1fr;
   }
 
+  .cta-card {
+    padding: 36px 24px;
+  }
+
+  .cta-title {
+    font-size: 26px;
+    line-height: 1.25;
+  }
+
+  .cta-sub {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    padding-inline: 4px;
+  }
+
   .cta-btns {
     flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 340px;
+    margin-inline: auto;
+    gap: 10px;
+  }
+
+  .cta-btns > a {
+    display: block;
+    width: 100%;
+  }
+
+  .cta-btns .btn-hero,
+  .cta-btns .btn-ghost {
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    align-items: center;
   }
 }
 

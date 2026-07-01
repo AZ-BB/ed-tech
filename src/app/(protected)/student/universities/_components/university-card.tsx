@@ -4,6 +4,7 @@ import { addUniversityToFavourites, addUniversityToShortlist, removeUniversityFr
 import { useLocale } from "@/lib/i18n/locale-context";
 import { tuitionCardLabel } from "@/lib/university-cost-display";
 import Link from "next/link";
+import { UniversityLocation } from "./university-location";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useOptimistic, useState, useTransition } from "react";
@@ -58,12 +59,6 @@ function acceptanceTone(rate: number | null): string {
     if (rate < 40) return "text-[#C0392B]";
     if (rate < 70) return "text-[#E65100]";
     return "text-[#2D6A4F]";
-}
-
-function formatLocation(u: UniversityCardUniversity): string {
-    const country = u.country_name || u.country_code;
-    if (u.state) return `${u.city}, ${u.state}, ${country}`;
-    return `${u.city}, ${country}`;
 }
 
 function formatIelts(score: number | null): string {
@@ -220,13 +215,13 @@ function Stat({
     valueClassName?: string;
 }) {
     return (
-        <div className="flex min-h-9 flex-1 flex-col items-center justify-center px-1 py-0.5 text-center [&:not(:last-child)]:border-r [&:not(:last-child)]:border-[#ece9e4]">
-            <div className="mb-0.5 flex items-center justify-center gap-0.5 text-[9.5px] font-medium tracking-[0.3px] text-[#a0a0a0] uppercase">
+        <div className="flex min-h-9 min-w-0 flex-1 flex-col items-center justify-center px-0.5 py-0.5 text-center sm:px-1 [&:not(:last-child)]:border-r [&:not(:last-child)]:border-[#ece9e4]">
+            <div className="mb-0.5 flex items-center justify-center gap-0.5 text-[8.5px] font-medium tracking-[0.3px] text-[#a0a0a0] uppercase sm:text-[9.5px]">
                 {icon}
                 {label}
             </div>
             <div
-                className={`text-[11.5px] leading-tight font-semibold ${valueClassName ?? "text-[#1a1a1a]"}`}
+                className={`text-[10.5px] leading-tight font-semibold break-words sm:text-[11.5px] ${valueClassName ?? "text-[#1a1a1a]"}`}
             >
                 {value}
             </div>
@@ -313,7 +308,7 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
     return (
         <article
             dir="ltr"
-            className="university-card-ltr relative flex h-full flex-col rounded-[16px] border border-[#ece9e4] bg-white p-6 text-left transition-all hover:-translate-y-[3px] hover:border-[#e0deda] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)]"
+            className="university-card-ltr relative flex h-full flex-col rounded-[16px] border border-[#ece9e4] bg-white p-4 text-left transition-all hover:-translate-y-[3px] hover:border-[#e0deda] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] sm:p-6"
         >
             <Link
                 href={detailHref}
@@ -321,20 +316,26 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 aria-labelledby={`uni-${u.id}-title`}
             />
             <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none">
-            <div className="mb-3 flex items-start gap-3">
+            <div className="mb-3 flex flex-wrap items-start gap-x-3 gap-y-2">
                 <UniversityCrest logoUrl={u.logo_url} />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-[calc(100%-3.75rem)] sm:basis-auto">
                     <h2
                         id={`uni-${u.id}-title`}
-                        className="serif mb-0.5 text-[15px] leading-snug font-bold text-[#1a1a1a]"
+                        className="serif mb-0.5 text-[15px] leading-snug font-bold text-[#1a1a1a] break-words"
                     >
                         {u.name}
                     </h2>
-                    <p className="text-[11.5px] text-[#7a7a7a]">
-                        {formatLocation(u)}
+                    <p className="text-[11.5px] text-[#7a7a7a] break-words">
+                        <UniversityLocation
+                            city={u.city}
+                            state={u.state}
+                            countryName={u.country_name}
+                            countryCode={u.country_code}
+                            flagSize={16}
+                        />
                     </p>
                 </div>
-                <div className="mt-0.5 shrink-0">
+                <div className="shrink-0">
                     <span className="inline-block rounded-[50px] border border-[#ece9e4] bg-[#f4f3f0] px-3 py-1 text-[10px] font-semibold tracking-[0.2px] text-[#4a4a4a] whitespace-nowrap">
                         {u.is_public ? t.public : t.private}
                     </span>
@@ -381,7 +382,8 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 </p>
             ) : null}
 
-            <footer className="relative z-10 mt-auto flex flex-wrap items-center justify-end gap-2 border-t border-[#ece9e4] pt-4 pointer-events-none">
+            <footer className="relative z-10 mt-auto flex flex-col gap-2 border-t border-[#ece9e4] pt-4 pointer-events-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                <div className="flex items-center gap-2 sm:contents">
                 {optimisticFavourite ? (
                     <button
                         type="button"
@@ -435,9 +437,10 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                         {t.addToShortlist}
                     </button>
                 )}
+                </div>
                 <Link
                     href={detailHref}
-                    className="pointer-events-auto inline-flex cursor-pointer items-center justify-center rounded-[50px] border-0 bg-[#2D6A4F] px-5 py-2 text-[11px] !font-semibold !text-white no-underline transition-colors hover:bg-[#1B4332]"
+                    className="pointer-events-auto flex w-full cursor-pointer items-center justify-center rounded-[50px] border-0 bg-[#2D6A4F] px-5 py-2.5 text-[11px] !font-semibold !text-white no-underline transition-colors hover:bg-[#1B4332] sm:inline-flex sm:w-auto sm:py-2"
                 >
                     {t.viewDetails}
                 </Link>
