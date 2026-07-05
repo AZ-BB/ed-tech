@@ -23,6 +23,7 @@ function revalidateApplicationPaths(applicationId: number) {
   revalidatePath("/advisor/payments");
   revalidatePath("/advisor/leads");
   revalidatePath("/advisor/students");
+  revalidatePath("/advisor/sessions-and-calls");
 }
 
 export async function sendAdvisorApplicationPaymentRequest(

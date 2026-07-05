@@ -6,7 +6,12 @@ import {
 } from "@/lib/application-activity-log";
 import { STUDENT_MY_APPLICATIONS_BUCKET } from "@/lib/admin-student-document-constants";
 import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
-import { DEFAULT_APPLICATION_PACKAGE_DATA } from "@/lib/application-package-data";
+import {
+  fetchActivePlanByUniversitiesCount,
+  mapApplicationSupportPayloadToApplicationFields,
+  validateApplicationSupportPayload,
+  type ApplicationSupportPayload,
+} from "@/lib/application-support-intake";
 import { assignApplicationToReceivingAdvisor } from "@/lib/advisor-receiving-flags";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
@@ -71,36 +76,7 @@ function resolveContentType(file: File): string {
   return byExt[ext] ?? "application/octet-stream";
 }
 
-export type ApplicationSupportPayload = {
-  planUniversitiesCount: 5 | 10 | 15;
-  studentName: string;
-  email: string;
-  phone: string;
-  nationality: string;
-  countryOfResidence: string;
-  schoolName: string;
-  currentGradeYear: string;
-  destinations: string[];
-  fieldOfStudy: string;
-  applyTiming: string | null;
-  planClarity: "clear" | "some" | "help" | null;
-  universities: string[];
-  uniNotes: string;
-  uniIntent: "shortlist" | "ideas" | "help" | null;
-};
-
-function buildIntakeNotes(payload: ApplicationSupportPayload): string {
-  const lines = [
-    "--- Application support intake (guided) ---",
-    payload.currentGradeYear?.trim() && `School year: ${payload.currentGradeYear.trim()}`,
-    payload.destinations?.length && `Destinations: ${payload.destinations.join(", ")}`,
-    payload.fieldOfStudy?.trim() && `Field of study (direction): ${payload.fieldOfStudy.trim()}`,
-    payload.applyTiming && `When applying: ${payload.applyTiming}`,
-    payload.planClarity && `Plan clarity: ${payload.planClarity}`,
-    payload.uniIntent && `University list approach: ${payload.uniIntent}`,
-  ].filter(Boolean) as string[];
-  return lines.join("\n");
-}
+export type { ApplicationSupportPayload };
 
 export async function submitApplicationSupport(
   formData: FormData,
@@ -129,87 +105,42 @@ export async function submitApplicationSupport(
     return { ok: false, error: "Could not read form data." };
   }
 
-  const name = payload.studentName?.trim() ?? "";
-  const email = payload.email?.trim() ?? "";
-  const phone = payload.phone?.trim() ?? "";
-  if (!name || !email || !phone) {
-    return { ok: false, error: "Name, email, and phone are required." };
-  }
-
-  if (![5, 10, 15].includes(payload.planUniversitiesCount)) {
-    return { ok: false, error: "Please choose a valid package." };
+  const validationError = validateApplicationSupportPayload(payload);
+  if (validationError) {
+    return { ok: false, error: validationError };
   }
 
   const secret = await createSupabaseSecretClient();
 
-  const { data: plan, error: planErr } = await secret
-    .from("applications_plans")
-    .select("id, universities_count")
-    .eq("universities_count", payload.planUniversitiesCount)
-    .eq("is_active", true)
-    .maybeSingle();
+  const plan = await fetchActivePlanByUniversitiesCount(
+    secret,
+    payload.planUniversitiesCount,
+  );
 
-  if (planErr || !plan) {
-    console.error(planErr);
+  if (!plan) {
     return {
       ok: false,
       error: "Application plans are not configured. Please contact support.",
     };
   }
 
-  const universities = (payload.universities ?? [])
-    .map((u) => u.trim())
-    .filter(Boolean);
-
-  const contactHeader = [
-    payload.nationality?.trim() ? `Nationality: ${payload.nationality.trim()}` : "",
-    payload.countryOfResidence?.trim()
-      ? `Country of residence: ${payload.countryOfResidence.trim()}`
-      : "",
-  ].filter(Boolean);
-
-  const intake = buildIntakeNotes(payload);
-  const additional_parts = [
-    contactHeader.join("\n"),
-    intake,
-    payload.uniNotes?.trim() ? `Notes:\n${payload.uniNotes.trim()}` : "",
-  ].filter(Boolean);
-
-  const additional_notes = additional_parts.length ? additional_parts.join("\n\n") : null;
-
-  const preferred =
-    payload.destinations?.filter((d) => d && d !== "Not sure yet").join(", ") ||
-    payload.fieldOfStudy?.trim() ||
-    "—";
+  const mapped = mapApplicationSupportPayloadToApplicationFields(payload, plan);
+  const name = payload.studentName.trim();
 
   const insertRow: Database["public"]["Tables"]["applications"]["Insert"] = {
     student_id: studentId,
     school_id: schoolId,
-    student_name: name,
-    student_email: email,
-    student_phone: phone,
-    school_name: payload.schoolName?.trim() || null,
+    ...mapped,
     curriculum: "other",
     expected_graduation_year: null,
-    preferences_universities: universities.length ? universities : null,
-    preferences_universities_notes: payload.uniNotes?.trim() || null,
-    final_grade: payload.currentGradeYear?.trim() || "—",
     gpa: null,
     sat: null,
     act: null,
     ielts: null,
     toefl: null,
-    inteended_fields: payload.fieldOfStudy?.trim() || "—",
     open_to_realted_fields: false,
-    preferred_uni_or_countries: preferred,
     extracurricular_activities: "—",
     awards: null,
-    additional_notes,
-    plan_id: plan.id,
-    package_data: {
-      ...DEFAULT_APPLICATION_PACKAGE_DATA,
-      universitiesTotal: plan.universities_count,
-    },
     status: "lead",
   };
 
