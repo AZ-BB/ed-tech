@@ -1,6 +1,7 @@
 import {
   type CalendlyWebhookEnvelope,
   resolveAdvisorSessionIdFromWebhook,
+  resolveApplicationIdFromWebhook,
   verifyCalendlyWebhookSignature,
 } from "@/lib/calendly-webhook";
 import { logCalendly, logCalendlyError, logCalendlyWarn } from "@/lib/calendly-log";
@@ -35,14 +36,27 @@ async function appendAdvisorSessionActivityLog(
 
 async function handleInviteeCreated(envelope: CalendlyWebhookEnvelope): Promise<void> {
   const sessionId = resolveAdvisorSessionIdFromWebhook(envelope);
-  if (sessionId == null) {
-    logCalendly("webhook", "invitee.created ignored — no advisor session in tracking", {
-      utmContent: envelope.payload?.tracking?.utm_content ?? null,
-    });
+  if (sessionId != null) {
+    await handleAdvisorSessionInviteeCreated(envelope, sessionId);
     return;
   }
 
-  logCalendly("webhook", "Processing invitee.created", {
+  const applicationId = resolveApplicationIdFromWebhook(envelope);
+  if (applicationId != null) {
+    await handleApplicationInviteeCreated(envelope, applicationId);
+    return;
+  }
+
+  logCalendly("webhook", "invitee.created ignored — no linked session or application", {
+    utmContent: envelope.payload?.tracking?.utm_content ?? null,
+  });
+}
+
+async function handleAdvisorSessionInviteeCreated(
+  envelope: CalendlyWebhookEnvelope,
+  sessionId: number,
+): Promise<void> {
+  logCalendly("webhook", "Processing invitee.created for advisor session", {
     sessionId,
     inviteeUri: envelope.payload?.uri ?? null,
     eventUri: envelope.payload?.scheduled_event?.uri ?? null,
@@ -97,7 +111,6 @@ async function handleInviteeCreated(envelope: CalendlyWebhookEnvelope): Promise<
     .from("advisor_sessions")
     .update({
       booked_at: bookedAt.toISOString(),
-      status: "confirmed",
       updated_at: new Date().toISOString(),
     })
     .eq("id", sessionId);
@@ -107,11 +120,12 @@ async function handleInviteeCreated(envelope: CalendlyWebhookEnvelope): Promise<
     throw new Error("Could not update advisor session.");
   }
 
-  logCalendly("webhook", "Advisor session marked confirmed", {
+  logCalendly("webhook", "Advisor session booked_at recorded (status unchanged)", {
     sessionId,
     advisorId: existing.advisor_id,
     studentId: existing.student_id,
     bookedAt: bookedAt.toISOString(),
+    status: existing.status,
   });
 
   await appendAdvisorSessionActivityLog(
@@ -119,8 +133,81 @@ async function handleInviteeCreated(envelope: CalendlyWebhookEnvelope): Promise<
     existing.student_id,
     existing.advisor_id,
     sessionId,
-    `Calendly booking confirmed for advisor session #${sessionId}.`,
+    `Calendly slot booked for advisor session #${sessionId}.`,
   );
+}
+
+async function handleApplicationInviteeCreated(
+  envelope: CalendlyWebhookEnvelope,
+  applicationId: number,
+): Promise<void> {
+  logCalendly("webhook", "Processing invitee.created for application", {
+    applicationId,
+    inviteeUri: envelope.payload?.uri ?? null,
+    eventUri: envelope.payload?.scheduled_event?.uri ?? null,
+  });
+
+  const startTime = envelope.payload?.scheduled_event?.start_time?.trim();
+  if (!startTime) {
+    logCalendlyWarn("webhook", "invitee.created missing start_time", { applicationId });
+    return;
+  }
+
+  const scheduledAt = new Date(startTime);
+  if (Number.isNaN(scheduledAt.getTime())) {
+    logCalendlyWarn("webhook", "invitee.created has invalid start_time", {
+      applicationId,
+      startTime,
+    });
+    return;
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: existing, error: fetchErr } = await secret
+    .from("applications")
+    .select("id, student_id, status, scheduled_at")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (fetchErr) {
+    logCalendlyError("webhook", "Failed to fetch application", fetchErr, { applicationId });
+    throw new Error("Could not load application.");
+  }
+
+  if (!existing) {
+    logCalendlyWarn("webhook", "Unknown application id", { applicationId });
+    return;
+  }
+
+  if (existing.scheduled_at != null) {
+    logCalendly("webhook", "Application already scheduled — skipping", {
+      applicationId,
+      scheduledAt: existing.scheduled_at,
+    });
+    return;
+  }
+
+  const { error: updateErr } = await secret
+    .from("applications")
+    .update({
+      scheduled_at: scheduledAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", applicationId);
+
+  if (updateErr) {
+    logCalendlyError("webhook", "Failed to update application scheduled_at", updateErr, {
+      applicationId,
+    });
+    throw new Error("Could not update application.");
+  }
+
+  logCalendly("webhook", "Application scheduled_at recorded", {
+    applicationId,
+    studentId: existing.student_id,
+    scheduledAt: scheduledAt.toISOString(),
+    status: existing.status,
+  });
 }
 
 export async function POST(request: Request) {

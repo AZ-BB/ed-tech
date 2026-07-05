@@ -156,7 +156,7 @@ export function AdminSchoolSessionsTab({
               <table className="w-full min-w-[920px] border-collapse text-[13px]">
                 <thead>
                   <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                    <th className="px-4 py-3">Booked</th>
+                    <th className="px-4 py-3">Booked at</th>
                     <th className="px-4 py-3">Student</th>
                     <th className="px-4 py-3">Advisor</th>
                     <th className="px-4 py-3">Destination</th>
@@ -178,7 +178,7 @@ export function AdminSchoolSessionsTab({
                         className="border-t border-[var(--border-light)] hover:bg-[#faf9f4]"
                       >
                         <td className="whitespace-nowrap px-4 py-3 text-[var(--text)]">
-                          {formatWhen(row.bookedAt ?? row.createdAt)}
+                          {formatWhen(row.bookedAt)}
                         </td>
                         <td className="px-4 py-3 text-[var(--text)]">
                           <div>{row.studentName}</div>

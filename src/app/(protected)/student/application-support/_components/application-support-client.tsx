@@ -16,8 +16,12 @@ import {
 } from "react";
 
 import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
-import { buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
+import {
+  applicationUtmContent,
+  buildCalendlySchedulingPageUrl,
+} from "@/lib/calendly-scheduling";
 import type { ApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags";
+import type { StudentFormDefaults } from "@/lib/load-student-form-defaults";
 import { useLocale } from "@/lib/i18n/locale-context";
 import "../application-support.css";
 import {
@@ -257,9 +261,11 @@ function ProgressTracker({
 export function ApplicationSupportClient({
   plans,
   applicationReceivingAdvisor,
+  profileDefaults,
 }: {
   plans: PlanRow[];
   applicationReceivingAdvisor: ApplicationReceivingAdvisor | null;
+  profileDefaults?: StudentFormDefaults | null;
 }) {
   const { dict } = useLocale();
   const as = dict.student.applicationSupport;
@@ -309,13 +315,13 @@ export function ApplicationSupportClient({
     return m;
   }, [plans]);
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [nationality, setNationality] = useState("");
-  const [country, setCountry] = useState("");
-  const [schoolName, setSchoolName] = useState("");
-  const [gradeYear, setGradeYear] = useState("");
+  const [fullName, setFullName] = useState(profileDefaults?.fullName ?? "");
+  const [email, setEmail] = useState(profileDefaults?.email ?? "");
+  const [phone, setPhone] = useState(profileDefaults?.phone ?? "");
+  const [nationality, setNationality] = useState(profileDefaults?.nationality ?? "");
+  const [country, setCountry] = useState(profileDefaults?.countryOfResidence ?? "");
+  const [schoolName, setSchoolName] = useState(profileDefaults?.schoolName ?? "");
+  const [gradeYear, setGradeYear] = useState(profileDefaults?.gradeYear ?? "");
 
   const [destinations, setDestinations] = useState<string[]>([]);
   const [majors, setMajors] = useState<string[]>([]);
@@ -486,6 +492,7 @@ export function ApplicationSupportClient({
       base: calendlySchedulingUrl,
       name: fullName.trim(),
       email: email.trim(),
+      utmContent: applicationId != null ? applicationUtmContent(applicationId) : undefined,
       ctxParts: ctx,
     });
   }, [

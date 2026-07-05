@@ -42,6 +42,22 @@ function formatWhen(iso: string): string {
   }
 }
 
+function formatBookedAt(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return formatWhen(iso);
+}
+
+function dateColumnHeading(tabId: SessionsTabId): string {
+  return tabId === "advisor" ? "Booked at" : "Date";
+}
+
+function rowDateValue(row: AdminSessionTableRow, tabId: SessionsTabId): string {
+  if (tabId === "advisor" || (isMergedSessionsTab(tabId) && row.kind === "advisor")) {
+    return formatBookedAt(row.bookedAt);
+  }
+  return formatWhen(row.occurredAt);
+}
+
 function StatusBadge({ status }: { status: string }) {
   const label = ADMIN_SESSION_STATUS_LABEL[status] ?? status.replace(/_/g, " ");
 
@@ -197,7 +213,7 @@ export function AdminSessionsTableClient({
                 "Student / School",
                 providerColumnHeading(tabId),
                 "Status",
-                "Date",
+                dateColumnHeading(tabId),
               ].map((heading) => (
                 <th
                   key={heading}
@@ -270,7 +286,7 @@ export function AdminSessionsTableClient({
                     <td
                       className={`${cellBorder} whitespace-nowrap px-4 py-3 text-[13px] text-[#4a4a4a]`}
                     >
-                      {formatWhen(row.occurredAt)}
+                      {rowDateValue(row, tabId)}
                     </td>
                   </tr>
                 );
