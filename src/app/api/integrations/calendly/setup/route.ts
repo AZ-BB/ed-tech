@@ -12,10 +12,12 @@ import {
   getCalendlyOAuthConfig,
 } from "@/lib/calendly-oauth";
 import { logCalendly, logCalendlyError } from "@/lib/calendly-log";
+import { resolveCalendlyOAuthRedirectBase } from "@/lib/calendly-oauth-redirect";
 import { NextResponse } from "next/server";
 
-function settingsRedirect(calendly: string): NextResponse {
-  return NextResponse.redirect(new URL(`/advisor/settings?calendly=${calendly}`, process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"));
+async function settingsRedirect(calendly: string, request?: Request): Promise<NextResponse> {
+  const base = await resolveCalendlyOAuthRedirectBase(request);
+  return NextResponse.redirect(new URL(`/advisor/settings?calendly=${calendly}`, base));
 }
 
 function oauthCookieOptions() {
@@ -29,13 +31,14 @@ function oauthCookieOptions() {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   logCalendly("setup", "OAuth setup requested");
 
   const access = await assertAdvisorAccess();
   if (!access.ok) {
     logCalendlyError("setup", "Advisor access denied", undefined, { error: access.error });
-    return NextResponse.redirect(new URL("/login", process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"));
+    const base = await resolveCalendlyOAuthRedirectBase(request);
+    return NextResponse.redirect(new URL("/login", base));
   }
 
   logCalendly("setup", "Advisor authenticated", { advisorId: access.advisorId });
@@ -47,7 +50,7 @@ export async function GET() {
       hasClientSecret: Boolean(process.env.CALENDLY_CLIENT_SECRET?.trim()),
       hasRedirectUri: Boolean(process.env.CALENDLY_OAUTH_REDIRECT_URI?.trim()),
     });
-    return settingsRedirect("error");
+    return settingsRedirect("error", request);
   }
 
   const alreadyConnected = await advisorHasCalendlyConnection(access.advisorId);
@@ -55,7 +58,7 @@ export async function GET() {
     logCalendly("setup", "Advisor already connected — skipping OAuth", {
       advisorId: access.advisorId,
     });
-    return settingsRedirect("already_connected");
+    return settingsRedirect("already_connected", request);
   }
 
   const state = generateOAuthState();
