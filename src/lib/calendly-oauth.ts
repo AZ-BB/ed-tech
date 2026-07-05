@@ -52,6 +52,68 @@ export type CalendlyCurrentUser = {
   scheduling_url?: string;
 };
 
+type CalendlyUserApiResource = {
+  uri?: string;
+  organization?: string;
+  current_organization?: string;
+  email?: string;
+  name?: string;
+  scheduling_url?: string;
+};
+
+type CalendlyTokenIdentityFallback = {
+  owner?: string;
+  organization?: string;
+};
+
+function resolveCalendlyUserContext(
+  user: CalendlyUserApiResource,
+  tokenFallback?: CalendlyTokenIdentityFallback,
+): { userUri: string; organizationUri: string; email: string; name: string; schedulingUrl?: string } {
+  const userUri = user.uri?.trim() || tokenFallback?.owner?.trim() || "";
+  const organizationUri =
+    user.current_organization?.trim() ||
+    user.organization?.trim() ||
+    tokenFallback?.organization?.trim() ||
+    "";
+
+  return {
+    userUri,
+    organizationUri,
+    email: user.email?.trim() ?? "",
+    name: user.name?.trim() ?? "",
+    schedulingUrl: user.scheduling_url?.trim() || undefined,
+  };
+}
+
+function logMissingCalendlyUserContext(
+  user: CalendlyUserApiResource,
+  tokenFallback: CalendlyTokenIdentityFallback | undefined,
+  partial: { userUri: string; organizationUri: string },
+): void {
+  logCalendlyError("oauth", "Current user response missing uri or organization", undefined, {
+    hasUri: Boolean(partial.userUri),
+    hasCurrentOrganization: Boolean(user.current_organization?.trim()),
+    hasOrganizationField: Boolean(user.organization?.trim()),
+    hasTokenOrganization: Boolean(tokenFallback?.organization?.trim()),
+    hasTokenOwner: Boolean(tokenFallback?.owner?.trim()),
+    hasResolvedOrganization: Boolean(partial.organizationUri),
+  });
+}
+
+async function fetchOrganizationUriFromMemberships(
+  accessToken: string,
+  userUri: string,
+): Promise<string | null> {
+  const encodedUser = encodeURIComponent(userUri);
+  const data = await calendlyApiGet<{
+    collection?: Array<{ organization?: string; role?: string }>;
+  }>(accessToken, `/organization_memberships?user=${encodedUser}`);
+
+  const membership = (data.collection ?? []).find((item) => item.organization?.trim());
+  return membership?.organization?.trim() ?? null;
+}
+
 export type CalendlyEventType = {
   uri: string;
   scheduling_url: string;
@@ -131,6 +193,8 @@ async function postTokenRequest(body: Record<string, string>): Promise<CalendlyT
     grantType,
     expiresIn: data.expires_in ?? null,
     scope: data.scope ?? null,
+    owner: data.owner ?? null,
+    organization: data.organization ?? null,
   });
 
   return data;
@@ -223,22 +287,52 @@ async function calendlyApiPost<T>(accessToken: string, path: string, body: unkno
   return data;
 }
 
-export async function fetchCalendlyCurrentUser(accessToken: string): Promise<CalendlyCurrentUser> {
-  const data = await calendlyApiGet<{ resource: CalendlyCurrentUser }>(accessToken, "/users/me");
-  const user = data.resource;
-  if (!user?.uri?.trim() || !user.organization?.trim()) {
-    logCalendlyError("oauth", "Current user response missing uri or organization", undefined, {
-      hasUri: Boolean(user?.uri?.trim()),
-      hasOrganization: Boolean(user?.organization?.trim()),
-    });
+export async function fetchCalendlyCurrentUser(
+  accessToken: string,
+  tokenFallback?: CalendlyTokenIdentityFallback,
+): Promise<CalendlyCurrentUser> {
+  const data = await calendlyApiGet<{ resource: CalendlyUserApiResource }>(accessToken, "/users/me");
+  const user = data.resource ?? {};
+  let { userUri, organizationUri, email, name, schedulingUrl } = resolveCalendlyUserContext(
+    user,
+    tokenFallback,
+  );
+
+  if (!organizationUri && userUri) {
+    try {
+      const fromMemberships = await fetchOrganizationUriFromMemberships(accessToken, userUri);
+      if (fromMemberships) {
+        organizationUri = fromMemberships;
+        logCalendly("oauth", "Resolved organization from memberships", {
+          organizationUri: fromMemberships,
+        });
+      }
+    } catch (err) {
+      logCalendlyWarn("oauth", "Could not load organization memberships", {
+        userUri,
+        err: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  if (!userUri || !organizationUri) {
+    logMissingCalendlyUserContext(user, tokenFallback, { userUri, organizationUri });
     throw new Error("Calendly user response missing uri or organization.");
   }
+
   logCalendly("oauth", "Fetched current user", {
-    userUri: user.uri,
-    organizationUri: user.organization,
-    email: user.email,
+    userUri,
+    organizationUri,
+    email,
   });
-  return user;
+
+  return {
+    uri: userUri,
+    organization: organizationUri,
+    email,
+    name,
+    scheduling_url: schedulingUrl,
+  };
 }
 
 export async function fetchFirstActiveEventType(
@@ -366,7 +460,10 @@ export async function completeAdvisorCalendlyOAuth(opts: {
     redirectUri: opts.redirectUri,
   });
 
-  const user = await fetchCalendlyCurrentUser(tokens.access_token);
+  const user = await fetchCalendlyCurrentUser(tokens.access_token, {
+    owner: tokens.owner,
+    organization: tokens.organization,
+  });
   const eventType = await fetchFirstActiveEventType(tokens.access_token, user.uri);
 
   let webhookSubscriptionUri: string | null = null;

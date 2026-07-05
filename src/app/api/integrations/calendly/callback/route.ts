@@ -8,11 +8,12 @@ import {
   saveAdvisorCalendlyConnection,
 } from "@/lib/calendly-oauth";
 import { logCalendly, logCalendlyError } from "@/lib/calendly-log";
+import { resolveCalendlyOAuthRedirectBase } from "@/lib/calendly-oauth-redirect";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-function settingsRedirect(calendly: string): NextResponse {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+async function settingsRedirect(calendly: string, request: Request): Promise<NextResponse> {
+  const base = await resolveCalendlyOAuthRedirectBase(request);
   const response = NextResponse.redirect(new URL(`/advisor/settings?calendly=${calendly}`, base));
   response.cookies.delete(CALENDLY_OAUTH_COOKIE_STATE);
   response.cookies.delete(CALENDLY_OAUTH_COOKIE_VERIFIER);
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
       hasClientSecret: Boolean(process.env.CALENDLY_CLIENT_SECRET?.trim()),
       hasRedirectUri: Boolean(process.env.CALENDLY_OAUTH_REDIRECT_URI?.trim()),
     });
-    return settingsRedirect("error");
+    return settingsRedirect("error", request);
   }
 
   const url = new URL(request.url);
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
       oauthError,
       oauthErrorDescription: oauthErrorDescription ?? null,
     });
-    return settingsRedirect("error");
+    return settingsRedirect("error", request);
   }
 
   if (!code || !state) {
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
       hasCode: Boolean(code),
       hasState: Boolean(state),
     });
-    return settingsRedirect("error");
+    return settingsRedirect("error", request);
   }
 
   const cookieStore = await cookies();
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
       hasAdvisorId: Boolean(advisorId),
       stateMatches: storedState === state,
     });
-    return settingsRedirect("error");
+    return settingsRedirect("error", request);
   }
 
   logCalendly("callback", "OAuth state validated — completing connection", { advisorId });
@@ -98,9 +99,9 @@ export async function GET(request: Request) {
     await saveAdvisorCalendlyConnection(advisorId, connection);
 
     logCalendly("callback", "OAuth connection completed successfully", { advisorId });
-    return settingsRedirect("connected");
+    return settingsRedirect("connected", request);
   } catch (err) {
     logCalendlyError("callback", "OAuth completion failed", err, { advisorId });
-    return settingsRedirect("error");
+    return settingsRedirect("error", request);
   }
 }
