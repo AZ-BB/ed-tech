@@ -32,6 +32,20 @@ function StatusBadge({ active }: { active: boolean }) {
   );
 }
 
+function CalendlyBadge({ connected }: { connected: boolean }) {
+  return (
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        connected
+          ? "bg-[#e8f5ee] text-[#2D6A4F]"
+          : "bg-[#f3f2f0] text-[#8a8a8a]"
+      }`}
+    >
+      {connected ? "Connected" : "Not connected"}
+    </span>
+  );
+}
+
 function TextCell({
   value,
   title,
@@ -158,6 +172,13 @@ export function getAdminUsersTableColumns(
         heading: "Tags",
         render: (row) => (
           <TextCell value={row.advisorDetail?.tags ?? "—"} title={row.advisorDetail?.tags} />
+        ),
+      },
+      {
+        id: "calendly",
+        heading: "Calendly",
+        render: (row) => (
+          <CalendlyBadge connected={row.advisorDetail?.calendlyConnected ?? false} />
         ),
       },
       {

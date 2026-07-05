@@ -20,6 +20,7 @@ export type AdminAdvisorTableDetail = {
   tags: string;
   statusLabel: string;
   isActive: boolean;
+  calendlyConnected: boolean;
 };
 
 export type AdminAmbassadorTableDetail = {
@@ -126,6 +127,7 @@ function formatCountryCodes(codes: string[]): string {
 const ADVISOR_TABLE_SELECT = `
   id, first_name, last_name, email, created_at,
   title, experience_years, languages, nationality_country_code, is_active,
+  calendly_refresh_token,
   advisor_tags_joint ( advisor_tags ( text ) ),
   advisor_specializations_countries ( country_code )
 `;
@@ -149,6 +151,7 @@ type AdvisorTableQueryRow = {
   languages: string | null;
   nationality_country_code: string;
   is_active: boolean;
+  calendly_refresh_token: string | null;
   advisor_tags_joint: { advisor_tags: { text: string } | null }[] | null;
   advisor_specializations_countries: { country_code: string }[] | null;
 };
@@ -202,6 +205,7 @@ function mapAdvisorToTableRow(row: AdvisorTableQueryRow): AdminUserTableRow {
       tags: formatListPreview(tags),
       statusLabel: row.is_active ? "Active" : "Inactive",
       isActive: row.is_active,
+      calendlyConnected: Boolean(row.calendly_refresh_token?.trim()),
     },
   };
 }

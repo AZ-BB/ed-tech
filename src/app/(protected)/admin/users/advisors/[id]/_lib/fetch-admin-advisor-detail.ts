@@ -43,6 +43,8 @@ export type AdminAdvisorDetailPayload = {
     payoutPercentage: number;
     receivesApplicationSupport: boolean;
     receivesPostAdmissionSupport: boolean;
+    calendlyConnected: boolean;
+    calendlyConnectedLabel: string;
     loginCredentialsSent: boolean;
     joinedLabel: string;
     lastLoggedInLabel: string;
@@ -85,6 +87,26 @@ function formatLastActive(iso: string | null | undefined): string {
     return formatDistanceToNow(d, { addSuffix: true });
   } catch {
     return "No sessions yet";
+  }
+}
+
+function formatCalendlyConnectedLabel(
+  connected: boolean,
+  connectedAt: string | null | undefined,
+): string {
+  if (!connected) return "Not connected";
+  if (!connectedAt) return "Connected";
+
+  try {
+    const d = new Date(connectedAt);
+    if (Number.isNaN(d.getTime())) return "Connected";
+    return `Connected · ${d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })}`;
+  } catch {
+    return "Connected";
   }
 }
 
@@ -145,6 +167,8 @@ export async function fetchAdminAdvisorDetail(
       payout_percentage,
       receives_application_support,
       receives_post_admission_support,
+      calendly_refresh_token,
+      calendly_connected_at,
       created_at,
       countries!advisors_nationality_country_code_fkey ( name ),
       advisor_tags_joint ( advisor_tags ( text ) ),
@@ -196,6 +220,11 @@ export async function fetchAdminAdvisorDetail(
   const lastLoggedInLabel = formatLastLoggedIn(
     loginCredentialsSent ? authUser?.last_sign_in_at : null,
   );
+  const calendlyConnected = Boolean(row.calendly_refresh_token?.trim());
+  const calendlyConnectedLabel = formatCalendlyConnectedLabel(
+    calendlyConnected,
+    row.calendly_connected_at,
+  );
 
   return {
     advisor: {
@@ -223,6 +252,8 @@ export async function fetchAdminAdvisorDetail(
       payoutPercentage: row.payout_percentage ?? 0,
       receivesApplicationSupport: row.receives_application_support ?? false,
       receivesPostAdmissionSupport: row.receives_post_admission_support ?? false,
+      calendlyConnected,
+      calendlyConnectedLabel,
       loginCredentialsSent,
       joinedLabel: formatJoined(row.created_at),
       lastLoggedInLabel,
