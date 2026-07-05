@@ -41,6 +41,8 @@ export type AdminAdvisorDetailPayload = {
     avatarUrl: string | null;
     isActive: boolean;
     payoutPercentage: number;
+    receivesApplicationSupport: boolean;
+    receivesPostAdmissionSupport: boolean;
     loginCredentialsSent: boolean;
     joinedLabel: string;
     lastLoggedInLabel: string;
@@ -141,6 +143,8 @@ export async function fetchAdminAdvisorDetail(
       avatar_url,
       is_active,
       payout_percentage,
+      receives_application_support,
+      receives_post_admission_support,
       created_at,
       countries!advisors_nationality_country_code_fkey ( name ),
       advisor_tags_joint ( advisor_tags ( text ) ),
@@ -217,6 +221,8 @@ export async function fetchAdminAdvisorDetail(
       avatarUrl: row.avatar_url?.trim() || null,
       isActive: row.is_active,
       payoutPercentage: row.payout_percentage ?? 0,
+      receivesApplicationSupport: row.receives_application_support ?? false,
+      receivesPostAdmissionSupport: row.receives_post_admission_support ?? false,
       loginCredentialsSent,
       joinedLabel: formatJoined(row.created_at),
       lastLoggedInLabel,
