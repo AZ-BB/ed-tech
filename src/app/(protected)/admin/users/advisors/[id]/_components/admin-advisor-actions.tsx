@@ -40,6 +40,8 @@ export type AdminAdvisorActionsProps = {
     avatarUrl: string | null;
     isActive: boolean;
     payoutPercentage: string;
+    receivesApplicationSupport: boolean;
+    receivesPostAdmissionSupport: boolean;
   };
 };
 
