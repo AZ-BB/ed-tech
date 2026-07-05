@@ -452,6 +452,15 @@ export type Database = {
           about: string | null
           avatar_url: string | null
           best_for: string | null
+          calendly_access_token: string | null
+          calendly_connected_at: string | null
+          calendly_event_type_uri: string | null
+          calendly_organization_uri: string | null
+          calendly_refresh_token: string | null
+          calendly_scheduling_url: string | null
+          calendly_token_expires_at: string | null
+          calendly_user_uri: string | null
+          calendly_webhook_subscription_uri: string | null
           created_at: string | null
           description: string | null
           email: string
@@ -474,6 +483,15 @@ export type Database = {
           about?: string | null
           avatar_url?: string | null
           best_for?: string | null
+          calendly_access_token?: string | null
+          calendly_connected_at?: string | null
+          calendly_event_type_uri?: string | null
+          calendly_organization_uri?: string | null
+          calendly_refresh_token?: string | null
+          calendly_scheduling_url?: string | null
+          calendly_token_expires_at?: string | null
+          calendly_user_uri?: string | null
+          calendly_webhook_subscription_uri?: string | null
           created_at?: string | null
           description?: string | null
           email: string
@@ -496,6 +514,15 @@ export type Database = {
           about?: string | null
           avatar_url?: string | null
           best_for?: string | null
+          calendly_access_token?: string | null
+          calendly_connected_at?: string | null
+          calendly_event_type_uri?: string | null
+          calendly_organization_uri?: string | null
+          calendly_refresh_token?: string | null
+          calendly_scheduling_url?: string | null
+          calendly_token_expires_at?: string | null
+          calendly_user_uri?: string | null
+          calendly_webhook_subscription_uri?: string | null
           created_at?: string | null
           description?: string | null
           email?: string

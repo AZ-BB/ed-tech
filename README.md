@@ -29,17 +29,47 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Calendly webhook (advisor session `booked_at`)
+## Calendly integration
+
+### Advisor OAuth (per-advisor scheduling)
+
+Each advisor connects their own Calendly account from **Advisor portal → My Profile → Integrations**. After OAuth, students book sessions on that advisor's Calendly event (not the shared org URL).
+
+#### Environment
+
+```bash
+CALENDLY_CLIENT_ID=your_oauth_client_id
+CALENDLY_CLIENT_SECRET=your_oauth_client_secret
+CALENDLY_OAUTH_REDIRECT_URI=http://localhost:3000/api/integrations/calendly/callback
+
+# Signing key from Calendly OAuth app / webhook subscription (server-only)
+CALENDLY_WEBHOOK_SIGNING_KEY=your_signing_key_here
+
+# Optional — shared Calendly event URL for application-support only
+NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL=https://calendly.com/admin-univeera/30min
+
+# Site origin used for OAuth redirect and webhook callback URL
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+#### Calendly developer portal (one-time)
+
+1. Sign up at [Calendly Developer](https://developer.calendly.com/) and create an **OAuth app** (use **Sandbox** for local dev).
+2. Set **Redirect URI** to match `CALENDLY_OAUTH_REDIRECT_URI` (HTTP localhost allowed in Sandbox).
+3. Enable scopes: `users:read`, `event_types:read`, `webhooks:write`, `scheduled_events:read`.
+4. Copy **Client ID**, **Client Secret**, and **Webhook signing key** into env vars.
+
+On connect, the app stores tokens on the `advisors` row, saves the first active event type's scheduling URL, and registers a user-scoped `invitee.created` webhook to `/api/webhooks/calendly`.
+
+### Calendly webhook (advisor session `booked_at`)
 
 When a student picks a time in Calendly after confirming an advisor session, Calendly sends `invitee.created` to the app, which sets `advisor_sessions.booked_at` and `status = confirmed`.
 
 ### Environment
 
 ```bash
-# Signing key from Calendly webhook subscription (server-only, not NEXT_PUBLIC_)
+# See "Calendly integration" above for OAuth variables.
 CALENDLY_WEBHOOK_SIGNING_KEY=your_signing_key_here
-
-# Optional — shared Calendly event URL (default: admin-univeera/30min)
 NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL=https://calendly.com/admin-univeera/30min
 ```
 

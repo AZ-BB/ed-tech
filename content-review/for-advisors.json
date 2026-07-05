@@ -1,0 +1,630 @@
+{
+  "page": "For Advisors",
+  "route": "/for-advisors",
+  "generatedAt": "2026-07-03",
+  "note": "Demo UI mock data in the hero preview is English-only and not localized.",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "metadata": {
+    "title": {
+      "en": "For advisors — Univeera",
+      "ar": "للمستشارين — يونيفيرا"
+    },
+    "description": {
+      "en": "Grow your advisory practice on Univeera — connect with students, run sessions, and build your profile.",
+      "ar": "نمِّ عملك الاستشاري عبر يونيفيرا: تواصل مع الطلاب، وقدّم الجلسات، وابنِ ملفك المهني."
+    }
+  },
+  "sections": {
+    "hero": {
+      "badge": {
+        "en": "For advisors and mentors",
+        "ar": "للمستشارين والمرشدين"
+      },
+      "title": {
+        "prefix": {
+          "en": "Shape",
+          "ar": "شكّل"
+        },
+        "emphasis": {
+          "en": "real student journeys",
+          "ar": "رحلات طلابية حقيقية"
+        },
+        "suffix": {
+          "en": ". From anywhere.",
+          "ar": ". من أي مكان."
+        }
+      },
+      "subtitle": {
+        "en": "Join a curated network of MENA-focused university advisors. Meet motivated students. Deliver structured guidance. Build a meaningful side practice — or scale your existing one.",
+        "ar": "انضم إلى شبكة مختارة من مستشاري الجامعات المتخصصين في الشرق الأوسط وشمال أفريقيا. قابل طلاباً جادين، وقدّم إرشاداً منظماً، وابنِ عملاً جانبياً ذا معنى أو وسّع عملك الحالي."
+      },
+      "applyAsAdvisor": {
+        "en": "Apply as an advisor",
+        "ar": "قدّم كمستشار"
+      },
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "demoPreview": {
+        "advisorProfile": {
+          "name": {
+            "en": "Sarah Khalil",
+            "ar": "Sarah Khalil"
+          },
+          "title": {
+            "en": "Admissions Advisor · 8 yrs",
+            "ar": "Admissions Advisor · 8 yrs"
+          },
+          "rating": {
+            "en": "★★★★★ 4.9 · 84 sessions",
+            "ar": "★★★★★ 4.9 · 84 sessions"
+          },
+          "tags": [
+            {
+              "en": "US admissions",
+              "ar": "US admissions"
+            },
+            {
+              "en": "UK · UCAS",
+              "ar": "UK · UCAS"
+            },
+            {
+              "en": "Common App",
+              "ar": "Common App"
+            },
+            {
+              "en": "Essays",
+              "ar": "Essays"
+            },
+            {
+              "en": "Scholarships",
+              "ar": "Scholarships"
+            }
+          ]
+        },
+        "upcomingSession": {
+          "title": {
+            "en": "Common App essay review",
+            "ar": "Common App essay review"
+          },
+          "time": {
+            "en": "4:30 PM · 45 min",
+            "ar": "4:30 PM · 45 min"
+          },
+          "student": {
+            "en": "Omar K. · Y13 · UAE",
+            "ar": "Omar K. · Y13 · UAE"
+          }
+        },
+        "request": {
+          "from": {
+            "en": "Layla A.",
+            "ar": "Layla A."
+          },
+          "time": {
+            "en": "2 hrs ago",
+            "ar": "2 hrs ago"
+          },
+          "message": {
+            "en": "Hi Sarah, I'm applying to LSE for Economics. Can we review my personal statement?",
+            "ar": "Hi Sarah, I'm applying to LSE for Economics. Can we review my personal statement?"
+          }
+        },
+        "stats": {
+          "sessions": {
+            "en": "Sessions",
+            "ar": "جلسات"
+          },
+          "students": {
+            "en": "Students",
+            "ar": "طلاب"
+          },
+          "rating": {
+            "en": "Rating",
+            "ar": "التقييم"
+          }
+        },
+        "labels": {
+          "upcoming": {
+            "en": "Upcoming",
+            "ar": "قادمة"
+          },
+          "today": {
+            "en": "Today",
+            "ar": "اليوم"
+          },
+          "withPrefix": {
+            "en": "With",
+            "ar": "مع"
+          },
+          "viewRequest": {
+            "en": "View request →",
+            "ar": "عرض الطلب ←"
+          }
+        }
+      }
+    },
+    "whyJoin": {
+      "label": {
+        "en": "Why advisors join Univeera",
+        "ar": "لماذا ينضم المستشارون ليونيفيرا"
+      },
+      "title": {
+        "prefix": {
+          "en": "More than tutoring.",
+          "ar": "أكثر من عمل حر عابر."
+        },
+        "emphasis": {
+          "en": "A real practice.",
+          "ar": "ممارسة استشارية حقيقية."
+        }
+      },
+      "description": {
+        "en": "Univeera advisors aren't running freelance side gigs from inbox to inbox. They sit inside a structured platform that takes care of the operations — so they can focus on actually advising.",
+        "ar": "لا يدير مستشارو يونيفيرا جلساتهم عبر رسائل متفرقة وبلا سياق. يعملون داخل منصة منظمة تتولى الجوانب التشغيلية، ليتمكنوا من التركيز على الإرشاد نفسه."
+      },
+      "cards": [
+        {
+          "title": {
+            "en": "Meaningful impact, every session.",
+            "ar": "أثر حقيقي في كل جلسة."
+          },
+          "desc": {
+            "en": "Students come to Univeera because they're serious about their future. You're not selling a service — you're shaping a life decision. Every session matters.",
+            "ar": "يأتي الطلاب إلى يونيفيرا لأنهم جادون بشأن مستقبلهم. أنت لا تبيع خدمة فقط، بل تساعد في تشكيل قرار حياتي مهم. كل جلسة لها قيمة."
+          },
+          "quote": {
+            "en": "Univeera lets me focus on the work I actually love — guiding students through one of the biggest decisions of their lives.",
+            "ar": "تتيح لي يونيفيرا التركيز على العمل الذي أحبه فعلاً: إرشاد الطلاب في أحد أهم قرارات حياتهم."
+          }
+        },
+        {
+          "title": {
+            "en": "A growing MENA platform",
+            "ar": "منصة إقليمية في نمو مستمر"
+          },
+          "desc": {
+            "en": "Be part of a region-focused company actively expanding across UAE, KSA, Bahrain, Jordan, Qatar, and beyond.",
+            "ar": "كن جزءاً من شركة تركز على المنطقة وتتوسع في الإمارات والسعودية والبحرين والأردن وقطر وغيرها."
+          }
+        },
+        {
+          "title": {
+            "en": "Pre-qualified students",
+            "ar": "طلاب مؤهلون مسبقاً"
+          },
+          "desc": {
+            "en": "Students come through our partner schools, fully onboarded with profiles, goals, and context already in place.",
+            "ar": "يصل الطلاب عبر مدارسنا الشريكة، وقد أكملوا التسجيل بملفات وأهداف وسياق واضح."
+          }
+        },
+        {
+          "title": {
+            "en": "Run by the platform",
+            "ar": "المنصة تتولى التشغيل"
+          },
+          "desc": {
+            "en": "Scheduling, payments, reminders, no-show handling — Univeera takes care of it all. You show up to advise.",
+            "ar": "الجدولة، والمدفوعات، والتذكيرات، والتعامل مع عدم الحضور؛ تتولى يونيفيرا كل ذلك، لتأتي أنت جاهزاً للإرشاد."
+          }
+        },
+        {
+          "title": {
+            "en": "Build your reputation",
+            "ar": "ابنِ سمعتك"
+          },
+          "desc": {
+            "en": "Public advisor profile, verified ratings, session history, and specialty badges across the platform.",
+            "ar": "ملف عام للمستشار، وتقييمات موثقة، وسجل جلسات، وشارات تخصص داخل المنصة."
+          }
+        }
+      ]
+    },
+    "howItWorks": {
+      "label": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "title": {
+        "prefix": {
+          "en": "Four steps from",
+          "ar": "أربع خطوات من"
+        },
+        "emphasis1": {
+          "en": "application",
+          "ar": "التقديم"
+        },
+        "between": {
+          "en": "to",
+          "ar": "إلى"
+        },
+        "emphasis2": {
+          "en": "first session",
+          "ar": "أول جلسة"
+        }
+      },
+      "description": {
+        "en": "Joining Univeera is a curated process. We're selective about who we onboard — students and schools count on the quality of our advisor network.",
+        "ar": "الانضمام إلى يونيفيرا يتم عبر عملية انتقائية. نختار المستشارين بعناية لأن الطلاب والمدارس يعتمدون على جودة شبكتنا."
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Apply to the network",
+            "ar": "قدّم للشبكة"
+          },
+          "desc": {
+            "en": "Submit your background, credentials, and areas of expertise. Most applications are reviewed within five business days.",
+            "ar": "أرسل خلفيتك ومؤهلاتك ومجالات خبرتك. تُراجع معظم الطلبات خلال خمسة أيام عمل."
+          }
+        },
+        {
+          "title": {
+            "en": "Build your profile",
+            "ar": "ابنِ ملفك"
+          },
+          "desc": {
+            "en": "Create a public profile showcasing your specialties, experience, languages, regions, and the universities you know well.",
+            "ar": "أنشئ ملفاً عاماً يعرض تخصصاتك وخبرتك ولغاتك والمناطق والجامعات التي تعرفها جيداً."
+          }
+        },
+        {
+          "title": {
+            "en": "Get matched with students",
+            "ar": "تواصل مع الطلاب المناسبين"
+          },
+          "desc": {
+            "en": "Our matching engine surfaces you to relevant students. They book directly through your calendar — no back-and-forth.",
+            "ar": "يعرضك محرك المطابقة للطلاب الأكثر صلة بخبرتك. يحجزون مباشرة عبر تقويمك دون مراسلات طويلة."
+          }
+        },
+        {
+          "title": {
+            "en": "Deliver structured sessions",
+            "ar": "قدّم جلسات منظمة"
+          },
+          "desc": {
+            "en": "Hold sessions inside Univeera with full context — student profile, goals, application status, and previous notes.",
+            "ar": "أجرِ الجلسات داخل يونيفيرا بسياق كامل: ملف الطالب، وأهدافه، وحالة طلبه، وملاحظاتك السابقة."
+          }
+        }
+      ]
+    },
+    "supportAreas": {
+      "label": {
+        "en": "Types of support advisors deliver",
+        "ar": "أنواع الدعم التي يقدمها المستشارون"
+      },
+      "title": {
+        "prefix": {
+          "en": "Bring your expertise.",
+          "ar": "قدّم خبرتك."
+        },
+        "emphasis": {
+          "en": "Pick your lane.",
+          "ar": "واختر مجال تخصصك."
+        }
+      },
+      "description": {
+        "en": "Univeera advisors work across the full university journey. You choose what you specialise in. Students choose you based on what they need.",
+        "ar": "يعمل مستشارو يونيفيرا عبر مختلف مراحل الرحلة الجامعية. أنت تحدد تخصصك، والطلاب يختارونك بناءً على احتياجهم."
+      },
+      "areas": [
+        {
+          "title": {
+            "en": "Pathway selection",
+            "ar": "اختيار المسار"
+          },
+          "desc": {
+            "en": "Help students figure out what to study before they figure out where. Major exploration to career-program fit.",
+            "ar": "ساعد الطلاب على تحديد ماذا يدرسون قبل اختيار أين يدرسون، من استكشاف التخصص إلى ملاءمته للمسار المهني."
+          },
+          "tag": {
+            "en": "High demand",
+            "ar": "طلب مرتفع"
+          }
+        },
+        {
+          "title": {
+            "en": "Country & university guidance",
+            "ar": "إرشاد الدول والجامعات"
+          },
+          "desc": {
+            "en": "Advise on destinations, university tiers, fit factors, and the realities of studying abroad as a MENA student.",
+            "ar": "قدّم نصائح حول الوجهات، ومستويات الجامعات، وعوامل الملاءمة، وواقع الدراسة في الخارج لطلاب المنطقة."
+          },
+          "tag": {
+            "en": "Specialised",
+            "ar": "متخصص"
+          }
+        },
+        {
+          "title": {
+            "en": "Application planning",
+            "ar": "تخطيط التقديم"
+          },
+          "desc": {
+            "en": "Build application timelines, university lists, requirements checklists, and submission strategies.",
+            "ar": "ساعد في بناء جداول التقديم، وقوائم الجامعات، وقوائم المتطلبات، واستراتيجيات الإرسال."
+          },
+          "tag": {
+            "en": "Most requested",
+            "ar": "الأكثر طلباً"
+          }
+        },
+        {
+          "title": {
+            "en": "Essay & statement coaching",
+            "ar": "توجيه المقالات والبيانات الشخصية"
+          },
+          "desc": {
+            "en": "Guide students through personal statements, supplementals, and Common App essays.",
+            "ar": "أرشد الطلاب في كتابة البيانات الشخصية، والمقالات الإضافية، ومقالات Common App."
+          },
+          "tag": {
+            "en": "Top earning",
+            "ar": "أعلى دخل"
+          }
+        },
+        {
+          "title": {
+            "en": "Interview preparation",
+            "ar": "التحضير للمقابلات"
+          },
+          "desc": {
+            "en": "Run mock interviews for medical, Oxbridge, Ivy, and competitive program admissions.",
+            "ar": "أجرِ مقابلات تجريبية للطب وأوكسفورد وكامبريدج والجامعات المرموقة والبرامج التنافسية."
+          },
+          "tag": {
+            "en": "High value",
+            "ar": "قيمة عالية"
+          }
+        },
+        {
+          "title": {
+            "en": "Scholarships & financial aid",
+            "ar": "المنح والمساعدات المالية"
+          },
+          "desc": {
+            "en": "Help students navigate scholarship applications, need-based aid, and study-abroad funding.",
+            "ar": "ساعد الطلاب على فهم طلبات المنح والمساعدات المالية وخيارات تمويل الدراسة في الخارج."
+          },
+          "tag": {
+            "en": "Specialised",
+            "ar": "متخصص"
+          }
+        }
+      ]
+    },
+    "differentiator": {
+      "label": {
+        "en": "What makes this different",
+        "ar": "ما يميز هذا"
+      },
+      "title": {
+        "prefix": {
+          "en": "Not freelance tutoring.",
+          "ar": "ليس عملاً حراً معزولاً."
+        },
+        "emphasis": {
+          "en": "A real platform.",
+          "ar": "منصة حقيقية."
+        }
+      },
+      "description": {
+        "en": "Univeera advisors come with context. You're not advising in a vacuum.",
+        "ar": "يعمل مستشارو يونيفيرا بسياق واضح. أنت لا ترشد في فراغ."
+      },
+      "heading": {
+        "prefix": {
+          "en": "Every student you meet has",
+          "ar": "كل طالب تقابله"
+        },
+        "emphasis": {
+          "en": "already done the work",
+          "ar": "أنجز الخطوات الأساسية مسبقاً"
+        }
+      },
+      "lead": {
+        "en": "Before a student books with you, they've completed onboarding, taken our Discovery Journey, built a profile, and signaled their goals. You start advising with full context — not from a blank page.",
+        "ar": "قبل أن يحجز الطالب معك، يكون قد أكمل التسجيل، وخاض رحلة الاكتشاف، وبنى ملفه، وحدد أهدافه. تبدأ الإرشاد بسياق كامل، لا من صفحة بيضاء."
+      },
+      "points": [
+        {
+          "title": {
+            "en": "Real student profiles",
+            "ar": "ملفات طلاب حقيقية"
+          },
+          "desc": {
+            "en": "Year of study, school, target countries, academic interests.",
+            "ar": "سنة الدراسة والمدرسة والدول المستهدفة والاهتمامات الأكاديمية."
+          }
+        },
+        {
+          "title": {
+            "en": "Discovery Journey results",
+            "ar": "نتائج رحلة الاكتشاف"
+          },
+          "desc": {
+            "en": "Six-module psychometric assessment showing strengths and pathway fit.",
+            "ar": "تقييم من ست وحدات يوضح نقاط القوة ومدى ملاءمة المسارات المختلفة."
+          }
+        },
+        {
+          "title": {
+            "en": "School context",
+            "ar": "سياق المدرسة"
+          },
+          "desc": {
+            "en": "Partner school, year group, and prior counsellor notes when shared.",
+            "ar": "المدرسة الشريكة، والصف الدراسي، وملاحظات المرشد السابقة عند مشاركتها."
+          }
+        },
+        {
+          "title": {
+            "en": "Continuity across sessions",
+            "ar": "استمرارية بين الجلسات"
+          },
+          "desc": {
+            "en": "Your notes stay with the student. Next session picks up where you left off.",
+            "ar": "تبقى ملاحظاتك مرتبطة بملف الطالب، لتبدأ الجلسة التالية من حيث توقفت السابقة."
+          }
+        }
+      ],
+      "profileLabels": {
+        "school": {
+          "en": "School",
+          "ar": "المدرسة"
+        },
+        "targetCountries": {
+          "en": "Target countries",
+          "ar": "الدول المستهدفة"
+        },
+        "interests": {
+          "en": "Interests",
+          "ar": "الاهتمامات"
+        },
+        "predictedGrades": {
+          "en": "Predicted grades",
+          "ar": "الدرجات المتوقعة"
+        },
+        "topTraits": {
+          "en": "Top traits",
+          "ar": "أبرز الصفات"
+        }
+      }
+    },
+    "cta": {
+      "title": {
+        "prefix": {
+          "en": "Help shape the next generation of",
+          "ar": "ساعد في تشكيل الجيل القادم من"
+        },
+        "emphasis": {
+          "en": "MENA students",
+          "ar": "طلاب المنطقة"
+        }
+      },
+      "description": {
+        "en": "If you have university admissions expertise — and you care about doing this work well — we'd love to talk. Applications take ten minutes.",
+        "ar": "إذا كانت لديك خبرة في القبول الجامعي وتهتم بتقديم هذا العمل بجودة عالية، يسعدنا التحدث معك. يستغرق التقديم عشر دقائق فقط."
+      },
+      "talkToTeam": {
+        "en": "Talk to our team",
+        "ar": "تحدث مع فريقنا"
+      }
+    }
+  }
+}

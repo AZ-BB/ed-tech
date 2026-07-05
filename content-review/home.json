@@ -1,0 +1,536 @@
+{
+  "page": "Home",
+  "route": "/",
+  "generatedAt": "2026-07-03",
+  "note": "Landing page for students. Header and footer appear on all public pages.",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "metadata": {
+    "title": {
+      "en": "Univeera — University guidance for MENA students",
+      "ar": "يونيفيرا — إرشاد جامعي لطلاب الشرق الأوسط"
+    }
+  },
+  "sections": {
+    "hero": {
+      "badge": {
+        "en": "Built for students across the Middle East",
+        "ar": "مصممة لطلاب الشرق الأوسط"
+      },
+      "title": {
+        "en": "From confusion to acceptance",
+        "ar": "من الحيرة إلى القبول"
+      },
+      "titleEmphasis": {
+        "en": "acceptance",
+        "ar": "القبول"
+      },
+      "subtitle": {
+        "en": "Discover, prepare, and apply to universities — all in one platform designed to guide students and teachers from first search to acceptance letter.",
+        "ar": "اكتشف الجامعات، واستعد للتقديم، وقدّم بثقة من خلال منصة واحدة ترافق الطلاب والمعلمين من أول بحث وحتى خطاب القبول."
+      },
+      "cta": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      }
+    },
+    "howItWorks": {
+      "label": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "title": {
+        "en": "A simpler way to navigate your university journey",
+        "ar": "رحلة جامعية أوضح وأسهل خطوة بخطوة"
+      },
+      "subtitle": {
+        "en": "Five steps from exploration to your acceptance letter.",
+        "ar": "خمس خطوات تنقلك من الاستكشاف إلى خطاب القبول."
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Create your profile",
+            "ar": "أنشئ ملفك"
+          },
+          "desc": {
+            "en": "Tell us about your academic background, interests, and preferred destinations.",
+            "ar": "عرّفنا بخلفيتك الأكاديمية واهتماماتك والوجهات التي تفكر بها."
+          }
+        },
+        {
+          "title": {
+            "en": "Explore universities",
+            "ar": "استكشف الجامعات"
+          },
+          "desc": {
+            "en": "Search and filter 1,000+ universities matched to your profile.",
+            "ar": "ابحث وفلتر أكثر من 1000 جامعة بناءً على ما يناسب ملفك."
+          }
+        },
+        {
+          "title": {
+            "en": "Prepare with confidence",
+            "ar": "استعد بثقة"
+          },
+          "desc": {
+            "en": "Program discovery, essay tools, and resources to strengthen your application.",
+            "ar": "استخدم أدوات اكتشاف البرامج ومراجعة المقالات وموارد تساعدك على تقوية طلبك."
+          }
+        },
+        {
+          "title": {
+            "en": "Get real guidance",
+            "ar": "احصل على إرشاد واقعي"
+          },
+          "desc": {
+            "en": "Speak to advisors and students who have already been through it.",
+            "ar": "تحدث مع مستشارين وطلاب خاضوا التجربة قبلك."
+          }
+        },
+        {
+          "title": {
+            "en": "Apply smarter",
+            "ar": "قدّم بذكاء"
+          },
+          "desc": {
+            "en": "Apply with the right support — or let us handle the process for you.",
+            "ar": "قدّم بدعم مناسب، أو دع فريقنا يتولى عملية التقديم نيابة عنك."
+          }
+        }
+      ]
+    },
+    "features": {
+      "label": {
+        "en": "Everything you need",
+        "ar": "كل ما تحتاجه"
+      },
+      "title": {
+        "en": "One platform, every tool",
+        "ar": "منصة واحدة تجمع كل الأدوات"
+      },
+      "subtitle": {
+        "en": "From choosing the right university to submitting your application.",
+        "ar": "من اختيار الجامعة المناسبة إلى تقديم طلبك."
+      },
+      "items": [
+        {
+          "name": {
+            "en": "Program discovery",
+            "ar": "اكتشاف البرامج"
+          },
+          "desc": {
+            "en": "View 100+ programs, identify what fits you best and see what careers that leads to — all while connecting with working professionals.",
+            "ar": "تعرّف إلى أكثر من 100 برنامج، وحدد الأنسب لك، واكتشف المسارات المهنية المرتبطة بها."
+          }
+        },
+        {
+          "name": {
+            "en": "University search database",
+            "ar": "قاعدة بيانات الجامعات"
+          },
+          "desc": {
+            "en": "Browse local, regional, and global universities with detailed requirements.",
+            "ar": "تصفح جامعات محلية وإقليمية وعالمية بمتطلبات مفصلة."
+          }
+        },
+        {
+          "name": {
+            "en": "Scholarship opportunities",
+            "ar": "فرص المنح"
+          },
+          "desc": {
+            "en": "Find and filter scholarships that match your profile and needs.",
+            "ar": "ابحث عن المنح التي تناسب ملفك واحتياجاتك."
+          }
+        },
+        {
+          "name": {
+            "en": "1:1 advisor sessions",
+            "ar": "جلسات مستشار فردية"
+          },
+          "desc": {
+            "en": "Get expert guidance tailored to your goals and application strategy.",
+            "ar": "إرشاد متخصص يناسب أهدافك واستراتيجية تقديمك."
+          }
+        },
+        {
+          "name": {
+            "en": "Essay support (AI-powered)",
+            "ar": "دعم المقالات بالذكاء الاصطناعي"
+          },
+          "desc": {
+            "en": "Receive actionable feedback to improve your personal statement.",
+            "ar": "ملاحظات عملية تساعدك على تحسين بيانك الشخصي."
+          }
+        },
+        {
+          "name": {
+            "en": "University ambassadors",
+            "ar": "سفراء الجامعات"
+          },
+          "desc": {
+            "en": "Speak to students who have already studied at your target university.",
+            "ar": "تحدث مع طلاب سبق لهم الدراسة في جامعاتك المستهدفة."
+          }
+        },
+        {
+          "name": {
+            "en": "Application support",
+            "ar": "دعم التقديم"
+          },
+          "desc": {
+            "en": "Tell us your targets — we'll handle the full application process for you.",
+            "ar": "أخبرنا بجامعاتك المستهدفة، ونتولى معك عملية التقديم من البداية إلى النهاية."
+          }
+        },
+        {
+          "name": {
+            "en": "Post-admission support",
+            "ar": "دعم ما بعد القبول"
+          },
+          "desc": {
+            "en": "We'll handle visas, accommodations, and flights — and connect you with fellow Middle East students at your university.",
+            "ar": "نساعدك في التأشيرات والسكن وحجوزات السفر، ونوصلك بطلاب من الشرق الأوسط في جامعتك."
+          }
+        }
+      ]
+    },
+    "socialProof": {
+      "label": {
+        "en": "Trusted by students across the region",
+        "ar": "يثق بنا طلاب من مختلف أنحاء المنطقة"
+      },
+      "title": {
+        "en": "Real impact, real numbers",
+        "ar": "أثر ملموس وأرقام حقيقية"
+      },
+      "stats": [
+        {
+          "num": {
+            "en": "10,000+",
+            "ar": "+10,000"
+          },
+          "label": {
+            "en": "Students supported",
+            "ar": "طالب حصل على الدعم"
+          }
+        },
+        {
+          "num": {
+            "en": "50+",
+            "ar": "+50"
+          },
+          "label": {
+            "en": "Partner schools",
+            "ar": "مدرسة شريكة"
+          }
+        },
+        {
+          "num": {
+            "en": "1,000+",
+            "ar": "+1,000"
+          },
+          "label": {
+            "en": "Advisory sessions",
+            "ar": "جلسة إرشادية"
+          }
+        },
+        {
+          "num": {
+            "en": "500+",
+            "ar": "+500"
+          },
+          "label": {
+            "en": "Universities covered",
+            "ar": "جامعة ضمن المنصة"
+          }
+        }
+      ]
+    },
+    "testimonials": {
+      "label": {
+        "en": "What students say",
+        "ar": "ماذا يقول الطلاب"
+      },
+      "title": {
+        "en": "Real results, real stories",
+        "ar": "نتائج وتجارب حقيقية"
+      },
+      "items": [
+        {
+          "quote": {
+            "en": "I had no idea where to start. The AI matching helped me shortlist universities that actually fit my profile and goals.",
+            "ar": "لم أكن أعرف من أين أبدأ. ساعدتني المطابقة بالذكاء الاصطناعي على إعداد قائمة جامعات تناسب ملفي وأهدافي فعلاً."
+          },
+          "name": {
+            "en": "Noura A.",
+            "ar": "نورة أ."
+          },
+          "uni": {
+            "en": "Accepted — University of Manchester 🇬🇧",
+            "ar": "مقبولة — جامعة مانشستر 🇬🇧"
+          }
+        },
+        {
+          "quote": {
+            "en": "My personal statement felt weak, but the AI essay feedback pushed me to rewrite it and really stand out.",
+            "ar": "كان بياني الشخصي ضعيفاً، لكن ملاحظات الذكاء الاصطناعي ساعدتني على إعادة كتابته ليصبح أكثر تميزاً."
+          },
+          "name": {
+            "en": "Mohammed K.",
+            "ar": "محمد ك."
+          },
+          "uni": {
+            "en": "Accepted — NYU Abu Dhabi 🇦🇪",
+            "ar": "مقبول — جامعة نيويورك أبوظبي 🇦🇪"
+          }
+        },
+        {
+          "quote": {
+            "en": "I was unsure about studying abroad. Speaking to someone already there gave me the clarity and confidence to apply.",
+            "ar": "كنت مترددة بشأن الدراسة في الخارج. التحدث مع طالبة هناك منحني وضوحاً وثقة أكبر للتقديم."
+          },
+          "name": {
+            "en": "Sara R.",
+            "ar": "سارة ر."
+          },
+          "uni": {
+            "en": "Accepted — University of Toronto 🇨🇦",
+            "ar": "مقبولة — جامعة تورنتو 🇨🇦"
+          }
+        }
+      ]
+    },
+    "mission": {
+      "label": {
+        "en": "Our mission",
+        "ar": "مهمتنا"
+      },
+      "title": {
+        "en": "Empowering students across the Middle East to access better education",
+        "ar": "تمكين طلاب الشرق الأوسط من الوصول إلى تعليم أفضل"
+      },
+      "description": {
+        "en": "Built by professionals who experienced the challenges of the university application journey firsthand. We believe every student deserves clear guidance, accessible tools, and real support — regardless of background.",
+        "ar": "بُنيت يونيفيرا على يد مختصين عاشوا تحديات التقديم الجامعي عن قرب. نؤمن أن كل طالب يستحق إرشاداً واضحاً، وأدوات سهلة الوصول، ودعماً حقيقياً بغض النظر عن خلفيته."
+      }
+    },
+    "faq": {
+      "label": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "title": {
+        "en": "Frequently asked questions",
+        "ar": "أسئلة متكررة"
+      },
+      "items": [
+        {
+          "q": {
+            "en": "What is this platform and how does it work?",
+            "ar": "ما هذه المنصة وكيف تعمل؟"
+          },
+          "a": {
+            "en": "We guide you through the entire university journey — from discovering universities to preparing your application and submitting it — all in one place.",
+            "ar": "نرافقك في رحلتك الجامعية كاملة، من اكتشاف الجامعات إلى تجهيز طلبك وتقديمه، في مكان واحد."
+          }
+        },
+        {
+          "q": {
+            "en": "Who is this platform for?",
+            "ar": "لمن هذه المنصة؟"
+          },
+          "a": {
+            "en": "This platform is designed for students across the Middle East who are planning to apply to universities locally or abroad.",
+            "ar": "صُممت للطلاب في الشرق الأوسط الذين يخططون للتقديم إلى جامعات محلية أو دولية."
+          }
+        },
+        {
+          "q": {
+            "en": "Do I need SAT, IELTS, or ACT to apply?",
+            "ar": "هل أحتاج SAT أو IELTS أو ACT؟"
+          },
+          "a": {
+            "en": "It depends on the universities you are applying to. We help you understand exactly what each university requires and guide you on how to prepare.",
+            "ar": "يعتمد ذلك على الجامعات التي ترغب في التقديم إليها. نساعدك على فهم متطلبات كل جامعة والاستعداد لها."
+          }
+        },
+        {
+          "q": {
+            "en": "How does the AI university matching work?",
+            "ar": "كيف تعمل مطابقة الجامعات بالذكاء الاصطناعي؟"
+          },
+          "a": {
+            "en": "You answer a few questions about your grades, interests, and goals, and our system recommends universities that best match your profile.",
+            "ar": "تجيب عن أسئلة حول درجاتك واهتماماتك وأهدافك، ثم نقترح الجامعات الأكثر ملاءمة لملفك."
+          }
+        },
+        {
+          "q": {
+            "en": "Can I speak to someone who studied at my target university?",
+            "ar": "هل يمكنني التحدث مع من درس في جامعتي المستهدفة؟"
+          },
+          "a": {
+            "en": "Yes — you can connect with student ambassadors and book 1:1 sessions to learn from their experience.",
+            "ar": "نعم، يمكنك التواصل مع سفراء الطلاب وحجز جلسات فردية للاستفادة من تجربتهم."
+          }
+        },
+        {
+          "q": {
+            "en": "What is the \"Apply for Me\" service?",
+            "ar": "ما خدمة \"قدّم نيابة عني\"؟"
+          },
+          "a": {
+            "en": "You tell us which universities you want to apply to, provide your documents, and we handle the application process on your behalf.",
+            "ar": "تخبرنا بالجامعات التي تستهدفها وتزوّدنا بمستنداتك، ونتولى عملية التقديم نيابة عنك."
+          }
+        },
+        {
+          "q": {
+            "en": "Can I use the platform through my school?",
+            "ar": "هل يمكنني استخدام المنصة عبر مدرستي؟"
+          },
+          "a": {
+            "en": "Yes — if your school is partnered with us, you will receive login details and access without needing to purchase individually.",
+            "ar": "نعم، إذا كانت مدرستك شريكة معنا، ستحصل على بيانات الدخول دون الحاجة إلى اشتراك فردي."
+          }
+        },
+        {
+          "q": {
+            "en": "Can I cancel my subscription?",
+            "ar": "هل يمكنني إلغاء الاشتراك؟"
+          },
+          "a": {
+            "en": "Yes — you can cancel your subscription at any time based on our cancellation policy.",
+            "ar": "نعم، يمكنك إلغاء اشتراكك في أي وقت وفقاً لسياسة الإلغاء."
+          }
+        }
+      ]
+    },
+    "cta": {
+      "title": {
+        "en": "Start your journey today",
+        "ar": "ابدأ رحلتك اليوم"
+      },
+      "subtitle": {
+        "en": "Take the first step toward your future.",
+        "ar": "خذ الخطوة الأولى نحو مستقبلك."
+      },
+      "signUp": {
+        "en": "Sign up",
+        "ar": "إنشاء حساب"
+      }
+    }
+  }
+}

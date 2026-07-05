@@ -1,0 +1,310 @@
+{
+  "page": "Sign Up",
+  "route": "/signup",
+  "generatedAt": "2026-07-03",
+  "note": "Auth pages use a minimal layout without the full marketing footer. Grade and country dropdown options use ISO country names.",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    }
+  },
+  "sections": {
+    "wizard": {
+      "step1of3": {
+        "en": "Step 1 of 3",
+        "ar": "الخطوة 1 من 3"
+      },
+      "step2of3": {
+        "en": "Step 2 of 3",
+        "ar": "الخطوة 2 من 3"
+      },
+      "step3of3": {
+        "en": "Step 3 of 3",
+        "ar": "الخطوة 3 من 3"
+      },
+      "profileLeftTitle": {
+        "en": "Let's get to know you",
+        "ar": "لنتعرّف إليك"
+      },
+      "profileLeftSub": {
+        "en": "We'll personalize your experience based on your background and goals. This only takes a minute.",
+        "ar": "سنخصص تجربتك بناءً على خلفيتك وأهدافك. لن يستغرق الأمر أكثر من دقيقة."
+      },
+      "featureRecommendations": {
+        "en": "Personalized recommendations",
+        "ar": "توصيات مخصصة"
+      },
+      "featureScholarships": {
+        "en": "Relevant scholarships",
+        "ar": "منح مناسبة"
+      },
+      "featureGuidance": {
+        "en": "Region-specific guidance",
+        "ar": "إرشاد مخصص للمنطقة"
+      },
+      "accountLeftTitle": {
+        "en": "Secure your account",
+        "ar": "أمّن حسابك"
+      },
+      "accountLeftSub": {
+        "en": "This lets you save your progress, access your dashboard, and pick up where you left off.",
+        "ar": "يساعدك ذلك على حفظ تقدمك، والوصول إلى لوحة التحكم، ومتابعة رحلتك من حيث توقفت."
+      },
+      "schoolLeftTitle": {
+        "en": "How are you joining Univeera?",
+        "ar": "كيف تنضم إلى يونيفيرا؟"
+      },
+      "schoolLeftSub": {
+        "en": "If your school is registered with Univeera, you'll have full access through your school's partnership — no payment needed.",
+        "ar": "إذا كانت مدرستك مسجلة في يونيفيرا، فستحصل على وصول كامل من خلال شراكة مدرستك دون الحاجة إلى الدفع."
+      },
+      "progressProfile": {
+        "en": "Profile",
+        "ar": "الملف الشخصي"
+      },
+      "progressAccount": {
+        "en": "Account setup",
+        "ar": "إعداد الحساب"
+      },
+      "progressAccess": {
+        "en": "Access type",
+        "ar": "نوع الوصول"
+      },
+      "tellAboutYou": {
+        "en": "Tell us about you",
+        "ar": "أخبرنا عنك"
+      },
+      "tellAboutYouSub": {
+        "en": "This helps us personalize your experience",
+        "ar": "يساعدنا هذا على تخصيص تجربتك"
+      },
+      "firstName": {
+        "en": "First name",
+        "ar": "الاسم الأول"
+      },
+      "lastName": {
+        "en": "Last name",
+        "ar": "اسم العائلة"
+      },
+      "grade": {
+        "en": "Grade",
+        "ar": "الصف"
+      },
+      "selectGrade": {
+        "en": "Select your grade",
+        "ar": "اختر صفك"
+      },
+      "nationality": {
+        "en": "Nationality",
+        "ar": "الجنسية"
+      },
+      "selectNationality": {
+        "en": "Select nationality",
+        "ar": "اختر جنسيتك"
+      },
+      "countryOfResidence": {
+        "en": "Country of residence",
+        "ar": "بلد الإقامة"
+      },
+      "selectCountry": {
+        "en": "Select country",
+        "ar": "اختر البلد"
+      },
+      "back": {
+        "en": "Back",
+        "ar": "رجوع"
+      },
+      "next": {
+        "en": "Next",
+        "ar": "التالي"
+      },
+      "phoneNumber": {
+        "en": "Phone number",
+        "ar": "رقم الهاتف"
+      },
+      "createPassword": {
+        "en": "Create a password",
+        "ar": "أنشئ كلمة مرور"
+      },
+      "confirmYourPassword": {
+        "en": "Confirm your password",
+        "ar": "أكّد كلمة المرور"
+      },
+      "passwordHint": {
+        "en": "Enter at least 8 characters",
+        "ar": "أدخل 8 أحرف على الأقل"
+      },
+      "agreePrefix": {
+        "en": "I agree to the",
+        "ar": "أوافق على"
+      },
+      "termsLink": {
+        "en": "Terms & Conditions",
+        "ar": "الشروط والأحكام"
+      },
+      "and": {
+        "en": "and",
+        "ar": "و"
+      },
+      "privacyLink": {
+        "en": "Privacy Policy",
+        "ar": "سياسة الخصوصية"
+      },
+      "schoolQuestion": {
+        "en": "Is your school registered with Univeera?",
+        "ar": "هل مدرستك مسجلة في يونيفيرا؟"
+      },
+      "schoolQuestionSub": {
+        "en": "Schools that partner with us provide free access for their students",
+        "ar": "توفر المدارس الشريكة وصولاً مجانياً لطلابها"
+      },
+      "schoolYesTitle": {
+        "en": "Yes — my school is registered",
+        "ar": "نعم — مدرستي مسجلة"
+      },
+      "schoolYesSub": {
+        "en": "I have an access code from my school",
+        "ar": "لدي رمز وصول من مدرستي"
+      },
+      "schoolNoTitle": {
+        "en": "No — I'm joining on my own",
+        "ar": "لا — أنضم بشكل فردي"
+      },
+      "schoolNoSub": {
+        "en": "Temporarily unavailable — please use your school access code",
+        "ar": "هذا الخيار غير متاح مؤقتاً. يرجى استخدام رمز وصول المدرسة"
+      },
+      "schoolNoTooltip": {
+        "en": "This option is not available right now",
+        "ar": "هذا الخيار غير متاح حالياً"
+      },
+      "schoolAccessCode": {
+        "en": "School access code",
+        "ar": "رمز وصول المدرسة"
+      },
+      "schoolAccessCodePlaceholder": {
+        "en": "Your school access code",
+        "ar": "رمز وصول مدرستك"
+      },
+      "schoolEmailHint": {
+        "en": "Use the same email address your school added to their approved student list.",
+        "ar": "استخدم البريد الإلكتروني نفسه الذي أضافته مدرستك إلى قائمة الطلاب المعتمدين."
+      },
+      "saving": {
+        "en": "Saving…",
+        "ar": "جارٍ الحفظ…"
+      },
+      "continue": {
+        "en": "Continue",
+        "ar": "متابعة"
+      },
+      "close": {
+        "en": "Close",
+        "ar": "إغلاق"
+      },
+      "strengthWeak": {
+        "en": "Weak",
+        "ar": "ضعيفة"
+      },
+      "strengthFair": {
+        "en": "Fair",
+        "ar": "مقبولة"
+      },
+      "strengthGood": {
+        "en": "Good",
+        "ar": "جيدة"
+      },
+      "strengthStrong": {
+        "en": "Strong",
+        "ar": "قوية"
+      },
+      "confirmPassword": {
+        "en": "Confirm password",
+        "ar": "تأكيد كلمة المرور"
+      },
+      "errFirstName": {
+        "en": "First name is required",
+        "ar": "الاسم الأول مطلوب"
+      },
+      "errLastName": {
+        "en": "Last name is required",
+        "ar": "اسم العائلة مطلوب"
+      },
+      "errGrade": {
+        "en": "Grade is required",
+        "ar": "الصف مطلوب"
+      },
+      "errNationality": {
+        "en": "Nationality is required",
+        "ar": "الجنسية مطلوبة"
+      },
+      "errResidence": {
+        "en": "Country of residence is required",
+        "ar": "بلد الإقامة مطلوب"
+      },
+      "errEmail": {
+        "en": "Valid email is required",
+        "ar": "بريد إلكتروني صالح مطلوب"
+      },
+      "errPhone": {
+        "en": "Phone number is required",
+        "ar": "رقم الهاتف مطلوب"
+      },
+      "errPassword": {
+        "en": "Password must be Good or stronger: at least 8 characters with uppercase, lowercase, and a number",
+        "ar": "يجب أن تكون كلمة المرور بدرجة جيدة أو أقوى: 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم"
+      },
+      "errPasswordMatch": {
+        "en": "Passwords do not match",
+        "ar": "كلمتا المرور غير متطابقتين"
+      },
+      "errTerms": {
+        "en": "You must agree to the Terms & Conditions and Privacy Policy",
+        "ar": "يجب الموافقة على الشروط والأحكام وسياسة الخصوصية"
+      },
+      "errMissingData": {
+        "en": "Missing required profile or country data.",
+        "ar": "بيانات الملف الشخصي أو البلد المطلوبة غير مكتملة."
+      },
+      "errCreateAccount": {
+        "en": "Could not create your account. Please try again.",
+        "ar": "تعذر إنشاء حسابك. يرجى المحاولة مرة أخرى."
+      }
+    },
+    "auth": {
+      "createAccountSubtitle": {
+        "en": "Create your account in under 2 minutes",
+        "ar": "أنشئ حسابك خلال أقل من دقيقتين"
+      },
+      "signupCreateAccount": {
+        "en": "Create your account",
+        "ar": "أنشئ حسابك"
+      },
+      "signupCredentials": {
+        "en": "Set up your login credentials",
+        "ar": "أعدّ بيانات تسجيل الدخول"
+      },
+      "email": {
+        "en": "Email",
+        "ar": "البريد الإلكتروني"
+      },
+      "emailPlaceholder": {
+        "en": "you@university.edu",
+        "ar": "you@university.edu"
+      },
+      "password": {
+        "en": "Password",
+        "ar": "كلمة المرور"
+      },
+      "hidePassword": {
+        "en": "Hide password",
+        "ar": "إخفاء كلمة المرور"
+      },
+      "showPassword": {
+        "en": "Show password",
+        "ar": "إظهار كلمة المرور"
+      }
+    }
+  }
+}

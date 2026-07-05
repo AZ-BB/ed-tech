@@ -15,6 +15,8 @@ function jsonArrayToMultiline(raw: unknown): string {
 export type AdvisorSettingsPagePayload = {
   authEmail: string;
   profileEmail: string;
+  calendlyConnected: boolean;
+  calendlyConnectedAt: string | null;
   defaults: {
     firstName: string;
     lastName: string;
@@ -60,7 +62,7 @@ export async function fetchAdvisorSettingsPage(): Promise<AdvisorSettingsPagePay
       .select(
         `id, email, first_name, last_name, phone, title, languages, experience_years,
         nationality_country_code, description, best_for, session_for, session_coverage,
-        about, questions, avatar_url`,
+        about, questions, avatar_url, calendly_refresh_token, calendly_connected_at`,
       )
       .eq("id", access.advisorId)
       .maybeSingle(),
@@ -105,6 +107,8 @@ export async function fetchAdvisorSettingsPage(): Promise<AdvisorSettingsPagePay
   return {
     authEmail,
     profileEmail: advisor.email?.trim() || authEmail,
+    calendlyConnected: Boolean(advisor.calendly_refresh_token?.trim()),
+    calendlyConnectedAt: advisor.calendly_connected_at?.trim() || null,
     defaults: {
       firstName: advisor.first_name ?? "",
       lastName: advisor.last_name ?? "",

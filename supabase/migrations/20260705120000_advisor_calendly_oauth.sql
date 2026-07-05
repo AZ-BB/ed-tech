@@ -1,0 +1,10 @@
+ALTER TABLE advisors
+  ADD COLUMN IF NOT EXISTS calendly_access_token TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_refresh_token TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_token_expires_at TIMESTAMPTZ DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_user_uri TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_organization_uri TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_scheduling_url TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_event_type_uri TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_webhook_subscription_uri TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS calendly_connected_at TIMESTAMPTZ DEFAULT NULL;

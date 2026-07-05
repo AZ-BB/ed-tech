@@ -56,6 +56,7 @@ export default async function AdvisorSessionsPage() {
       `,
       )
       .eq("is_active", true)
+      .not("calendly_scheduling_url", "is", null)
       .order("last_name"),
     secret.from("countries").select("id, name").order("name"),
   ]);
