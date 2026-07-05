@@ -3,17 +3,15 @@
 import { useEffect, useState } from "react";
 import { updateAdvisorApplicationSupportIntake } from "@/actions/advisor-application-support-intake";
 import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
-import type { ApplicationPlanCatalogRow } from "@/lib/applications-plans";
 
 import { ApplicationSupportIntakeForm } from "./application-support-intake-form";
 
 type ApplicationSupportIntakeDialogProps = {
   open: boolean;
   applicationId: number;
-  sessionId: number;
+  sessionId?: number;
   studentName: string;
   initialPayload: ApplicationSupportPayload;
-  plans: ApplicationPlanCatalogRow[];
   onClose: () => void;
   onSaved?: () => void;
 };
@@ -24,7 +22,6 @@ export function ApplicationSupportIntakeDialog({
   sessionId,
   studentName,
   initialPayload,
-  plans,
   onClose,
   onSaved,
 }: ApplicationSupportIntakeDialogProps) {
@@ -57,7 +54,7 @@ export function ApplicationSupportIntakeDialog({
     const result = await updateAdvisorApplicationSupportIntake(
       String(applicationId),
       form,
-      String(sessionId),
+      sessionId != null ? String(sessionId) : undefined,
     );
 
     setIsSubmitting(false);
@@ -116,7 +113,6 @@ export function ApplicationSupportIntakeDialog({
             <ApplicationSupportIntakeForm
               value={form}
               onChange={setForm}
-              plans={plans}
               disabled={isSubmitting}
             />
           </div>

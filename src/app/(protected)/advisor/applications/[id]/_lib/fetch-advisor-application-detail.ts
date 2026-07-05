@@ -14,14 +14,23 @@ import {
   fetchApplicationPayouts,
   fetchPayoutsByPaymentIds,
 } from "@/lib/advisor-payouts/fetch-application-payouts";
-import { hydrateApplicationsPlansEmbeds } from "@/lib/applications-plans";
+import {
+  hydrateApplicationsPlansEmbeds,
+} from "@/lib/applications-plans";
 import { buildPaymentRequestModalContext } from "@/lib/fetch-payment-request-modal-context";
 import { expireOverduePendingPayments } from "@/lib/payment-request-utils";
+import { mapApplicationRowToEditableIntake } from "@/lib/fetch-advisor-session-editable-application";
+import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+
+export type AdvisorApplicationIntakeEdit = {
+  initialPayload: ApplicationSupportPayload;
+};
 
 export type AdvisorApplicationDetailPayload = ApplicationDetailPayload & {
   applicationPayouts: Awaited<ReturnType<typeof fetchApplicationPayouts>>;
   paymentRequestContext: Awaited<ReturnType<typeof buildPaymentRequestModalContext>> | null;
+  intakeEdit: AdvisorApplicationIntakeEdit;
 };
 
 const ADVISOR_LINKS = {
@@ -124,9 +133,14 @@ export async function fetchAdvisorApplicationDetail(
     { name: advisorName, email: advisorEmail },
   );
 
+  const intakeMapped = mapApplicationRowToEditableIntake(hydratedData);
+
   return {
     ...payload,
     applicationPayouts,
     paymentRequestContext,
+    intakeEdit: {
+      initialPayload: intakeMapped.initialPayload,
+    },
   };
 }

@@ -57,7 +57,7 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
   const router = useRouter();
   const [status, setStatus] = useState(payload.status);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [intakeOpen, setIntakeOpen] = useState(false);
+  const [intakeOpen, setIntakeOpen] = useState(() => Boolean(payload.editableApplication));
   const [isPending, startTransition] = useTransition();
 
   const { student, school, editableApplication } = payload;
@@ -227,7 +227,6 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
           sessionId={payload.id}
           studentName={payload.studentName}
           initialPayload={editableApplication.initialPayload}
-          plans={payload.applicationPlans}
           onClose={() => setIntakeOpen(false)}
           onSaved={() => router.refresh()}
         />
