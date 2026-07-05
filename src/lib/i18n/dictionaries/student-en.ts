@@ -756,6 +756,9 @@ export const studentEn = {
         "Choose a slot that works for you below. You'll get a calendar invite and confirmation email within minutes.",
       calendlyTitle: "Book your onboarding session — Calendly",
       openCalendar: "Open calendar in a new tab",
+      calendlyUnavailableTitle: "Scheduling unavailable",
+      calendlyUnavailableMessage:
+        "Our application advisor has not set up scheduling yet. Please check back soon or contact support.",
       whatNext: "What happens next",
       nextSteps: [
         "Pick a time above — you'll receive a calendar invite and confirmation email within minutes",

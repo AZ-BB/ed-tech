@@ -17,6 +17,7 @@ import {
 
 import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
 import { buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
+import type { ApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags";
 import { useLocale } from "@/lib/i18n/locale-context";
 import "../application-support.css";
 import {
@@ -253,7 +254,13 @@ function ProgressTracker({
   );
 }
 
-export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
+export function ApplicationSupportClient({
+  plans,
+  applicationReceivingAdvisor,
+}: {
+  plans: PlanRow[];
+  applicationReceivingAdvisor: ApplicationReceivingAdvisor | null;
+}) {
   const { dict } = useLocale();
   const as = dict.student.applicationSupport;
   const heroTrackerRows = useMemo(
@@ -458,7 +465,14 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     };
   }, [applyTiming, as.summary.timingEmpty, applyTimingLabels, notSureYet]);
 
+  const calendlySchedulingUrl = applicationReceivingAdvisor?.calendlySchedulingUrl?.trim() || null;
+  const canBookCalendly = Boolean(calendlySchedulingUrl);
+  const receivingAdvisorName = applicationReceivingAdvisor
+    ? `${applicationReceivingAdvisor.firstName} ${applicationReceivingAdvisor.lastName}`.trim()
+    : "";
+
   const calendlyUrl = useMemo(() => {
+    if (!canBookCalendly || !calendlySchedulingUrl) return "";
     const ctx: string[] = [];
     if (destinations.length)
       ctx.push(`Destinations: ${destinations.join(", ")}`);
@@ -467,20 +481,25 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
     if (applyTiming) ctx.push(`Timing: ${applyTiming}`);
     if (planClarity) ctx.push(`Clarity: ${planClarity}`);
     if (applicationId != null) ctx.push(`Application ref: #${applicationId}`);
+    if (receivingAdvisorName) ctx.push(`Advisor: ${receivingAdvisorName}`);
     return buildCalendlySchedulingPageUrl({
+      base: calendlySchedulingUrl,
       name: fullName.trim(),
       email: email.trim(),
       ctxParts: ctx,
     });
   }, [
-    destinations,
-    majors,
-    selectedPack,
-    applyTiming,
-    planClarity,
     applicationId,
-    fullName,
+    applyTiming,
+    calendlySchedulingUrl,
+    canBookCalendly,
+    destinations,
     email,
+    fullName,
+    majors,
+    planClarity,
+    receivingAdvisorName,
+    selectedPack,
   ]);
 
   const sectionLabel = (children: ReactNode) => (
@@ -1241,18 +1260,33 @@ export function ApplicationSupportClient({ plans }: { plans: PlanRow[] }) {
           </div>
 
           <div className="as-calendly-wrap">
-            <div className="as-calendly-embed-box shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-              <CalendlyInlineEmbed
-                url={calendlyUrl}
-                title={as.done.calendlyTitle}
-                className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[780px]"
-              />
-            </div>
-            <p className="mt-4 text-center text-xs text-[var(--text-hint)]">
-              <a href={calendlyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--green)] underline-offset-2 hover:underline">
-                {as.done.openCalendar}
-              </a>
-            </p>
+            {canBookCalendly && calendlyUrl ? (
+              <>
+                <div className="as-calendly-embed-box shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                  <CalendlyInlineEmbed
+                    url={calendlyUrl}
+                    title={as.done.calendlyTitle}
+                    className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[780px]"
+                  />
+                </div>
+                <p className="mt-4 text-center text-xs text-[var(--text-hint)]">
+                  <a href={calendlyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--green)] underline-offset-2 hover:underline">
+                    {as.done.openCalendar}
+                  </a>
+                </p>
+              </>
+            ) : (
+              <div className={`${formWideShellClass} pb-0`}>
+                <div className={`${formCardClass} text-center`}>
+                  <h3 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">
+                    {as.done.calendlyUnavailableTitle}
+                  </h3>
+                  <p className="mx-auto mt-3 max-w-[480px] text-sm leading-relaxed text-[var(--text-mid)]">
+                    {as.done.calendlyUnavailableMessage}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className={`${formWideShellClass} pb-12 sm:pb-16`}>

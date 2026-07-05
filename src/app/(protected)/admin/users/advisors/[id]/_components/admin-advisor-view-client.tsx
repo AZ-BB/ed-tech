@@ -102,6 +102,14 @@ export function AdminAdvisorViewClient({
     { lab: "Tags", val: advisor.tagsLabel },
     { lab: "Payout %", val: `${advisor.payoutPercentage}%` },
     { lab: "Status", val: advisor.isActive ? "Active" : "Inactive" },
+    {
+      lab: "Application receiving",
+      val: advisor.receivesApplicationSupport ? "Yes" : "No",
+    },
+    {
+      lab: "Post-admission receiving",
+      val: advisor.receivesPostAdmissionSupport ? "Yes" : "No",
+    },
     { lab: "Joined", val: advisor.joinedLabel },
     { lab: "Last logged in", val: advisor.lastLoggedInLabel },
     { lab: "Last session", val: advisor.lastSessionLabel },
@@ -219,6 +227,8 @@ export function AdminAdvisorViewClient({
                 avatarUrl: advisor.avatarUrl,
                 isActive: advisor.isActive,
                 payoutPercentage: String(advisor.payoutPercentage),
+                receivesApplicationSupport: advisor.receivesApplicationSupport,
+                receivesPostAdmissionSupport: advisor.receivesPostAdmissionSupport,
               }}
             />
           </div>

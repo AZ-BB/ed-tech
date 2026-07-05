@@ -1,4 +1,5 @@
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import { fetchApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags";
 import {
   fetchPlatformSettings,
   isPlatformFeatureEnabled,
@@ -19,11 +20,19 @@ export default async function StudentApplicationSupportPage() {
   }
 
   const secret = await createSupabaseSecretClient();
-  const { data: plans } = await secret
-    .from("applications_plans")
-    .select("*")
-    .eq("is_active", true)
-    .order("universities_count", { ascending: true });
+  const [{ data: plans }, applicationReceivingAdvisor] = await Promise.all([
+    secret
+      .from("applications_plans")
+      .select("*")
+      .eq("is_active", true)
+      .order("universities_count", { ascending: true }),
+    fetchApplicationReceivingAdvisor(),
+  ]);
 
-  return <ApplicationSupportClient plans={plans ?? []} />;
+  return (
+    <ApplicationSupportClient
+      plans={plans ?? []}
+      applicationReceivingAdvisor={applicationReceivingAdvisor}
+    />
+  );
 }

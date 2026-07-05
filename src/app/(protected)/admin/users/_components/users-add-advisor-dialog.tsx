@@ -422,6 +422,30 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
               Active
             </label>
 
+            <div className="space-y-2 rounded-[8px] border border-[#e8e6e1] bg-[#faf9f4] px-3 py-3">
+              <p className="text-[12px] font-semibold text-[#4a4a4a]">Receiving roles</p>
+              <p className="text-[11px] leading-snug text-[#7a7a7a]">
+                Only one advisor can hold each role. Assigning a role here replaces the current
+                holder.
+              </p>
+              <label className="flex items-center gap-2 text-[13px] text-[#4a4a4a]">
+                <input
+                  type="checkbox"
+                  name="receivesApplicationSupport"
+                  className="h-4 w-4 rounded border-[#e0deda]"
+                />
+                Application receiving advisor
+              </label>
+              <label className="flex items-center gap-2 text-[13px] text-[#4a4a4a]">
+                <input
+                  type="checkbox"
+                  name="receivesPostAdmissionSupport"
+                  className="h-4 w-4 rounded border-[#e0deda]"
+                />
+                Post-admission receiving advisor
+              </label>
+            </div>
+
             {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
           </div>
 

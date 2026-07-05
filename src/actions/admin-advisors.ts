@@ -6,6 +6,7 @@ import {
   replaceAdvisorSpecializations,
   replaceAdvisorTags,
 } from "@/lib/advisor-csv-import";
+import { applyAdvisorReceivingFlags } from "@/lib/advisor-receiving-flags";
 import { isResendConfigured } from "@/lib/resend/config";
 import { sendStaffCredentialsEmail } from "@/lib/resend/staff-credentials-email";
 import { buildLoginPageUrl } from "@/lib/resend/site-url";
@@ -299,6 +300,11 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
     return { ok: false, error: "Payout percentage must be between 0 and 100." };
   }
 
+  const receivesApplicationSupport = parseCheckbox(formData.get("receivesApplicationSupport"));
+  const receivesPostAdmissionSupport = parseCheckbox(
+    formData.get("receivesPostAdmissionSupport"),
+  );
+
   const password = String(formData.get("password") ?? "");
   if (password.length < MIN_PASSWORD_LENGTH) {
     return { ok: false, error: "Password must be at least 8 characters." };
@@ -425,6 +431,11 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
     if (specializationCountryCodes.length > 0) {
       await replaceAdvisorSpecializations(service, advisorId, specializationCountryCodes);
     }
+
+    await applyAdvisorReceivingFlags(service, advisorId, {
+      receivesApplicationSupport,
+      receivesPostAdmissionSupport,
+    });
   } catch (error) {
     console.error("[createAdvisor] post-create", error);
     await deleteAdvisorProfile(service, advisorId);
@@ -588,6 +599,11 @@ export async function updateAdminAdvisorProfile(
     return { ok: false, error: "Payout percentage must be between 0 and 100." };
   }
 
+  const receivesApplicationSupport = parseCheckbox(formData.get("receivesApplicationSupport"));
+  const receivesPostAdmissionSupport = parseCheckbox(
+    formData.get("receivesPostAdmissionSupport"),
+  );
+
   const specializationCountryCodes = formData
     .getAll("specializationCountryCodes")
     .map((value) => String(value).trim().toUpperCase())
@@ -704,6 +720,10 @@ export async function updateAdminAdvisorProfile(
 
     await replaceAdvisorTags(service, id, parseCommaList(tagsRaw));
     await replaceAdvisorSpecializations(service, id, specializationCountryCodes);
+    await applyAdvisorReceivingFlags(service, id, {
+      receivesApplicationSupport,
+      receivesPostAdmissionSupport,
+    });
   } catch (error) {
     console.error("[updateAdminAdvisorProfile] post-update", error);
     return {
