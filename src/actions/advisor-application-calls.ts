@@ -21,6 +21,7 @@ import { revalidatePath } from "next/cache";
 function revalidateApplicationPaths(applicationId: number) {
   revalidatePath("/advisor/applications");
   revalidatePath(`/advisor/applications/${applicationId}`);
+  revalidatePath("/advisor/sessions-and-calls");
 }
 
 async function assertAdvisorCanAccessCall(

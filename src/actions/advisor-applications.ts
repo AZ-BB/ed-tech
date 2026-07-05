@@ -75,6 +75,7 @@ function revalidateApplicationPaths(applicationId: number) {
   revalidatePath(`/advisor/applications/${applicationId}`);
   revalidatePath("/advisor/students");
   revalidatePath("/advisor/leads");
+  revalidatePath("/advisor/sessions-and-calls");
   revalidatePath("/admin/applications");
   revalidatePath(`/admin/applications/${applicationId}`);
 }

@@ -14,6 +14,7 @@ const fontSerif = '"DM Serif Display", Georgia, serif' as const;
 
 const ADVISOR_HOME = "/advisor";
 const ADVISOR_LEADS = "/advisor/leads";
+const ADVISOR_SESSIONS_AND_CALLS = "/advisor/sessions-and-calls";
 const ADVISOR_STUDENTS = "/advisor/students";
 const ADVISOR_PACKAGES = "/advisor/packages";
 const ADVISOR_PAYMENTS = "/advisor/payments";
@@ -76,6 +77,10 @@ export function AdvisorPortalShell({
   const leadsActive =
     pathname === ADVISOR_LEADS || pathname.startsWith(`${ADVISOR_LEADS}/`);
 
+  const sessionsAndCallsActive =
+    pathname === ADVISOR_SESSIONS_AND_CALLS ||
+    pathname.startsWith(`${ADVISOR_SESSIONS_AND_CALLS}/`);
+
   const studentsActive =
     pathname === ADVISOR_STUDENTS || pathname.startsWith(`${ADVISOR_STUDENTS}/`);
 
@@ -98,7 +103,11 @@ export function AdvisorPortalShell({
     ? "Payment Requests"
     : tasksActive
       ? "Tasks"
-      : studentsActive
+      : sessionsAndCallsActive
+        ? pathname.includes("/session/")
+            ? "Advisor session"
+            : "Sessions and Calls"
+        : studentsActive
         ? pathname.startsWith(`${ADVISOR_STUDENTS}/`) &&
           pathname !== ADVISOR_STUDENTS
           ? "Student"
@@ -224,6 +233,30 @@ export function AdvisorPortalShell({
                 <line x1="22" y1="11" x2="16" y2="11" />
               </svg>
               <span>New Leads</span>
+            </Link>
+            <Link
+              href={ADVISOR_SESSIONS_AND_CALLS}
+              prefetch={false}
+              onClick={closeSidebar}
+              className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
+                sessionsAndCallsActive
+                  ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
+                  : ""
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
+                aria-hidden
+              >
+                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Sessions and Calls</span>
             </Link>
             <Link
               href={ADVISOR_STUDENTS}

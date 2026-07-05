@@ -1,5 +1,8 @@
 "use server";
 
+import { assertAdvisorAccess } from "@/lib/advisor-access";
+import { createEmptyApplicationForAdvisorStudentIfNeeded } from "@/lib/create-empty-application-for-advisor-student";
+import type { Database } from "@/database.types";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { isValidAlpha2Code } from "@/lib/countries";
 import {
@@ -10,6 +13,7 @@ import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
+import { revalidatePath } from "next/cache";
 
 function uuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -251,5 +255,100 @@ export async function createAdvisorSessionBooking(
     STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_advisor_sessions,
   ).catch(() => {});
 
+  try {
+    let schoolName: string | null = null;
+    if (studentRow?.school_id) {
+      const { data: schoolRow } = await secret
+        .from("schools")
+        .select("name")
+        .eq("id", studentRow.school_id)
+        .maybeSingle();
+      schoolName = schoolRow?.name?.trim() || null;
+    }
+
+    await createEmptyApplicationForAdvisorStudentIfNeeded(secret, {
+      studentId: actor.studentId,
+      advisorId,
+      studentName,
+      studentEmail,
+      studentPhone,
+      schoolId: studentRow?.school_id ?? null,
+      schoolName,
+    });
+  } catch (stubErr) {
+    console.error("[advisor_sessions] empty application stub:", stubErr);
+  }
+
   return { ok: true, sessionId };
+}
+
+type AdvisorSessionActionResult = { ok: true } | { ok: false; error: string };
+
+const ADVISOR_PORTAL_SESSION_STATUSES = new Set<string>([
+  "pending",
+  "confirmed",
+  "completed",
+]);
+
+function parseAdvisorSessionId(raw: string): number | null {
+  const id = Number.parseInt(raw.trim(), 10);
+  if (!Number.isFinite(id) || id < 1) return null;
+  return id;
+}
+
+export async function updateAdvisorSessionStatus(
+  sessionIdRaw: string,
+  statusRaw: string,
+): Promise<AdvisorSessionActionResult> {
+  const access = await assertAdvisorAccess();
+  if (!access.ok) return access;
+
+  const sessionId = parseAdvisorSessionId(sessionIdRaw);
+  if (sessionId == null) {
+    return { ok: false, error: "Invalid session." };
+  }
+
+  const status = statusRaw.trim() as Database["public"]["Enums"]["advisor_session_status"];
+  if (!ADVISOR_PORTAL_SESSION_STATUSES.has(status)) {
+    return { ok: false, error: "Select a valid status." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: existing, error: fetchErr } = await secret
+    .from("advisor_sessions")
+    .select("id, status, advisor_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    return { ok: false, error: "Session not found." };
+  }
+
+  if (existing.advisor_id !== access.advisorId) {
+    return { ok: false, error: "You do not have access to this session." };
+  }
+
+  if (existing.status === "cancelled") {
+    return { ok: false, error: "Cancelled sessions cannot be updated." };
+  }
+
+  if (existing.status === status) {
+    return { ok: true };
+  }
+
+  const { error: updateErr } = await secret
+    .from("advisor_sessions")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", sessionId)
+    .eq("advisor_id", access.advisorId);
+
+  if (updateErr) {
+    console.error("[updateAdvisorSessionStatus]", updateErr);
+    return { ok: false, error: "Could not update session status." };
+  }
+
+  revalidatePath("/advisor/sessions-and-calls");
+  revalidatePath(`/advisor/sessions-and-calls/session/${sessionId}`);
+
+  return { ok: true };
 }
