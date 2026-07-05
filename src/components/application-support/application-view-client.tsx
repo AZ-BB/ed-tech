@@ -56,6 +56,8 @@ import {
 import { AdminApplicationPayoutsTab } from "@/app/(protected)/admin/applications/[id]/_components/admin-application-payouts-tab";
 import { AdvisorApplicationPayoutsTab } from "@/app/(protected)/advisor/applications/[id]/_components/advisor-application-payouts-tab";
 import { EditApplicationPackageDialog } from "@/components/application-support/edit-application-package-dialog";
+import { ApplicationSupportIntakeDialog } from "@/components/application-support/application-support-intake-dialog";
+import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
 
 import type { ApplicationPayoutRow } from "@/lib/advisor-payouts/types";
 
@@ -92,6 +94,7 @@ export type ApplicationViewConfig = {
   blockPaymentRequestIfPending?: boolean;
   showHeaderQuickActions?: boolean;
   documentsPortal?: "admin" | "advisor";
+  canEditIntake?: boolean;
 };
 
 export type ApplicationViewActions = {
@@ -119,6 +122,9 @@ export type ApplicationViewClientProps = {
   initialTab?: ApplicationDetailTab;
   applicationPayouts?: ApplicationPayoutRow[];
   paymentRequestContext?: PaymentRequestModalContext | null;
+  intakeEdit?: {
+    initialPayload: ApplicationSupportPayload;
+  } | null;
 };
 
 const SELECT_CHEVRON =
@@ -225,6 +231,7 @@ export function ApplicationViewClient({
   advisorOptions = [],
   applicationPayouts = [],
   paymentRequestContext = null,
+  intakeEdit = null,
 }: ApplicationViewClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -255,6 +262,9 @@ export function ApplicationViewClient({
   const [addNoteError, setAddNoteError] = useState<string | null>(null);
   const [logCallOpen, setLogCallOpen] = useState(false);
   const [logCallError, setLogCallError] = useState<string | null>(null);
+  const [intakeEditOpen, setIntakeEditOpen] = useState(
+    () => config.canEditIntake === true && intakeEdit != null,
+  );
   const [studentFlagged, setStudentFlagged] = useState(payload.student.flagged);
   const [isPending, startTransition] = useTransition();
 
@@ -537,6 +547,18 @@ export function ApplicationViewClient({
   if (tab === "intake") {
     tabBody = (
       <>
+        {config.canEditIntake && intakeEdit ? (
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => setIntakeEditOpen(true)}
+              className={headerQuickActionPrimaryClass}
+            >
+              Edit application support
+            </button>
+          </div>
+        ) : null}
         <SchoolStudentPanel
           head="Application intake"
           sub="Details submitted through application support"
@@ -1032,6 +1054,16 @@ export function ApplicationViewClient({
                 </svg>
                 Log Call
               </button>
+              {config.canEditIntake && intakeEdit ? (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => setIntakeEditOpen(true)}
+                  className={headerQuickActionPrimaryClass}
+                >
+                  Edit intake
+                </button>
+              ) : null}
               {hasStudentEmail ? (
                 <a
                   href={`mailto:${application.studentEmail}`}
@@ -1343,6 +1375,17 @@ export function ApplicationViewClient({
         isSubmitting={isPending}
         error={editPackageError}
       />
+
+      {config.canEditIntake && intakeEdit ? (
+        <ApplicationSupportIntakeDialog
+          open={intakeEditOpen}
+          applicationId={application.id}
+          studentName={application.studentName}
+          initialPayload={intakeEdit.initialPayload}
+          onClose={() => setIntakeEditOpen(false)}
+          onSaved={() => router.refresh()}
+        />
+      ) : null}
     </div>
   );
 }

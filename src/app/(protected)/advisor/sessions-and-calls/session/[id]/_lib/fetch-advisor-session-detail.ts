@@ -1,9 +1,7 @@
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
-import { fetchActiveApplicationPlans } from "@/lib/applications-plans";
 import { fetchAdvisorSessionEditableApplication } from "@/lib/fetch-advisor-session-editable-application";
 import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
-import type { ApplicationPlanCatalogRow } from "@/lib/applications-plans";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 type StudentEmbed =
@@ -102,7 +100,6 @@ export type AdvisorSessionDetailPayload = {
   student: AdvisorSessionDetailStudent;
   school: AdvisorSessionDetailSchool | null;
   editableApplication: AdvisorSessionEditableApplicationPayload | null;
-  applicationPlans: ApplicationPlanCatalogRow[];
 };
 
 function mapStudent(embed: StudentEmbed): AdvisorSessionDetailStudent | null {
@@ -194,13 +191,10 @@ export async function fetchAdvisorSessionDetail(
 
   const destinationCode = data.destination_country_code?.trim() || "";
 
-  const [editableApplication, applicationPlans] = await Promise.all([
-    fetchAdvisorSessionEditableApplication(secret, {
-      studentId: data.student_id,
-      advisorId,
-    }),
-    fetchActiveApplicationPlans(secret),
-  ]);
+  const editableApplication = await fetchAdvisorSessionEditableApplication(secret, {
+    studentId: data.student_id,
+    advisorId,
+  });
 
   return {
     id: data.id,
@@ -220,6 +214,5 @@ export async function fetchAdvisorSessionDetail(
     student,
     school: mapSchool(data.student_profiles as StudentEmbed),
     editableApplication,
-    applicationPlans,
   };
 }

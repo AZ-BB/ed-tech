@@ -1,7 +1,6 @@
 "use client";
 
 import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
-import type { ApplicationPlanCatalogRow } from "@/lib/applications-plans";
 import {
   COUNTRY_OPTIONS,
   NATIONALITY_OPTIONS,
@@ -9,7 +8,6 @@ import {
   VF_DESTINATION_CHIPS,
   VF_GRADE_YEAR_OPTIONS,
 } from "@/app/(protected)/student/application-support/_data/application-support-options";
-import { applicationSupportIncludedCompactEn } from "@/lib/i18n/dictionaries/application-support-form-options-en";
 
 const inputClassName =
   "w-full rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:opacity-60";
@@ -33,7 +31,6 @@ const sectionTitleClassName =
 type ApplicationSupportIntakeFormProps = {
   value: ApplicationSupportPayload;
   onChange: (next: ApplicationSupportPayload) => void;
-  plans: ApplicationPlanCatalogRow[];
   disabled?: boolean;
 };
 
@@ -48,11 +45,8 @@ function toggleChip(list: string[], item: string): string[] {
 export function ApplicationSupportIntakeForm({
   value,
   onChange,
-  plans,
   disabled = false,
 }: ApplicationSupportIntakeFormProps) {
-  const planByCount = new Map(plans.map((plan) => [plan.universities_count, plan]));
-
   function patch(partial: Partial<ApplicationSupportPayload>) {
     onChange({ ...value, ...partial });
   }
@@ -274,48 +268,6 @@ export function ApplicationSupportIntakeForm({
                 );
               })}
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <SectionTitle>Application strategy</SectionTitle>
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {([5, 10, 15] as const).map((count) => {
-            const available = planByCount.has(count);
-            const selected = value.planUniversitiesCount === count;
-            return (
-              <button
-                key={count}
-                type="button"
-                disabled={disabled || !available}
-                onClick={() => available && patch({ planUniversitiesCount: count })}
-                className={`rounded-[10px] border-2 px-3 py-4 text-center transition-colors ${
-                  !available
-                    ? "cursor-not-allowed border-[#ece9e4] opacity-45"
-                    : selected
-                      ? "border-[#40916C] bg-[#E8F5EE]"
-                      : "border-[#e0deda] bg-white hover:border-[#40916C]"
-                }`}
-              >
-                <div className="font-[family-name:var(--font-dm-serif)] text-[28px] leading-none text-[#2D6A4F]">
-                  {count}
-                </div>
-                <div className="mt-1 text-[12px] font-semibold text-[#4a4a4a]">universities</div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="rounded-[8px] border border-[#ece9e4] bg-[#faf9f4] px-3 py-3">
-          <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#2D6A4F]">
-            Every package includes
-          </div>
-          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {applicationSupportIncludedCompactEn.slice(0, 6).map((line) => (
-              <div key={line} className="text-[11px] text-[#6a6a6a]">
-                {line}
-              </div>
-            ))}
           </div>
         </div>
       </section>

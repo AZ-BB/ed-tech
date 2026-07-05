@@ -51,6 +51,7 @@ const ADVISOR_CONFIG: ApplicationViewConfig = {
   blockPaymentRequestIfPending: true,
   showHeaderQuickActions: true,
   documentsPortal: "advisor",
+  canEditIntake: true,
 };
 
 const ADVISOR_ACTIONS: ApplicationViewActions = {
@@ -102,6 +103,7 @@ export function AdvisorApplicationViewClient({
       actions={ADVISOR_ACTIONS}
       applicationPayouts={payload.applicationPayouts}
       paymentRequestContext={payload.paymentRequestContext}
+      intakeEdit={payload.intakeEdit}
     />
   );
 }
