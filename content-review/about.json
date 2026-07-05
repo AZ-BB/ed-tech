@@ -1,0 +1,751 @@
+{
+  "page": "About",
+  "route": "/about",
+  "generatedAt": "2026-07-03",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "metadata": {
+    "title": {
+      "en": "About — Univeera",
+      "ar": "من نحن — يونيفيرا"
+    },
+    "description": {
+      "en": "Univeera is a MENA-focused platform helping students choose what to study, where, and why — with structure, tools, and human guidance.",
+      "ar": "يونيفيرا منصة موجهة لمنطقة الشرق الأوسط وشمال أفريقيا تساعد الطلاب على اختيار ما يدرسونه، وأين يدرسون، ولماذا، من خلال أدوات منظمة وإرشاد إنساني."
+    }
+  },
+  "sections": {
+    "hero": {
+      "badge": {
+        "en": "About Univeera",
+        "ar": "عن يونيفيرا"
+      },
+      "title": {
+        "start": {
+          "en": "From",
+          "ar": "من"
+        },
+        "confusion": {
+          "en": "confusion",
+          "ar": "الحيرة"
+        },
+        "to1": {
+          "en": ", to",
+          "ar": "، إلى"
+        },
+        "clarity": {
+          "en": "clarity",
+          "ar": "الوضوح"
+        },
+        "to2": {
+          "en": ", to",
+          "ar": "، إلى"
+        },
+        "confidence": {
+          "en": "confidence",
+          "ar": "الثقة"
+        }
+      },
+      "subtitle": {
+        "en": "Univeera is a MENA-focused platform built to help students make the most important decision of their early lives — what to study, where, and why — with the structure, tools, and human guidance they deserve.",
+        "ar": "يونيفيرا منصة موجهة لمنطقة الشرق الأوسط وشمال أفريقيا، صُممت لمساعدة الطلاب على اتخاذ أحد أهم قراراتهم المبكرة: ماذا يدرسون، وأين يدرسون، ولماذا، بدعم من أدوات واضحة وإرشاد إنساني يستحقونه."
+      },
+      "journey": [
+        {
+          "label": {
+            "en": "Confusion",
+            "ar": "الحيرة"
+          },
+          "sub": {
+            "en": "where most start",
+            "ar": "حيث يبدأ معظم الطلاب"
+          }
+        },
+        {
+          "label": {
+            "en": "Discovery",
+            "ar": "الاكتشاف"
+          },
+          "sub": {
+            "en": "find your fit",
+            "ar": "تعرّف إلى ما يناسبك"
+          }
+        },
+        {
+          "label": {
+            "en": "Exploration",
+            "ar": "الاستكشاف"
+          },
+          "sub": {
+            "en": "build options",
+            "ar": "ابنِ خياراتك بثقة"
+          }
+        },
+        {
+          "label": {
+            "en": "Clarity",
+            "ar": "الوضوح"
+          },
+          "sub": {
+            "en": "where we get you",
+            "ar": "الوجهة التي نساعدك على بلوغها"
+          }
+        }
+      ]
+    },
+    "advisoryBoard": {
+      "label": {
+        "en": "Our advisory board",
+        "ar": "مجلسنا الاستشاري"
+      },
+      "title": {
+        "before": {
+          "en": "Backed by",
+          "ar": "بدعم من"
+        },
+        "emphasis": {
+          "en": "world-class advisors",
+          "ar": "مستشارين وتربويين عالميين"
+        },
+        "after": {
+          "en": "and educators.",
+          "ar": "."
+        }
+      },
+      "description": {
+        "en": "Univeera is shaped by a growing network of senior admissions officers, school leaders, and global ed-tech operators who've spent careers thinking about how students choose where to study — and how the system can be better. A few of them, below.",
+        "ar": "تتشكل يونيفيرا بدعم من شبكة متنامية من كبار مسؤولي القبول، وقادة المدارس، وخبراء التقنية التعليمية، ممن كرّسوا مسيرتهم لفهم كيف يختار الطلاب وجهات الدراسة وكيف يمكن تحسين هذه الرحلة. نعرض هنا بعضاً منهم."
+      },
+      "moreLabel": {
+        "en": "+ more",
+        "ar": "+ المزيد"
+      },
+      "growingLabel": {
+        "en": "And growing",
+        "ar": "والشبكة في نمو مستمر"
+      },
+      "advisors": [
+        {
+          "name": {
+            "en": "James T.",
+            "ar": "James T."
+          }
+        },
+        {
+          "name": {
+            "en": "Ahmed M.",
+            "ar": "Ahmed M."
+          }
+        },
+        {
+          "name": {
+            "en": "Rana J.",
+            "ar": "Rana J."
+          }
+        },
+        {
+          "name": {
+            "en": "Nadia H.",
+            "ar": "Nadia H."
+          }
+        },
+        {
+          "name": {
+            "en": "Sarah K.",
+            "ar": "Sarah K."
+          }
+        },
+        {
+          "name": {
+            "en": "Omar B.",
+            "ar": "Omar B."
+          }
+        }
+      ]
+    },
+    "missionQuote": {
+      "before": {
+        "en": "We believe every student deserves to make their next big decision with",
+        "ar": "نؤمن أن كل طالب يستحق أن يتخذ قراره الكبير التالي بقدر من"
+      },
+      "clarity": {
+        "en": "clarity",
+        "ar": "وضوح"
+      },
+      "mid": {
+        "en": ", not",
+        "ar": "، لا"
+      },
+      "confusion": {
+        "en": "confusion",
+        "ar": "حيرة"
+      },
+      "after": {
+        "en": ".",
+        "ar": "."
+      }
+    },
+    "problem": {
+      "label": {
+        "en": "The problem we're solving",
+        "ar": "المشكلة التي نحلها"
+      },
+      "title": {
+        "before": {
+          "en": "University guidance is",
+          "ar": "إرشاد الجامعة"
+        },
+        "emphasis": {
+          "en": "broken",
+          "ar": "معطّل"
+        },
+        "after": {
+          "en": "in our region.",
+          "ar": "في منطقتنا."
+        }
+      },
+      "description": {
+        "en": "Students across MENA make life-changing decisions about university with too little structure, too much noise, and not enough support. We're here to fix that.",
+        "ar": "يتخذ طلاب الشرق الأوسط وشمال أفريقيا قرارات مصيرية حول الجامعة وسط بنية إرشادية محدودة، وضجيج معلوماتي كبير، ودعم لا يكفي. نحن هنا لتغيير ذلك."
+      },
+      "items": [
+        {
+          "title": {
+            "en": "Too much information",
+            "ar": "معلومات كثيرة جداً"
+          },
+          "desc": {
+            "en": "Thousands of universities. Endless rankings. Conflicting advice. Students drown in data before they make a single decision.",
+            "ar": "آلاف الجامعات، وتصنيفات لا تنتهي، ونصائح متضاربة. يغرق الطلاب في التفاصيل قبل أن يتخذوا قراراً واحداً."
+          }
+        },
+        {
+          "title": {
+            "en": "Too little direction",
+            "ar": "توجيه قليل جداً"
+          },
+          "desc": {
+            "en": "Knowing what to study, where, and why is harder than ever. Most students aren't given the tools or frameworks to figure it out.",
+            "ar": "أصبح تحديد ماذا تدرس، وأين، ولماذا أصعب من أي وقت مضى. كثير من الطلاب لا يحصلون على الأدوات أو الإطار الذي يساعدهم على الاختيار."
+          }
+        },
+        {
+          "title": {
+            "en": "Fragmented support",
+            "ar": "دعم مجزأ"
+          },
+          "desc": {
+            "en": "School counsellors are overstretched. Family advice is dated. Advisors are expensive or hard to access. Nothing connects.",
+            "ar": "مرشدو المدارس مثقلون، ونصائح العائلة قد تكون قديمة، والمستشارون مكلفون أو صعبو الوصول. لا يوجد ما يجمع هذه المصادر في تجربة واحدة."
+          }
+        },
+        {
+          "title": {
+            "en": "Overwhelming decisions",
+            "ar": "قرارات مرهقة"
+          },
+          "desc": {
+            "en": "Students end up making consequential choices on partial information, family pressure, or whichever Instagram ad showed up most.",
+            "ar": "ينتهي كثير من الطلاب إلى اتخاذ قرارات مؤثرة بناءً على معلومات ناقصة، أو ضغط عائلي، أو إعلان صادف ظهوره أمامهم أكثر من مرة."
+          }
+        }
+      ]
+    },
+    "beliefs": {
+      "label": {
+        "en": "What we believe",
+        "ar": "ما نؤمن به"
+      },
+      "title": {
+        "before": {
+          "en": "Four ideas that shape",
+          "ar": "أربع أفكار تشكل"
+        },
+        "emphasis": {
+          "en": "everything we build",
+          "ar": "كل ما نبنيه"
+        },
+        "after": {
+          "en": ".",
+          "ar": "."
+        }
+      },
+      "description": {
+        "en": "These aren't slogans — they're the principles we test every product decision against.",
+        "ar": "هذه ليست شعارات، بل مبادئ نقيس عليها كل قرار نبنيه في المنتج."
+      },
+      "cards": [
+        {
+          "titleBefore": {
+            "en": "Every student deserves",
+            "ar": "كل طالب يستحق"
+          },
+          "titleEm": {
+            "en": "clarity",
+            "ar": "الوضوح"
+          },
+          "titleAfter": {
+            "en": ".",
+            "ar": "."
+          },
+          "desc": {
+            "en": "Not faster results. Not more options. Clarity. The path from where you are to where you want to be should feel walkable, not impossible.",
+            "ar": "ليس الأمر في الحصول على نتائج أسرع أو خيارات أكثر فقط. الأهم هو الوضوح: أن يبدو الطريق من مكانك الحالي إلى وجهتك ممكناً، لا مستحيلاً."
+          }
+        },
+        {
+          "titleBefore": {
+            "en": "Guidance must be",
+            "ar": "يجب أن يكون الإرشاد"
+          },
+          "titleEm": {
+            "en": "personalised",
+            "ar": "شخصياً"
+          },
+          "titleAfter": {
+            "en": ".",
+            "ar": "."
+          },
+          "desc": {
+            "en": "One ranked list doesn't fit one thousand students. Real guidance starts from understanding who the student is — and meets them there.",
+            "ar": "قائمة واحدة لا يمكن أن تناسب ألف طالب. الإرشاد الحقيقي يبدأ بفهم الطالب كما هو، ثم البناء من هناك."
+          }
+        },
+        {
+          "titleBefore": {
+            "en": "Technology supports",
+            "ar": "التقنية تدعم"
+          },
+          "titleEm": {
+            "en": "human judgement",
+            "ar": "الحكم البشري"
+          },
+          "titleAfter": {
+            "en": ".",
+            "ar": "."
+          },
+          "desc": {
+            "en": "Software handles data, tracking, routine. People handle conversations, nuance, encouragement. Both matter.",
+            "ar": "تتولى البرمجيات البيانات والمتابعة والمهام المتكررة. أما الناس فيتولون الحوار، والفهم الدقيق، والتشجيع. كلاهما ضروري."
+          }
+        },
+        {
+          "titleBefore": {
+            "en": "Opportunity should be",
+            "ar": "يجب أن تكون الفرصة"
+          },
+          "titleEm": {
+            "en": "accessible",
+            "ar": "متاحة"
+          },
+          "titleAfter": {
+            "en": ".",
+            "ar": "."
+          },
+          "desc": {
+            "en": "A student in Cairo, Manama, or Riyadh should have access to the same quality of guidance as a student in London or Boston.",
+            "ar": "يجب أن يحصل الطالب في القاهرة أو المنامة أو الرياض على جودة إرشاد تضاهي ما يحصل عليه طالب في لندن أو بوسطن."
+          }
+        }
+      ]
+    },
+    "platform": {
+      "label": {
+        "en": "How the platform helps",
+        "ar": "كيف تساعد المنصة"
+      },
+      "title": {
+        "before": {
+          "en": "From",
+          "ar": "من"
+        },
+        "emphasis1": {
+          "en": "where you are",
+          "ar": "حيث أنت"
+        },
+        "mid": {
+          "en": "to",
+          "ar": "إلى"
+        },
+        "emphasis2": {
+          "en": "where you're going",
+          "ar": "حيث تتجه"
+        },
+        "after": {
+          "en": ", step by step.",
+          "ar": "، خطوة بخطوة."
+        }
+      },
+      "description": {
+        "en": "Univeera isn't a search engine. It's a structured journey — designed so students never feel lost about what to do next.",
+        "ar": "يونيفيرا ليست مجرد محرك بحث. إنها رحلة منظمة تساعد الطلاب على معرفة الخطوة التالية دون شعور بالضياع."
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Discover yourself",
+            "ar": "اكتشف نفسك"
+          },
+          "desc": {
+            "en": "A six-module psychometric Discovery Journey reveals who you are, how you think, and what kind of paths will fit.",
+            "ar": "رحلة اكتشاف مكونة من ست وحدات تساعدك على فهم من أنت، وكيف تفكر، وما المسارات التي قد تناسبك."
+          }
+        },
+        {
+          "title": {
+            "en": "Explore options",
+            "ar": "استكشف الخيارات"
+          },
+          "desc": {
+            "en": "Search 1,100+ universities, hundreds of scholarships, and dozens of programmes — filtered by what's actually right for you.",
+            "ar": "ابحث في أكثر من 1100 جامعة ومئات المنح وعشرات البرامج، مع فلترة مبنية على ما يناسبك فعلاً."
+          }
+        },
+        {
+          "title": {
+            "en": "Get guidance",
+            "ar": "احصل على إرشاد"
+          },
+          "desc": {
+            "en": "Talk to vetted advisors and current university ambassadors. Real conversations with people who've been where you're going.",
+            "ar": "تحدث مع مستشارين موثوقين وسفراء جامعيين حاليين، في محادثات حقيقية مع أشخاص مروا بما تمر به."
+          }
+        },
+        {
+          "title": {
+            "en": "Take action",
+            "ar": "اتخذ إجراء"
+          },
+          "desc": {
+            "en": "Build application timelines, refine essays with AI and human review, and submit with full clarity about why.",
+            "ar": "ابنِ خطط التقديم، وحسّن مقالاتك بالذكاء الاصطناعي والمراجعة البشرية، وقدّم وأنت تعرف سبب كل اختيار."
+          }
+        }
+      ]
+    },
+    "missionVision": {
+      "label": {
+        "en": "Mission and vision",
+        "ar": "المهمة والرؤية"
+      },
+      "title": {
+        "en": "Where we are.",
+        "ar": "أين نحن."
+      },
+      "titleEmphasis": {
+        "en": "Where we're going.",
+        "ar": "إلى أين نتجه."
+      },
+      "description": {
+        "en": "Univeera was built with a specific belief about what students need — and a long-term view of what we're building toward.",
+        "ar": "بُنيت يونيفيرا على إيمان واضح بما يحتاجه الطلاب، ورؤية طويلة المدى لما نسعى إلى بنائه."
+      },
+      "mission": {
+        "label": {
+          "en": "Our mission",
+          "ar": "مهمتنا"
+        },
+        "title": {
+          "before": {
+            "en": "Help every MENA student make the",
+            "ar": "مساعدة كل طالب في الشرق الأوسط وشمال أفريقيا على اتخاذ"
+          },
+          "emphasis": {
+            "en": "right next decision",
+            "ar": "القرار الصحيح التالي"
+          },
+          "after": {
+            "en": ".",
+            "ar": "."
+          }
+        },
+        "text": {
+          "en": "We exist to give students, families, schools, and advisors a single platform where the entire university journey makes sense. Where the right tools, the right people, and the right information meet at the right time.",
+          "ar": "نوجد لنمنح الطلاب والعائلات والمدارس والمستشارين منصة واحدة تجعل رحلة الجامعة مفهومة، حيث تلتقي الأدوات المناسبة، والأشخاص المناسبون، والمعلومات المناسبة في الوقت المناسب."
+        }
+      },
+      "vision": {
+        "label": {
+          "en": "Our vision",
+          "ar": "رؤيتنا"
+        },
+        "title": {
+          "before": {
+            "en": "A region where every student has access to",
+            "ar": "منطقة يحصل فيها كل طالب على"
+          },
+          "emphasis": {
+            "en": "world-class guidance",
+            "ar": "إرشاد عالمي المستوى"
+          },
+          "after": {
+            "en": ".",
+            "ar": "."
+          }
+        },
+        "text": {
+          "en": "We see a future where studying abroad isn't a privilege of geography or connection — where any MENA student with ambition has the structure, mentors, and support to compete globally. We're building toward that future, one school and one student at a time.",
+          "ar": "نتطلع إلى مستقبل لا تكون فيه الدراسة في الخارج امتيازاً لمن يملك موقعاً جغرافياً أو علاقات معينة، بل فرصة متاحة لكل طالب طموح في الشرق الأوسط وشمال أفريقيا يمتلك البنية والمرشدين والدعم للمنافسة عالمياً. نبني هذا المستقبل مدرسة وطالباً في كل مرة."
+        }
+      }
+    },
+    "region": {
+      "label": {
+        "en": "Built for the region",
+        "ar": "مبنية للمنطقة"
+      },
+      "title": {
+        "en": "MENA-focused.",
+        "ar": "موجهة للشرق الأوسط وشمال أفريقيا."
+      },
+      "titleEmphasis": {
+        "en": "From day one.",
+        "ar": "من اليوم الأول."
+      },
+      "description1": {
+        "en": "Univeera is not a Western platform translated into Arabic. It's built from the ground up around how university decisions actually happen in our region — including the family dynamics, scholarship landscapes, and school systems that don't fit anywhere else.",
+        "ar": "يونيفيرا ليست منصة غربية تُرجمت إلى العربية. لقد بُنيت من البداية حول الطريقة التي تُتخذ بها قرارات الجامعة فعلاً في منطقتنا، بما يشمل دور العائلة، وطبيعة المنح، وأنظمة المدارس التي لا تشبه أي مكان آخر."
+      },
+      "description2": {
+        "en": "That means scholarships accessible to MENA students. Universities that admit MENA students. Advisors who understand the region. Counsellors who know the curricula.",
+        "ar": "يعني ذلك منحاً متاحة لطلاب الشرق الأوسط وشمال أفريقيا، وجامعات تقبلهم، ومستشارين يفهمون المنطقة، ومرشدين يعرفون مناهجها."
+      },
+      "list": [
+        {
+          "en": "We know British, American, IB, French, and national curricula across the region.",
+          "ar": "نعرف المناهج البريطانية والأمريكية والبكالوريا الدولية والفرنسية والوطنية في المنطقة."
+        },
+        {
+          "en": "Our scholarship database is curated for MENA eligibility — not US-citizen-only awards.",
+          "ar": "قاعدة المنح لدينا مخصصة لأهلية طلاب الشرق الأوسط وشمال أفريقيا، وليست محصورة في منح للمواطنين الأمريكيين فقط."
+        },
+        {
+          "en": "Our advisor network includes people who studied, worked, and live in the region.",
+          "ar": "تضم شبكة مستشارينا أشخاصاً درسوا وعملوا ويعيشون في المنطقة."
+        },
+        {
+          "en": "Our content reflects MENA family contexts, expectations, and decision dynamics.",
+          "ar": "يعكس محتوانا سياقات العائلة في الشرق الأوسط وشمال أفريقيا وتوقعاتها وطريقة اتخاذ القرار فيها."
+        }
+      ],
+      "visual": {
+        "title": {
+          "en": "Where we operate",
+          "ar": "أين نعمل"
+        },
+        "subtitle": {
+          "en": "Active in 8 MENA countries · expanding",
+          "ar": "نشطون في 8 دول · ونتوسع"
+        },
+        "statusActive": {
+          "en": "Active",
+          "ar": "نشط"
+        },
+        "statusExpanding": {
+          "en": "Expanding",
+          "ar": "نتوسع"
+        },
+        "countries": [
+          {
+            "flag": "🇦🇪",
+            "name": {
+              "en": "UAE",
+              "ar": "الإمارات"
+            },
+            "status": "active"
+          },
+          {
+            "flag": "🇸🇦",
+            "name": {
+              "en": "Saudi Arabia",
+              "ar": "السعودية"
+            },
+            "status": "active"
+          },
+          {
+            "flag": "🇧🇭",
+            "name": {
+              "en": "Bahrain",
+              "ar": "البحرين"
+            },
+            "status": "active"
+          },
+          {
+            "flag": "🇶🇦",
+            "name": {
+              "en": "Qatar",
+              "ar": "قطر"
+            },
+            "status": "active"
+          },
+          {
+            "flag": "🇰🇼",
+            "name": {
+              "en": "Kuwait",
+              "ar": "الكويت"
+            },
+            "status": "active"
+          },
+          {
+            "flag": "🇯🇴",
+            "name": {
+              "en": "Jordan",
+              "ar": "الأردن"
+            },
+            "status": "active"
+          },
+          {
+            "flag": "🇴🇲",
+            "name": {
+              "en": "Oman",
+              "ar": "عُمان"
+            },
+            "status": "expanding"
+          },
+          {
+            "flag": "🇪🇬",
+            "name": {
+              "en": "Egypt",
+              "ar": "مصر"
+            },
+            "status": "expanding"
+          }
+        ]
+      }
+    },
+    "cta": {
+      "title": {
+        "before": {
+          "en": "Build the future of",
+          "ar": "ابنِ مستقبل"
+        },
+        "emphasis": {
+          "en": "MENA university guidance",
+          "ar": "إرشاد الجامعة في الشرق الأوسط وشمال أفريقيا"
+        },
+        "after": {
+          "en": "with us.",
+          "ar": "معنا."
+        }
+      },
+      "description": {
+        "en": "Whether you're a school, an advisor, a parent, or a student — there's a place for you on this platform.",
+        "ar": "سواء كنت مدرسة، أو مستشاراً، أو ولي أمر، أو طالباً، فهناك مكان لك في هذه المنصة."
+      },
+      "button": {
+        "en": "Get in touch",
+        "ar": "تواصل معنا"
+      }
+    }
+  }
+}

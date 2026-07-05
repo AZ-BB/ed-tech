@@ -5,11 +5,14 @@ const MAX_SIGNATURE_AGE_MS = 5 * 60 * 1000;
 
 export type CalendlyWebhookEnvelope = {
   event: string;
+  created_at?: string;
   payload?: {
+    uri?: string;
     tracking?: {
       utm_content?: string | null;
     };
     scheduled_event?: {
+      uri?: string;
       start_time?: string;
     };
     questions_and_answers?: Array<{

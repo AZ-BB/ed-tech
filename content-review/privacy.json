@@ -1,0 +1,347 @@
+{
+  "page": "Privacy Policy",
+  "route": "/privacy",
+  "generatedAt": "2026-07-03",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "sections": {
+    "document": {
+      "title": {
+        "en": "Privacy Policy",
+        "ar": "سياسة الخصوصية"
+      },
+      "effectiveDate": {
+        "en": "Effective date: April 2026",
+        "ar": "تاريخ السريان: أبريل 2026"
+      },
+      "sections": [
+        {
+          "heading": {
+            "en": "Introduction",
+            "ar": "مقدمة"
+          },
+          "paragraphs": [
+            {
+              "en": "Univeera (\"we\", \"us\", \"our\") is committed to protecting the privacy of our users. This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our platform, website, and services.",
+              "ar": "تلتزم يونيفيرا (\"نحن\") بحماية خصوصية مستخدمينا. توضح سياسة الخصوصية هذه كيف نجمع معلوماتك الشخصية ونستخدمها ونخزنها ونحميها عند استخدامك لمنصتنا وموقعنا وخدماتنا."
+            },
+            {
+              "en": "By using Univeera, you agree to the collection and use of information in accordance with this policy. If you do not agree, please do not use our services.",
+              "ar": "باستخدامك ليونيفيرا، فإنك توافق على جمع المعلومات واستخدامها وفقاً لهذه السياسة. إذا كنت لا توافق عليها، يرجى عدم استخدام خدماتنا."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Information we collect",
+            "ar": "المعلومات التي نجمعها"
+          },
+          "paragraphs": [
+            {
+              "en": "We collect information that you provide directly to us, as well as information generated through your use of the platform.",
+              "ar": "نجمع المعلومات التي تقدمها لنا مباشرة، بالإضافة إلى المعلومات الناتجة عن استخدامك للمنصة."
+            }
+          ],
+          "list": [
+            {
+              "en": "Account information such as your name, email address, nationality, and school name when you register",
+              "ar": "معلومات الحساب مثل الاسم والبريد الإلكتروني والجنسية واسم المدرسة عند التسجيل"
+            },
+            {
+              "en": "Academic profile data including your grades, test scores, preferred fields of study, and university preferences",
+              "ar": "بيانات الملف الأكاديمي بما في ذلك الدرجات ونتائج الاختبارات والمجالات الدراسية المفضلة وتفضيلات الجامعات"
+            },
+            {
+              "en": "Content you create on the platform, such as essays submitted for review, saved universities, and scholarship bookmarks",
+              "ar": "المحتوى الذي تنشئه على المنصة مثل المقالات المرسلة للمراجعة والجامعات المحفوظة والمنح المضافة إلى قائمتك"
+            },
+            {
+              "en": "Communication data when you contact us, book advisor sessions, or interact with ambassadors",
+              "ar": "بيانات التواصل عند الاتصال بنا أو حجز جلسات المستشارين أو التفاعل مع السفراء"
+            },
+            {
+              "en": "Usage data including pages visited, features used, time spent on the platform, and device information",
+              "ar": "بيانات الاستخدام بما في ذلك الصفحات والميزات المستخدمة ووقت الاستخدام ومعلومات الجهاز"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "How we use your information",
+            "ar": "كيف نستخدم معلوماتك"
+          },
+          "paragraphs": [
+            {
+              "en": "We use the information we collect to operate, improve, and personalise your experience on Univeera.",
+              "ar": "نستخدم المعلومات التي نجمعها لتشغيل المنصة وتحسينها وتخصيص تجربتك على يونيفيرا."
+            }
+          ],
+          "list": [
+            {
+              "en": "To provide our core services including university search, scholarship discovery, AI matching, and essay review",
+              "ar": "تقديم خدماتنا الأساسية بما في ذلك البحث عن الجامعات، واكتشاف المنح، والمطابقة بالذكاء الاصطناعي، ومراجعة المقالات"
+            },
+            {
+              "en": "To personalise your experience by recommending universities and scholarships based on your profile",
+              "ar": "تخصيص تجربتك من خلال توصية جامعات ومنح بناءً على ملفك"
+            },
+            {
+              "en": "To facilitate connections with advisors and university ambassadors",
+              "ar": "تسهيل التواصل مع المستشارين وسفراء الجامعات"
+            },
+            {
+              "en": "To communicate with you about your account, sessions, and platform updates",
+              "ar": "التواصل معك بشأن حسابك والجلسات وتحديثات المنصة"
+            },
+            {
+              "en": "To improve our platform, features, and content based on usage patterns",
+              "ar": "تحسين المنصة والميزات والمحتوى بناءً على أنماط الاستخدام"
+            },
+            {
+              "en": "To provide aggregate, anonymised insights to partner schools (if applicable)",
+              "ar": "تقديم رؤى مجمعة ومجهولة الهوية للمدارس الشريكة، إن وجد"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Information sharing",
+            "ar": "مشاركة المعلومات"
+          },
+          "paragraphs": [
+            {
+              "en": "We do not sell your personal information. We may share your information only in the following circumstances:",
+              "ar": "لا نبيع معلوماتك الشخصية. قد نشارك معلوماتك فقط في الحالات التالية:"
+            }
+          ],
+          "list": [
+            {
+              "en": "With advisors or ambassadors you choose to connect with, limited to what is necessary for the session",
+              "ar": "مع المستشارين أو السفراء الذين تختار التواصل معهم، بما يلزم للجلسة فقط"
+            },
+            {
+              "en": "With partner schools, only if you are a student enrolled at that school and only in aggregate or with your consent",
+              "ar": "مع المدارس الشريكة، فقط إذا كنت طالباً مسجلاً في تلك المدرسة، وبشكل مجمع أو بموافقتك"
+            },
+            {
+              "en": "With service providers who help us operate the platform (such as hosting, analytics, and email services), under strict data protection agreements",
+              "ar": "مع مزودي الخدمات الذين يساعدوننا في تشغيل المنصة، بموجب اتفاقيات حماية بيانات صارمة"
+            },
+            {
+              "en": "If required by law, regulation, or legal process",
+              "ar": "إذا تطلب القانون أو اللوائح أو أي إجراء قانوني ذلك"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Data storage and security",
+            "ar": "تخزين البيانات والأمان"
+          },
+          "paragraphs": [
+            {
+              "en": "We store your data on secure servers and use industry-standard encryption and access controls to protect your information. We retain your data for as long as your account is active or as needed to provide our services. You may request deletion of your account and associated data at any time.",
+              "ar": "نخزن بياناتك على خوادم آمنة ونستخدم التشفير وضوابط الوصول المتعارف عليها في القطاع لحماية معلوماتك. نحتفظ ببياناتك ما دام حسابك نشطاً أو حسب الحاجة لتقديم خدماتنا. يمكنك طلب حذف حسابك والبيانات المرتبطة به في أي وقت."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Your rights",
+            "ar": "حقوقك"
+          },
+          "paragraphs": [
+            {
+              "en": "Depending on your location, you may have the right to:",
+              "ar": "بحسب موقعك، قد يكون لديك الحق في:"
+            }
+          ],
+          "list": [
+            {
+              "en": "Access the personal data we hold about you",
+              "ar": "الوصول إلى البيانات الشخصية التي نحتفظ بها عنك"
+            },
+            {
+              "en": "Request correction of inaccurate information",
+              "ar": "طلب تصحيح المعلومات غير الدقيقة"
+            },
+            {
+              "en": "Request deletion of your account and personal data",
+              "ar": "طلب حذف حسابك وبياناتك الشخصية"
+            },
+            {
+              "en": "Object to certain types of processing",
+              "ar": "الاعتراض على أنواع معينة من المعالجة"
+            },
+            {
+              "en": "Export your data in a portable format",
+              "ar": "تصدير بياناتك بصيغة قابلة للنقل"
+            }
+          ],
+          "afterList": {
+            "en": "To exercise any of these rights, please contact us at admin@univeera.me.",
+            "ar": "لممارسة أي من هذه الحقوق، يرجى التواصل معنا على admin@univeera.me."
+          }
+        },
+        {
+          "heading": {
+            "en": "Cookies",
+            "ar": "ملفات تعريف الارتباط"
+          },
+          "paragraphs": [
+            {
+              "en": "We use cookies and similar technologies to remember your preferences, understand how you use the platform, and improve your experience. You can manage your cookie preferences through your browser settings.",
+              "ar": "نستخدم ملفات تعريف الارتباط وتقنيات مشابهة لتذكر تفضيلاتك وفهم طريقة استخدامك للمنصة وتحسين تجربتك. يمكنك إدارة تفضيلات ملفات تعريف الارتباط من إعدادات المتصفح."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Children's privacy",
+            "ar": "خصوصية الأطفال"
+          },
+          "paragraphs": [
+            {
+              "en": "Univeera is designed for students who are typically 16 years or older. We do not knowingly collect personal information from children under the age of 13. If we become aware that we have collected data from a child under 13, we will take steps to delete it promptly.",
+              "ar": "صُممت يونيفيرا للطلاب الذين تبلغ أعمارهم عادة 16 عاماً فأكثر. لا نجمع عن قصد معلومات شخصية من أطفال دون سن 13 عاماً. إذا علمنا أننا جمعنا بيانات من طفل دون 13 عاماً، فسنتخذ خطوات لحذفها فوراً."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Changes to this policy",
+            "ar": "تغييرات على هذه السياسة"
+          },
+          "paragraphs": [
+            {
+              "en": "We may update this Privacy Policy from time to time. When we make significant changes, we will notify you through the platform or by email. Your continued use of Univeera after changes are posted constitutes your acceptance of the updated policy.",
+              "ar": "قد نحدّث سياسة الخصوصية من وقت لآخر. عند إجراء تغييرات جوهرية، سنخطرك عبر المنصة أو البريد الإلكتروني. استمرارك في استخدام يونيفيرا بعد نشر التغييرات يعني قبولك للسياسة المحدّثة."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Contact us",
+            "ar": "تواصل معنا"
+          },
+          "paragraphs": [
+            {
+              "en": "If you have questions about this Privacy Policy or how we handle your data, please contact us at admin@univeera.me.",
+              "ar": "إذا كانت لديك أسئلة حول سياسة الخصوصية أو كيفية تعاملنا مع بياناتك، يرجى التواصل معنا على admin@univeera.me."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

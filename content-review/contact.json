@@ -1,0 +1,207 @@
+{
+  "page": "Contact",
+  "route": "/contact",
+  "generatedAt": "2026-07-03",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "sections": {
+    "hero": {
+      "title": {
+        "en": "Contact us",
+        "ar": "تواصل معنا"
+      },
+      "subtitle": {
+        "en": "Have a question, partnership inquiry, or need support? We'd love to hear from you.",
+        "ar": "هل لديك سؤال، أو طلب شراكة، أو تحتاج إلى دعم؟ يسعدنا أن نسمع منك."
+      },
+      "reachUs": {
+        "en": "You can also reach us at",
+        "ar": "يمكنك أيضاً التواصل معنا على"
+      },
+      "responseTime": {
+        "en": "We usually respond within 2-4 hours.",
+        "ar": "نرد عادة خلال 2 إلى 4 ساعات."
+      },
+      "email": {
+        "en": "admin@univeera.me",
+        "ar": "admin@univeera.me"
+      }
+    },
+    "form": {
+      "title": {
+        "en": "Contact us",
+        "ar": "تواصل معنا"
+      },
+      "subtitle": {
+        "en": "Have a question, partnership inquiry, or need support? We'd love to hear from you.",
+        "ar": "هل لديك سؤال، أو طلب شراكة، أو تحتاج إلى دعم؟ يسعدنا أن نسمع منك."
+      },
+      "reachUs": {
+        "en": "You can also reach us at",
+        "ar": "يمكنك أيضاً التواصل معنا على"
+      },
+      "responseTime": {
+        "en": "We usually respond within 2-4 hours.",
+        "ar": "نرد عادة خلال 2 إلى 4 ساعات."
+      },
+      "fullName": {
+        "en": "Full name",
+        "ar": "الاسم الكامل"
+      },
+      "fullNamePlaceholder": {
+        "en": "Enter your full name",
+        "ar": "أدخل اسمك الكامل"
+      },
+      "email": {
+        "en": "Email address",
+        "ar": "البريد الإلكتروني"
+      },
+      "emailPlaceholder": {
+        "en": "Enter your email",
+        "ar": "أدخل بريدك الإلكتروني"
+      },
+      "subject": {
+        "en": "Subject",
+        "ar": "الموضوع"
+      },
+      "optional": {
+        "en": "(optional)",
+        "ar": "(اختياري)"
+      },
+      "subjectPlaceholder": {
+        "en": "What is this about?",
+        "ar": "ما موضوع رسالتك؟"
+      },
+      "message": {
+        "en": "Message",
+        "ar": "الرسالة"
+      },
+      "messagePlaceholder": {
+        "en": "Tell us how we can help...",
+        "ar": "أخبرنا كيف يمكننا مساعدتك..."
+      },
+      "sending": {
+        "en": "Sending…",
+        "ar": "جارٍ الإرسال…"
+      },
+      "sendMessage": {
+        "en": "Send message",
+        "ar": "إرسال الرسالة"
+      },
+      "toastSuccess": {
+        "en": "Message sent! We'll be in touch soon.",
+        "ar": "تم إرسال رسالتك بنجاح. سنتواصل معك قريباً."
+      }
+    }
+  }
+}

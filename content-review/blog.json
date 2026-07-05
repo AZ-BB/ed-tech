@@ -1,0 +1,139 @@
+{
+  "page": "Blog",
+  "route": "/blog",
+  "generatedAt": "2026-07-03",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "sections": {
+    "hero": {
+      "title": {
+        "en": "Blog",
+        "ar": "المدونة"
+      },
+      "subtitle": {
+        "en": "We're working on thoughtful content, guides, and updates for students, families, and partners.",
+        "ar": "نعمل على إعداد مقالات وأدلة وتحديثات مفيدة للطلاب والعائلات والشركاء."
+      }
+    },
+    "comingSoon": {
+      "label": {
+        "en": "Coming soon",
+        "ar": "قريباً"
+      },
+      "backHome": {
+        "en": "Back to home",
+        "ar": "العودة للرئيسية"
+      }
+    }
+  }
+}

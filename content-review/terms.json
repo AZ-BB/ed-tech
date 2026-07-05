@@ -1,0 +1,381 @@
+{
+  "page": "Terms & Conditions",
+  "route": "/terms",
+  "generatedAt": "2026-07-03",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "sections": {
+    "document": {
+      "title": {
+        "en": "Terms & Conditions",
+        "ar": "الشروط والأحكام"
+      },
+      "effectiveDate": {
+        "en": "Effective date: April 2026",
+        "ar": "تاريخ السريان: أبريل 2026"
+      },
+      "sections": [
+        {
+          "heading": {
+            "en": "Acceptance of terms",
+            "ar": "قبول الشروط"
+          },
+          "paragraphs": [
+            {
+              "en": "By accessing or using Univeera (\"the platform\"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use the platform. These terms apply to all users, including students, advisors, ambassadors, school administrators, and visitors.",
+              "ar": "بوصولك إلى يونيفيرا (\"المنصة\") أو استخدامك لها، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على هذه الشروط، يرجى عدم استخدام المنصة. تنطبق هذه الشروط على جميع المستخدمين، بما في ذلك الطلاب والمستشارون والسفراء ومديرو المدارس والزوار."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "About Univeera",
+            "ar": "عن يونيفيرا"
+          },
+          "paragraphs": [
+            {
+              "en": "Univeera is an education technology platform that helps students discover universities, find scholarships, receive essay feedback, connect with advisors and ambassadors, and manage their university application journey. The platform is designed primarily for students in the Middle East applying to universities globally.",
+              "ar": "يونيفيرا منصة تقنية تعليمية تساعد الطلاب على اكتشاف الجامعات، والعثور على المنح، والحصول على ملاحظات حول المقالات، والتواصل مع المستشارين والسفراء، وإدارة رحلة التقديم الجامعي. صُممت المنصة أساساً لطلاب الشرق الأوسط المتقدمين إلى جامعات حول العالم."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "User accounts",
+            "ar": "حسابات المستخدمين"
+          },
+          "paragraphs": [
+            {
+              "en": "To access certain features, you must create an account. You agree to:",
+              "ar": "للوصول إلى ميزات معينة، يجب إنشاء حساب. وبذلك توافق على:"
+            }
+          ],
+          "list": [
+            {
+              "en": "Provide accurate and complete information during registration",
+              "ar": "تقديم معلومات دقيقة وكاملة عند التسجيل"
+            },
+            {
+              "en": "Keep your login credentials confidential and not share them with others",
+              "ar": "الحفاظ على سرية بيانات الدخول وعدم مشاركتها"
+            },
+            {
+              "en": "Notify us immediately if you suspect unauthorised access to your account",
+              "ar": "إبلاغنا فوراً عند الاشتباه بأي وصول غير مصرح به إلى حسابك"
+            },
+            {
+              "en": "Accept responsibility for all activity that occurs under your account",
+              "ar": "تحمل المسؤولية عن جميع الأنشطة التي تتم من خلال حسابك"
+            }
+          ],
+          "afterList": {
+            "en": "We reserve the right to suspend or terminate accounts that violate these terms or engage in behaviour that harms other users or the platform.",
+            "ar": "نحتفظ بالحق في تعليق أو إنهاء الحسابات التي تنتهك هذه الشروط أو تضر بالمستخدمين أو بالمنصة."
+          }
+        },
+        {
+          "heading": {
+            "en": "Acceptable use",
+            "ar": "الاستخدام المقبول"
+          },
+          "paragraphs": [
+            {
+              "en": "You agree to use Univeera only for its intended purpose and in compliance with all applicable laws. You may not:",
+              "ar": "توافق على استخدام يونيفيرا لغرضها المقصود ووفقاً للقوانين المعمول بها. لا يجوز لك:"
+            }
+          ],
+          "list": [
+            {
+              "en": "Use the platform to submit false, misleading, or plagiarised information",
+              "ar": "استخدام المنصة لتقديم معلومات كاذبة أو مضللة أو منسوخة"
+            },
+            {
+              "en": "Attempt to access another user's account or data without permission",
+              "ar": "محاولة الوصول إلى حساب أو بيانات مستخدم آخر دون إذن"
+            },
+            {
+              "en": "Use automated tools, bots, or scrapers to collect data from the platform",
+              "ar": "استخدام أدوات آلية أو بوتات لجمع بيانات من المنصة"
+            },
+            {
+              "en": "Upload content that is offensive, harmful, or violates the rights of others",
+              "ar": "رفع محتوى مسيء أو ضار أو ينتهك حقوق الآخرين"
+            },
+            {
+              "en": "Interfere with the operation or security of the platform",
+              "ar": "التدخل في تشغيل المنصة أو أمنها"
+            },
+            {
+              "en": "Use the platform for any commercial purpose not authorised by Univeera",
+              "ar": "استخدام المنصة لأغراض تجارية غير مصرح بها من يونيفيرا"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Content and intellectual property",
+            "ar": "المحتوى والملكية الفكرية"
+          },
+          "paragraphs": [
+            {
+              "en": "All content on Univeera, including text, design, logos, features, and software, is owned by or licensed to Univeera and is protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works from our content without written permission.",
+              "ar": "جميع المحتوى الموجود على يونيفيرا، بما في ذلك النصوص والتصميم والشعارات والميزات والبرمجيات، مملوك ليونيفيرا أو مرخص لها ومحمي بقوانين الملكية الفكرية. لا يجوز نسخ محتوانا أو تعديله أو توزيعه دون إذن كتابي."
+            },
+            {
+              "en": "Content you submit to the platform (such as essays, profile information, and messages) remains yours. By submitting content, you grant Univeera a limited licence to use it solely for the purpose of providing and improving our services.",
+              "ar": "يبقى المحتوى الذي تقدمه، مثل المقالات ومعلومات الملف الشخصي والرسائل، ملكاً لك. وبتقديم هذا المحتوى، تمنح يونيفيرا ترخيصاً محدوداً لاستخدامه فقط لغرض تقديم خدماتنا وتحسينها."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Essay review and AI tools",
+            "ar": "مراجعة المقالات وأدوات الذكاء الاصطناعي"
+          },
+          "paragraphs": [
+            {
+              "en": "Univeera offers AI-powered essay feedback and university matching tools. These tools are designed to assist and guide you, but they are not a substitute for professional advice. You acknowledge that:",
+              "ar": "تقدم يونيفيرا ملاحظات على المقالات وأدوات لمطابقة الجامعات بالذكاء الاصطناعي. صُممت هذه الأدوات للمساعدة والإرشاد، وليست بديلاً عن المشورة المهنية. أنت تقر بأن:"
+            }
+          ],
+          "list": [
+            {
+              "en": "AI-generated feedback is informational and should be used as one input among many",
+              "ar": "ملاحظات الذكاء الاصطناعي معلوماتية ويجب استخدامها كأحد المدخلات ضمن قرارك"
+            },
+            {
+              "en": "Univeera does not guarantee specific outcomes, admissions results, or scholarship awards",
+              "ar": "يونيفيرا لا تضمن نتائج قبول أو منحاً محددة"
+            },
+            {
+              "en": "You are responsible for all final decisions regarding your applications",
+              "ar": "أنت مسؤول عن جميع القرارات النهائية بشأن طلباتك"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Advisor and ambassador sessions",
+            "ar": "جلسات المستشارين والسفراء"
+          },
+          "paragraphs": [
+            {
+              "en": "Univeera facilitates connections between students and advisors or university ambassadors. We do not employ advisors or ambassadors directly and are not responsible for the advice they provide. Sessions are subject to availability and any applicable fees.",
+              "ar": "تسهّل يونيفيرا التواصل بين الطلاب والمستشارين أو سفراء الجامعات. نحن لا نوظفهم مباشرة ولسنا مسؤولين عن النصائح التي يقدمونها. تخضع الجلسات للتوفر ولأي رسوم مطبقة."
+            }
+          ],
+          "list": [
+            {
+              "en": "Advisors and ambassadors are independent individuals sharing their personal experience and expertise",
+              "ar": "المستشارون والسفراء أفراد مستقلون يشاركون خبرتهم الشخصية"
+            },
+            {
+              "en": "Univeera does not guarantee the accuracy or completeness of advice given during sessions",
+              "ar": "يونيفيرا لا تضمن دقة النصائح المقدمة خلال الجلسات أو اكتمالها"
+            },
+            {
+              "en": "Session cancellation and rescheduling policies will be communicated at the time of booking",
+              "ar": "سياسات الإلغاء وإعادة الجدولة تُبلّغ عند الحجز"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "School partnerships",
+            "ar": "شراكات المدارس"
+          },
+          "paragraphs": [
+            {
+              "en": "Schools that partner with Univeera may have access to aggregate student engagement data and counsellor tools. Student data shared with partner schools is governed by our Privacy Policy and any applicable data sharing agreements.",
+              "ar": "قد تتمكن المدارس الشريكة من الوصول إلى بيانات تفاعل مجمعة وأدوات للمستشارين. تخضع بيانات الطلاب التي تُشارك مع المدارس الشريكة لسياسة الخصوصية وأي اتفاقيات مشاركة بيانات معمول بها."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Limitation of liability",
+            "ar": "حدود المسؤولية"
+          },
+          "paragraphs": [
+            {
+              "en": "Univeera is provided on an \"as is\" and \"as available\" basis. We make no warranties, express or implied, regarding the platform's availability, accuracy, or fitness for a particular purpose. To the fullest extent permitted by law:",
+              "ar": "تُقدم يونيفيرا \"كما هي\" و\"حسب التوفر\". لا نقدم أي ضمانات صريحة أو ضمنية بشأن توفر المنصة أو دقتها أو ملاءمتها لغرض معين. إلى أقصى حد يسمح به القانون:"
+            }
+          ],
+          "list": [
+            {
+              "en": "Univeera shall not be liable for any indirect, incidental, or consequential damages arising from your use of the platform",
+              "ar": "لا تتحمل يونيفيرا مسؤولية أي أضرار غير مباشرة أو عرضية أو تبعية ناتجة عن استخدامك للمنصة"
+            },
+            {
+              "en": "Our total liability for any claim shall not exceed the amount you paid to Univeera in the 12 months preceding the claim",
+              "ar": "لا يتجاوز إجمالي مسؤوليتنا عن أي مطالبة المبلغ الذي دفعته ليونيفيرا خلال الاثني عشر شهراً السابقة للمطالبة"
+            },
+            {
+              "en": "We are not responsible for decisions made based on information or tools provided through the platform",
+              "ar": "لسنا مسؤولين عن قرارات مبنية على معلومات أو أدوات مقدمة عبر المنصة"
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Modifications to the platform",
+            "ar": "تعديلات على المنصة"
+          },
+          "paragraphs": [
+            {
+              "en": "We may update, modify, or discontinue features of the platform at any time without prior notice. We will make reasonable efforts to communicate significant changes that affect your use of the platform.",
+              "ar": "قد نحدّث ميزات المنصة أو نعدّلها أو نوقفها في أي وقت دون إشعار مسبق. سنبذل جهداً معقولاً لإبلاغك بالتغييرات الجوهرية التي تؤثر في استخدامك للمنصة."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Changes to these terms",
+            "ar": "تغييرات على هذه الشروط"
+          },
+          "paragraphs": [
+            {
+              "en": "We may revise these Terms and Conditions from time to time. When we make material changes, we will notify you through the platform or by email. Your continued use of Univeera after changes are posted constitutes your acceptance of the revised terms.",
+              "ar": "قد نراجع هذه الشروط والأحكام من وقت لآخر. عند إجراء تغييرات جوهرية، سنخطرك عبر المنصة أو البريد الإلكتروني. استمرارك في استخدام يونيفيرا بعد نشر التغييرات يعني قبولك للشروط المحدّثة."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Governing law",
+            "ar": "القانون الحاكم"
+          },
+          "paragraphs": [
+            {
+              "en": "These terms are governed by the laws of the United Arab Emirates. Any disputes arising from these terms or your use of the platform will be subject to the exclusive jurisdiction of the courts of the United Arab Emirates.",
+              "ar": "تخضع هذه الشروط لقوانين دولة الإمارات العربية المتحدة. وتخضع أي نزاعات تنشأ عن هذه الشروط أو عن استخدامك للمنصة للاختصاص الحصري لمحاكم دولة الإمارات العربية المتحدة."
+            }
+          ]
+        },
+        {
+          "heading": {
+            "en": "Contact us",
+            "ar": "تواصل معنا"
+          },
+          "paragraphs": [
+            {
+              "en": "If you have questions about these Terms and Conditions, please contact us at admin@univeera.me.",
+              "ar": "إذا كانت لديك أسئلة حول الشروط والأحكام، يرجى التواصل معنا على admin@univeera.me."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

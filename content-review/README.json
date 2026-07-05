@@ -1,0 +1,64 @@
+{
+  "title": "Public page content review — README",
+  "generatedAt": "2026-07-03",
+  "format": {
+    "description": "Each JSON file contains all user-facing copy for one public page. Every string is shown as { en: \"...\", ar: \"...\" } for side-by-side review.",
+    "pages": [
+      {
+        "file": "home.json",
+        "route": "/"
+      },
+      {
+        "file": "about.json",
+        "route": "/about"
+      },
+      {
+        "file": "contact.json",
+        "route": "/contact"
+      },
+      {
+        "file": "blog.json",
+        "route": "/blog"
+      },
+      {
+        "file": "for-schools.json",
+        "route": "/for-schools"
+      },
+      {
+        "file": "for-advisors.json",
+        "route": "/for-advisors"
+      },
+      {
+        "file": "privacy.json",
+        "route": "/privacy"
+      },
+      {
+        "file": "terms.json",
+        "route": "/terms"
+      },
+      {
+        "file": "webinars.json",
+        "route": "/webinars"
+      },
+      {
+        "file": "login.json",
+        "route": "/login"
+      },
+      {
+        "file": "signup.json",
+        "route": "/signup"
+      },
+      {
+        "file": "reset-password.json",
+        "route": "/auth/reset-password"
+      }
+    ],
+    "notes": [
+      "Marketing pages include header.navigation and footer in each file.",
+      "Auth pages (login, signup, reset-password) use a minimal header only.",
+      "Webinar detail pages (/webinars/[id]) load title, description, and agenda from the database.",
+      "Some dashboard preview mock data on For Schools and For Advisors is English-only."
+    ],
+    "regenerate": "node --experimental-strip-types scripts/export-public-page-content.ts"
+  }
+}

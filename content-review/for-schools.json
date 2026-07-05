@@ -1,0 +1,666 @@
+{
+  "page": "For Schools",
+  "route": "/for-schools",
+  "generatedAt": "2026-07-03",
+  "note": "Demo UI mock data (student names, university names, stats) is English-only and not localized.",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "metadata": {
+    "title": {
+      "en": "For schools — Univeera",
+      "ar": "للمدارس — يونيفيرا"
+    },
+    "description": {
+      "en": "Partner with Univeera to give your students university discovery, scholarships, and guidance — with full visibility for your school.",
+      "ar": "تعاون مع يونيفيرا لتمنح طلابك تجربة متكاملة لاكتشاف الجامعات والمنح والحصول على الإرشاد، مع رؤية واضحة لمدرستك."
+    }
+  },
+  "sections": {
+    "hero": {
+      "badge": {
+        "en": "For schools and counsellors",
+        "ar": "للمدارس والمستشارين"
+      },
+      "title": {
+        "before": {
+          "en": "Run modern university guidance,",
+          "ar": "قدّم إرشاداً جامعياً حديثاً،"
+        },
+        "emphasis": {
+          "en": "at scale",
+          "ar": "على نطاق واسع"
+        }
+      },
+      "subtitle": {
+        "en": "Give your students the structured, data-informed university journey they deserve, and give your counsellors the visibility, tools, and reporting they need to support every student well.",
+        "ar": "امنح طلابك رحلة جامعية منظمة ومدعومة بالبيانات، ووفّر لمستشاريك الرؤية والأدوات والتقارير التي يحتاجونها لدعم كل طالب بالشكل الصحيح."
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً توضيحياً"
+      },
+      "seeWhatsIncluded": {
+        "en": "See what's included",
+        "ar": "تعرّف إلى ما تتضمنه المنصة"
+      },
+      "demoPreview": {
+        "note": {
+          "en": "Illustrative dashboard preview — not live data",
+          "ar": "معاينة توضيحية للوحة التحكم — ليست بيانات حية"
+        },
+        "counsellorOverview": {
+          "en": "Counsellor overview",
+          "ar": "نظرة عامة للمستشار"
+        },
+        "live": {
+          "en": "Live",
+          "ar": "مباشر"
+        },
+        "kpis": {
+          "onboarded": {
+            "en": "Onboarded",
+            "ar": "تم تفعيلهم"
+          },
+          "discovery": {
+            "en": "Discovery",
+            "ar": "الاكتشاف"
+          },
+          "sessions": {
+            "en": "Sessions",
+            "ar": "الجلسات"
+          }
+        },
+        "studentsInProgress": {
+          "en": "Students in progress",
+          "ar": "طلاب قيد التقدم"
+        },
+        "viewAll": {
+          "en": "view all",
+          "ar": "عرض الكل"
+        },
+        "sampleStudents": [
+          {
+            "name": {
+              "en": "Sara H.",
+              "ar": "Sara H."
+            },
+            "stage": {
+              "en": "Applications · Y13",
+              "ar": "Applications · Y13"
+            }
+          },
+          {
+            "name": {
+              "en": "Omar K.",
+              "ar": "Omar K."
+            },
+            "stage": {
+              "en": "Discovery · Y12",
+              "ar": "Discovery · Y12"
+            }
+          },
+          {
+            "name": {
+              "en": "Layla A.",
+              "ar": "Layla A."
+            },
+            "stage": {
+              "en": "Exploring · Y12",
+              "ar": "Exploring · Y12"
+            }
+          }
+        ],
+        "recentActivity": {
+          "en": "Recent activity",
+          "ar": "النشاط الأخير"
+        }
+      }
+    },
+    "unlock": {
+      "label": {
+        "en": "What schools unlock",
+        "ar": "ما تحصل عليه المدارس"
+      },
+      "title": {
+        "before": {
+          "en": "An end-to-end guidance platform,",
+          "ar": "منصة إرشاد متكاملة،"
+        },
+        "emphasis": {
+          "en": "under one roof",
+          "ar": "تحت سقف واحد"
+        }
+      },
+      "description": {
+        "en": "A complete system covering every part of the university journey — from self-discovery, to application, to landing in the destination country. Built for MENA schools, MENA students, MENA families.",
+        "ar": "نظام متكامل يغطي رحلة الطالب الجامعية كاملة، من اكتشاف الذات إلى التقديم والوصول إلى بلد الدراسة. صُمم لمدارس وطلاب وعائلات الشرق الأوسط وشمال أفريقيا."
+      },
+      "features": {
+        "commandCentre": {
+          "title": {
+            "en": "Counsellor command centre",
+            "ar": "مركز متابعة المستشارين"
+          },
+          "desc": {
+            "en": "A real-time dashboard showing every student's stage, progress, and next step. No more chasing updates. Every counsellor sees exactly where each student is — and where to intervene.",
+            "ar": "لوحة تحكم لحظية تعرض مرحلة كل طالب، وتقدمه، وخطوته التالية. لا حاجة لملاحقة التحديثات؛ يرى كل مستشار أين يقف كل طالب ومتى يحتاج إلى التدخل."
+          }
+        },
+        "matching": {
+          "title": {
+            "en": "AI-powered university matching",
+            "ar": "مطابقة الجامعات بالذكاء الاصطناعي"
+          },
+          "desc": {
+            "en": "Students don't get a list of 1,100 universities. They get a personalised shortlist — each match scored against their profile, goals, and academics. With the reasoning behind every score.",
+            "ar": "لا يحصل الطلاب على قائمة عشوائية تضم 1100 جامعة، بل على قائمة مختصرة مخصصة لهم، مع تقييم كل مطابقة بناءً على ملف الطالب وأهدافه وأدائه الأكاديمي، وشرح سبب كل درجة."
+          }
+        },
+        "essayReview": {
+          "title": {
+            "en": "Essay review",
+            "ar": "مراجعة المقالات"
+          },
+          "desc": {
+            "en": "AI feedback on first drafts. Human advisor review on final versions. No personal statement leaves Univeera unrefined.",
+            "ar": "ملاحظات بالذكاء الاصطناعي على المسودات الأولى، ومراجعة بشرية من مستشار للنسخ النهائية. لا يغادر أي بيان شخصي يونيفيرا دون صقل."
+          }
+        },
+        "advisorSessions": {
+          "title": {
+            "en": "1-on-1 advisor sessions",
+            "ar": "جلسات فردية مع مستشار"
+          },
+          "desc": {
+            "en": "Vetted university advisors bookable in-platform. Every student gets one free intro session. Premium packages available when they need more.",
+            "ar": "مستشارون جامعيون موثوقون يمكن حجزهم مباشرة عبر المنصة. يحصل كل طالب على جلسة تعريفية مجانية، مع باقات إضافية متاحة عند الحاجة."
+          }
+        },
+        "ambassador": {
+          "title": {
+            "en": "Ambassador network",
+            "ar": "شبكة السفراء"
+          },
+          "desc": {
+            "en": "Real students currently at target universities, ready to answer the honest questions your students wouldn't ask anywhere else.",
+            "ar": "طلاب حاليون في الجامعات المستهدفة، مستعدون للإجابة عن الأسئلة الواقعية التي قد لا يطرحها طلابك في مكان آخر."
+          }
+        },
+        "applicationSupport": {
+          "title": {
+            "en": "Application support",
+            "ar": "دعم التقديم"
+          },
+          "desc": {
+            "en": "Application timelines, requirements checklists, deadline reminders, submission tracking — built directly into every student journey.",
+            "ar": "جداول التقديم، وقوائم المتطلبات، وتذكيرات المواعيد، وتتبع الإرسال، كلها مدمجة مباشرة في رحلة كل طالب."
+          }
+        },
+        "discoveryJourney": {
+          "title": {
+            "en": "Discovery Journey",
+            "ar": "رحلة الاكتشاف"
+          },
+          "desc": {
+            "en": "A psychometric assessment that helps each student understand who they are — and what kinds of paths actually fit them — before they pick a university.",
+            "ar": "تقييم يساعد كل طالب على فهم نفسه والمسارات التي تناسبه قبل اختيار الجامعة."
+          }
+        },
+        "scholarship": {
+          "title": {
+            "en": "Scholarship matching",
+            "ar": "مطابقة المنح"
+          },
+          "desc": {
+            "en": "A curated database of MENA-eligible scholarships. Filtered to what each student can actually win — not US-citizen-only awards.",
+            "ar": "قاعدة بيانات من المنح المتاحة لطلاب الشرق الأوسط، مفلترة بحسب ما يمكن لكل طالب التقديم إليه فعلاً، لا منح مخصصة لمواطنين أمريكيين فقط."
+          }
+        }
+      }
+    },
+    "beyondAdmission": {
+      "exclusiveBadge": {
+        "en": "Exclusive to Univeera",
+        "ar": "حصري ليونيفيرا"
+      },
+      "title": {
+        "before": {
+          "en": "Beyond admission.",
+          "ar": "ما بعد القبول."
+        },
+        "emphasis": {
+          "en": "All the way to landing.",
+          "ar": "حتى الوصول."
+        }
+      },
+      "description": {
+        "en": "Most platforms stop at \"you got in.\" Univeera doesn't. We support students through everything that happens after the acceptance letter — the part that families actually need help with.",
+        "ar": "تتوقف معظم المنصات عند عبارة \"تم قبولك\". أما يونيفيرا فتستمر بعد ذلك، وتدعم الطلاب في كل ما يلي خطاب القبول، وهو الجزء الذي تحتاج العائلات إلى المساعدة فيه فعلاً."
+      },
+      "chips": [
+        {
+          "en": "Visa support",
+          "ar": "دعم التأشيرة"
+        },
+        {
+          "en": "Accommodation",
+          "ar": "السكن"
+        },
+        {
+          "en": "Tuition payment",
+          "ar": "دفع الرسوم"
+        },
+        {
+          "en": "Health insurance",
+          "ar": "التأمين الصحي"
+        },
+        {
+          "en": "Flight booking",
+          "ar": "حجز الرحلات"
+        },
+        {
+          "en": "See all",
+          "ar": "عرض الكل"
+        }
+      ],
+      "additionalFeatures": {
+        "webinars": {
+          "title": {
+            "en": "Webinars & live events",
+            "ar": "ندوات وفعاليات مباشرة"
+          },
+          "desc": {
+            "en": "Regular sessions with admissions officers, alumni, and subject experts. Recordings stay in your school's library for any student who misses the live event.",
+            "ar": "جلسات منتظمة مع مسؤولي قبول وخريجين وخبراء في مجالات مختلفة. تبقى التسجيلات في مكتبة مدرستك ليستفيد منها أي طالب فاته الحدث المباشر."
+          }
+        },
+        "bulkOnboarding": {
+          "title": {
+            "en": "Bulk onboarding & portal",
+            "ar": "تفعيل جماعي وبوابة مدرسية"
+          },
+          "desc": {
+            "en": "Invite an entire cohort in one click. Counsellor accounts. Permission tiers. School portal for admins and leadership.",
+            "ar": "ادعُ دفعة كاملة بنقرة واحدة، مع حسابات للمستشارين، ومستويات صلاحيات، وبوابة مدرسية للإداريين والقيادة."
+          }
+        },
+        "monthlyReports": {
+          "title": {
+            "en": "Monthly school reports",
+            "ar": "تقارير شهرية للمدرسة"
+          },
+          "desc": {
+            "en": "Cohort-level engagement, completion, and outcome data. Brandable for board meetings and parent communications. Year-on-year trends.",
+            "ar": "بيانات المشاركة والإكمال والنتائج على مستوى الدفعة، بتقارير قابلة للتخصيص لاجتماعات مجلس الإدارة وتواصل أولياء الأمور، مع رؤية للاتجاهات سنة بعد سنة."
+          }
+        }
+      }
+    },
+    "howItWorks": {
+      "label": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "title": {
+        "before": {
+          "en": "Five steps from",
+          "ar": "خمس خطوات من"
+        },
+        "emphasis1": {
+          "en": "signed up",
+          "ar": "التسجيل"
+        },
+        "mid": {
+          "en": "to",
+          "ar": "إلى"
+        },
+        "emphasis2": {
+          "en": "fully running",
+          "ar": "التشغيل الكامل"
+        }
+      },
+      "description": {
+        "en": "We've designed onboarding to require almost nothing from your team. Most schools are fully operational within two weeks.",
+        "ar": "صممنا عملية الإعداد لتتطلب جهداً محدوداً من فريقك. تعمل معظم المدارس بكامل طاقتها خلال أسبوعين."
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "School joins",
+            "ar": "انضمام المدرسة"
+          },
+          "desc": {
+            "en": "Sign a simple agreement. We configure your school portal.",
+            "ar": "وقّع اتفاقية بسيطة، وسنجهز بوابة مدرستك."
+          }
+        },
+        {
+          "title": {
+            "en": "Students gain access",
+            "ar": "وصول الطلاب"
+          },
+          "desc": {
+            "en": "Bulk-invite students. They onboard in under three minutes.",
+            "ar": "ادعُ الطلاب جماعياً، وسينضمون خلال أقل من ثلاث دقائق."
+          }
+        },
+        {
+          "title": {
+            "en": "Discovery & exploration",
+            "ar": "الاكتشاف والاستكشاف"
+          },
+          "desc": {
+            "en": "Students complete the journey and explore options.",
+            "ar": "يكمل الطلاب الرحلة ويستكشفون الخيارات."
+          }
+        },
+        {
+          "title": {
+            "en": "Counsellors support",
+            "ar": "دعم المستشارين"
+          },
+          "desc": {
+            "en": "Counsellors monitor progress and intervene as needed.",
+            "ar": "يتابع المستشارون التقدم ويتدخلون عند الحاجة."
+          }
+        },
+        {
+          "title": {
+            "en": "Reports & outcomes",
+            "ar": "التقارير والنتائج"
+          },
+          "desc": {
+            "en": "Monthly reporting gives leadership a full view.",
+            "ar": "تمنح التقارير الشهرية القيادة رؤية شاملة."
+          }
+        }
+      ]
+    },
+    "wholeSchool": {
+      "label": {
+        "en": "Built for the whole school",
+        "ar": "مصمم للمدرسة بأكملها"
+      },
+      "title": {
+        "before": {
+          "en": "A platform that works for",
+          "ar": "منصة تخدم"
+        },
+        "emphasis1": {
+          "en": "counsellors",
+          "ar": "المستشارين"
+        },
+        "mid": {
+          "en": "and",
+          "ar": "و"
+        },
+        "emphasis2": {
+          "en": "leadership",
+          "ar": "القيادة"
+        }
+      },
+      "description": {
+        "en": "Different people in your school need different things from a guidance platform. Univeera serves both.",
+        "ar": "تحتاج الأطراف المختلفة داخل المدرسة إلى أشياء مختلفة من منصة الإرشاد. يونيفيرا تخدم الجميع."
+      },
+      "forCounsellors": {
+        "label": {
+          "en": "For counsellors",
+          "ar": "للمستشارين"
+        },
+        "title": {
+          "en": "Less admin. More guidance.",
+          "ar": "إدارة أقل. إرشاد أكثر."
+        },
+        "description": {
+          "en": "Univeera handles the tracking, reminders, and routine workflows. Your counsellors focus on the conversations that actually shape student futures.",
+          "ar": "تتولى يونيفيرا التتبع والتذكيرات وسير العمل الروتيني، ليركز مستشاروك على المحادثات التي تصنع فرقاً في مستقبل الطلاب."
+        },
+        "points": [
+          {
+            "en": "A single dashboard showing every student's stage and next step",
+            "ar": "لوحة تحكم واحدة تعرض مرحلة كل طالب وخطوته التالية"
+          },
+          {
+            "en": "Automated reminders for deadlines, applications, and check-ins",
+            "ar": "تذكيرات تلقائية بالمواعيد النهائية والتقديمات والمتابعات"
+          },
+          {
+            "en": "Built-in essay queue, advisor scheduling, and ambassador access",
+            "ar": "قائمة مقالات مدمجة وجدولة مستشارين ووصول للسفراء"
+          },
+          {
+            "en": "Notes and progress logs stay with each student profile",
+            "ar": "الملاحظات وسجلات التقدم تبقى مع ملف كل طالب"
+          },
+          {
+            "en": "No more spreadsheets, no more lost context",
+            "ar": "لا مزيد من جداول البيانات ولا من فقدان السياق"
+          }
+        ]
+      },
+      "forLeadership": {
+        "label": {
+          "en": "For school leadership",
+          "ar": "لقيادة المدرسة"
+        },
+        "title": {
+          "en": "Outcomes you can measure.",
+          "ar": "نتائج يمكن قياسها."
+        },
+        "description": {
+          "en": "Monthly reports show parents and boards how your guidance programme is performing — and where your team is making real impact.",
+          "ar": "تُظهر التقارير الشهرية لأولياء الأمور ومجالس الإدارة أداء برنامج الإرشاد، والمجالات التي يحقق فيها فريقك أثراً حقيقياً."
+        },
+        "points": [
+          {
+            "en": "Cohort-level engagement, completion, and outcome metrics",
+            "ar": "مقاييس المشاركة والإكمال والنتائج على مستوى الدفعة"
+          },
+          {
+            "en": "Application and acceptance tracking across destinations",
+            "ar": "تتبع التقديمات والقبول عبر الوجهات"
+          },
+          {
+            "en": "University and scholarship coverage benchmarked against peers",
+            "ar": "تغطية الجامعات والمنح مقارنة بمدارس مشابهة"
+          },
+          {
+            "en": "Brandable reports for board meetings and parent comms",
+            "ar": "تقارير قابلة للتخصيص لاجتماعات المجلس وتواصل أولياء الأمور"
+          },
+          {
+            "en": "Year-on-year trend visibility",
+            "ar": "رؤية الاتجاهات سنة بعد سنة"
+          }
+        ]
+      }
+    },
+    "practice": {
+      "label": {
+        "en": "Platform in practice",
+        "ar": "المنصة في الممارسة"
+      },
+      "title": {
+        "before": {
+          "en": "What a typical school sees",
+          "ar": "ما تراه المدرسة عادة"
+        },
+        "emphasis": {
+          "en": "each month",
+          "ar": "كل شهر"
+        }
+      },
+      "description": {
+        "en": "A snapshot from a partner school's reporting dashboard. Real activity drives real conversations.",
+        "ar": "لمحة من لوحة تقارير مدرسة شريكة. النشاط الحقيقي يفتح الباب لمحادثات أكثر فائدة."
+      },
+      "report": {
+        "title": {
+          "en": "Partner school · October report",
+          "ar": "مدرسة شريكة · تقرير أكتوبر"
+        },
+        "updatedAgo": {
+          "en": "Updated 2 hours ago",
+          "ar": "تم التحديث منذ ساعتين"
+        },
+        "stats": {
+          "onboarded": {
+            "en": "Students onboarded",
+            "ar": "طلاب مسجلون"
+          },
+          "discoveryCompleted": {
+            "en": "Discovery completed",
+            "ar": "اكتمل الاكتشاف"
+          },
+          "essaysSubmitted": {
+            "en": "Essays submitted",
+            "ar": "مقالات مقدمة"
+          },
+          "advisorSessions": {
+            "en": "Advisor sessions",
+            "ar": "جلسات مستشار"
+          }
+        },
+        "topDestinations": {
+          "en": "Top destinations",
+          "ar": "أبرز الوجهات"
+        },
+        "topProgrammes": {
+          "en": "Top programmes",
+          "ar": "أبرز البرامج"
+        }
+      }
+    },
+    "cta": {
+      "title": {
+        "before": {
+          "en": "Bring modern university guidance to",
+          "ar": "اجلب إرشاد الجامعة الحديث إلى"
+        },
+        "emphasis": {
+          "en": "your school",
+          "ar": "مدرستك"
+        }
+      },
+      "description": {
+        "en": "A 30-minute demo walks your team through the dashboard, student experience, and reporting. We tailor every demo to your school's context.",
+        "ar": "عرض توضيحي مدته 30 دقيقة يعرّف فريقك إلى لوحة التحكم وتجربة الطالب والتقارير. نخصص كل عرض بحسب سياق مدرستك."
+      },
+      "emailSchoolsTeam": {
+        "en": "Email our schools team",
+        "ar": "راسل فريق المدارس"
+      }
+    }
+  }
+}

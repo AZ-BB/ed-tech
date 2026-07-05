@@ -1,0 +1,76 @@
+{
+  "page": "Login",
+  "route": "/login",
+  "generatedAt": "2026-07-03",
+  "note": "Auth pages use a minimal layout without the full marketing footer.",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    }
+  },
+  "sections": {
+    "form": {
+      "welcomeBack": {
+        "en": "Welcome back",
+        "ar": "مرحباً بعودتك"
+      },
+      "subtitle": {
+        "en": "Log in to continue your journey",
+        "ar": "سجّل الدخول لمتابعة رحلتك الجامعية"
+      },
+      "email": {
+        "en": "Email",
+        "ar": "البريد الإلكتروني"
+      },
+      "emailPlaceholder": {
+        "en": "you@university.edu",
+        "ar": "you@university.edu"
+      },
+      "password": {
+        "en": "Password",
+        "ar": "كلمة المرور"
+      },
+      "forgotPassword": {
+        "en": "Forgot password?",
+        "ar": "نسيت كلمة المرور؟"
+      },
+      "loggingIn": {
+        "en": "Logging in…",
+        "ar": "جارٍ تسجيل الدخول…"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "newHere": {
+        "en": "New here?",
+        "ar": "جديد هنا؟"
+      },
+      "startUniversityJourney": {
+        "en": "Start your university journey",
+        "ar": "ابدأ رحلتك الجامعية"
+      },
+      "createAccount": {
+        "en": "Create account",
+        "ar": "إنشاء حساب"
+      },
+      "schoolDeactivated": {
+        "en": "The school has been deactivated. Please contact support.",
+        "ar": "تم إلغاء تفعيل المدرسة. يرجى التواصل مع الدعم."
+      },
+      "accountDeactivated": {
+        "en": "Your account has been deactivated. Please contact support.",
+        "ar": "تم إلغاء تفعيل حسابك. يرجى التواصل مع الدعم."
+      },
+      "hidePassword": {
+        "en": "Hide password",
+        "ar": "إخفاء كلمة المرور"
+      },
+      "showPassword": {
+        "en": "Show password",
+        "ar": "إظهار كلمة المرور"
+      }
+    }
+  }
+}

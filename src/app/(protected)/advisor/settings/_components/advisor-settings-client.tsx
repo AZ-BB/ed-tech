@@ -145,6 +145,8 @@ function SectionCard({
 export function AdvisorSettingsClient({
   authEmail,
   profileEmail,
+  calendlyConnected,
+  calendlyConnectedAt,
   defaults,
   countries,
 }: AdvisorSettingsClientProps) {
@@ -204,6 +206,23 @@ export function AdvisorSettingsClient({
     return () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("calendly");
+    if (status === "connected") {
+      showToast("Calendly connected successfully.");
+      router.replace("/advisor/settings", { scroll: false });
+      router.refresh();
+    } else if (status === "already_connected") {
+      showToast("Calendly is already connected.");
+      router.replace("/advisor/settings", { scroll: false });
+    } else if (status === "error") {
+      showToast("Could not connect Calendly. Please try again.");
+      router.replace("/advisor/settings", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for OAuth redirect
   }, []);
 
   useEffect(() => {
@@ -678,6 +697,48 @@ export function AdvisorSettingsClient({
           <p className="text-[12px] font-medium text-[#E74C3C]">{profileState.error}</p>
         ) : null}
       </form>
+
+      <SectionCard
+        title="Integrations"
+        subtitle="Connect Calendly so students can book sessions with you"
+        icon={
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+        }
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-[var(--text)]">Calendly</p>
+            {calendlyConnected ? (
+              <p className="mt-1 text-[12px] text-[var(--text-light)]">
+                <span className="font-medium text-[var(--green-dark)]">Connected</span>
+                {calendlyConnectedAt
+                  ? ` · ${new Date(calendlyConnectedAt).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}`
+                  : ""}
+              </p>
+            ) : (
+              <p className="mt-1 text-[12px] text-[var(--text-light)]">
+                Link your Calendly account to enable student session booking.
+              </p>
+            )}
+          </div>
+          {calendlyConnected ? (
+            <button type="button" className={btnSecondaryClass()} disabled>
+              Calendly connected
+            </button>
+          ) : (
+            <a href="/api/integrations/calendly/setup" className={btnSecondaryClass()}>
+              Connect Calendly
+            </a>
+          )}
+        </div>
+      </SectionCard>
 
       {pwOpen ? (
         <div

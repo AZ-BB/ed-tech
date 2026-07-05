@@ -39,9 +39,10 @@ type AdvisorBrief = {
 
 type Props = {
   advisor: AdvisorBrief;
+  calendlySchedulingUrl: string;
 };
 
-export function BookAdvisorSessionClient({ advisor }: Props) {
+export function BookAdvisorSessionClient({ advisor, calendlySchedulingUrl }: Props) {
   const { dict } = useLocale();
   const bt = dict.student.advisors.book;
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -70,11 +71,12 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
   );
 
   const calendlyPageUrl = useMemo(() => {
-    if (sessionId == null) return "";
+    if (sessionId == null || !calendlySchedulingUrl.trim()) return "";
     const destinationLabel = destinationAlpha2
       ? (COUNTRIES.find((c) => c.alpha2 === destinationAlpha2)?.name ?? destinationAlpha2)
       : "";
     return buildCalendlySchedulingPageUrl({
+      base: calendlySchedulingUrl,
       name: fullName.trim(),
       email: email.trim(),
       utmContent: advisorSessionUtmContent(sessionId),
@@ -88,7 +90,18 @@ export function BookAdvisorSessionClient({ advisor }: Props) {
         helpWith.trim() ? `Help: ${helpWith.trim().slice(0, 160)}` : "",
       ].filter(Boolean),
     });
-  }, [advisor.id, destinationAlpha2, displayName, email, fullName, helpWith, sessionId, specificUnis, stage]);
+  }, [
+    advisor.id,
+    calendlySchedulingUrl,
+    destinationAlpha2,
+    displayName,
+    email,
+    fullName,
+    helpWith,
+    sessionId,
+    specificUnis,
+    stage,
+  ]);
 
   const goConfirm = useCallback(() => {
     setError(null);

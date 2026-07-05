@@ -1,0 +1,454 @@
+{
+  "page": "Webinars",
+  "route": "/webinars",
+  "generatedAt": "2026-07-03",
+  "note": "Individual webinar titles, descriptions, and agendas come from the database and are not included here.",
+  "header": {
+    "brand": {
+      "en": "Univeera",
+      "ar": "يونيفيرا"
+    },
+    "navigation": {
+      "howItWorks": {
+        "en": "How it works",
+        "ar": "كيف تعمل المنصة"
+      },
+      "features": {
+        "en": "Features",
+        "ar": "الميزات"
+      },
+      "testimonials": {
+        "en": "Testimonials",
+        "ar": "تجارب الطلاب"
+      },
+      "faq": {
+        "en": "FAQ",
+        "ar": "الأسئلة الشائعة"
+      },
+      "webinars": {
+        "en": "Webinars",
+        "ar": "الندوات"
+      },
+      "forSchools": {
+        "en": "For Schools",
+        "ar": "للمدارس"
+      },
+      "forAdvisors": {
+        "en": "For Advisors",
+        "ar": "للمستشارين"
+      },
+      "about": {
+        "en": "About",
+        "ar": "من نحن"
+      },
+      "logIn": {
+        "en": "Log in",
+        "ar": "تسجيل الدخول"
+      },
+      "startJourney": {
+        "en": "Start your journey",
+        "ar": "ابدأ رحلتك"
+      },
+      "bookDemo": {
+        "en": "Book a demo",
+        "ar": "احجز عرضاً"
+      },
+      "openMenu": {
+        "en": "Open menu",
+        "ar": "فتح القائمة"
+      },
+      "closeMenu": {
+        "en": "Close menu",
+        "ar": "إغلاق القائمة"
+      }
+    },
+    "languageSwitcher": {
+      "label": {
+        "en": "Language",
+        "ar": "اللغة"
+      },
+      "english": {
+        "en": "English",
+        "ar": "English"
+      },
+      "arabic": {
+        "en": "العربية",
+        "ar": "العربية"
+      }
+    }
+  },
+  "footer": {
+    "tagline": {
+      "en": "A MENA-focused university guidance platform built for schools, students, and families.",
+      "ar": "منصة إرشاد جامعي مصممة لطلاب ومدارس وعائلات منطقة الشرق الأوسط وشمال أفريقيا."
+    },
+    "platform": {
+      "en": "Platform",
+      "ar": "المنصة"
+    },
+    "company": {
+      "en": "Company",
+      "ar": "الشركة"
+    },
+    "legal": {
+      "en": "Legal",
+      "ar": "الشؤون القانونية"
+    },
+    "blog": {
+      "en": "Blog",
+      "ar": "المدونة"
+    },
+    "contact": {
+      "en": "Contact",
+      "ar": "تواصل معنا"
+    },
+    "privacy": {
+      "en": "Privacy",
+      "ar": "الخصوصية"
+    },
+    "terms": {
+      "en": "Terms",
+      "ar": "الشروط"
+    },
+    "copyright": {
+      "en": "© 2026 Univeera. All rights reserved.",
+      "ar": "© 2026 يونيفيرا. جميع الحقوق محفوظة."
+    }
+  },
+  "metadata": {
+    "title": {
+      "en": "Live Webinars & Expert Sessions",
+      "ar": "ندوات مباشرة وجلسات مع خبراء"
+    },
+    "description": {
+      "en": "Join free live webinars led by advisors, alumni and professionals. Open to students and families across the Middle East.",
+      "ar": "انضم إلى ندوات مباشرة مجانية يقدمها مستشارون وخريجون ومهنيون، ومفتوحة للطلاب والعائلات في الشرق الأوسط."
+    }
+  },
+  "sections": {
+    "hero": {
+      "badge": {
+        "en": "Live Webinars & Expert Sessions",
+        "ar": "ندوات مباشرة وجلسات مع خبراء"
+      },
+      "title": {
+        "en": "Join live webinars led by",
+        "ar": "انضم إلى ندوات مباشرة يقدمها"
+      },
+      "titleEmphasis": {
+        "en": "advisors, alumni and professionals",
+        "ar": "مستشارون وخريجون ومحترفون"
+      },
+      "subtitle": {
+        "en": "Every two weeks, Univeera hosts live sessions to help students across the Middle East understand university applications, study destinations, scholarships, majors, career pathways and student life.",
+        "ar": "كل أسبوعين، تستضيف يونيفيرا جلسات مباشرة لمساعدة طلاب الشرق الأوسط على فهم التقديم الجامعي، ووجهات الدراسة، والمنح، والتخصصات، والمسارات المهنية، وحياة الطالب."
+      },
+      "ctaViewUpcoming": {
+        "en": "View upcoming webinars",
+        "ar": "عرض الندوات القادمة"
+      },
+      "ctaRegisterNext": {
+        "en": "Register for next session",
+        "ar": "التسجيل في الجلسة القادمة"
+      },
+      "footnote": {
+        "en": "New sessions added every month.",
+        "ar": "جلسات جديدة تُضاف كل شهر."
+      },
+      "features": [
+        {
+          "en": "Bi-weekly live sessions",
+          "ar": "جلسات مباشرة كل أسبوعين"
+        },
+        {
+          "en": "Expert-led guidance",
+          "ar": "إرشاد يقدمه خبراء"
+        },
+        {
+          "en": "Built for Middle East students",
+          "ar": "مصممة لطلاب الشرق الأوسط"
+        },
+        {
+          "en": "Free for registered students",
+          "ar": "مجانية للطلاب المسجلين"
+        }
+      ]
+    },
+    "topics": {
+      "label": {
+        "en": "What we cover",
+        "ar": "ما نغطيه"
+      },
+      "title": {
+        "en": "Topics we cover",
+        "ar": "المواضيع التي نغطيها"
+      },
+      "subtitle": {
+        "en": "Our webinars are designed to support students at every stage of the university journey.",
+        "ar": "ندواتنا مصممة لدعم الطلاب في كل مرحلة من رحلتهم الجامعية."
+      },
+      "items": [
+        {
+          "title": {
+            "en": "Study destinations",
+            "ar": "وجهات الدراسة"
+          },
+          "desc": {
+            "en": "UK, US, Canada, Europe, Australia and GCC university options.",
+            "ar": "خيارات الجامعات في المملكة المتحدة والولايات المتحدة وكندا وأوروبا وأستراليا ودول الخليج."
+          }
+        },
+        {
+          "title": {
+            "en": "Application guidance",
+            "ar": "إرشاد التقديم"
+          },
+          "desc": {
+            "en": "UCAS, Common App, essays, recommendation letters, interviews and deadlines.",
+            "ar": "UCAS وCommon App والمقالات وخطابات التوصية والمقابلات والمواعيد النهائية."
+          }
+        },
+        {
+          "title": {
+            "en": "Scholarships & funding",
+            "ar": "المنح والتمويل"
+          },
+          "desc": {
+            "en": "How to find scholarships, understand eligibility and submit stronger applications.",
+            "ar": "كيفية العثور على المنح، وفهم شروط الأهلية، وتقديم طلبات أقوى."
+          }
+        },
+        {
+          "title": {
+            "en": "Major & career exploration",
+            "ar": "استكشاف التخصص والمسار المهني"
+          },
+          "desc": {
+            "en": "Helping students connect their interests and strengths to future careers.",
+            "ar": "مساعدة الطلاب على ربط اهتماماتهم ونقاط قوتهم بالمسارات المهنية المستقبلية."
+          }
+        },
+        {
+          "title": {
+            "en": "Student & alumni stories",
+            "ar": "قصص الطلاب والخريجين"
+          },
+          "desc": {
+            "en": "Real experiences from Middle Eastern students studying locally and abroad.",
+            "ar": "تجارب حقيقية من طلاب من الشرق الأوسط يدرسون محلياً وفي الخارج."
+          }
+        },
+        {
+          "title": {
+            "en": "Career & professional pathways",
+            "ar": "المسارات الوظيفية والمهنية"
+          },
+          "desc": {
+            "en": "How to break into consulting, banking, and tech — plus internships, networks, and life beyond graduation.",
+            "ar": "كيفية دخول مجالات الاستشارات والمصارف والتقنية، إلى جانب التدريب العملي، وبناء العلاقات، والحياة بعد التخرج."
+          }
+        }
+      ]
+    },
+    "faq": {
+      "label": {
+        "en": "Questions",
+        "ar": "أسئلة"
+      },
+      "title": {
+        "en": "Frequently asked",
+        "ar": "أسئلة شائعة"
+      },
+      "subtitle": {
+        "en": "Quick answers to the most common questions about our webinars.",
+        "ar": "إجابات سريعة على أكثر الأسئلة شيوعاً حول ندواتنا."
+      },
+      "items": [
+        {
+          "q": {
+            "en": "Are Univeera webinars free?",
+            "ar": "هل ندوات يونيفيرا مجانية؟"
+          },
+          "a": {
+            "en": "Yes. Webinars are free for students, families and school counselors unless otherwise stated.",
+            "ar": "نعم. الندوات مجانية للطلاب والعائلات ومستشاري المدارس ما لم يُذكر خلاف ذلك."
+          }
+        },
+        {
+          "q": {
+            "en": "Who can attend?",
+            "ar": "من يمكنه الحضور؟"
+          },
+          "a": {
+            "en": "Students, families and school counselors are welcome. Most sessions are designed for students in Grades 11 and 12.",
+            "ar": "نرحب بالطلاب والعائلات ومستشاري المدارس. صُممت معظم الجلسات لطلاب الصفين 11 و12."
+          }
+        },
+        {
+          "q": {
+            "en": "How do I receive the webinar link?",
+            "ar": "كيف أستلم رابط الندوة؟"
+          },
+          "a": {
+            "en": "After you register, Univeera will email you the meeting link when the session starts, plus a reminder the day before.",
+            "ar": "بعد التسجيل، سترسل لك يونيفيرا رابط الاجتماع عند بدء الجلسة، بالإضافة إلى تذكير قبلها بيوم واحد."
+          }
+        },
+        {
+          "q": {
+            "en": "Are the sessions recorded?",
+            "ar": "هل تُسجَّل الجلسات؟"
+          },
+          "a": {
+            "en": "Some sessions are recorded and shared after the webinar, depending on the speaker and topic.",
+            "ar": "تُسجَّل بعض الجلسات وتُشارك بعد الندوة، بحسب المتحدث والموضوع."
+          }
+        },
+        {
+          "q": {
+            "en": "Can I ask questions during the session?",
+            "ar": "هل يمكنني طرح أسئلة أثناء الجلسة؟"
+          },
+          "a": {
+            "en": "Yes. Most webinars include a live Q&A section where students and families can ask questions.",
+            "ar": "نعم. تتضمن معظم الندوات فقرة مباشرة للأسئلة والأجوبة."
+          }
+        },
+        {
+          "q": {
+            "en": "How often are webinars hosted?",
+            "ar": "كم مرة تُستضاف الندوات؟"
+          },
+          "a": {
+            "en": "Univeera hosts webinars every two weeks, with additional sessions added during key application periods.",
+            "ar": "تستضيف يونيفيرا ندوات كل أسبوعين، مع جلسات إضافية خلال فترات التقديم المهمة."
+          }
+        }
+      ]
+    },
+    "listing": {
+      "calendar": {
+        "en": "Calendar",
+        "ar": "التقويم"
+      },
+      "upcomingTitle": {
+        "en": "Upcoming webinars",
+        "ar": "الندوات القادمة"
+      },
+      "upcomingSub": {
+        "en": "Explore our upcoming live sessions designed to help students make better decisions about university, majors and careers.",
+        "ar": "استكشف جلساتنا المباشرة المصممة لمساعدة الطلاب على اتخاذ قرارات أفضل حول الجامعة والتخصصات والمسارات المهنية."
+      },
+      "empty": {
+        "en": "No upcoming webinars right now. Check back soon.",
+        "ar": "لا توجد ندوات قادمة حالياً. تحقق مرة أخرى قريباً."
+      },
+      "featuredSectionLabel": {
+        "en": "Next session",
+        "ar": "الجلسة القادمة"
+      },
+      "featuredSectionTitle": {
+        "en": "Featured upcoming webinar",
+        "ar": "الندوة القادمة المميزة"
+      },
+      "featuredSectionDescription": {
+        "en": "Our next live session — register early as seats are limited.",
+        "ar": "جلستنا المباشرة القادمة. سجّل مبكراً لأن المقاعد محدودة."
+      },
+      "allWebinars": {
+        "en": "All webinars",
+        "ar": "كل الندوات"
+      }
+    },
+    "registration": {
+      "registerForWebinar": {
+        "en": "Register for webinar",
+        "ar": "التسجيل في الندوة"
+      },
+      "registerPublicHint": {
+        "en": "Enter your details to reserve your spot. We'll email you a reminder the day before and the meeting link when the session starts.",
+        "ar": "أدخل بياناتك لحجز مقعدك. سنرسل لك تذكيراً قبل يوم واحد ورابط الاجتماع عند بدء الجلسة."
+      },
+      "fullName": {
+        "en": "Full name",
+        "ar": "الاسم الكامل"
+      },
+      "fullNamePlaceholder": {
+        "en": "Enter your full name",
+        "ar": "أدخل اسمك الكامل"
+      },
+      "emailAddress": {
+        "en": "Email address",
+        "ar": "البريد الإلكتروني"
+      },
+      "emailPlaceholder": {
+        "en": "Enter your email",
+        "ar": "أدخل بريدك الإلكتروني"
+      },
+      "phoneNumber": {
+        "en": "Phone number",
+        "ar": "رقم الهاتف"
+      },
+      "phoneOptional": {
+        "en": "(optional)",
+        "ar": "(اختياري)"
+      },
+      "phonePlaceholder": {
+        "en": "Enter your phone number",
+        "ar": "أدخل رقم هاتفك"
+      },
+      "registering": {
+        "en": "Registering…",
+        "ar": "جارٍ التسجيل…"
+      },
+      "confirmRegistration": {
+        "en": "Confirm registration",
+        "ar": "تأكيد التسجيل"
+      },
+      "registeredSuccess": {
+        "en": "You're registered!",
+        "ar": "تم تسجيلك!"
+      },
+      "registeredSuccessHint": {
+        "en": "We'll send you a reminder the day before the session, and the meeting link when it starts.",
+        "ar": "سنرسل لك تذكيراً قبل يوم واحد من الجلسة، ورابط الاجتماع عند بدئها."
+      },
+      "gotIt": {
+        "en": "Got it",
+        "ar": "حسناً"
+      },
+      "close": {
+        "en": "Close",
+        "ar": "إغلاق"
+      },
+      "registered": {
+        "en": "Registered",
+        "ar": "مسجّل"
+      },
+      "full": {
+        "en": "Full",
+        "ar": "مكتمل"
+      },
+      "registerNow": {
+        "en": "Register now",
+        "ar": "سجّل الآن"
+      },
+      "seatsOf": {
+        "en": "of",
+        "ar": "من"
+      },
+      "seatsUnit": {
+        "en": "seats",
+        "ar": "مقاعد"
+      },
+      "seatsRemaining": {
+        "en": "seats remaining",
+        "ar": "مقاعد متبقية"
+      },
+      "notFound": {
+        "en": "Webinar not found",
+        "ar": "الندوة غير موجودة"
+      }
+    }
+  }
+}
