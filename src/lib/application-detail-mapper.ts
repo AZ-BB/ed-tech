@@ -37,6 +37,7 @@ export type ApplicationDetailPayload = {
     updatedAt: string | null;
     submittedAt: string | null;
     assignedAt: string | null;
+    scheduledAt: string | null;
     inProgressAt: string | null;
     blockedAt: string | null;
     curriculum: string | null;
@@ -136,6 +137,7 @@ export const APPLICATION_DETAIL_SELECT = `
   assigned_to,
   submitted_at,
   assigned_at,
+  scheduled_at,
   in_progress_at,
   blocked_at,
   created_at,
@@ -198,6 +200,7 @@ type ApplicationRowRaw = {
   assigned_to: string | null;
   submitted_at: string | null;
   assigned_at: string | null;
+  scheduled_at: string | null;
   in_progress_at: string | null;
   blocked_at: string | null;
   created_at: string | null;
@@ -382,6 +385,7 @@ export function mapApplicationDetailPayload(
       updatedAt: data.updated_at,
       submittedAt: data.submitted_at,
       assignedAt: data.assigned_at,
+      scheduledAt: data.scheduled_at,
       inProgressAt: data.in_progress_at,
       blockedAt: data.blocked_at,
       curriculum: data.curriculum,

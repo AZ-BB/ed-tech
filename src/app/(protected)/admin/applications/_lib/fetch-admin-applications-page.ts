@@ -15,6 +15,7 @@ export type AdminApplicationTableRow = {
   universitiesLabel: string;
   advisorName: string | null;
   status: string;
+  scheduledAt: string | null;
 };
 
 type PreferencesUniversities = unknown;
@@ -31,6 +32,7 @@ type AppRowRaw = {
   student_email: string | null;
   status: string | null;
   assigned_to: string | null;
+  scheduled_at: string | null;
   preferences_universities: PreferencesUniversities;
   school_name: string | null;
   applications_plans:
@@ -130,6 +132,7 @@ function mapApplicationRow(row: AppRowRaw): AdminApplicationTableRow {
     universitiesLabel: resolveUniversitiesLabel(row),
     advisorName: personNameFromEmbed(row.advisors),
     status: row.status?.trim() || "lead",
+    scheduledAt: row.scheduled_at,
   };
 }
 
@@ -150,6 +153,7 @@ export async function fetchAdminApplicationsPage(
       student_email,
       status,
       assigned_to,
+      scheduled_at,
       preferences_universities,
       school_name,
       applications_plans ( name, universities_count ),

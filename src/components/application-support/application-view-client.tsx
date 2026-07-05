@@ -335,6 +335,7 @@ export function ApplicationViewClient({
     { lab: "Application #", val: String(application.id) },
     { lab: "Package", val: `${packageUniversitiesTotal} universities` },
     { lab: "Advisor", val: advisorName },
+    { lab: "Scheduled at", val: formatDateTime(application.scheduledAt) },
     { lab: "Submitted", val: formatDate(application.submittedAt) },
     { lab: "Created", val: formatDate(application.createdAt) },
     { lab: "Updated", val: formatDateTime(application.updatedAt) },

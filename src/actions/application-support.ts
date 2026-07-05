@@ -7,6 +7,7 @@ import {
 import { STUDENT_MY_APPLICATIONS_BUCKET } from "@/lib/admin-student-document-constants";
 import { ensureStudentApplicationDocuments } from "@/lib/ensure-student-application-documents";
 import { DEFAULT_APPLICATION_PACKAGE_DATA } from "@/lib/application-package-data";
+import { fetchApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
   recordStudentPlatformCompletionOnce,
@@ -141,12 +142,15 @@ export async function submitApplicationSupport(
 
   const secret = await createSupabaseSecretClient();
 
-  const { data: plan, error: planErr } = await secret
-    .from("applications_plans")
-    .select("id, universities_count")
-    .eq("universities_count", payload.planUniversitiesCount)
-    .eq("is_active", true)
-    .maybeSingle();
+  const [{ data: plan, error: planErr }, receivingAdvisor] = await Promise.all([
+    secret
+      .from("applications_plans")
+      .select("id, universities_count")
+      .eq("universities_count", payload.planUniversitiesCount)
+      .eq("is_active", true)
+      .maybeSingle(),
+    fetchApplicationReceivingAdvisor(),
+  ]);
 
   if (planErr || !plan) {
     console.error(planErr);
@@ -181,6 +185,8 @@ export async function submitApplicationSupport(
     payload.fieldOfStudy?.trim() ||
     "—";
 
+  const assignedAt = receivingAdvisor ? new Date().toISOString() : null;
+
   const insertRow: Database["public"]["Tables"]["applications"]["Insert"] = {
     student_id: studentId,
     school_id: schoolId,
@@ -210,6 +216,8 @@ export async function submitApplicationSupport(
       universitiesTotal: plan.universities_count,
     },
     status: "lead",
+    assigned_to: receivingAdvisor?.id ?? null,
+    assigned_at: assignedAt,
   };
 
   const { data: appRow, error: insErr } = await secret
@@ -224,6 +232,24 @@ export async function submitApplicationSupport(
   }
 
   const applicationId = appRow.id;
+
+  if (receivingAdvisor) {
+    const advisorName =
+      `${receivingAdvisor.firstName} ${receivingAdvisor.lastName}`.trim() || "Advisor";
+    const { error: assignLogErr } = await secret.from("acitivity_logs").insert({
+      entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
+      entity_id: applicationActivityEntityId(applicationId),
+      action: "application_advisor_assigned",
+      message: `Automatically assigned ${advisorName} as application support advisor on application #${applicationId}.`,
+      created_by_type: "student",
+      admin_id: null,
+      school_admin_id: null,
+      student_id: studentId,
+    });
+    if (assignLogErr) {
+      console.error("[application-support] advisor assignment activity log", assignLogErr);
+    }
+  }
 
   await ensureStudentApplicationDocuments(secret, studentId);
 

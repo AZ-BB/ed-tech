@@ -1,6 +1,7 @@
 "use client";
 
 import { Pagination } from "@/components/pagination";
+import { format } from "date-fns";
 import { usePathname, useRouter } from "next/navigation";
 
 import type { AdminApplicationTableRow } from "../_lib/fetch-admin-applications-page";
@@ -24,6 +25,17 @@ const SELECT_CHEVRON =
 
 const filterSelectClass =
   "min-w-[140px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat py-[7px] pl-[10px] pr-9 text-[12px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C]";
+
+function formatScheduledAt(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    return format(d, "MMM d, yyyy · h:mm a");
+  } catch {
+    return "—";
+  }
+}
 
 function StatusBadge({ status }: { status: string }) {
   const label =
@@ -190,7 +202,7 @@ export function AdminApplicationsTableClient({
                 "Universities",
                 "Advisor",
                 "Status",
-                "Deadline",
+                "Scheduled at",
               ].map((heading) => (
                 <th
                   key={heading}
@@ -259,7 +271,7 @@ export function AdminApplicationsTableClient({
                       <StatusBadge status={row.status} />
                     </td>
                     <td className={`${cellBorder} whitespace-nowrap px-4 py-3 text-[13px] text-[#4a4a4a]`}>
-                      —
+                      {formatScheduledAt(row.scheduledAt)}
                     </td>
                   </tr>
                 );
