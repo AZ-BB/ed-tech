@@ -11,6 +11,91 @@ export type ApplicationReceivingAdvisor = {
 
 type AdvisorReceivingSecret = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
+type ApplicationReceivingAdvisorRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  calendly_scheduling_url: string | null;
+};
+
+function mapReceivingAdvisorRow(
+  row: ApplicationReceivingAdvisorRow,
+): ApplicationReceivingAdvisor {
+  return {
+    id: row.id,
+    firstName: row.first_name?.trim() ?? "",
+    lastName: row.last_name?.trim() ?? "",
+    calendlySchedulingUrl: row.calendly_scheduling_url?.trim() || null,
+  };
+}
+
+async function queryApplicationReceivingAdvisor(
+  service: AdvisorReceivingSecret,
+): Promise<ApplicationReceivingAdvisor | null> {
+  const { data, error } = await service
+    .from("advisors")
+    .select("id, first_name, last_name, calendly_scheduling_url")
+    .eq("receives_application_support", true)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[queryApplicationReceivingAdvisor]", error);
+    return null;
+  }
+
+  if (!data) return null;
+  return mapReceivingAdvisorRow(data);
+}
+
+/** Assign a newly created application to the flagged application-support advisor. */
+export async function assignApplicationToReceivingAdvisor(
+  service: AdvisorReceivingSecret,
+  input: { applicationId: number; studentId: string },
+): Promise<{ assigned: boolean; advisorName?: string }> {
+  const receivingAdvisor = await queryApplicationReceivingAdvisor(service);
+  if (!receivingAdvisor) {
+    console.warn(
+      "[assignApplicationToReceivingAdvisor] No active advisor with receives_application_support",
+      { applicationId: input.applicationId },
+    );
+    return { assigned: false };
+  }
+
+  const now = new Date().toISOString();
+  const { data: updated, error: updateErr } = await service
+    .from("applications")
+    .update({
+      assigned_to: receivingAdvisor.id,
+      assigned_at: now,
+      updated_at: now,
+    })
+    .eq("id", input.applicationId)
+    .select("id, assigned_to")
+    .maybeSingle();
+
+  if (updateErr) {
+    console.error("[assignApplicationToReceivingAdvisor] update failed", updateErr, {
+      applicationId: input.applicationId,
+      advisorId: receivingAdvisor.id,
+    });
+    return { assigned: false };
+  }
+
+  if (!updated?.assigned_to) {
+    console.error("[assignApplicationToReceivingAdvisor] update returned no row", {
+      applicationId: input.applicationId,
+      advisorId: receivingAdvisor.id,
+    });
+    return { assigned: false };
+  }
+
+  const advisorName =
+    `${receivingAdvisor.firstName} ${receivingAdvisor.lastName}`.trim() || "Advisor";
+
+  return { assigned: true, advisorName };
+}
+
 export async function clearOtherApplicationSupportReceivers(
   service: AdvisorReceivingSecret,
   advisorId: string,
@@ -75,24 +160,5 @@ export async function applyAdvisorReceivingFlags(
 
 export async function fetchApplicationReceivingAdvisor(): Promise<ApplicationReceivingAdvisor | null> {
   const secret = await createSupabaseSecretClient();
-  const { data, error } = await secret
-    .from("advisors")
-    .select("id, first_name, last_name, calendly_scheduling_url")
-    .eq("is_active", true)
-    .eq("receives_application_support", true)
-    .maybeSingle();
-
-  if (error) {
-    console.error("[fetchApplicationReceivingAdvisor]", error);
-    return null;
-  }
-
-  if (!data) return null;
-
-  return {
-    id: data.id,
-    firstName: data.first_name?.trim() ?? "",
-    lastName: data.last_name?.trim() ?? "",
-    calendlySchedulingUrl: data.calendly_scheduling_url?.trim() || null,
-  };
+  return queryApplicationReceivingAdvisor(secret);
 }
