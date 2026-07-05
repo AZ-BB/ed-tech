@@ -110,6 +110,7 @@ export function AdminAdvisorViewClient({
       lab: "Post-admission receiving",
       val: advisor.receivesPostAdmissionSupport ? "Yes" : "No",
     },
+    { lab: "Calendly", val: advisor.calendlyConnectedLabel },
     { lab: "Joined", val: advisor.joinedLabel },
     { lab: "Last logged in", val: advisor.lastLoggedInLabel },
     { lab: "Last session", val: advisor.lastSessionLabel },
@@ -136,6 +137,7 @@ export function AdminAdvisorViewClient({
           <SnapItem label="Specializations" value={advisor.specializationsLabel} />
           <SnapItem label="Tags" value={advisor.tagsLabel} />
           <SnapItem label="Payout percentage" value={`${advisor.payoutPercentage}%`} />
+          <SnapItem label="Calendly" value={advisor.calendlyConnectedLabel} />
         </div>
       </SchoolStudentPanel>
     );
