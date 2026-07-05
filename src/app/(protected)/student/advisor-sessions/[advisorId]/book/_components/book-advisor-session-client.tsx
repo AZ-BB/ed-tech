@@ -4,6 +4,7 @@ import { createAdvisorSessionBooking } from "@/actions/advisor-sessions";
 import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
 import { COUNTRIES } from "@/lib/countries";
 import { advisorSessionUtmContent, buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
+import type { StudentFormDefaults } from "@/lib/load-student-form-defaults";
 import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
@@ -40,19 +41,26 @@ type AdvisorBrief = {
 type Props = {
   advisor: AdvisorBrief;
   calendlySchedulingUrl: string;
+  profileDefaults?: StudentFormDefaults;
 };
 
-export function BookAdvisorSessionClient({ advisor, calendlySchedulingUrl }: Props) {
+export function BookAdvisorSessionClient({
+  advisor,
+  calendlySchedulingUrl,
+  profileDefaults,
+}: Props) {
   const { dict } = useLocale();
   const bt = dict.student.advisors.book;
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [destinationAlpha2, setDestinationAlpha2] = useState("");
+  const [fullName, setFullName] = useState(profileDefaults?.fullName ?? "");
+  const [email, setEmail] = useState(profileDefaults?.email ?? "");
+  const [phone, setPhone] = useState(profileDefaults?.phone ?? "");
+  const [destinationAlpha2, setDestinationAlpha2] = useState(
+    profileDefaults?.destinationCountryCode ?? "",
+  );
   const [stage, setStage] = useState("");
   const [specificUnis, setSpecificUnis] = useState("");
   const [helpWith, setHelpWith] = useState("");

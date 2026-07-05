@@ -1,10 +1,11 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
+import { loadStudentFormDefaults } from "@/lib/load-student-form-defaults";
 import {
   fetchPlatformSettings,
   isPlatformFeatureEnabled,
   PLATFORM_FEATURE_LABELS,
 } from "@/lib/platform-settings";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { StudentFeatureUnavailable } from "../../../_components/student-feature-unavailable";
@@ -39,12 +40,20 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
   }
 
   const secret = await createSupabaseSecretClient();
-  const { data } = await secret
-    .from("advisors")
-    .select("id, first_name, last_name, title, calendly_scheduling_url")
-    .eq("id", advisorId)
-    .eq("is_active", true)
-    .maybeSingle();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [{ data }, profileDefaults] = await Promise.all([
+    secret
+      .from("advisors")
+      .select("id, first_name, last_name, title, calendly_scheduling_url")
+      .eq("id", advisorId)
+      .eq("is_active", true)
+      .maybeSingle(),
+    loadStudentFormDefaults(auth.studentId, user?.email),
+  ]);
 
   if (!data) {
     notFound();
@@ -83,6 +92,7 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
         title: data.title,
       }}
       calendlySchedulingUrl={calendlySchedulingUrl}
+      profileDefaults={profileDefaults}
     />
   );
 }

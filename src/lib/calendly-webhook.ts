@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const ADVISOR_SESSION_UTM_PREFIX = "advisor_session:";
+const APPLICATION_UTM_PREFIX = "application:";
 const MAX_SIGNATURE_AGE_MS = 5 * 60 * 1000;
 
 export type CalendlyWebhookEnvelope = {
@@ -105,6 +106,42 @@ export function resolveAdvisorSessionIdFromWebhook(
   const answers = envelope.payload?.questions_and_answers ?? [];
   for (const qa of answers) {
     const fromAnswer = parseAdvisorSessionIdFromContext(qa.answer);
+    if (fromAnswer != null) return fromAnswer;
+  }
+
+  return null;
+}
+
+/** Extract applications.id from utm_content (e.g. application:123). */
+export function parseApplicationIdFromTracking(
+  utmContent: string | null | undefined,
+): number | null {
+  if (!utmContent?.trim()) return null;
+  const trimmed = utmContent.trim();
+  if (!trimmed.startsWith(APPLICATION_UTM_PREFIX)) return null;
+  const idRaw = trimmed.slice(APPLICATION_UTM_PREFIX.length);
+  const id = Number.parseInt(idRaw, 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/** Fallback: scan a1 / questions_and_answers for "Application ref: #123". */
+export function parseApplicationIdFromContext(text: string | null | undefined): number | null {
+  if (!text?.trim()) return null;
+  const match = text.match(/Application ref:\s*#?(\d+)/i);
+  if (!match?.[1]) return null;
+  const id = Number.parseInt(match[1], 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+export function resolveApplicationIdFromWebhook(
+  envelope: CalendlyWebhookEnvelope,
+): number | null {
+  const fromUtm = parseApplicationIdFromTracking(envelope.payload?.tracking?.utm_content);
+  if (fromUtm != null) return fromUtm;
+
+  const answers = envelope.payload?.questions_and_answers ?? [];
+  for (const qa of answers) {
+    const fromAnswer = parseApplicationIdFromContext(qa.answer);
     if (fromAnswer != null) return fromAnswer;
   }
 

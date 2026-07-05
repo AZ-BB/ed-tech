@@ -8,6 +8,11 @@ export function advisorSessionUtmContent(sessionId: number): string {
   return `advisor_session:${sessionId}`;
 }
 
+/** UTM content value linking a Calendly booking back to an applications row. */
+export function applicationUtmContent(applicationId: number): string {
+  return `application:${applicationId}`;
+}
+
 /** Build Calendly scheduling page URL with prefill + optional custom field `a1` (context). */
 export function buildCalendlySchedulingPageUrl(opts: {
   name: string;

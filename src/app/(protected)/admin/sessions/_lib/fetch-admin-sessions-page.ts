@@ -21,6 +21,7 @@ export type AdminSessionTableRow = {
   schoolName: string;
   providerName: string;
   occurredAt: string;
+  bookedAt: string | null;
 };
 
 type PersonEmbed =
@@ -279,6 +280,7 @@ function mapAdvisorRow(row: AdvisorRowRaw): AdminSessionTableRow {
     schoolName: resolveSchoolName(student),
     providerName: personNameFromEmbed(row.advisors),
     occurredAt,
+    bookedAt: row.booked_at,
   };
 }
 
@@ -293,6 +295,7 @@ function mapAmbassadorRow(row: AmbassadorRowRaw): AdminSessionTableRow {
     schoolName: resolveSchoolName(student),
     providerName: personNameFromEmbed(row.ambassadors),
     occurredAt: row.created_at ?? new Date(0).toISOString(),
+    bookedAt: null,
   };
 }
 

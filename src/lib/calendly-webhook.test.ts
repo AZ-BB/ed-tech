@@ -4,7 +4,10 @@ import { test } from "node:test";
 import {
   parseAdvisorSessionIdFromContext,
   parseAdvisorSessionIdFromTracking,
+  parseApplicationIdFromContext,
+  parseApplicationIdFromTracking,
   resolveAdvisorSessionIdFromWebhook,
+  resolveApplicationIdFromWebhook,
   verifyCalendlyWebhookSignature,
 } from "./calendly-webhook.ts";
 
@@ -40,6 +43,29 @@ test("resolveAdvisorSessionIdFromWebhook prefers utm_content", () => {
     },
   });
   assert.equal(id, 7);
+});
+
+test("parseApplicationIdFromTracking extracts id from utm_content", () => {
+  assert.equal(parseApplicationIdFromTracking("application:42"), 42);
+  assert.equal(parseApplicationIdFromTracking("advisor_session:1"), null);
+});
+
+test("parseApplicationIdFromContext extracts id from a1 text", () => {
+  assert.equal(
+    parseApplicationIdFromContext("Destinations: UK | Application ref: #88 | Advisor: Jane"),
+    88,
+  );
+});
+
+test("resolveApplicationIdFromWebhook prefers utm_content", () => {
+  const id = resolveApplicationIdFromWebhook({
+    event: "invitee.created",
+    payload: {
+      tracking: { utm_content: "application:12" },
+      questions_and_answers: [{ answer: "Application ref: #99" }],
+    },
+  });
+  assert.equal(id, 12);
 });
 
 test("verifyCalendlyWebhookSignature accepts valid signature", () => {
