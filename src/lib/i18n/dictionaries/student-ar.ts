@@ -144,6 +144,11 @@ export const studentAr: {
         "حفظنا بياناتك ضمن جلسات المستشارين. اختر وقتاً أدناه، وستتلقى تأكيداً من Calendly، وسنتابع عبر واتساب عند الحاجة.",
       step3Highlight: "أنت على بعد خطوة من وضوح أكبر في رحلتك الجامعية",
       calendlyTitle: "احجز جلسة مع {name} — Calendly",
+      calendlyUnavailableTitle: "الجدولة غير متاحة",
+      calendlyUnavailableMessage:
+        "لم يربط {name} حساب Calendly بعد. تم حفظ طلب جلستك — سنتواصل معك عندما تصبح الجدولة متاحة.",
+      step3SubtitleNoCalendly:
+        "حفظنا بياناتك ضمن جلسات المستشارين. لم يُعد هذا المستشار الجدولة عبر الإنترنت بعد — سنتواصل معك عندما يمكن ترتيب موعد.",
       summaryTitle: "ملخص الجلسة",
       withAdvisor: "مع {name}",
       duration: "المدة: 45–60 دقيقة",

@@ -51,12 +51,12 @@ export default async function AdvisorSessionsPage() {
         session_coverage,
         questions,
         nationality_country_code,
+        calendly_scheduling_url,
         advisor_tags_joint ( advisor_tags ( text ) ),
         advisor_specializations_countries ( country_code )
       `,
       )
       .eq("is_active", true)
-      .not("calendly_scheduling_url", "is", null)
       .order("last_name"),
     secret.from("countries").select("id, name").order("name"),
   ]);

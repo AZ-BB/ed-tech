@@ -40,7 +40,7 @@ type AdvisorBrief = {
 
 type Props = {
   advisor: AdvisorBrief;
-  calendlySchedulingUrl: string;
+  calendlySchedulingUrl: string | null;
   profileDefaults?: StudentFormDefaults;
 };
 
@@ -67,6 +67,7 @@ export function BookAdvisorSessionClient({
   const [sessionId, setSessionId] = useState<number | null>(null);
 
   const displayName = `${advisor.firstName} ${advisor.lastName}`;
+  const hasCalendly = Boolean(calendlySchedulingUrl?.trim());
 
   const stageLabels: Record<string, string> = useMemo(
     () => ({
@@ -79,7 +80,7 @@ export function BookAdvisorSessionClient({
   );
 
   const calendlyPageUrl = useMemo(() => {
-    if (sessionId == null || !calendlySchedulingUrl.trim()) return "";
+    if (!hasCalendly || sessionId == null || !calendlySchedulingUrl?.trim()) return "";
     const destinationLabel = destinationAlpha2
       ? (COUNTRIES.find((c) => c.alpha2 === destinationAlpha2)?.name ?? destinationAlpha2)
       : "";
@@ -105,6 +106,7 @@ export function BookAdvisorSessionClient({
     displayName,
     email,
     fullName,
+    hasCalendly,
     helpWith,
     sessionId,
     specificUnis,
@@ -168,7 +170,7 @@ export function BookAdvisorSessionClient({
 
   return (
     <div className="-mx-6 min-h-[calc(100dvh-4rem)] bg-[linear-gradient(180deg,#F7FBF8_0%,var(--sand)_280px)] md:-mx-10 lg:-mx-16">
-      <div className="relative mx-auto w-full min-w-0 max-w-[1040px] overflow-x-clip px-6 py-6 pb-16 md:px-10 md:py-8 lg:px-16">
+      <div className="relative mx-auto w-full min-w-0 max-w-[1120px] overflow-x-clip px-6 py-6 pb-16 md:px-10 md:py-8 lg:px-16">
         <Link
           href="/student/advisor-sessions"
           className="mb-5 inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-[50px] border-[1.5px] border-[var(--border)] bg-white px-4 py-2 text-[12px] font-medium text-[var(--text-mid)] no-underline transition hover:border-[var(--text-hint)] hover:-translate-x-0.5 sm:mb-7 sm:px-[18px] sm:text-[13px]"
@@ -177,7 +179,7 @@ export function BookAdvisorSessionClient({
           {bt.backToAdvisors}
         </Link>
 
-        <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
+        <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:gap-5">
           <div className="min-w-0 flex-1">
             {step === 1 ? (
               <>
@@ -189,7 +191,7 @@ export function BookAdvisorSessionClient({
                 </p>
                 <p className="mt-2 text-xs font-medium text-[var(--green)] break-words">{bt.step1Highlight}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {bt.badges.map((label) => (
+                  {bt.badges.filter((label) => hasCalendly || !label.toLowerCase().includes("calendly")).map((label) => (
                     <div
                       key={label}
                       className="flex max-w-full min-w-0 items-center gap-1.5 rounded-[50px] border border-[#d5e8db] bg-[var(--green-pale)] px-3 py-1.5 text-[11px] font-medium text-[var(--green-dark)] sm:px-4 sm:py-2 sm:text-[11.5px]"
@@ -392,9 +394,11 @@ export function BookAdvisorSessionClient({
                   </div>
                   <h2 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)] sm:text-2xl">{bt.step3Title}</h2>
                   <p className="mx-auto mt-2 max-w-[480px] text-[13px] leading-relaxed text-[#8a8a8a] break-words sm:text-[13.5px]">
-                    {bt.step3Subtitle}
+                    {hasCalendly ? bt.step3Subtitle : bt.step3SubtitleNoCalendly}
                   </p>
-                  <p className="mt-2 text-xs font-medium text-[var(--green)] break-words">{bt.step3Highlight}</p>
+                  {hasCalendly ? (
+                    <p className="mt-2 text-xs font-medium text-[var(--green)] break-words">{bt.step3Highlight}</p>
+                  ) : null}
                 </div>
                 {calendlyPageUrl ? (
                   <div className="mt-6 min-w-0 overflow-x-clip rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] sm:mt-8">
@@ -403,6 +407,21 @@ export function BookAdvisorSessionClient({
                       title={bt.calendlyTitle.replace("{name}", displayName)}
                       className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[720px]"
                     />
+                  </div>
+                ) : !hasCalendly ? (
+                  <div className="mt-6 rounded-[var(--radius-lg)] border border-[#E8ECE9] bg-[var(--sand)] px-5 py-8 text-center sm:mt-8 sm:px-8">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" strokeWidth="1.8" aria-hidden>
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <path d="M16 2v4M8 2v4M3 10h18" />
+                      </svg>
+                    </div>
+                    <h3 className="font-[family-name:var(--font-dm-serif)] text-lg text-[var(--text)]">
+                      {bt.calendlyUnavailableTitle}
+                    </h3>
+                    <p className="mx-auto mt-2 max-w-[420px] text-[13px] leading-relaxed text-[var(--text-mid)]">
+                      {bt.calendlyUnavailableMessage.replace("{name}", displayName)}
+                    </p>
                   </div>
                 ) : null}
                 <div className="mt-6 text-center sm:mt-8">
@@ -417,8 +436,8 @@ export function BookAdvisorSessionClient({
             ) : null}
           </div>
 
-          <aside className="w-full min-w-0 shrink-0 lg:w-[360px] lg:sticky lg:top-6">
-            <div className="rounded-2xl border border-[#EEF2EF] bg-[linear-gradient(180deg,var(--white)_0%,#FAFBFA_100%)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-5 md:p-6">
+          <aside className="w-full min-w-0 shrink-0 lg:w-[260px] lg:sticky lg:top-6">
+            <div className="rounded-2xl border border-[#EEF2EF] bg-[linear-gradient(180deg,var(--white)_0%,#FAFBFA_100%)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-4">
               <div className="text-sm font-bold text-[var(--text)]">{bt.summaryTitle}</div>
               <div className="mt-4 flex flex-col gap-3 text-[12.5px] text-[var(--text-mid)]">
                 <div className="flex items-start gap-2.5">

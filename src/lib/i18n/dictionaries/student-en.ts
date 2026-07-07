@@ -123,6 +123,11 @@ export const studentEn = {
         "We've saved your details to advisor sessions. Choose a time below — you'll get a confirmation from Calendly, and we'll follow up on WhatsApp if needed.",
       step3Highlight: "You're one step closer to your university journey",
       calendlyTitle: "Book a session with {name} — Calendly",
+      calendlyUnavailableTitle: "Scheduling unavailable",
+      calendlyUnavailableMessage:
+        "{name} has not connected Calendly yet. Your session request was saved — we'll follow up when scheduling is available.",
+      step3SubtitleNoCalendly:
+        "We've saved your details to advisor sessions. This advisor has not set up online scheduling yet — we'll follow up when a time can be arranged.",
       summaryTitle: "Session summary",
       withAdvisor: "With {name}",
       duration: "Duration: 45–60 min",
