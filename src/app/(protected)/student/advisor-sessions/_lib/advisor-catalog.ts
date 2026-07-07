@@ -18,6 +18,7 @@ export type AdvisorCatalogAdvisor = {
   nationalityCode: string;
   helps: string[];
   searchBlob: string;
+  hasCalendly: boolean;
 };
 
 function jsonToStringList(value: Json | null): string[] {
@@ -49,6 +50,7 @@ export type AdvisorQueryRow = {
   session_coverage: Json | null;
   questions: Json | null;
   nationality_country_code: string;
+  calendly_scheduling_url: string | null;
   advisor_tags_joint: { advisor_tags: { text: string } | null }[] | null;
   advisor_specializations_countries: { country_code: string }[] | null;
 };
@@ -103,6 +105,7 @@ export function mapAdvisorRows(rows: AdvisorQueryRow[]): AdvisorCatalogAdvisor[]
       nationalityCode: r.nationality_country_code.toUpperCase(),
       helps,
       searchBlob,
+      hasCalendly: Boolean(r.calendly_scheduling_url?.trim()),
     };
   });
 }

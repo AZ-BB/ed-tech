@@ -61,28 +61,6 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
 
   const calendlySchedulingUrl = data.calendly_scheduling_url?.trim() || null;
 
-  if (!calendlySchedulingUrl) {
-    return (
-      <div className="-mx-6 min-h-[calc(100dvh-4rem)] bg-[linear-gradient(180deg,#F7FBF8_0%,var(--sand)_280px)] px-6 py-10 md:-mx-10 md:px-10 lg:-mx-16 lg:px-16">
-        <div className="mx-auto max-w-lg rounded-[var(--radius-xl)] border border-[#EEF2EF] bg-white p-8 text-center shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-          <h1 className="font-[family-name:var(--font-dm-serif)] text-2xl tracking-tight text-[var(--text)]">
-            Booking unavailable
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[var(--text-mid)]">
-            {data.first_name} {data.last_name} has not connected Calendly yet. Please choose another
-            advisor or check back later.
-          </p>
-          <a
-            href="/student/advisor-sessions"
-            className="mt-6 inline-flex items-center justify-center rounded-[50px] bg-[var(--green)] px-6 py-3 text-sm font-semibold text-white no-underline hover:bg-[var(--green-dark)]"
-          >
-            Back to advisors
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <BookAdvisorSessionClient
       advisor={{
