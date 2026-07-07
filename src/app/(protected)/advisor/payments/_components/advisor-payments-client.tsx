@@ -1,6 +1,7 @@
 "use client";
 
 import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
+import { sendAdvisorPostAdmissionPaymentRequest } from "@/actions/advisor-post-admission-payments";
 import type {
   AdvisorPaymentRequestStatusFilter,
   AdvisorPaymentsPanelProps,
@@ -8,6 +9,10 @@ import type {
   AdvisorPayoutStatusFilter,
 } from "@/app/(protected)/advisor/payments/_lib/fetch-advisor-payments-page";
 import { SendPaymentRequestDialog } from "@/components/application-support/send-payment-request-dialog";
+import {
+  SendPostAdmissionPaymentRequestDialog,
+  type PostAdmissionSendPaymentRequestInput,
+} from "@/components/post-admission-support/send-post-admission-payment-request-dialog";
 import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
@@ -97,6 +102,7 @@ export function AdvisorPaymentsClient({
   fromEmailDisplay,
   availablePlans,
   paymentRequestApplications,
+  paymentRequestPostAdmissionCases,
   paymentRequests,
   payouts,
 }: AdvisorPaymentsPanelProps) {
@@ -107,8 +113,14 @@ export function AdvisorPaymentsClient({
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(paymentRequests.search);
   const [requestPaymentOpen, setRequestPaymentOpen] = useState(false);
+  const [requestPostAdmissionPaymentOpen, setRequestPostAdmissionPaymentOpen] =
+    useState(false);
   const [requestPaymentError, setRequestPaymentError] = useState<string | null>(null);
   const [requestPaymentMessage, setRequestPaymentMessage] = useState<string | null>(null);
+
+  const hasApplicationPaymentTargets = paymentRequestApplications.length > 0;
+  const hasPostAdmissionPaymentTargets =
+    paymentRequestPostAdmissionCases.length > 0;
 
   useEffect(() => {
     setTab(initialTab);
@@ -206,6 +218,11 @@ export function AdvisorPaymentsClient({
     setRequestPaymentOpen(true);
   }
 
+  function handleOpenPostAdmissionRequestPayment() {
+    setRequestPaymentError(null);
+    setRequestPostAdmissionPaymentOpen(true);
+  }
+
   function handleSendRequestPayment(input: SendPaymentRequestInput) {
     setRequestPaymentError(null);
     startTransition(async () => {
@@ -220,6 +237,38 @@ export function AdvisorPaymentsClient({
       );
       router.refresh();
     });
+  }
+
+  function handleSendPostAdmissionRequestPayment(
+    input: PostAdmissionSendPaymentRequestInput,
+  ) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendAdvisorPostAdmissionPaymentRequest(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setRequestPostAdmissionPaymentOpen(false);
+      setRequestPaymentMessage(
+        `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function paymentRequestDetailHref(row: (typeof paymentRequests.rows)[number]) {
+    if (row.kind === "post_admission") {
+      return `/advisor/post-admission/${row.referenceId}?tab=payments`;
+    }
+    return `/advisor/applications/${row.referenceId}?tab=payments`;
+  }
+
+  function payoutDetailHref(row: (typeof payouts.rows)[number]) {
+    if (row.kind === "post_admission") {
+      return `/advisor/post-admission/${row.referenceId}?tab=payouts`;
+    }
+    return `/advisor/applications/${row.referenceId}?tab=payouts`;
   }
 
   return (
@@ -296,15 +345,33 @@ export function AdvisorPaymentsClient({
                 {requestsCountLabel}
               </span>
             </div>
-            {paymentRequestApplications.length > 0 ? (
-              <button
-                type="button"
-                onClick={handleOpenRequestPayment}
-                disabled={isPending}
-                className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3.5 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Request payment
-              </button>
+            {hasApplicationPaymentTargets || hasPostAdmissionPaymentTargets ? (
+              <div className="flex flex-wrap gap-2">
+                {hasApplicationPaymentTargets ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenRequestPayment}
+                    disabled={isPending}
+                    className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3.5 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {hasPostAdmissionPaymentTargets
+                      ? "Request application payment"
+                      : "Request payment"}
+                  </button>
+                ) : null}
+                {hasPostAdmissionPaymentTargets ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenPostAdmissionRequestPayment}
+                    disabled={isPending}
+                    className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--green-dark)] transition-colors hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {hasApplicationPaymentTargets
+                      ? "Request post-admission payment"
+                      : "Request payment"}
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
@@ -320,7 +387,8 @@ export function AdvisorPaymentsClient({
                 <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   <th className="px-4 py-3">Student</th>
                   <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Application</th>
+                  <th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3">Reference</th>
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Due date</th>
                   <th className="px-4 py-3">Status</th>
@@ -332,21 +400,21 @@ export function AdvisorPaymentsClient({
                 {paymentRequests.rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-4 py-10 text-center text-[var(--text-light)]"
                     >
                       {paymentRequests.search.trim()
                         ? "No payment requests match your search."
                         : paymentRequests.status === "pending"
-                          ? "No pending payment requests for your assigned applications."
+                          ? "No pending payment requests for your assigned applications or post-admission cases."
                           : paymentRequests.status === "completed"
                             ? "No completed payment requests yet."
-                            : "No payment requests sent yet for your assigned applications."}
+                            : "No payment requests sent yet for your assigned applications or post-admission cases."}
                     </td>
                   </tr>
                 ) : (
                   paymentRequests.rows.map((row) => {
-                    const detailHref = `/advisor/applications/${row.applicationId}?tab=payments`;
+                    const detailHref = paymentRequestDetailHref(row);
 
                     function openDetail() {
                       router.push(detailHref);
@@ -378,8 +446,13 @@ export function AdvisorPaymentsClient({
                         <td className="px-4 py-3 text-[var(--text-light)]">
                           {row.studentEmail}
                         </td>
+                        <td className="px-4 py-3 text-[var(--text-mid)]">
+                          {row.kind === "post_admission"
+                            ? "Post-admission"
+                            : "Application"}
+                        </td>
                         <td className="px-4 py-3 font-medium text-[var(--green-dark)]">
-                          #{row.applicationId}
+                          {row.referenceLabel}
                         </td>
                         <td className="px-4 py-3 font-semibold text-[var(--text)]">
                           AED {row.amount.toLocaleString()}
@@ -473,7 +546,8 @@ export function AdvisorPaymentsClient({
               <table className="w-full min-w-[860px] border-collapse text-[13px]">
                 <thead>
                   <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                    <th className="px-4 py-3">Application</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Reference</th>
                     <th className="px-4 py-3">Student</th>
                     <th className="px-4 py-3">Payment (AED)</th>
                     <th className="px-4 py-3">Payout %</th>
@@ -486,7 +560,7 @@ export function AdvisorPaymentsClient({
                   {payouts.rows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={8}
                         className="px-4 py-10 text-center text-[var(--text-light)]"
                       >
                         {payouts.status === "pending"
@@ -498,7 +572,7 @@ export function AdvisorPaymentsClient({
                     </tr>
                   ) : (
                     payouts.rows.map((row) => {
-                      const detailHref = `/advisor/applications/${row.applicationId}?tab=payouts`;
+                      const detailHref = payoutDetailHref(row);
 
                       function openDetail() {
                         router.push(detailHref);
@@ -517,10 +591,15 @@ export function AdvisorPaymentsClient({
                           }}
                           tabIndex={0}
                           role="link"
-                          aria-label={`View payout for application #${row.applicationId}`}
+                          aria-label={`View payout for ${row.referenceLabel}`}
                         >
+                          <td className="px-4 py-3 text-[var(--text-mid)]">
+                            {row.kind === "post_admission"
+                              ? "Post-admission"
+                              : "Application"}
+                          </td>
                           <td className="px-4 py-3 font-medium text-[var(--green-dark)]">
-                            #{row.applicationId}
+                            {row.referenceLabel}
                           </td>
                           <td className="px-4 py-3 text-[var(--text-mid)]">
                             {row.studentName ?? "—"}
@@ -575,6 +654,20 @@ export function AdvisorPaymentsClient({
         senderEmail={advisorEmail}
         fromEmailDisplay={fromEmailDisplay}
         onSubmit={handleSendRequestPayment}
+        isSubmitting={isPending}
+        error={requestPaymentError}
+      />
+
+      <SendPostAdmissionPaymentRequestDialog
+        open={requestPostAdmissionPaymentOpen}
+        onClose={() => {
+          if (!isPending) setRequestPostAdmissionPaymentOpen(false);
+        }}
+        caseOptions={paymentRequestPostAdmissionCases}
+        senderName={advisorName}
+        senderEmail={advisorEmail}
+        fromEmailDisplay={fromEmailDisplay}
+        onSubmit={handleSendPostAdmissionRequestPayment}
         isSubmitting={isPending}
         error={requestPaymentError}
       />

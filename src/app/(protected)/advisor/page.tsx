@@ -2,10 +2,12 @@ import { fetchAdvisorSessionProfile } from "@/lib/advisor-access";
 
 import { AdvisorDashboard } from "./_components/advisor-dashboard";
 import { fetchAdvisorDashboard } from "./_lib/fetch-advisor-dashboard";
+import { fetchAdvisorTodaysSessionsAndCalls } from "./sessions-and-calls/_lib/fetch-advisor-sessions-and-calls-page";
 
 export default async function AdvisorPage() {
-  const [data, session] = await Promise.all([
+  const [data, todaysSessionsAndCalls, session] = await Promise.all([
     fetchAdvisorDashboard(),
+    fetchAdvisorTodaysSessionsAndCalls(),
     fetchAdvisorSessionProfile(),
   ]);
 
@@ -22,6 +24,7 @@ export default async function AdvisorPage() {
   return (
     <AdvisorDashboard
       data={data}
+      todaysSessionsAndCalls={todaysSessionsAndCalls}
       welcome={{ firstName, displayName, title }}
     />
   );

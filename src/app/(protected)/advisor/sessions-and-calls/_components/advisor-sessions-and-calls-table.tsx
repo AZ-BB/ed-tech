@@ -2,8 +2,13 @@
 
 import type {
   AdvisorSessionsAndCallsPanelProps,
+  AdvisorSessionsAndCallsRowKind,
   AdvisorSessionsAndCallsTypeFilter,
-} from "@/app/(protected)/advisor/sessions-and-calls/_lib/fetch-advisor-sessions-and-calls-page";
+} from "@/app/(protected)/advisor/sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
+import {
+  advisorSessionsAndCallsKindLabel,
+  advisorSessionsAndCallsRowHref,
+} from "@/app/(protected)/advisor/sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -16,7 +21,8 @@ const TYPE_OPTIONS: {
   label: string;
 }[] = [
   { value: "all", label: "All" },
-  { value: "application_lead", label: "Lead call" },
+  { value: "application_lead", label: "Application lead" },
+  { value: "post_admission_lead", label: "Post-admission lead" },
   { value: "advisor_session", label: "Advisor session" },
 ];
 
@@ -30,20 +36,10 @@ function formatMeetingDateTime(iso: string): string {
   }
 }
 
-function kindBadgeClass(kind: "application_lead" | "advisor_session"): string {
-  return kind === "application_lead"
-    ? "bg-[#FFF3E0] text-[#E67E22]"
-    : "bg-[#E8F5EE] text-[#2D6A4F]";
-}
-
-function kindLabel(kind: "application_lead" | "advisor_session"): string {
-  return kind === "application_lead" ? "Lead call" : "Advisor session";
-}
-
-function rowHref(kind: "application_lead" | "advisor_session", id: string): string {
-  return kind === "application_lead"
-    ? `/advisor/applications/${id}`
-    : `/advisor/sessions-and-calls/session/${id}`;
+function kindBadgeClass(kind: AdvisorSessionsAndCallsRowKind): string {
+  if (kind === "application_lead") return "bg-[#FFF3E0] text-[#E67E22]";
+  if (kind === "post_admission_lead") return "bg-[#E8F0FF] text-[#1D4ED8]";
+  return "bg-[#E8F5EE] text-[#2D6A4F]";
 }
 
 function emptyMessage(
@@ -54,7 +50,10 @@ function emptyMessage(
     return "No sessions or calls match your search.";
   }
   if (type === "application_lead") {
-    return "No scheduled lead calls right now.";
+    return "No scheduled application lead calls right now.";
+  }
+  if (type === "post_admission_lead") {
+    return "No scheduled post-admission lead calls right now.";
   }
   if (type === "advisor_session") {
     return "No booked advisor sessions right now.";
@@ -124,8 +123,8 @@ export function AdvisorSessionsAndCallsTable({
     [pathname, router, searchParams, type],
   );
 
-  function openRow(kind: "application_lead" | "advisor_session", id: string) {
-    router.push(rowHref(kind, id));
+  function openRow(kind: AdvisorSessionsAndCallsRowKind, id: string) {
+    router.push(advisorSessionsAndCallsRowHref(kind, id));
   }
 
   return (
@@ -216,7 +215,7 @@ export function AdvisorSessionsAndCallsTable({
                   }}
                   tabIndex={0}
                   role="link"
-                  aria-label={`Open ${kindLabel(row.kind)} for ${row.studentName}`}
+                  aria-label={`Open ${advisorSessionsAndCallsKindLabel(row.kind)} for ${row.studentName}`}
                 >
                   <td className="px-4 py-3">
                     <div className="font-semibold text-[var(--green-dark)]">
@@ -230,7 +229,7 @@ export function AdvisorSessionsAndCallsTable({
                     <span
                       className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${kindBadgeClass(row.kind)}`}
                     >
-                      {kindLabel(row.kind)}
+                      {advisorSessionsAndCallsKindLabel(row.kind)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-[var(--text-mid)]">

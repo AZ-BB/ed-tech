@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { format } from "date-fns";
 
+import type { AdvisorSessionsAndCallsRow } from "../sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 import {
-  APPLICATION_CALL_TYPE_LABEL,
-  isApplicationCallType,
-} from "@/lib/application-call-constants";
+  advisorSessionsAndCallsKindLabel,
+  advisorSessionsAndCallsRowHref,
+} from "../sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 
-import type { AdvisorDashboardPayload, AdvisorDashboardTodaysCall } from "../_lib/parse-advisor-dashboard";
+import type { AdvisorDashboardPayload } from "../_lib/parse-advisor-dashboard";
 
 import { AdvisorDashboardKpiGrid } from "./advisor-dashboard-kpi-grid";
 
@@ -24,6 +26,7 @@ type AdvisorDashboardWelcome = {
 
 type Props = {
   data: AdvisorDashboardPayload;
+  todaysSessionsAndCalls: AdvisorSessionsAndCallsRow[];
   welcome: AdvisorDashboardWelcome;
 };
 
@@ -37,25 +40,20 @@ function formatTodayHeading(count: number): string {
   return `${dateLabel} · ${count} scheduled`;
 }
 
-function resolveCallLabel(call: AdvisorDashboardTodaysCall): string {
-  if (call.source === "advisor_session") return "Advisor session";
-  if (isApplicationCallType(call.callType)) {
-    return APPLICATION_CALL_TYPE_LABEL[call.callType];
+function formatMeetingTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "All day";
+    return format(d, "h:mm a");
+  } catch {
+    return "All day";
   }
-  return call.callType || "Call";
 }
 
-function buildCallMeta(call: AdvisorDashboardTodaysCall): string {
-  const label = resolveCallLabel(call);
-  const parts: string[] = [label];
-
-  if (call.hasPaid && call.planUniversitiesCount && call.planUniversitiesCount > 0) {
-    parts.push(`Active package (${call.planUniversitiesCount} unis)`);
-  } else {
-    if (call.schoolName) parts.push(call.schoolName);
-    if (call.grade) parts.push(`Grade ${call.grade}`);
-  }
-
+function buildSessionMeta(row: AdvisorSessionsAndCallsRow): string {
+  const parts = [advisorSessionsAndCallsKindLabel(row.kind)];
+  if (row.schoolName && row.schoolName !== "—") parts.push(row.schoolName);
+  if (row.subtitle) parts.push(row.subtitle);
   return parts.join(" · ");
 }
 
@@ -91,8 +89,8 @@ function deadlineDotClass(daysUntil: number): string {
   return "bg-[#52B788]";
 }
 
-export function AdvisorDashboard({ data, welcome }: Props) {
-  const { kpis, conversionMetrics, todaysCalls, awaitingPayment, upcomingDeadlines } = data;
+export function AdvisorDashboard({ data, todaysSessionsAndCalls, welcome }: Props) {
+  const { kpis, conversionMetrics, awaitingPayment, upcomingDeadlines } = data;
 
   return (
     <div style={{ fontFamily: fontSans }}>
@@ -124,41 +122,42 @@ export function AdvisorDashboard({ data, welcome }: Props) {
             <div>
               <div className="text-[14px] font-bold text-[#1a1a1a]">Today&apos;s calls</div>
               <div className="text-[12px] font-medium text-[#6a6a6a]">
-                {formatTodayHeading(todaysCalls.length)}
+                {formatTodayHeading(todaysSessionsAndCalls.length)}
               </div>
             </div>
-            <Link href="/advisor/applications" className={btnGhostClassName}>
+            <Link href="/advisor/sessions-and-calls" className={btnGhostClassName}>
               View all →
             </Link>
           </div>
 
-          {todaysCalls.length === 0 ? (
+          {todaysSessionsAndCalls.length === 0 ? (
             <div className="py-8 text-center text-[13px] text-[#6a6a6a]">
-              No calls scheduled for today
+              No calls or sessions scheduled for today
             </div>
           ) : (
-            todaysCalls.map((call) => (
-              <div
-                key={`${call.source}-${call.id}`}
-                className="flex items-center gap-3 border-b border-[#ece9e4] py-[11px] last:border-b-0"
+            todaysSessionsAndCalls.map((row) => (
+              <Link
+                key={`${row.kind}-${row.id}`}
+                href={advisorSessionsAndCallsRowHref(row.kind, row.id)}
+                className="flex items-center gap-3 border-b border-[#ece9e4] py-[11px] last:border-b-0 transition-colors hover:bg-[#faf9f4]"
               >
                 <div className="min-w-[62px]">
                   <div className="text-[12px] font-bold text-[#1B4332]">
-                    {call.time ?? "All day"}
+                    {formatMeetingTime(row.meetingAt)}
                   </div>
-                  {call.durationMinutes ? (
-                    <div className="text-[10.5px] font-medium text-[#a0a0a0]">
-                      {call.durationMinutes} min
+                  {row.isOverdue ? (
+                    <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#d97706]">
+                      Overdue
                     </div>
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-[2px] text-[13.5px] font-semibold text-[#1a1a1a]">
-                    {call.studentName}
+                    {row.studentName}
                   </div>
-                  <div className="text-[11.5px] text-[#6a6a6a]">{buildCallMeta(call)}</div>
+                  <div className="text-[11.5px] text-[#6a6a6a]">{buildSessionMeta(row)}</div>
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </div>

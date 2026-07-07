@@ -49,3 +49,8 @@ export async function buildApplicationPaymentUrl(token: string): Promise<string>
   const trimmed = token.trim();
   return `${await getPublicSiteBaseUrl()}/application-support/pay/${encodeURIComponent(trimmed)}`;
 }
+
+export async function buildPostAdmissionPaymentUrl(token: string): Promise<string> {
+  const trimmed = token.trim();
+  return `${await getPublicSiteBaseUrl()}/post-admission-support/pay/${encodeURIComponent(trimmed)}`;
+}

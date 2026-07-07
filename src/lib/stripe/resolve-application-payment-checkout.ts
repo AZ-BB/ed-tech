@@ -113,7 +113,7 @@ export async function resolveApplicationPaymentCheckout(
   }
 
   if (isPaymentOverdue(payment)) {
-    await expireOverduePendingPayments(secret, { applicationId: payment.application_id });
+    await expireOverduePendingPayments(secret, { applicationId: app.id });
     return {
       type: "error",
       message: "This payment link has expired. Please contact your advisor for a new request.",

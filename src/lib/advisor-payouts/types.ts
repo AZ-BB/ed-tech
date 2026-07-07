@@ -39,6 +39,9 @@ export type AdvisorPayoutsSummary = {
 
 export type AdvisorPayoutTableRow = ApplicationPayoutRow & {
   studentName: string | null;
+  kind: "application" | "post_admission";
+  referenceId: number;
+  referenceLabel: string;
 };
 
 export function calculatePayoutAmount(paymentAmount: number, percentage: number): number {

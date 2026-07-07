@@ -5,6 +5,7 @@ export const APPLICATION_CALL_TYPES = [
   "essay_review_session",
   "parent_consultation",
   "uni_shortlist_call",
+  "post_admission_session",
 ] as const;
 
 export type ApplicationCallType = (typeof APPLICATION_CALL_TYPES)[number];
@@ -16,6 +17,7 @@ export const APPLICATION_CALL_TYPE_LABEL: Record<ApplicationCallType, string> = 
   essay_review_session: "Essay review session",
   parent_consultation: "Parent consultation",
   uni_shortlist_call: "Uni shortlist call",
+  post_admission_session: "Post-admission session",
 };
 
 export const APPLICATION_CALL_STATUSES = [

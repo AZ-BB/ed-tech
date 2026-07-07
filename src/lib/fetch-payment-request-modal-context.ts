@@ -5,7 +5,7 @@ import {
   resolveApplicationUniversitiesTotal,
 } from "@/lib/application-package-data";
 import { resolvePaymentFromEmailDisplay } from "@/lib/resend/application-payment-request-email";
-import { hasActivePendingPaymentRequest } from "@/lib/payment-request-utils";
+import { resolveActivePendingPaymentRequest } from "@/lib/payment-request-utils";
 import type { SendPaymentRequestApplicationOption } from "@/components/application-support/send-payment-request-dialog";
 import type { createSupabaseServerClient } from "@/utils/supabase-server";
 
@@ -77,6 +77,7 @@ export async function buildPaymentRequestModalContext(
     .filter((payment) => payment.status === "paid")
     .reduce((sum, payment) => sum + payment.amount, 0);
   const totalPaymentsAed = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingPayment = resolveActivePendingPaymentRequest(payments);
 
   const availablePlans = await fetchActiveApplicationPlans(client);
 
@@ -95,7 +96,9 @@ export async function buildPaymentRequestModalContext(
       universitiesTotal,
       totalPaid,
       totalPaymentsAed,
-      hasPendingPaymentRequest: hasActivePendingPaymentRequest(payments),
+      hasPendingPaymentRequest: pendingPayment != null,
+      pendingPaymentAmountAed: pendingPayment?.amount ?? null,
+      pendingPaymentDueDate: pendingPayment?.dueDate ?? null,
       label: `${studentName} — Application #${application.id}`,
     },
   };

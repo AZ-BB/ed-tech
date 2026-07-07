@@ -1,0 +1,1310 @@
+/* Post-admission support — matches post_admission_support.html mockup (content only) */
+
+#post-admission-support-scope {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+#post-admission-support-scope .page {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 0 48px;
+  width: 100%;
+}
+
+/* HERO */
+#post-admission-support-scope .pas-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 36px;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: 32px 40px;
+  min-height: 0;
+  margin-bottom: 28px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+#post-admission-support-scope .pas-hero::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -120px;
+  width: 540px;
+  height: 540px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--green-pale) 0%,
+    rgba(232, 245, 238, 0.6) 40%,
+    transparent 70%
+  );
+  z-index: -1;
+}
+
+#post-admission-support-scope .pas-hero::after {
+  content: "";
+  position: absolute;
+  top: 32px;
+  bottom: 32px;
+  left: 24px;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--green-bright) 0%,
+    var(--green) 50%,
+    transparent 100%
+  );
+  border-radius: 2px;
+  z-index: -1;
+}
+
+#post-admission-support-scope .pas-hero-left {
+  padding-left: 8px;
+}
+
+#post-admission-support-scope .pas-hero-title {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  font-weight: 400;
+  font-size: 46px;
+  line-height: 1.05;
+  letter-spacing: -0.8px;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+
+#post-admission-support-scope .pas-hero-title em {
+  font-style: italic;
+  color: var(--green);
+  font-weight: 400;
+}
+
+#post-admission-support-scope .pas-hero-sub {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-mid);
+  max-width: 480px;
+  margin-bottom: 28px;
+}
+
+#post-admission-support-scope .pas-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+#post-admission-support-scope .pas-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: var(--green);
+  color: var(--white);
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(45, 106, 79, 0.18);
+}
+
+#post-admission-support-scope .pas-hero-cta:hover:not(:disabled) {
+  background: var(--green-dark);
+  transform: translateY(-1px);
+}
+
+#post-admission-support-scope .pas-hero-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#post-admission-support-scope .pas-hero-cta svg {
+  width: 14px;
+  height: 14px;
+}
+
+#post-admission-support-scope .pas-hero-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-mid);
+  padding: 12px 4px;
+  transition: color 0.15s, gap 0.15s;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+}
+
+#post-admission-support-scope .pas-hero-cta-secondary:hover {
+  color: var(--green-dark);
+  gap: 10px;
+}
+
+#post-admission-support-scope .pas-hero-cta-secondary svg {
+  width: 13px;
+  height: 13px;
+}
+
+#post-admission-support-scope .pas-hero-right {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+#post-admission-support-scope .pas-hero-preview {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  padding: 24px 26px;
+  width: 100%;
+  max-width: 340px;
+  box-shadow:
+    0 12px 40px rgba(15, 30, 20, 0.08),
+    0 1px 3px rgba(15, 30, 20, 0.04);
+  position: relative;
+}
+
+#post-admission-support-scope .pas-hero-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+#post-admission-support-scope .pas-hero-preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+#post-admission-support-scope .pas-hero-preview-count {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  font-size: 22px;
+  color: var(--green);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+#post-admission-support-scope .pas-hero-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+#post-admission-support-scope .pas-hero-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  position: relative;
+}
+
+#post-admission-support-scope .pas-hero-preview-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 32px;
+  height: 14px;
+  width: 1px;
+  background: var(--border-light);
+}
+
+#post-admission-support-scope .pas-hero-preview-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--green-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--green);
+  border: 1.5px solid var(--white);
+  outline: 1px solid var(--border-light);
+}
+
+#post-admission-support-scope .pas-hero-preview-dot svg {
+  width: 11px;
+  height: 11px;
+}
+
+#post-admission-support-scope .pas-hero-preview-text {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+#post-admission-support-scope .pas-hero-preview-badge {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  background: var(--green-dark);
+  color: var(--white);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(15, 30, 20, 0.15);
+}
+
+#post-admission-support-scope .pas-hero-preview-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-bright);
+  animation: pasHeroPulse 2s ease-in-out infinite;
+}
+
+@keyframes pasHeroPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Calendly booking modal */
+.pas-calendly-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(27, 67, 50, 0.4);
+  padding: 20px;
+  backdrop-filter: blur(3px);
+}
+
+.pas-calendly-modal {
+  display: flex;
+  max-height: 92vh;
+  width: 100%;
+  max-width: 900px;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 24px 64px rgba(15, 30, 20, 0.18);
+}
+
+.pas-calendly-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-light);
+  padding: 18px 22px;
+}
+
+.pas-calendly-modal-title {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.pas-calendly-modal-close {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  padding: 6px;
+  color: var(--text-light);
+  transition: background 0.15s, color 0.15s;
+}
+
+.pas-calendly-modal-close:hover {
+  background: var(--cream);
+  color: var(--text);
+}
+
+.pas-calendly-modal-body {
+  flex: 1;
+  overflow: auto;
+  background: white;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pas-calendly-modal-embed {
+  min-height: 520px;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: white;
+}
+
+.pas-calendly-modal-loading {
+  display: flex;
+  min-height: 520px;
+  align-items: center;
+  justify-content: center;
+  background: white;
+}
+
+.pas-calendly-modal-already-booked {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 28px;
+  text-align: center;
+}
+
+.pas-calendly-modal-already-booked-message {
+  max-width: 460px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-mid);
+}
+
+.pas-calendly-modal-already-booked-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: var(--green);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pas-calendly-modal-already-booked-cta:hover {
+  background: var(--green-dark);
+}
+
+#post-admission-support-scope .pas-error {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e74c3c;
+}
+
+#post-admission-support-scope .pas-unavailable {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+/* Services section */
+#post-admission-support-scope .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+#post-admission-support-scope .section-header h2 {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.2px;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+#post-admission-support-scope .section-meta {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+#post-admission-support-scope .service-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+#post-admission-support-scope .service-grid a {
+  text-decoration: none;
+  color: inherit;
+}
+
+#post-admission-support-scope .service-card {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 24px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.15s;
+  cursor: pointer;
+  min-height: 200px;
+  height: 100%;
+}
+
+#post-admission-support-scope .service-card:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+#post-admission-support-scope .service-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--green-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+#post-admission-support-scope .service-card:hover .service-icon {
+  background: var(--green);
+  color: var(--white);
+}
+
+#post-admission-support-scope .service-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+#post-admission-support-scope .service-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#post-admission-support-scope .service-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  letter-spacing: -0.1px;
+}
+
+#post-admission-support-scope .service-desc {
+  font-size: 13px;
+  color: var(--text-light);
+  line-height: 1.55;
+}
+
+#post-admission-support-scope .service-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--green);
+  align-self: flex-start;
+  transition: gap 0.15s;
+  margin-top: 4px;
+}
+
+#post-admission-support-scope .service-card:hover .service-cta {
+  gap: 10px;
+  color: var(--green-dark);
+}
+
+#post-admission-support-scope .service-cta svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 0.15s;
+}
+
+#post-admission-support-scope .service-card:hover .service-cta svg {
+  transform: translateX(2px);
+}
+
+/* Help card */
+#post-admission-support-scope .help-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  margin-top: 28px;
+  border: none;
+  background: none;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+#post-admission-support-scope .help-card-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+#post-admission-support-scope .help-card {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+#post-admission-support-scope .help-card-link:hover .help-card {
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+#post-admission-support-scope .help-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--green-bg);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#post-admission-support-scope .help-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+#post-admission-support-scope .help-left {
+  flex: 1;
+  min-width: 0;
+}
+
+#post-admission-support-scope .help-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+#post-admission-support-scope .help-sub {
+  font-size: 12.5px;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+#post-admission-support-scope .help-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 18px;
+  background: var(--green);
+  color: var(--white);
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+#post-admission-support-scope .help-card-link:hover .help-cta {
+  background: var(--green-dark);
+}
+
+@media (max-width: 920px) {
+  #post-admission-support-scope .pas-hero {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 18px 24px;
+  }
+
+  #post-admission-support-scope .pas-hero::after {
+    display: none;
+  }
+
+  #post-admission-support-scope .pas-hero-left {
+    padding-left: 0;
+  }
+
+  #post-admission-support-scope .pas-hero-right {
+    justify-content: flex-start;
+  }
+
+  #post-admission-support-scope .pas-hero-preview {
+    max-width: none;
+  }
+
+  #post-admission-support-scope .pas-hero-title {
+    font-size: 40px;
+  }
+
+  #post-admission-support-scope .service-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  #post-admission-support-scope .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  #post-admission-support-scope .pas-detail-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  #post-admission-support-scope .pas-detail-aside {
+    position: static;
+    order: -1;
+  }
+
+  #post-admission-support-scope .pas-detail-hero {
+    padding: 32px 28px 28px;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  #post-admission-support-scope .pas-detail-hero-icon {
+    order: -1;
+  }
+
+  #post-admission-support-scope .pas-detail-title {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pas-calendly-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .pas-calendly-modal {
+    max-height: 100dvh;
+    height: min(100dvh, 100%);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .pas-calendly-modal-header {
+    padding: 14px 16px;
+  }
+
+  .pas-calendly-modal-title {
+    font-size: 17px;
+    line-height: 1.35;
+    padding-right: 8px;
+  }
+
+  .pas-calendly-modal-embed,
+  .pas-calendly-modal-loading {
+    min-height: min(72dvh, 620px);
+  }
+}
+
+@media (max-width: 560px) {
+  #post-admission-support-scope .page {
+    padding-bottom: 32px;
+  }
+
+  #post-admission-support-scope .pas-hero {
+    padding: 16px 18px;
+    border-radius: 18px;
+    gap: 22px;
+  }
+
+  #post-admission-support-scope .pas-hero-title {
+    font-size: 32px;
+    letter-spacing: -0.5px;
+  }
+
+  #post-admission-support-scope .pas-hero-sub {
+    font-size: 15px;
+    max-width: none;
+  }
+
+  #post-admission-support-scope .pas-hero-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  #post-admission-support-scope .pas-hero-cta,
+  #post-admission-support-scope .pas-hero-cta-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  #post-admission-support-scope .pas-hero-cta-secondary {
+    padding: 10px 4px;
+  }
+
+  #post-admission-support-scope .pas-hero-preview {
+    padding: 18px;
+  }
+
+  #post-admission-support-scope .pas-hero-preview-badge {
+    right: 8px;
+    top: -10px;
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  #post-admission-support-scope .service-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  #post-admission-support-scope .service-card {
+    min-height: 0;
+    padding: 20px 18px 18px;
+  }
+
+  #post-admission-support-scope .section-header h2 {
+    font-size: 22px;
+  }
+
+  #post-admission-support-scope .help-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+
+  #post-admission-support-scope .help-cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  #post-admission-support-scope .pas-detail-breadcrumb {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  #post-admission-support-scope .pas-detail-hero {
+    padding: 20px 18px 18px;
+    border-radius: 18px;
+    margin-bottom: 20px;
+  }
+
+  #post-admission-support-scope .pas-detail-title {
+    font-size: 26px;
+  }
+
+  #post-admission-support-scope .pas-detail-summary {
+    font-size: 14.5px;
+  }
+
+  #post-admission-support-scope .pas-detail-main {
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  #post-admission-support-scope .pas-detail-aside-card {
+    padding: 20px 18px;
+    border-radius: 16px;
+  }
+
+  #post-admission-support-scope .pas-detail-aside-title {
+    font-size: 18px;
+  }
+
+  #post-admission-support-scope .pas-detail-section {
+    margin-bottom: 28px;
+  }
+
+  #post-admission-support-scope .pas-detail-include-item {
+    padding: 12px 14px;
+  }
+
+  #post-admission-support-scope .pas-detail-include-text,
+  #post-admission-support-scope .pas-detail-step-desc,
+  #post-admission-support-scope .pas-detail-faq-a {
+    font-size: 13px;
+  }
+
+  #post-admission-support-scope .pas-detail-faq-q {
+    font-size: 14px;
+    padding: 14px 0;
+  }
+
+  #post-admission-support-scope .pas-detail-partner {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* Service detail sub-pages */
+#post-admission-support-scope .pas-detail-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 20px;
+  transition: color 0.15s;
+  text-decoration: none;
+}
+
+#post-admission-support-scope .pas-detail-breadcrumb:hover {
+  color: var(--green);
+}
+
+#post-admission-support-scope .pas-detail-breadcrumb svg {
+  width: 14px;
+  height: 14px;
+}
+
+#post-admission-support-scope .pas-detail-hero {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 28px;
+  padding: 40px 48px 36px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: start;
+}
+
+#post-admission-support-scope .pas-detail-hero::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--green-bg) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+#post-admission-support-scope .pas-detail-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 580px;
+  min-width: 0;
+}
+
+#post-admission-support-scope .pas-detail-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#post-admission-support-scope .pas-detail-eyebrow::before {
+  content: "";
+  width: 20px;
+  height: 1px;
+  background: var(--green);
+}
+
+#post-admission-support-scope .pas-detail-title {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: -0.4px;
+  margin-bottom: 14px;
+  color: var(--text);
+}
+
+#post-admission-support-scope .pas-detail-summary {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+#post-admission-support-scope .pas-detail-hero-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: var(--green-bg);
+  border: 1px solid #cfe7d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green-dark);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+#post-admission-support-scope .pas-detail-hero-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+#post-admission-support-scope .pas-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+#post-admission-support-scope .pas-detail-main {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 36px 40px;
+}
+
+#post-admission-support-scope .pas-detail-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 24px;
+}
+
+#post-admission-support-scope .pas-detail-section {
+  margin-bottom: 36px;
+}
+
+#post-admission-support-scope .pas-detail-section:last-child {
+  margin-bottom: 0;
+}
+
+#post-admission-support-scope .pas-detail-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#post-admission-support-scope .pas-detail-section-title::before {
+  content: "";
+  width: 16px;
+  height: 1px;
+  background: var(--green);
+}
+
+#post-admission-support-scope .pas-detail-includes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#post-admission-support-scope .pas-detail-include-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--green-pale);
+  border-radius: var(--radius);
+}
+
+#post-admission-support-scope .pas-detail-include-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+#post-admission-support-scope .pas-detail-include-check svg {
+  width: 12px;
+  height: 12px;
+}
+
+#post-admission-support-scope .pas-detail-include-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+#post-admission-support-scope .pas-detail-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#post-admission-support-scope .pas-detail-step {
+  display: flex;
+  gap: 16px;
+  padding: 14px 0;
+  position: relative;
+}
+
+#post-admission-support-scope .pas-detail-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 42px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--border);
+}
+
+#post-admission-support-scope .pas-detail-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1.5px solid var(--green);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  z-index: 1;
+}
+
+#post-admission-support-scope .pas-detail-step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+#post-admission-support-scope .pas-detail-step-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+#post-admission-support-scope .pas-detail-step-desc {
+  font-size: 13.5px;
+  color: var(--text-light);
+  line-height: 1.6;
+  margin: 0;
+}
+
+#post-admission-support-scope .pas-detail-partners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#post-admission-support-scope .pas-detail-partner {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--sand);
+  border: 1px solid var(--border-light);
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+}
+
+#post-admission-support-scope .pas-detail-faq-item {
+  border-bottom: 1px solid var(--border-light);
+}
+
+#post-admission-support-scope .pas-detail-faq-item:last-child {
+  border-bottom: none;
+}
+
+#post-admission-support-scope .pas-detail-faq-q > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+#post-admission-support-scope .pas-detail-faq-q {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 16px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  list-style: none;
+}
+
+#post-admission-support-scope .pas-detail-faq-q::-webkit-details-marker {
+  display: none;
+}
+
+#post-admission-support-scope .pas-detail-faq-q-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--green-bg);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.25s;
+}
+
+#post-admission-support-scope .pas-detail-faq-item[open] .pas-detail-faq-q-icon {
+  transform: rotate(45deg);
+}
+
+#post-admission-support-scope .pas-detail-faq-a {
+  font-size: 13.5px;
+  color: var(--text-mid);
+  line-height: 1.65;
+  padding: 0 0 18px;
+  margin: 0;
+}
+
+#post-admission-support-scope .pas-detail-aside-card {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+#post-admission-support-scope .pas-detail-aside-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+#post-admission-support-scope .pas-detail-aside-title {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+#post-admission-support-scope .pas-detail-aside-sub {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.55;
+  margin: 0 0 18px;
+}
+
+#post-admission-support-scope .pas-detail-cta-aside {
+  background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%);
+  color: var(--white);
+  border: none;
+}
+
+#post-admission-support-scope .pas-detail-cta-aside .pas-detail-aside-eyebrow {
+  color: var(--green-bright);
+}
+
+#post-admission-support-scope .pas-detail-cta-aside .pas-detail-aside-title {
+  color: var(--white);
+}
+
+#post-admission-support-scope .pas-detail-cta-aside .pas-detail-aside-sub {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+#post-admission-support-scope .pas-detail-cta-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 20px;
+  background: var(--white);
+  color: var(--green-dark);
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+#post-admission-support-scope .pas-detail-cta-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+#post-admission-support-scope .pas-detail-cta-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+  box-shadow: none;
+}
+
+#post-admission-support-scope .pas-detail-cta-error {
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e74c3c;
+}
+
+#post-admission-support-scope .pas-detail-cta-unavailable {
+  margin-top: 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (min-width: 641px) {
+  .pas-calendly-modal-embed,
+  .pas-calendly-modal-loading {
+    min-height: 620px;
+  }
+}
+
+@media (min-width: 768px) {
+  .pas-calendly-modal-embed,
+  .pas-calendly-modal-loading {
+    min-height: 700px;
+  }
+}
+
+#post-admission-support-scope .pas-detail-cta-button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* RTL — forward arrows point left and nudge toward reading direction on hover */
+html[dir="rtl"] #post-admission-support-scope .service-card:hover .service-cta svg.icon-directional,
+.student-portal[dir="rtl"] #post-admission-support-scope .service-card:hover .service-cta svg.icon-directional {
+  transform: scaleX(-1) translateX(-2px);
+}

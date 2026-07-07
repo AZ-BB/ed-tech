@@ -36,7 +36,8 @@ type PayoutRowRaw = {
   id: number;
   advisor_id: string;
   payment_id: number;
-  application_id: number;
+  application_id: number | null;
+  post_admission_case_id: number | null;
   percentage: number;
   amount: number;
   status: string | null;
@@ -67,7 +68,7 @@ function mapApplicationPayoutRow(row: PayoutRowRaw): ApplicationPayoutRow {
     paymentId: row.payment_id,
     paymentAmount: payment?.amount ?? 0,
     paymentPaidAt: payment?.paid_at ?? null,
-    applicationId: row.application_id,
+    applicationId: row.application_id ?? 0,
     percentage: row.percentage,
     amount: row.amount,
     status: mapPayoutStatus(row.status),
@@ -81,6 +82,7 @@ const PAYOUT_SELECT = `
   advisor_id,
   payment_id,
   application_id,
+  post_admission_case_id,
   percentage,
   amount,
   status,
@@ -196,7 +198,39 @@ export async function fetchApplicationPayoutSummary(
 
 type AdvisorPayoutListRowRaw = PayoutRowRaw & {
   applications: { student_name: string | null } | { student_name: string | null }[] | null;
+  post_admission_cases:
+    | { student_name: string | null }
+    | { student_name: string | null }[]
+    | null;
 };
+
+function mapAdvisorPayoutTableRow(row: AdvisorPayoutListRowRaw): AdvisorPayoutTableRow | null {
+  const base = mapApplicationPayoutRow(row);
+  const isPostAdmission = row.post_admission_case_id != null;
+  const referenceId = isPostAdmission
+    ? row.post_admission_case_id!
+    : row.application_id ?? 0;
+
+  if (!referenceId) return null;
+
+  const application = firstEmbed(row.applications);
+  const postAdmissionCase = firstEmbed(row.post_admission_cases);
+  const studentName =
+    application?.student_name?.trim() ||
+    postAdmissionCase?.student_name?.trim() ||
+    null;
+
+  return {
+    ...base,
+    applicationId: row.application_id ?? 0,
+    kind: isPostAdmission ? "post_admission" : "application",
+    referenceId,
+    referenceLabel: isPostAdmission
+      ? `Post-admission #${referenceId}`
+      : `#${referenceId}`,
+    studentName,
+  };
+}
 
 export type AdvisorPayoutStatusFilter = "all" | "pending" | "completed";
 
@@ -280,7 +314,8 @@ export async function fetchAdvisorPayoutsPage(
     .select(
       `
       ${PAYOUT_SELECT},
-      applications ( student_name )
+      applications ( student_name ),
+      post_admission_cases ( student_name )
     `,
     )
     .eq("advisor_id", advisorId)
@@ -312,14 +347,9 @@ export async function fetchAdvisorPayoutsPage(
     };
   }
 
-  const rows: AdvisorPayoutTableRow[] = (data ?? []).map((row: AdvisorPayoutListRowRaw) => {
-    const base = mapApplicationPayoutRow(row);
-    const application = firstEmbed(row.applications);
-    return {
-      ...base,
-      studentName: application?.student_name?.trim() || null,
-    };
-  });
+  const rows: AdvisorPayoutTableRow[] = (data ?? [])
+    .map((row) => mapAdvisorPayoutTableRow(row as AdvisorPayoutListRowRaw))
+    .filter((row): row is AdvisorPayoutTableRow => row != null);
 
   const { data: allPayouts, error: summaryErr } = await client
     .from("advisor_payouts")

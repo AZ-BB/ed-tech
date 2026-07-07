@@ -1,19 +1,19 @@
 import "server-only";
 
 import { getStripeClient } from "@/lib/stripe/config";
-import { markApplicationPaymentPaid } from "@/lib/stripe/mark-payment-paid";
+import { markPaymentPaid } from "@/lib/stripe/mark-payment-paid";
 
-export type ConfirmApplicationPaymentResult =
+export type ConfirmPaymentFromSessionResult =
   | { ok: true; alreadyPaid: boolean }
   | { ok: false; error: string };
 
 /**
  * Verifies a completed Stripe Checkout session and marks the linked payment paid.
- * Used on the success redirect (immediate feedback) and safe to call idempotently.
+ * Handles both application support and post-admission support payments.
  */
-export async function confirmApplicationPaymentFromSession(
+export async function confirmPaymentFromSession(
   sessionId: string,
-): Promise<ConfirmApplicationPaymentResult> {
+): Promise<ConfirmPaymentFromSessionResult> {
   const trimmed = sessionId.trim();
   if (!trimmed) {
     return { ok: false, error: "Missing checkout session." };
@@ -28,7 +28,7 @@ export async function confirmApplicationPaymentFromSession(
   try {
     session = await stripe.checkout.sessions.retrieve(trimmed);
   } catch (error) {
-    console.error("[confirmApplicationPaymentFromSession] retrieve", error);
+    console.error("[confirmPaymentFromSession] retrieve", error);
     return { ok: false, error: "Could not verify payment session." };
   }
 
@@ -46,22 +46,36 @@ export async function confirmApplicationPaymentFromSession(
     return { ok: false, error: "Invalid payment reference in session." };
   }
 
+  const postAdmissionCaseIdRaw = session.metadata?.post_admission_case_id?.trim();
   const applicationIdRaw = session.metadata?.application_id?.trim();
-  const applicationId = applicationIdRaw
-    ? Number.parseInt(applicationIdRaw, 10)
-    : NaN;
-  const applicationRef =
-    Number.isFinite(applicationId) && applicationId > 0
-      ? `application #${applicationId}`
-      : "application support";
 
-  const result = await markApplicationPaymentPaid(paymentId, {
-    message: `Stripe payment completed for ${applicationRef}.`,
-  });
+  let message: string;
+  if (postAdmissionCaseIdRaw) {
+    const caseId = Number.parseInt(postAdmissionCaseIdRaw, 10);
+    message = Number.isFinite(caseId)
+      ? `Stripe payment completed for post-admission case #${caseId}.`
+      : "Stripe payment completed for post-admission support.";
+  } else if (applicationIdRaw) {
+    const applicationId = Number.parseInt(applicationIdRaw, 10);
+    message = Number.isFinite(applicationId)
+      ? `Stripe payment completed for application #${applicationId}.`
+      : "Stripe payment completed for application support.";
+  } else {
+    message = "Stripe payment completed.";
+  }
+
+  const result = await markPaymentPaid(paymentId, { message });
 
   if (!result.ok) {
     return result;
   }
 
   return { ok: true, alreadyPaid: false };
+}
+
+/** @deprecated Use confirmPaymentFromSession */
+export async function confirmApplicationPaymentFromSession(
+  sessionId: string,
+): Promise<ConfirmPaymentFromSessionResult> {
+  return confirmPaymentFromSession(sessionId);
 }

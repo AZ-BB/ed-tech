@@ -1,4 +1,4 @@
-import { confirmApplicationPaymentFromSession } from "@/lib/stripe/confirm-application-payment-from-session";
+import { confirmPaymentFromSession } from "@/lib/stripe/confirm-application-payment-from-session";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/stripe/config";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
@@ -23,7 +23,7 @@ async function handleCheckoutSessionCompleted(
     return;
   }
 
-  const result = await confirmApplicationPaymentFromSession(sessionId);
+  const result = await confirmPaymentFromSession(sessionId);
   if (!result.ok) {
     console.error("[stripe webhook] confirm session failed", result.error);
     throw new Error(result.error);

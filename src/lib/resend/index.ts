@@ -21,6 +21,10 @@ export {
   type SendApplicationPaymentRequestEmailInput,
 } from "@/lib/resend/application-payment-request-email";
 export {
+  sendPostAdmissionPaymentRequestEmail,
+  type SendPostAdmissionPaymentRequestEmailInput,
+} from "@/lib/resend/post-admission-payment-request-email";
+export {
   formatRecommendationDeadline,
   sendRecommendationRequestEmail,
   type SendRecommendationRequestEmailInput,

@@ -5,6 +5,7 @@ import {
   applicationSupportIncludedCompactEn,
   applicationSupportJourneyStepsEn,
 } from "./application-support-form-options-en";
+import { postAdmissionSupportEn } from "./post-admission-support-en";
 import { studentDiscoveryEn } from "./student-discovery-en";
 
 export const studentEn = {
@@ -959,5 +960,6 @@ export const studentEn = {
     loggingOut: "Logging out…",
     cancelAria: "Cancel log out",
   },
+  postAdmission: postAdmissionSupportEn,
   ...studentDiscoveryEn,
 } as const;
