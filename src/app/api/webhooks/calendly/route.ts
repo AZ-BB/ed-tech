@@ -2,6 +2,7 @@ import {
   type CalendlyWebhookEnvelope,
   resolveAdvisorSessionIdFromWebhook,
   resolveApplicationIdFromWebhook,
+  resolvePostAdmissionCaseIdFromWebhook,
   verifyCalendlyWebhookSignature,
 } from "@/lib/calendly-webhook";
 import { logCalendly, logCalendlyError, logCalendlyWarn } from "@/lib/calendly-log";
@@ -47,7 +48,13 @@ async function handleInviteeCreated(envelope: CalendlyWebhookEnvelope): Promise<
     return;
   }
 
-  logCalendly("webhook", "invitee.created ignored — no linked session or application", {
+  const postAdmissionCaseId = resolvePostAdmissionCaseIdFromWebhook(envelope);
+  if (postAdmissionCaseId != null) {
+    await handlePostAdmissionInviteeCreated(envelope, postAdmissionCaseId);
+    return;
+  }
+
+  logCalendly("webhook", "invitee.created ignored — no linked session, application, or post-admission case", {
     utmContent: envelope.payload?.tracking?.utm_content ?? null,
   });
 }
@@ -204,6 +211,79 @@ async function handleApplicationInviteeCreated(
 
   logCalendly("webhook", "Application scheduled_at recorded", {
     applicationId,
+    studentId: existing.student_id,
+    scheduledAt: scheduledAt.toISOString(),
+    status: existing.status,
+  });
+}
+
+async function handlePostAdmissionInviteeCreated(
+  envelope: CalendlyWebhookEnvelope,
+  caseId: number,
+): Promise<void> {
+  logCalendly("webhook", "Processing invitee.created for post-admission case", {
+    caseId,
+    inviteeUri: envelope.payload?.uri ?? null,
+    eventUri: envelope.payload?.scheduled_event?.uri ?? null,
+  });
+
+  const startTime = envelope.payload?.scheduled_event?.start_time?.trim();
+  if (!startTime) {
+    logCalendlyWarn("webhook", "invitee.created missing start_time", { caseId });
+    return;
+  }
+
+  const scheduledAt = new Date(startTime);
+  if (Number.isNaN(scheduledAt.getTime())) {
+    logCalendlyWarn("webhook", "invitee.created has invalid start_time", {
+      caseId,
+      startTime,
+    });
+    return;
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: existing, error: fetchErr } = await secret
+    .from("post_admission_cases")
+    .select("id, student_id, status, scheduled_at")
+    .eq("id", caseId)
+    .maybeSingle();
+
+  if (fetchErr) {
+    logCalendlyError("webhook", "Failed to fetch post-admission case", fetchErr, { caseId });
+    throw new Error("Could not load post-admission case.");
+  }
+
+  if (!existing) {
+    logCalendlyWarn("webhook", "Unknown post-admission case id", { caseId });
+    return;
+  }
+
+  if (existing.scheduled_at != null) {
+    logCalendly("webhook", "Post-admission case already scheduled — skipping", {
+      caseId,
+      scheduledAt: existing.scheduled_at,
+    });
+    return;
+  }
+
+  const { error: updateErr } = await secret
+    .from("post_admission_cases")
+    .update({
+      scheduled_at: scheduledAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", caseId);
+
+  if (updateErr) {
+    logCalendlyError("webhook", "Failed to update post-admission scheduled_at", updateErr, {
+      caseId,
+    });
+    throw new Error("Could not update post-admission case.");
+  }
+
+  logCalendly("webhook", "Post-admission scheduled_at recorded", {
+    caseId,
     studentId: existing.student_id,
     scheduledAt: scheduledAt.toISOString(),
     status: existing.status,

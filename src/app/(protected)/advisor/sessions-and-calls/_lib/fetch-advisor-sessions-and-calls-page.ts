@@ -7,38 +7,36 @@ import {
 } from "@/lib/applications-plans";
 import { isMeetingOverdue } from "@/lib/meeting-overdue";
 import {
+  ACTIVE_POST_ADMISSION_STATUSES,
+  POST_ADMISSION_STATUS_LABEL,
+  type PostAdmissionStatus,
+} from "@/lib/post-admission-status-labels";
+import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
 
-export type AdvisorSessionsAndCallsRowKind = "application_lead" | "advisor_session";
+import type {
+  AdvisorSessionsAndCallsPanelProps,
+  AdvisorSessionsAndCallsRow,
+  AdvisorSessionsAndCallsTypeFilter,
+} from "./advisor-sessions-and-calls-shared";
 
-export type AdvisorSessionsAndCallsRow = {
-  kind: AdvisorSessionsAndCallsRowKind;
-  id: string;
-  studentName: string;
-  studentEmail: string;
-  schoolName: string;
-  meetingAt: string;
-  isOverdue: boolean;
-  statusLabel: string;
-  subtitle: string;
-};
+export type {
+  AdvisorSessionsAndCallsPanelProps,
+  AdvisorSessionsAndCallsRow,
+  AdvisorSessionsAndCallsRowKind,
+  AdvisorSessionsAndCallsTypeFilter,
+} from "./advisor-sessions-and-calls-shared";
 
-export type AdvisorSessionsAndCallsTypeFilter =
-  | "all"
-  | "application_lead"
-  | "advisor_session";
+export {
+  advisorSessionsAndCallsKindLabel,
+  advisorSessionsAndCallsRowHref,
+  parseAdvisorSessionsAndCallsSearch,
+  parseAdvisorSessionsAndCallsType,
+} from "./advisor-sessions-and-calls-shared";
 
-export type AdvisorSessionsAndCallsPanelProps = {
-  rows: AdvisorSessionsAndCallsRow[];
-  totalRows: number;
-  page: number;
-  limit: number;
-  search: string;
-  type: AdvisorSessionsAndCallsTypeFilter;
-  typeCounts: Record<AdvisorSessionsAndCallsTypeFilter, number>;
-};
+type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 type LeadRowRaw = {
   id: number;
@@ -55,6 +53,29 @@ type LeadRowRaw = {
   student_profiles:
     | { first_name: string; last_name: string; email?: string | null }
     | { first_name: string; last_name: string; email?: string | null }[]
+    | null;
+};
+
+type PostAdmissionLeadRowRaw = {
+  id: number;
+  student_name: string | null;
+  student_email: string | null;
+  school_name: string | null;
+  status: string | null;
+  scheduled_at: string | null;
+  schools: { name: string } | { name: string }[] | null;
+  student_profiles:
+    | { first_name: string; last_name: string; email?: string | null }
+    | { first_name: string; last_name: string; email?: string | null }[]
+    | null;
+};
+
+type PostAdmissionScheduledCallRowRaw = {
+  id: string;
+  call_date: string;
+  post_admission_cases:
+    | PostAdmissionLeadRowRaw
+    | PostAdmissionLeadRowRaw[]
     | null;
 };
 
@@ -110,6 +131,17 @@ function sortRows(rows: AdvisorSessionsAndCallsRow[]): AdvisorSessionsAndCallsRo
   });
 }
 
+function isMeetingScheduledToday(meetingAt: string): boolean {
+  const meeting = new Date(meetingAt);
+  if (Number.isNaN(meeting.getTime())) return false;
+  const now = new Date();
+  return (
+    meeting.getFullYear() === now.getFullYear() &&
+    meeting.getMonth() === now.getMonth() &&
+    meeting.getDate() === now.getDate()
+  );
+}
+
 function matchesSearch(
   row: { studentName: string; studentEmail: string },
   search: string,
@@ -148,6 +180,53 @@ function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
   };
 }
 
+function postAdmissionStatusLabel(status: string | null | undefined): string {
+  const normalized = (status?.trim() || "lead") as PostAdmissionStatus;
+  return POST_ADMISSION_STATUS_LABEL[normalized] ?? normalized;
+}
+
+function callDateToMeetingAt(callDate: string): string {
+  const trimmed = callDate.trim();
+  if (!trimmed) return new Date().toISOString();
+  return `${trimmed}T12:00:00.000Z`;
+}
+
+function mapPostAdmissionLeadRow(
+  row: PostAdmissionLeadRowRaw,
+  meetingAt: string,
+): AdvisorSessionsAndCallsRow {
+  const profile = firstEmbed(row.student_profiles);
+  const profileName = profile
+    ? personName(profile.first_name, profile.last_name)
+    : "";
+  const studentName = profileName || row.student_name?.trim() || "Student";
+  const studentEmail =
+    profile?.email?.trim() || row.student_email?.trim() || "—";
+  const school = firstEmbed(row.schools);
+  const schoolName = school?.name?.trim() || row.school_name?.trim() || "—";
+
+  return {
+    kind: "post_admission_lead",
+    id: String(row.id),
+    studentName,
+    studentEmail,
+    schoolName,
+    meetingAt,
+    isOverdue: isMeetingOverdue(meetingAt),
+    statusLabel: postAdmissionStatusLabel(row.status),
+    subtitle: "Post-admission support",
+  };
+}
+
+function mergePostAdmissionSessionRows(
+  caseRows: AdvisorSessionsAndCallsRow[],
+  callRows: AdvisorSessionsAndCallsRow[],
+): AdvisorSessionsAndCallsRow[] {
+  const caseIdsWithScheduledAt = new Set(caseRows.map((row) => row.id));
+  const supplementalCallRows = callRows.filter((row) => !caseIdsWithScheduledAt.has(row.id));
+  return [...caseRows, ...supplementalCallRows];
+}
+
 function mapSessionRow(row: SessionRowRaw): AdvisorSessionsAndCallsRow {
   const studentEmbed = firstEmbed(row.student_profiles);
   const profileName = studentEmbed
@@ -177,25 +256,6 @@ function mapSessionRow(row: SessionRowRaw): AdvisorSessionsAndCallsRow {
     statusLabel: ADMIN_SESSION_STATUS_LABEL[status] ?? status,
     subtitle: helpWith ? `${destinationLabel} · ${helpWith}` : destinationLabel,
   };
-}
-
-export function parseAdvisorSessionsAndCallsSearch(
-  raw: string | string[] | undefined,
-): string {
-  const value =
-    typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
-  return value?.trim() ?? "";
-}
-
-export function parseAdvisorSessionsAndCallsType(
-  raw: string | string[] | undefined,
-): AdvisorSessionsAndCallsTypeFilter {
-  const value =
-    typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
-  if (value === "application_lead" || value === "advisor_session") {
-    return value;
-  }
-  return "all";
 }
 
 async function fetchLeadRows(
@@ -244,6 +304,110 @@ async function fetchLeadRows(
   return hydratedRows.map(mapLeadRow);
 }
 
+async function fetchPostAdmissionLeadRows(
+  supabase: SupabaseServerClient,
+  advisorId: string,
+  search: string,
+): Promise<AdvisorSessionsAndCallsRow[]> {
+  let query = supabase
+    .from("post_admission_cases")
+    .select(
+      `
+      id,
+      student_name,
+      student_email,
+      school_name,
+      status,
+      scheduled_at,
+      schools ( name ),
+      student_profiles ( first_name, last_name, email )
+    `,
+    )
+    .eq("assigned_to", advisorId)
+    .in("status", ACTIVE_POST_ADMISSION_STATUSES)
+    .not("scheduled_at", "is", null)
+    .order("scheduled_at", { ascending: true });
+
+  if (search) {
+    const e = escapeIlike(search);
+    query = query.or(`student_name.ilike.%${e}%,student_email.ilike.%${e}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("[fetchAdvisorSessionsAndCalls] post-admission leads", error);
+    return [];
+  }
+
+  return (data ?? [])
+    .map((row) => row as PostAdmissionLeadRowRaw)
+    .filter((row) => row.scheduled_at)
+    .map((row) => mapPostAdmissionLeadRow(row, row.scheduled_at!));
+}
+
+async function fetchPostAdmissionScheduledCallRows(
+  supabase: SupabaseServerClient,
+  advisorId: string,
+  search: string,
+): Promise<AdvisorSessionsAndCallsRow[]> {
+  const { data, error } = await supabase
+    .from("post_admission_calls")
+    .select(
+      `
+      id,
+      call_date,
+      post_admission_cases!inner (
+        id,
+        student_name,
+        student_email,
+        school_name,
+        status,
+        scheduled_at,
+        assigned_to,
+        schools ( name ),
+        student_profiles ( first_name, last_name, email )
+      )
+    `,
+    )
+    .in("status", ["scheduled", "rescheduled"])
+    .eq("post_admission_cases.assigned_to", advisorId)
+    .in("post_admission_cases.status", ACTIVE_POST_ADMISSION_STATUSES)
+    .order("call_date", { ascending: true });
+
+  if (error) {
+    console.error("[fetchAdvisorSessionsAndCalls] post-admission calls", error);
+    return [];
+  }
+
+  const rows: AdvisorSessionsAndCallsRow[] = [];
+
+  for (const raw of data ?? []) {
+    const callRow = raw as PostAdmissionScheduledCallRowRaw;
+    const caseRow = firstEmbed(callRow.post_admission_cases);
+    if (!caseRow?.id || !callRow.call_date?.trim()) continue;
+
+    const mapped = mapPostAdmissionLeadRow(caseRow, callDateToMeetingAt(callRow.call_date));
+    if (search && !matchesSearch(mapped, search)) continue;
+    rows.push(mapped);
+  }
+
+  return rows;
+}
+
+async function fetchPostAdmissionSessionRows(
+  supabase: SupabaseServerClient,
+  advisorId: string,
+  search: string,
+): Promise<AdvisorSessionsAndCallsRow[]> {
+  const [caseRows, callRows] = await Promise.all([
+    fetchPostAdmissionLeadRows(supabase, advisorId, search),
+    fetchPostAdmissionScheduledCallRows(supabase, advisorId, search),
+  ]);
+
+  return mergePostAdmissionSessionRows(caseRows, callRows);
+}
+
 async function fetchSessionRows(
   advisorId: string,
   search: string,
@@ -289,6 +453,26 @@ async function fetchSessionRows(
   return (data ?? []).map((row) => mapSessionRow(row as SessionRowRaw));
 }
 
+export async function fetchAdvisorTodaysSessionsAndCalls(): Promise<
+  AdvisorSessionsAndCallsRow[]
+> {
+  const supabase = await createSupabaseServerClient();
+  const advisorId = await resolveCurrentAdvisorId(supabase);
+  if (!advisorId) return [];
+
+  const [leadRows, postAdmissionRows, sessionRows] = await Promise.all([
+    fetchLeadRows(advisorId, ""),
+    fetchPostAdmissionSessionRows(supabase, advisorId, ""),
+    fetchSessionRows(advisorId, ""),
+  ]);
+
+  return sortRows(
+    [...leadRows, ...postAdmissionRows, ...sessionRows].filter((row) =>
+      isMeetingScheduledToday(row.meetingAt),
+    ),
+  );
+}
+
 export async function fetchAdvisorSessionsAndCallsPanel(options: {
   page: number;
   limit: number;
@@ -299,12 +483,13 @@ export async function fetchAdvisorSessionsAndCallsPanel(options: {
   const advisorId = await resolveCurrentAdvisorId(supabase);
   if (!advisorId) return null;
 
-  const [leadRows, sessionRows] = await Promise.all([
+  const [leadRows, postAdmissionRows, sessionRows] = await Promise.all([
     fetchLeadRows(advisorId, options.search),
+    fetchPostAdmissionSessionRows(supabase, advisorId, options.search),
     fetchSessionRows(advisorId, options.search),
   ]);
 
-  const merged = sortRows([...leadRows, ...sessionRows]);
+  const merged = sortRows([...leadRows, ...postAdmissionRows, ...sessionRows]);
   const searchFiltered = options.search
     ? merged.filter((row) => matchesSearch(row, options.search))
     : merged;
@@ -313,6 +498,9 @@ export async function fetchAdvisorSessionsAndCallsPanel(options: {
     all: searchFiltered.length,
     application_lead: searchFiltered.filter((row) => row.kind === "application_lead")
       .length,
+    post_admission_lead: searchFiltered.filter(
+      (row) => row.kind === "post_admission_lead",
+    ).length,
     advisor_session: searchFiltered.filter((row) => row.kind === "advisor_session")
       .length,
   };

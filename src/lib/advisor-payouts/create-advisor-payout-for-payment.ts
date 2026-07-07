@@ -12,7 +12,7 @@ export async function createAdvisorPayoutForPayment(
   const { data: payment, error: paymentErr } = await secret
     .from("payments")
     .select(
-      "id, amount, application_id, requested_by_type, requested_by_advisor_id, status",
+      "id, amount, application_id, post_admission_case_id, requested_by_type, requested_by_advisor_id, status",
     )
     .eq("id", paymentId)
     .maybeSingle();
@@ -55,6 +55,7 @@ export async function createAdvisorPayoutForPayment(
     advisor_id: advisor.id,
     payment_id: paymentId,
     application_id: payment.application_id,
+    post_admission_case_id: payment.post_admission_case_id,
     percentage,
     amount,
     status: "pending",

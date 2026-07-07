@@ -4,6 +4,7 @@ import {
   applicationSupportIncludedCompactAr,
   applicationSupportJourneyStepsAr,
 } from "./application-support-form-options-ar";
+import { postAdmissionSupportAr } from "./post-admission-support-ar";
 import { studentDiscoveryAr } from "./student-discovery-ar";
 import { studentSharedAr } from "./student-shared-ar";
 
@@ -31,6 +32,7 @@ export const studentAr: {
   aiMatching: Localize<typeof studentEn.aiMatching>;
   essayReview: Localize<typeof studentEn.essayReview>;
   stories: Localize<typeof studentEn.stories>;
+  postAdmission: Localize<typeof studentEn.postAdmission>;
 } = {
   advisors: {
     pageTitle: "احجز جلسة استشارية فردية قبل التقديم",
@@ -967,5 +969,6 @@ export const studentAr: {
     loggingOut: "جارٍ تسجيل الخروج…",
     cancelAria: "إلغاء تسجيل الخروج",
   },
+  postAdmission: postAdmissionSupportAr,
   ...studentDiscoveryAr,
 };

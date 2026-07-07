@@ -14,8 +14,15 @@ import type { ApplicationPlanCatalogRow } from "@/lib/applications-plans";
 import { resolvePaymentFromEmailDisplay } from "@/lib/resend/application-payment-request-email";
 import {
   mapApplicationToPaymentRequestOption,
+  pickLatestPaymentRequestApplicationPerStudent,
   type PaymentRequestApplicationRowInput,
 } from "@/lib/payment-request-application-option";
+import {
+  mapPostAdmissionToPaymentRequestOption,
+  pickLatestPaymentRequestPostAdmissionPerStudent,
+  type PaymentRequestPostAdmissionRowInput,
+} from "@/lib/payment-request-post-admission-option";
+import type { SendPostAdmissionPaymentRequestOption } from "@/components/post-admission-support/send-post-admission-payment-request-dialog";
 import {
   expireOverduePendingPayments,
   resolvePaymentDisplayStatus,
@@ -29,7 +36,9 @@ type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export type AdvisorPaymentRequestRow = {
   id: number;
-  applicationId: number;
+  kind: "application" | "post_admission";
+  referenceId: number;
+  referenceLabel: string;
   studentName: string;
   studentInitials: string;
   studentEmail: string;
@@ -52,6 +61,8 @@ export type AdvisorPaymentRequestApplicationOption = {
   totalPaid: number;
   totalPaymentsAed: number;
   hasPendingPaymentRequest: boolean;
+  pendingPaymentAmountAed: number | null;
+  pendingPaymentDueDate: string | null;
   label: string;
 };
 
@@ -69,6 +80,7 @@ export type AdvisorPaymentsPanelProps = {
   fromEmailDisplay: string;
   availablePlans: ApplicationPlanCatalogRow[];
   paymentRequestApplications: AdvisorPaymentRequestApplicationOption[];
+  paymentRequestPostAdmissionCases: SendPostAdmissionPaymentRequestOption[];
   paymentRequests: {
     rows: AdvisorPaymentRequestRow[];
     totalRows: number;
@@ -116,6 +128,18 @@ function studentInitials(name: string): string {
   return pair || "?";
 }
 
+function paymentRequestSortKey(row: AdvisorPaymentRequestRow): number {
+  const sent = row.sentAt ?? row.createdAt;
+  if (!sent) return 0;
+  const t = new Date(sent).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function paginateMergedRows<T>(rows: T[], page: number, limit: number): T[] {
+  const { from } = paginationRange(page, limit);
+  return rows.slice(from, from + limit);
+}
+
 type PaymentRequestRowRaw = {
   id: number;
   amount: number;
@@ -146,7 +170,37 @@ type PaymentRequestRowRaw = {
       }[];
 };
 
-function mapPaymentRequestRow(
+type PostAdmissionPaymentRequestRowRaw = {
+  id: number;
+  amount: number;
+  status: string | null;
+  due_date: string | null;
+  created_at: string | null;
+  paid_at: string | null;
+  payment_request_sent_at: string | null;
+  post_admission_case_id: number;
+  post_admission_cases:
+    | {
+        id: number;
+        student_name: string | null;
+        student_email: string | null;
+        student_profiles:
+          | { first_name: string; last_name: string; email?: string | null }
+          | { first_name: string; last_name: string; email?: string | null }[]
+          | null;
+      }
+    | {
+        id: number;
+        student_name: string | null;
+        student_email: string | null;
+        student_profiles:
+          | { first_name: string; last_name: string; email?: string | null }
+          | { first_name: string; last_name: string; email?: string | null }[]
+          | null;
+      }[];
+};
+
+function mapApplicationPaymentRequestRow(
   row: PaymentRequestRowRaw,
 ): AdvisorPaymentRequestRow {
   const application = firstEmbed(row.applications);
@@ -161,7 +215,44 @@ function mapPaymentRequestRow(
 
   return {
     id: row.id,
-    applicationId: row.application_id,
+    kind: "application",
+    referenceId: row.application_id,
+    referenceLabel: `#${row.application_id}`,
+    studentName,
+    studentInitials: studentInitials(studentName),
+    studentEmail,
+    amount: row.amount,
+    status: resolvePaymentDisplayStatus({
+      status: row.status,
+      due_date: row.due_date,
+    }),
+    dueDate: row.due_date,
+    sentAt: row.payment_request_sent_at,
+    paidAt: row.paid_at,
+    createdAt: row.created_at,
+  };
+}
+
+function mapPostAdmissionPaymentRequestRow(
+  row: PostAdmissionPaymentRequestRowRaw,
+): AdvisorPaymentRequestRow {
+  const postAdmissionCase = firstEmbed(row.post_admission_cases);
+  const profile = postAdmissionCase
+    ? firstEmbed(postAdmissionCase.student_profiles)
+    : null;
+  const profileName = profile
+    ? personName(profile.first_name, profile.last_name)
+    : "";
+  const studentName =
+    profileName || postAdmissionCase?.student_name?.trim() || "Student";
+  const studentEmail =
+    profile?.email?.trim() || postAdmissionCase?.student_email?.trim() || "—";
+
+  return {
+    id: row.id,
+    kind: "post_admission",
+    referenceId: row.post_admission_case_id,
+    referenceLabel: `Post-admission #${row.post_admission_case_id}`,
     studentName,
     studentInitials: studentInitials(studentName),
     studentEmail,
@@ -232,17 +323,35 @@ async function fetchAssignedApplicationIds(
   return (data ?? []).map((row) => row.id);
 }
 
-async function countAdvisorPaymentRequests(
+async function fetchAssignedPostAdmissionCaseIds(
   client: DbClient,
-  applicationIds: number[],
+  advisorId: string,
+): Promise<number[]> {
+  const { data, error } = await client
+    .from("post_admission_cases")
+    .select("id")
+    .eq("assigned_to", advisorId);
+
+  if (error) {
+    console.error("[fetchAssignedPostAdmissionCaseIds]", error);
+    return [];
+  }
+
+  return (data ?? []).map((row) => row.id);
+}
+
+async function countAdvisorPaymentRequestsForIds(
+  client: DbClient,
+  column: "application_id" | "post_admission_case_id",
+  ids: number[],
   status: AdvisorPaymentRequestStatusFilter,
 ): Promise<number> {
-  if (applicationIds.length === 0) return 0;
+  if (ids.length === 0) return 0;
 
   let query = client
     .from("payments")
     .select("id", { count: "exact", head: true })
-    .in("application_id", applicationIds)
+    .in(column, ids)
     .or(isPaymentRequestSentFilter());
 
   if (status === "pending") {
@@ -253,51 +362,84 @@ async function countAdvisorPaymentRequests(
 
   const { count, error } = await query;
   if (error) {
-    console.error("[countAdvisorPaymentRequests]", error);
+    console.error("[countAdvisorPaymentRequestsForIds]", error);
     return 0;
   }
 
   return count ?? 0;
 }
 
+async function countAdvisorPaymentRequests(
+  client: DbClient,
+  applicationIds: number[],
+  postAdmissionCaseIds: number[],
+  status: AdvisorPaymentRequestStatusFilter,
+): Promise<number> {
+  const [applicationCount, postAdmissionCount] = await Promise.all([
+    countAdvisorPaymentRequestsForIds(
+      client,
+      "application_id",
+      applicationIds,
+      status,
+    ),
+    countAdvisorPaymentRequestsForIds(
+      client,
+      "post_admission_case_id",
+      postAdmissionCaseIds,
+      status,
+    ),
+  ]);
+
+  return applicationCount + postAdmissionCount;
+}
+
 async function fetchAdvisorPaymentRequestStatusCounts(
   client: DbClient,
   applicationIds: number[],
+  postAdmissionCaseIds: number[],
 ): Promise<Record<AdvisorPaymentRequestStatusFilter, number>> {
   const [all, pending, completed] = await Promise.all([
-    countAdvisorPaymentRequests(client, applicationIds, "all"),
-    countAdvisorPaymentRequests(client, applicationIds, "pending"),
-    countAdvisorPaymentRequests(client, applicationIds, "completed"),
+    countAdvisorPaymentRequests(
+      client,
+      applicationIds,
+      postAdmissionCaseIds,
+      "all",
+    ),
+    countAdvisorPaymentRequests(
+      client,
+      applicationIds,
+      postAdmissionCaseIds,
+      "pending",
+    ),
+    countAdvisorPaymentRequests(
+      client,
+      applicationIds,
+      postAdmissionCaseIds,
+      "completed",
+    ),
   ]);
 
   return { all, pending, completed };
 }
 
-async function fetchAdvisorPaymentRequestsPage(
+async function fetchApplicationPaymentRequestRows(
   client: DbClient,
   advisorId: string,
   options: {
-    page: number;
-    limit: number;
     search: string;
     status: AdvisorPaymentRequestStatusFilter;
   },
-): Promise<{ rows: AdvisorPaymentRequestRow[]; totalRows: number }> {
-  const { page, limit, search, status } = options;
-  const { from, to } = paginationRange(page, limit);
-
+): Promise<AdvisorPaymentRequestRow[]> {
   const assignedApplicationIds = await fetchAssignedApplicationIds(
     client,
     advisorId,
   );
-  if (assignedApplicationIds.length === 0) {
-    return { rows: [], totalRows: 0 };
-  }
+  if (assignedApplicationIds.length === 0) return [];
 
   let applicationIds = assignedApplicationIds;
 
-  if (search) {
-    const e = escapeIlike(search);
+  if (options.search) {
+    const e = escapeIlike(options.search);
     const { data: matchingApps, error: appsErr } = await client
       .from("applications")
       .select("id")
@@ -306,17 +448,15 @@ async function fetchAdvisorPaymentRequestsPage(
 
     if (appsErr) {
       console.error(
-        "[fetchAdvisorPaymentRequestsPage] application search",
+        "[fetchApplicationPaymentRequestRows] application search",
         appsErr,
       );
-      return { rows: [], totalRows: 0 };
+      return [];
     }
 
     const matchingIds = new Set((matchingApps ?? []).map((app) => app.id));
     applicationIds = assignedApplicationIds.filter((id) => matchingIds.has(id));
-    if (applicationIds.length === 0) {
-      return { rows: [], totalRows: 0 };
-    }
+    if (applicationIds.length === 0) return [];
   }
 
   let query = client
@@ -338,7 +478,6 @@ async function fetchAdvisorPaymentRequestsPage(
         student_profiles ( first_name, last_name, email )
       )
     `,
-      { count: "exact" },
     )
     .in("application_id", applicationIds)
     .or(isPaymentRequestSentFilter())
@@ -346,24 +485,132 @@ async function fetchAdvisorPaymentRequestsPage(
     .order("created_at", { ascending: false })
     .order("id", { ascending: false });
 
-  if (status === "pending") {
+  if (options.status === "pending") {
     query = query.eq("status", "pending");
-  } else if (status === "completed") {
+  } else if (options.status === "completed") {
     query = query.eq("status", "paid");
   }
 
-  const { data, count, error } = await query.range(from, to);
+  const { data, error } = await query;
 
   if (error) {
-    console.error("[fetchAdvisorPaymentRequestsPage]", error);
-    return { rows: [], totalRows: 0 };
+    console.error("[fetchApplicationPaymentRequestRows]", error);
+    return [];
   }
 
-  const rows = ((data ?? []) as unknown as PaymentRequestRowRaw[]).map(
-    mapPaymentRequestRow,
+  return ((data ?? []) as unknown as PaymentRequestRowRaw[]).map(
+    mapApplicationPaymentRequestRow,
   );
+}
 
-  return { rows, totalRows: count ?? 0 };
+async function fetchPostAdmissionPaymentRequestRows(
+  client: DbClient,
+  advisorId: string,
+  options: {
+    search: string;
+    status: AdvisorPaymentRequestStatusFilter;
+  },
+): Promise<AdvisorPaymentRequestRow[]> {
+  const assignedCaseIds = await fetchAssignedPostAdmissionCaseIds(
+    client,
+    advisorId,
+  );
+  if (assignedCaseIds.length === 0) return [];
+
+  let caseIds = assignedCaseIds;
+
+  if (options.search) {
+    const e = escapeIlike(options.search);
+    const { data: matchingCases, error: casesErr } = await client
+      .from("post_admission_cases")
+      .select("id")
+      .eq("assigned_to", advisorId)
+      .or(`student_name.ilike.%${e}%,student_email.ilike.%${e}%`);
+
+    if (casesErr) {
+      console.error(
+        "[fetchPostAdmissionPaymentRequestRows] case search",
+        casesErr,
+      );
+      return [];
+    }
+
+    const matchingIds = new Set((matchingCases ?? []).map((row) => row.id));
+    caseIds = assignedCaseIds.filter((id) => matchingIds.has(id));
+    if (caseIds.length === 0) return [];
+  }
+
+  let query = client
+    .from("payments")
+    .select(
+      `
+      id,
+      amount,
+      status,
+      due_date,
+      created_at,
+      paid_at,
+      payment_request_sent_at,
+      post_admission_case_id,
+      post_admission_cases (
+        id,
+        student_name,
+        student_email,
+        student_profiles ( first_name, last_name, email )
+      )
+    `,
+    )
+    .in("post_admission_case_id", caseIds)
+    .or(isPaymentRequestSentFilter())
+    .order("payment_request_sent_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+
+  if (options.status === "pending") {
+    query = query.eq("status", "pending");
+  } else if (options.status === "completed") {
+    query = query.eq("status", "paid");
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("[fetchPostAdmissionPaymentRequestRows]", error);
+    return [];
+  }
+
+  return ((data ?? []) as unknown as PostAdmissionPaymentRequestRowRaw[]).map(
+    mapPostAdmissionPaymentRequestRow,
+  );
+}
+
+async function fetchAdvisorPaymentRequestsPage(
+  client: DbClient,
+  advisorId: string,
+  options: {
+    page: number;
+    limit: number;
+    search: string;
+    status: AdvisorPaymentRequestStatusFilter;
+  },
+): Promise<{ rows: AdvisorPaymentRequestRow[]; totalRows: number }> {
+  const { page, limit, search, status } = options;
+
+  const [applicationRows, postAdmissionRows] = await Promise.all([
+    fetchApplicationPaymentRequestRows(client, advisorId, { search, status }),
+    fetchPostAdmissionPaymentRequestRows(client, advisorId, { search, status }),
+  ]);
+
+  const merged = [...applicationRows, ...postAdmissionRows].sort((a, b) => {
+    const bySent = paymentRequestSortKey(b) - paymentRequestSortKey(a);
+    if (bySent !== 0) return bySent;
+    return b.id - a.id;
+  });
+
+  return {
+    rows: paginateMergedRows(merged, page, limit),
+    totalRows: merged.length,
+  };
 }
 
 async function fetchAdvisorPayoutPercentage(
@@ -395,7 +642,9 @@ async function fetchAdvisorPaymentRequestApplicationOptions(
     .select(
       `
       id,
+      student_id,
       plan_id,
+      status,
       student_name,
       student_email,
       package_data,
@@ -406,6 +655,7 @@ async function fetchAdvisorPaymentRequestApplicationOptions(
     `,
     )
     .eq("assigned_to", advisorId)
+    .neq("status", "not_suitable")
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -418,7 +668,43 @@ async function fetchAdvisorPaymentRequestApplicationOptions(
     (data ?? []) as unknown as PaymentRequestApplicationRowRaw[],
   );
 
-  return rows.map(mapApplicationToPaymentRequestOption);
+  return pickLatestPaymentRequestApplicationPerStudent(rows).map(
+    mapApplicationToPaymentRequestOption,
+  );
+}
+
+async function fetchAdvisorPaymentRequestPostAdmissionOptions(
+  client: DbClient,
+  advisorId: string,
+): Promise<SendPostAdmissionPaymentRequestOption[]> {
+  const { data, error } = await client
+    .from("post_admission_cases")
+    .select(
+      `
+      id,
+      student_id,
+      status,
+      student_name,
+      student_email,
+      updated_at,
+      student_profiles ( first_name, last_name, email ),
+      payments ( status, amount, due_date, payment_request_sent_at, payment_request_token )
+    `,
+    )
+    .eq("assigned_to", advisorId)
+    .neq("status", "not_suitable")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("[fetchAdvisorPaymentRequestPostAdmissionOptions]", error);
+    return [];
+  }
+
+  const rows = (data ?? []) as unknown as PaymentRequestPostAdmissionRowInput[];
+
+  return pickLatestPaymentRequestPostAdmissionPerStudent(rows).map(
+    mapPostAdmissionToPaymentRequestOption,
+  );
 }
 
 export async function fetchAdvisorPaymentsPanel(options: {
@@ -441,6 +727,10 @@ export async function fetchAdvisorPaymentsPanel(options: {
     supabase,
     advisorId,
   );
+  const assignedPostAdmissionCaseIds = await fetchAssignedPostAdmissionCaseIds(
+    supabase,
+    advisorId,
+  );
 
   const [
     paymentRequests,
@@ -448,6 +738,7 @@ export async function fetchAdvisorPaymentsPanel(options: {
     payouts,
     payoutPercentage,
     paymentRequestApplications,
+    paymentRequestPostAdmissionCases,
     availablePlans,
     advisorProfile,
   ] = await Promise.all([
@@ -457,7 +748,11 @@ export async function fetchAdvisorPaymentsPanel(options: {
       search: options.paymentRequestsSearch,
       status: options.paymentRequestsStatus,
     }),
-    fetchAdvisorPaymentRequestStatusCounts(supabase, assignedApplicationIds),
+    fetchAdvisorPaymentRequestStatusCounts(
+      supabase,
+      assignedApplicationIds,
+      assignedPostAdmissionCaseIds,
+    ),
     fetchAdvisorPayoutsPage(supabase, advisorId, {
       page: options.payoutsPage,
       pageSize: options.payoutsLimit,
@@ -465,6 +760,7 @@ export async function fetchAdvisorPaymentsPanel(options: {
     }),
     fetchAdvisorPayoutPercentage(supabase, advisorId),
     fetchAdvisorPaymentRequestApplicationOptions(supabase, advisorId),
+    fetchAdvisorPaymentRequestPostAdmissionOptions(supabase, advisorId),
     fetchActiveApplicationPlans(supabase),
     supabase
       .from("advisors")
@@ -488,6 +784,7 @@ export async function fetchAdvisorPaymentsPanel(options: {
     fromEmailDisplay: resolvePaymentFromEmailDisplay(),
     availablePlans,
     paymentRequestApplications,
+    paymentRequestPostAdmissionCases,
     paymentRequests: {
       ...paymentRequests,
       page: options.paymentRequestsPage,

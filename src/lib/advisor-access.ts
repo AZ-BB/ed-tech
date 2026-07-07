@@ -205,3 +205,30 @@ export async function assertAdvisorAssignedApplication(
 
   return { ok: true, studentId: application.student_id };
 }
+
+export async function assertAdvisorAssignedPostAdmissionCase(
+  advisorId: string,
+  caseId: number,
+): Promise<{ ok: true; studentId: string } | { ok: false; error: string }> {
+  const secret = await createSupabaseSecretClient();
+  const { data: caseRow, error } = await secret
+    .from("post_admission_cases")
+    .select("id, student_id, assigned_to")
+    .eq("id", caseId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[assertAdvisorAssignedPostAdmissionCase]", error);
+    return { ok: false, error: "Could not verify post-admission access." };
+  }
+
+  if (!caseRow) {
+    return { ok: false, error: "Post-admission case not found." };
+  }
+
+  if (caseRow.assigned_to !== advisorId) {
+    return { ok: false, error: "You do not have access to this case." };
+  }
+
+  return { ok: true, studentId: caseRow.student_id };
+}

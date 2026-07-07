@@ -1,12 +1,18 @@
 "use client";
 
 import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
+import { sendAdvisorPostAdmissionPaymentRequest } from "@/actions/advisor-post-admission-payments";
 import { updateAdvisorApplicationStatus } from "@/actions/advisor-applications";
+import { updateAdvisorPostAdmissionStatus } from "@/actions/advisor-post-admission";
 import type { AdvisorNewLeadsPanelProps } from "@/app/(protected)/advisor/leads/_lib/fetch-advisor-new-leads-page";
 import {
   SendPaymentRequestDialog,
   type SendPaymentRequestApplicationOption,
 } from "@/components/application-support/send-payment-request-dialog";
+import {
+  SendPostAdmissionPaymentRequestDialog,
+  type PostAdmissionSendPaymentRequestInput,
+} from "@/components/post-admission-support/send-post-admission-payment-request-dialog";
 import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
@@ -27,6 +33,16 @@ function formatWhen(iso: string | null): string {
   }
 }
 
+function kindLabel(kind: "application" | "post_admission"): string {
+  return kind === "application" ? "Application" : "Post-admission";
+}
+
+function kindBadgeClass(kind: "application" | "post_admission"): string {
+  return kind === "application"
+    ? "bg-[#FCEBEB] text-[#A32D2D]"
+    : "bg-[#DCFCE7] text-[#166534]";
+}
+
 export function AdvisorNewLeadsTable({
   rows,
   totalRows,
@@ -43,9 +59,12 @@ export function AdvisorNewLeadsTable({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search);
-  const [requestPaymentOpen, setRequestPaymentOpen] = useState(false);
-  const [selectedPaymentOption, setSelectedPaymentOption] =
+  const [applicationPaymentOpen, setApplicationPaymentOpen] = useState(false);
+  const [postAdmissionPaymentOpen, setPostAdmissionPaymentOpen] = useState(false);
+  const [selectedApplicationPayment, setSelectedApplicationPayment] =
     useState<SendPaymentRequestApplicationOption | null>(null);
+  const [selectedPostAdmissionPayment, setSelectedPostAdmissionPayment] =
+    useState<AdvisorNewLeadsPanelProps["rows"][number] | null>(null);
   const [requestPaymentError, setRequestPaymentError] = useState<string | null>(
     null,
   );
@@ -53,8 +72,8 @@ export function AdvisorNewLeadsTable({
     string | null
   >(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [markingNotSuitableId, setMarkingNotSuitableId] = useState<
-    number | null
+  const [markingNotSuitableKey, setMarkingNotSuitableKey] = useState<
+    string | null
   >(null);
 
   useEffect(() => {
@@ -87,15 +106,26 @@ export function AdvisorNewLeadsTable({
     return () => window.clearTimeout(handle);
   }, [searchInput, search, applySearch]);
 
-  function handleOpenRequestPayment(
-    option: SendPaymentRequestApplicationOption,
-  ) {
-    setRequestPaymentError(null);
-    setSelectedPaymentOption(option);
-    setRequestPaymentOpen(true);
+  function openLead(row: AdvisorNewLeadsPanelProps["rows"][number]) {
+    if (row.kind === "application") {
+      router.push(`/advisor/applications/${row.id}`);
+    } else {
+      router.push(`/advisor/post-admission/${row.id}`);
+    }
   }
 
-  function handleSendRequestPayment(input: SendPaymentRequestInput) {
+  function handleOpenRequestPayment(row: AdvisorNewLeadsPanelProps["rows"][number]) {
+    setRequestPaymentError(null);
+    if (row.kind === "application") {
+      setSelectedApplicationPayment(row.paymentRequestOption);
+      setApplicationPaymentOpen(true);
+    } else {
+      setSelectedPostAdmissionPayment(row);
+      setPostAdmissionPaymentOpen(true);
+    }
+  }
+
+  function handleSendApplicationPayment(input: SendPaymentRequestInput) {
     setRequestPaymentError(null);
     startTransition(async () => {
       const result = await sendAdvisorApplicationPaymentRequest(input);
@@ -103,8 +133,8 @@ export function AdvisorNewLeadsTable({
         setRequestPaymentError(result.error);
         return;
       }
-      setRequestPaymentOpen(false);
-      setSelectedPaymentOption(null);
+      setApplicationPaymentOpen(false);
+      setSelectedApplicationPayment(null);
       setRequestPaymentMessage(
         `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
       );
@@ -112,19 +142,33 @@ export function AdvisorNewLeadsTable({
     });
   }
 
-  function openApplication(applicationId: number) {
-    router.push(`/advisor/applications/${applicationId}`);
+  function handleSendPostAdmissionPayment(input: PostAdmissionSendPaymentRequestInput) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendAdvisorPostAdmissionPaymentRequest(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setPostAdmissionPaymentOpen(false);
+      setSelectedPostAdmissionPayment(null);
+      setRequestPaymentMessage(
+        `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
+      router.refresh();
+    });
   }
 
-  function handleMarkNotSuitable(applicationId: number) {
+  function handleMarkNotSuitable(row: AdvisorNewLeadsPanelProps["rows"][number]) {
+    const key = `${row.kind}:${row.id}`;
     setActionError(null);
-    setMarkingNotSuitableId(applicationId);
+    setMarkingNotSuitableKey(key);
     startTransition(async () => {
-      const result = await updateAdvisorApplicationStatus(
-        String(applicationId),
-        "not_suitable",
-      );
-      setMarkingNotSuitableId(null);
+      const result =
+        row.kind === "application"
+          ? await updateAdvisorApplicationStatus(String(row.id), "not_suitable")
+          : await updateAdvisorPostAdmissionStatus(row.id, "not_suitable");
+      setMarkingNotSuitableKey(null);
       if (!result.ok) {
         setActionError(result.error);
         return;
@@ -177,9 +221,10 @@ export function AdvisorNewLeadsTable({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] border-collapse text-[13px]">
+        <table className="w-full min-w-[1060px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+              <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Student name</th>
               <th className="px-4 py-3">Student email</th>
               <th className="px-4 py-3">School</th>
@@ -192,12 +237,12 @@ export function AdvisorNewLeadsTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {search.trim()
                     ? "No new leads match your search."
-                    : "No new leads right now. Leads are assigned applications without payment that are not yet active."}
+                    : "No new leads right now."}
                 </td>
               </tr>
             ) : (
@@ -205,22 +250,30 @@ export function AdvisorNewLeadsTable({
                 const canSendPayment =
                   !row.paymentRequestOption.hasPendingPaymentRequest &&
                   row.paymentRequestOption.studentEmail.trim().length > 0;
+                const rowKey = `${row.kind}:${row.id}`;
 
                 return (
                   <tr
-                    key={row.id}
+                    key={rowKey}
                     className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
-                    onClick={() => openApplication(row.id)}
+                    onClick={() => openLead(row)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        openApplication(row.id);
+                        openLead(row);
                       }
                     }}
                     tabIndex={0}
                     role="link"
-                    aria-label={`Open application #${row.id} for ${row.studentName}`}
+                    aria-label={`Open ${kindLabel(row.kind)} #${row.id} for ${row.studentName}`}
                   >
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${kindBadgeClass(row.kind)}`}
+                      >
+                        {kindLabel(row.kind)}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-bold text-[var(--green-dark)]">
@@ -253,21 +306,17 @@ export function AdvisorNewLeadsTable({
                         <button
                           type="button"
                           disabled={isPending || !canSendPayment}
-                          aria-label={
-                            row.paymentRequestOption.hasPendingPaymentRequest
-                              ? "Payment request pending"
-                              : "Send payment request"
-                          }
+                          aria-label="Send payment request"
                           title={
                             row.paymentRequestOption.hasPendingPaymentRequest
-                              ? "A payment request is already pending for this application"
+                              ? "A payment request is already pending"
                               : !row.paymentRequestOption.studentEmail.trim()
-                                ? "Student email is required to send a payment request"
+                                ? "Student email is required"
                                 : "Send payment request"
                           }
                           onClick={(event) => {
                             event.stopPropagation();
-                            handleOpenRequestPayment(row.paymentRequestOption);
+                            handleOpenRequestPayment(row);
                           }}
                           className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] border border-[#e0deda] bg-white text-[var(--green-dark)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-40"
                         >
@@ -279,18 +328,16 @@ export function AdvisorNewLeadsTable({
                         </button>
                         <button
                           type="button"
-                          disabled={
-                            isPending || markingNotSuitableId === row.id
-                          }
+                          disabled={isPending || markingNotSuitableKey === rowKey}
                           aria-label="Mark as not suitable"
                           title="Mark as not suitable"
                           onClick={(event) => {
                             event.stopPropagation();
-                            handleMarkNotSuitable(row.id);
+                            handleMarkNotSuitable(row);
                           }}
                           className="cursor-pointer rounded-[8px] border border-[#f0c4c4] bg-[#FCEBEB] px-3 py-1.5 text-[11.5px] font-semibold text-[#8c2d22] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {markingNotSuitableId === row.id
+                          {markingNotSuitableKey === rowKey
                             ? "Updating..."
                             : "Mark as not suitable"}
                         </button>
@@ -315,21 +362,41 @@ export function AdvisorNewLeadsTable({
         />
       </div>
 
-      {selectedPaymentOption ? (
+      {selectedApplicationPayment ? (
         <SendPaymentRequestDialog
-          open={requestPaymentOpen}
+          open={applicationPaymentOpen}
           onClose={() => {
             if (!isPending) {
-              setRequestPaymentOpen(false);
-              setSelectedPaymentOption(null);
+              setApplicationPaymentOpen(false);
+              setSelectedApplicationPayment(null);
             }
           }}
-          fixedApplication={selectedPaymentOption}
+          fixedApplication={selectedApplicationPayment}
           availablePlans={availablePlans}
           senderName={advisorName}
           senderEmail={advisorEmail}
           fromEmailDisplay={fromEmailDisplay}
-          onSubmit={handleSendRequestPayment}
+          onSubmit={handleSendApplicationPayment}
+          isSubmitting={isPending}
+          error={requestPaymentError}
+        />
+      ) : null}
+
+      {selectedPostAdmissionPayment?.kind === "post_admission" ? (
+        <SendPostAdmissionPaymentRequestDialog
+          key={selectedPostAdmissionPayment.paymentRequestOption.caseId}
+          open={postAdmissionPaymentOpen}
+          onClose={() => {
+            if (!isPending) {
+              setPostAdmissionPaymentOpen(false);
+              setSelectedPostAdmissionPayment(null);
+            }
+          }}
+          fixedCase={selectedPostAdmissionPayment.paymentRequestOption}
+          senderName={advisorName}
+          senderEmail={advisorEmail}
+          fromEmailDisplay={fromEmailDisplay}
+          onSubmit={handleSendPostAdmissionPayment}
           isSubmitting={isPending}
           error={requestPaymentError}
         />

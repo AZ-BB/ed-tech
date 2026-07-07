@@ -20,6 +20,7 @@ const ADVISOR_PACKAGES = "/advisor/packages";
 const ADVISOR_PAYMENTS = "/advisor/payments";
 const ADVISOR_TASKS = "/advisor/tasks";
 const ADVISOR_APPLICATIONS = "/advisor/applications";
+const ADVISOR_POST_ADMISSION = "/advisor/post-admission";
 const ADVISOR_SETTINGS = "/advisor/settings";
 
 export type AdvisorPortalShellProps = {
@@ -94,6 +95,10 @@ export function AdvisorPortalShell({
     pathname === ADVISOR_APPLICATIONS ||
     pathname.startsWith(`${ADVISOR_APPLICATIONS}/`);
 
+  const postAdmissionActive =
+    pathname === ADVISOR_POST_ADMISSION ||
+    pathname.startsWith(`${ADVISOR_POST_ADMISSION}/`);
+
   const settingsActive =
     pathname === ADVISOR_SETTINGS || pathname.startsWith(`${ADVISOR_SETTINGS}/`);
 
@@ -121,7 +126,12 @@ export function AdvisorPortalShell({
                 pathname !== ADVISOR_APPLICATIONS
                 ? "Application"
                 : "Applications"
-              : "Dashboard";
+              : postAdmissionActive
+                ? pathname.startsWith(`${ADVISOR_POST_ADMISSION}/`) &&
+                  pathname !== ADVISOR_POST_ADMISSION
+                  ? "Post-admission case"
+                  : "Post-admission"
+                : "Dashboard";
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -335,6 +345,31 @@ export function AdvisorPortalShell({
                 <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
               </svg>
               <span>Applications</span>
+            </Link>
+            <Link
+              href={ADVISOR_POST_ADMISSION}
+              prefetch={false}
+              onClick={closeSidebar}
+              className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
+                postAdmissionActive
+                  ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
+                  : ""
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
+                aria-hidden
+              >
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <span>Post-admission</span>
             </Link>
             <Link
               href={ADVISOR_TASKS}

@@ -218,7 +218,8 @@ export type Database = {
         Row: {
           advisor_id: string
           amount: number
-          application_id: number
+          application_id: number | null
+          post_admission_case_id: number | null
           created_at: string
           id: number
           paid_at: string | null
@@ -230,7 +231,8 @@ export type Database = {
         Insert: {
           advisor_id: string
           amount: number
-          application_id: number
+          application_id?: number | null
+          post_admission_case_id?: number | null
           created_at?: string
           id?: number
           paid_at?: string | null
@@ -242,7 +244,8 @@ export type Database = {
         Update: {
           advisor_id?: string
           amount?: number
-          application_id?: number
+          application_id?: number | null
+          post_admission_case_id?: number | null
           created_at?: string
           id?: number
           paid_at?: string | null
@@ -264,6 +267,13 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_payouts_post_admission_case_id_fkey"
+            columns: ["post_admission_case_id"]
+            isOneToOne: false
+            referencedRelation: "post_admission_cases"
             referencedColumns: ["id"]
           },
           {
@@ -1601,10 +1611,197 @@ export type Database = {
         }
         Relationships: []
       }
+      post_admission_calls: {
+        Row: {
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          call_date: string
+          call_type: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          outcome: string | null
+          post_admission_case_id: number
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          call_date: string
+          call_type: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          outcome?: string | null
+          post_admission_case_id: number
+          status: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          call_date?: string
+          call_type?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          outcome?: string | null
+          post_admission_case_id?: number
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_admission_calls_post_admission_case_id_fkey"
+            columns: ["post_admission_case_id"]
+            isOneToOne: false
+            referencedRelation: "post_admission_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_admission_cases: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          blocked_at: string | null
+          completed_at: string | null
+          created_at: string
+          id: number
+          payment_completed_at: string | null
+          payment_in_progress_at: string | null
+          scheduled_at: string | null
+          school_id: string | null
+          school_name: string | null
+          status: Database["public"]["Enums"]["post_admission_status"]
+          student_email: string | null
+          student_id: string
+          student_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          blocked_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: number
+          payment_completed_at?: string | null
+          payment_in_progress_at?: string | null
+          scheduled_at?: string | null
+          school_id?: string | null
+          school_name?: string | null
+          status?: Database["public"]["Enums"]["post_admission_status"]
+          student_email?: string | null
+          student_id: string
+          student_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          blocked_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: number
+          payment_completed_at?: string | null
+          payment_in_progress_at?: string | null
+          scheduled_at?: string | null
+          school_id?: string | null
+          school_name?: string | null
+          status?: Database["public"]["Enums"]["post_admission_status"]
+          student_email?: string | null
+          student_id?: string
+          student_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_admission_cases_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_admission_cases_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_admission_cases_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_admission_internal_notes: {
+        Row: {
+          author_name: string
+          author_role: string
+          author_user_id: string | null
+          content: string
+          created_at: string
+          id: string
+          post_admission_case_id: number
+          student_id: string
+          visibility: string
+        }
+        Insert: {
+          author_name: string
+          author_role: string
+          author_user_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          post_admission_case_id: number
+          student_id: string
+          visibility?: string
+        }
+        Update: {
+          author_name?: string
+          author_role?: string
+          author_user_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          post_admission_case_id?: number
+          student_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_admission_internal_notes_post_admission_case_id_fkey"
+            columns: ["post_admission_case_id"]
+            isOneToOne: false
+            referencedRelation: "post_admission_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_admission_internal_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
-          application_id: number
+          application_id: number | null
+          post_admission_case_id: number | null
           created_at: string | null
           custom_universities_count: number | null
           due_date: string | null
@@ -1622,7 +1819,8 @@ export type Database = {
         }
         Insert: {
           amount: number
-          application_id: number
+          application_id?: number | null
+          post_admission_case_id?: number | null
           created_at?: string | null
           custom_universities_count?: number | null
           due_date?: string | null
@@ -1640,7 +1838,8 @@ export type Database = {
         }
         Update: {
           amount?: number
-          application_id?: number
+          application_id?: number | null
+          post_admission_case_id?: number | null
           created_at?: string | null
           custom_universities_count?: number | null
           due_date?: string | null
@@ -1662,6 +1861,13 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_post_admission_case_id_fkey"
+            columns: ["post_admission_case_id"]
+            isOneToOne: false
+            referencedRelation: "post_admission_cases"
             referencedColumns: ["id"]
           },
           {
@@ -3644,6 +3850,12 @@ export type Database = {
       contact_submission_status: "new" | "read" | "archived"
       gender: "male" | "female"
       news_tag: "visa" | "deadline" | "update"
+      post_admission_status:
+        | "lead"
+        | "not_suitable"
+        | "payment_requested"
+        | "active"
+        | "completed"
       payment_status: "pending" | "paid" | "failed"
       payout_status: "pending" | "paid" | "canceled"
       scholarship_competition_type: "low" | "medium" | "high" | "very_high"

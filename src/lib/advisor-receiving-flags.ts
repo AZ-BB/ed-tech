@@ -162,3 +162,71 @@ export async function fetchApplicationReceivingAdvisor(): Promise<ApplicationRec
   const secret = await createSupabaseSecretClient();
   return queryApplicationReceivingAdvisor(secret);
 }
+
+async function queryPostAdmissionReceivingAdvisor(
+  service: AdvisorReceivingSecret,
+): Promise<ApplicationReceivingAdvisor | null> {
+  const { data, error } = await service
+    .from("advisors")
+    .select("id, first_name, last_name, calendly_scheduling_url")
+    .eq("receives_post_admission_support", true)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[queryPostAdmissionReceivingAdvisor]", error);
+    return null;
+  }
+
+  if (!data) return null;
+  return mapReceivingAdvisorRow(data);
+}
+
+/** Assign a newly created post-admission case to the flagged receiving advisor. */
+export async function assignPostAdmissionToReceivingAdvisor(
+  service: AdvisorReceivingSecret,
+  input: { caseId: number; studentId: string },
+): Promise<{ assigned: boolean; advisorName?: string }> {
+  const receivingAdvisor = await queryPostAdmissionReceivingAdvisor(service);
+  if (!receivingAdvisor) {
+    console.warn(
+      "[assignPostAdmissionToReceivingAdvisor] No active advisor with receives_post_admission_support",
+      { caseId: input.caseId },
+    );
+    return { assigned: false };
+  }
+
+  const now = new Date().toISOString();
+  const { data: updated, error: updateErr } = await service
+    .from("post_admission_cases")
+    .update({
+      assigned_to: receivingAdvisor.id,
+      assigned_at: now,
+      updated_at: now,
+    })
+    .eq("id", input.caseId)
+    .select("id, assigned_to")
+    .maybeSingle();
+
+  if (updateErr) {
+    console.error("[assignPostAdmissionToReceivingAdvisor] update failed", updateErr, {
+      caseId: input.caseId,
+      advisorId: receivingAdvisor.id,
+    });
+    return { assigned: false };
+  }
+
+  if (!updated?.assigned_to) {
+    return { assigned: false };
+  }
+
+  const advisorName =
+    `${receivingAdvisor.firstName} ${receivingAdvisor.lastName}`.trim() || "Advisor";
+
+  return { assigned: true, advisorName };
+}
+
+export async function fetchPostAdmissionReceivingAdvisor(): Promise<ApplicationReceivingAdvisor | null> {
+  const secret = await createSupabaseSecretClient();
+  return queryPostAdmissionReceivingAdvisor(secret);
+}

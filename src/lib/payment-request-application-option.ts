@@ -3,14 +3,19 @@ import {
   parseApplicationPackageData,
   resolveApplicationUniversitiesTotal,
 } from "@/lib/application-package-data";
-import { hasActivePendingPaymentRequest } from "@/lib/payment-request-utils";
+import {
+  resolveActivePendingPaymentRequest,
+} from "@/lib/payment-request-utils";
 
 export type PaymentRequestApplicationRowInput = {
   id: number;
+  student_id: string;
   plan_id: number;
+  status?: string | null;
   student_name: string | null;
   student_email: string | null;
   package_data: unknown;
+  updated_at?: string;
   applications_plans:
     | { name: string; price: number; universities_count: number }
     | { name: string; price: number; universities_count: number }[]
@@ -94,6 +99,7 @@ export function mapApplicationToPaymentRequestOption(
     (sum, payment) => sum + payment.amount,
     0,
   );
+  const pendingPayment = resolveActivePendingPaymentRequest(payments);
 
   return {
     applicationId: row.id,
@@ -105,7 +111,27 @@ export function mapApplicationToPaymentRequestOption(
     universitiesTotal,
     totalPaid,
     totalPaymentsAed,
-    hasPendingPaymentRequest: hasActivePendingPaymentRequest(payments),
+    hasPendingPaymentRequest: pendingPayment != null,
+    pendingPaymentAmountAed: pendingPayment?.amount ?? null,
+    pendingPaymentDueDate: pendingPayment?.dueDate ?? null,
     label: `${studentName} — Application #${row.id}`,
   };
+}
+
+/** Latest non–not-suitable application per student (rows must be newest first). */
+export function pickLatestPaymentRequestApplicationPerStudent<
+  T extends { student_id: string; status?: string | null },
+>(rows: T[]): T[] {
+  const seenStudentIds = new Set<string>();
+  const picked: T[] = [];
+
+  for (const row of rows) {
+    const status = row.status?.trim() || "lead";
+    if (status === "not_suitable") continue;
+    if (seenStudentIds.has(row.student_id)) continue;
+    seenStudentIds.add(row.student_id);
+    picked.push(row);
+  }
+
+  return picked;
 }

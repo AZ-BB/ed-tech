@@ -50,12 +50,24 @@ function parsePayoutIds(raw: number[]): number[] {
   return [...ids];
 }
 
-function revalidatePayoutPaths(rows: { application_id: number; advisor_id: string }[]) {
+function revalidatePayoutPaths(
+  rows: {
+    application_id: number | null;
+    post_admission_case_id?: number | null;
+    advisor_id: string;
+  }[],
+) {
   const applicationIds = new Set<number>();
+  const postAdmissionCaseIds = new Set<number>();
   const advisorIds = new Set<string>();
 
   for (const row of rows) {
-    applicationIds.add(row.application_id);
+    if (row.application_id != null) {
+      applicationIds.add(row.application_id);
+    }
+    if (row.post_admission_case_id != null) {
+      postAdmissionCaseIds.add(row.post_admission_case_id);
+    }
     advisorIds.add(row.advisor_id);
   }
 
@@ -64,6 +76,13 @@ function revalidatePayoutPaths(rows: { application_id: number; advisor_id: strin
     revalidatePath(`/admin/applications/${applicationId}`);
     revalidatePath("/advisor/applications");
     revalidatePath(`/advisor/applications/${applicationId}`);
+  }
+
+  for (const caseId of postAdmissionCaseIds) {
+    revalidatePath("/admin/post-admission");
+    revalidatePath(`/admin/post-admission/${caseId}`);
+    revalidatePath("/advisor/post-admission");
+    revalidatePath(`/advisor/post-admission/${caseId}`);
   }
 
   for (const advisorId of advisorIds) {
@@ -88,7 +107,7 @@ export async function markAdvisorPayoutsPaid(
 
   const { data: pendingRows, error: fetchErr } = await secret
     .from("advisor_payouts")
-    .select("id, application_id, advisor_id, status")
+    .select("id, application_id, post_admission_case_id, advisor_id, status")
     .in("id", payoutIds)
     .eq("status", "pending");
 
@@ -112,7 +131,7 @@ export async function markAdvisorPayoutsPaid(
     })
     .in("id", pendingIds)
     .eq("status", "pending")
-    .select("application_id, advisor_id");
+    .select("application_id, post_admission_case_id, advisor_id");
 
   if (updateErr) {
     console.error("[markAdvisorPayoutsPaid] update", updateErr);
@@ -140,7 +159,7 @@ export async function cancelAdvisorPayout(
 
   const { data: row, error: fetchErr } = await secret
     .from("advisor_payouts")
-    .select("id, application_id, advisor_id, status")
+    .select("id, application_id, post_admission_case_id, advisor_id, status")
     .eq("id", payoutId)
     .maybeSingle();
 

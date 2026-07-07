@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const ADVISOR_SESSION_UTM_PREFIX = "advisor_session:";
 const APPLICATION_UTM_PREFIX = "application:";
+const POST_ADMISSION_UTM_PREFIX = "post_admission:";
 const MAX_SIGNATURE_AGE_MS = 5 * 60 * 1000;
 
 export type CalendlyWebhookEnvelope = {
@@ -142,6 +143,46 @@ export function resolveApplicationIdFromWebhook(
   const answers = envelope.payload?.questions_and_answers ?? [];
   for (const qa of answers) {
     const fromAnswer = parseApplicationIdFromContext(qa.answer);
+    if (fromAnswer != null) return fromAnswer;
+  }
+
+  return null;
+}
+
+/** Extract post_admission_cases.id from utm_content (e.g. post_admission:123). */
+export function parsePostAdmissionCaseIdFromTracking(
+  utmContent: string | null | undefined,
+): number | null {
+  if (!utmContent?.trim()) return null;
+  const trimmed = utmContent.trim();
+  if (!trimmed.startsWith(POST_ADMISSION_UTM_PREFIX)) return null;
+  const idRaw = trimmed.slice(POST_ADMISSION_UTM_PREFIX.length);
+  const id = Number.parseInt(idRaw, 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/** Fallback: scan questions for "Post-admission ref: #123". */
+export function parsePostAdmissionCaseIdFromContext(
+  text: string | null | undefined,
+): number | null {
+  if (!text?.trim()) return null;
+  const match = text.match(/Post-admission ref:\s*#?(\d+)/i);
+  if (!match?.[1]) return null;
+  const id = Number.parseInt(match[1], 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+export function resolvePostAdmissionCaseIdFromWebhook(
+  envelope: CalendlyWebhookEnvelope,
+): number | null {
+  const fromUtm = parsePostAdmissionCaseIdFromTracking(
+    envelope.payload?.tracking?.utm_content,
+  );
+  if (fromUtm != null) return fromUtm;
+
+  const answers = envelope.payload?.questions_and_answers ?? [];
+  for (const qa of answers) {
+    const fromAnswer = parsePostAdmissionCaseIdFromContext(qa.answer);
     if (fromAnswer != null) return fromAnswer;
   }
 

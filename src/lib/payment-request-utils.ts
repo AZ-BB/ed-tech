@@ -83,19 +83,45 @@ export function resolvePaymentDisplayStatus(
 }
 
 export function hasActivePendingPaymentRequest(
-  payments: { status: string | null; [key: string]: unknown }[],
+  payments: {
+    status: string | null;
+    amount?: number;
+    due_date?: string | null;
+    payment_request_sent_at?: string | null;
+    payment_request_token?: string | null;
+    [key: string]: unknown;
+  }[],
   referenceDate = todayDateString(),
 ): boolean {
-  return payments.some((payment) => {
-    if (payment.status !== "pending") return false;
-    if (!isPaymentRequestSent(payment as PaymentRequestSentFields)) return false;
-    return !isPaymentOverdue(payment as PaymentDueDateFields, referenceDate);
-  });
+  return resolveActivePendingPaymentRequest(payments, referenceDate) != null;
+}
+
+export function resolveActivePendingPaymentRequest(
+  payments: {
+    status: string | null;
+    amount?: number;
+    due_date?: string | null;
+    payment_request_sent_at?: string | null;
+    payment_request_token?: string | null;
+    [key: string]: unknown;
+  }[],
+  referenceDate = todayDateString(),
+): { amount: number; dueDate: string | null } | null {
+  for (const payment of payments) {
+    if (payment.status !== "pending") continue;
+    if (!isPaymentRequestSent(payment as PaymentRequestSentFields)) continue;
+    if (isPaymentOverdue(payment as PaymentDueDateFields, referenceDate)) continue;
+    return {
+      amount: payment.amount ?? 0,
+      dueDate: resolveDueDate(payment as PaymentDueDateFields),
+    };
+  }
+  return null;
 }
 
 export async function expireOverduePendingPayments(
   secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
-  options: { applicationId?: number } = {},
+  options: { applicationId?: number; postAdmissionCaseId?: number } = {},
 ): Promise<number> {
   const referenceDate = todayDateString();
 
@@ -103,6 +129,10 @@ export async function expireOverduePendingPayments(
 
   if (options.applicationId != null) {
     fetchQuery = fetchQuery.eq("application_id", options.applicationId);
+  }
+
+  if (options.postAdmissionCaseId != null) {
+    fetchQuery = fetchQuery.eq("post_admission_case_id", options.postAdmissionCaseId);
   }
 
   const { data, error } = await fetchQuery;

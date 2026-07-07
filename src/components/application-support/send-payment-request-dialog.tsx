@@ -40,6 +40,8 @@ export type SendPaymentRequestApplicationOption = {
   /** Sum of all payment amounts on this application (any status). */
   totalPaymentsAed: number;
   hasPendingPaymentRequest: boolean;
+  pendingPaymentAmountAed: number | null;
+  pendingPaymentDueDate: string | null;
   label: string;
 };
 
@@ -287,7 +289,7 @@ export function SendPaymentRequestDialog({
               {isListMode ? (
                 <div>
                   <label htmlFor="payment-application" className={labelClassName}>
-                    Student — application
+                    Student
                   </label>
                   <select
                     id="payment-application"
@@ -297,7 +299,7 @@ export function SendPaymentRequestDialog({
                     disabled={isSubmitting}
                     onChange={(event) => setSelectedApplicationId(event.target.value)}
                   >
-                    <option value="">Select student — application</option>
+                    <option value="">Select student</option>
                     {applicationOptions?.map((option) => (
                       <option key={option.applicationId} value={String(option.applicationId)}>
                         {option.label}
@@ -338,7 +340,14 @@ export function SendPaymentRequestDialog({
 
                   {hasPendingPaymentRequest ? (
                     <p className="text-[12px] font-medium text-[#E67E22]" role="status">
-                      This application already has a pending payment request.
+                      There is already a pending payment request
+                      {selectedOption.pendingPaymentAmountAed != null
+                        ? ` for AED ${selectedOption.pendingPaymentAmountAed.toLocaleString()}`
+                        : ""}
+                      {selectedOption.pendingPaymentDueDate
+                        ? ` (due ${new Date(`${selectedOption.pendingPaymentDueDate}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })})`
+                        : ""}
+                      .
                     </p>
                   ) : null}
 
@@ -509,7 +518,7 @@ export function SendPaymentRequestDialog({
                 </>
               ) : isListMode ? (
                 <p className="text-[13px] text-[var(--text-light)]">
-                  Select a student application to continue.
+                  Select a student to continue.
                 </p>
               ) : null}
             </div>

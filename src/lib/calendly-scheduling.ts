@@ -13,6 +13,11 @@ export function applicationUtmContent(applicationId: number): string {
   return `application:${applicationId}`;
 }
 
+/** UTM content value linking a Calendly booking back to a post_admission_cases row. */
+export function postAdmissionUtmContent(caseId: number): string {
+  return `post_admission:${caseId}`;
+}
+
 /** Build Calendly scheduling page URL with prefill + optional custom field `a1` (context). */
 export function buildCalendlySchedulingPageUrl(opts: {
   name: string;

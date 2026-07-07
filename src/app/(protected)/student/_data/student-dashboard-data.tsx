@@ -57,7 +57,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "post-admission-support",
-    href: "#",
+    href: "/student/post-admission-support",
   },
   {
     type: "link",
@@ -227,7 +227,7 @@ export const quickActions: QuickAction[] = [
   },
   {
     dictKey: "postAdmission",
-    href: "#",
+    href: "/student/post-admission-support",
     iconWrap: "bg-[#DCFCE7]",
     iconStroke: "#166534",
     icon: (
