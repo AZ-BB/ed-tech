@@ -1,5 +1,6 @@
 export const ADMIN_CONTENT_HOME = "/admin/content";
 export const ADMIN_SCHOLARSHIPS_HOME = `${ADMIN_CONTENT_HOME}/scholarships`;
+export const ADMIN_INTERNSHIPS_HOME = `${ADMIN_CONTENT_HOME}/internships`;
 export const ADMIN_ANNOUNCEMENTS_HOME = `${ADMIN_CONTENT_HOME}/announcements`;
 export const ADMIN_NEWS_HOME = `${ADMIN_CONTENT_HOME}/news`;
 export const ADMIN_WEBINARS_HOME = `${ADMIN_CONTENT_HOME}/webinars`;
@@ -8,6 +9,7 @@ export const ADMIN_STUDENT_STORIES_HOME = `${ADMIN_CONTENT_HOME}/student-stories
 export type ContentTabId =
   | "universities"
   | "scholarships"
+  | "internships"
   | "announcements"
   | "news"
   | "webinars"
@@ -16,6 +18,7 @@ export type ContentTabId =
 export type ContentTabCounts = Record<
   | "universities"
   | "scholarships"
+  | "internships"
   | "announcements"
   | "news"
   | "webinars"
@@ -36,6 +39,12 @@ export const contentTabs: readonly ContentTab[] = [
     id: "scholarships",
     label: "Scholarships",
     href: `${ADMIN_CONTENT_HOME}/scholarships`,
+    showCount: true,
+  },
+  {
+    id: "internships",
+    label: "Internships",
+    href: ADMIN_INTERNSHIPS_HOME,
     showCount: true,
   },
   {
@@ -96,6 +105,16 @@ export function isAdminScholarshipDetailPath(pathname: string): boolean {
   return UUID_RE.test(id);
 }
 
+/** e.g. /admin/content/internships/{uuid} — hide list chrome (tabs, header actions). */
+export function isAdminInternshipDetailPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  const prefix = `${ADMIN_INTERNSHIPS_HOME}/`;
+  if (!n.startsWith(prefix)) return false;
+  const id = n.slice(prefix.length).split("/")[0];
+  if (!id || n.slice(prefix.length).includes("/")) return false;
+  return UUID_RE.test(id);
+}
+
 /** e.g. /admin/content/webinars/{id} — hide list chrome (tabs, header actions). */
 export function isAdminWebinarDetailPath(pathname: string): boolean {
   const n = normalizePath(pathname);
@@ -111,12 +130,14 @@ export function isAdminContentListPath(pathname: string): boolean {
   return (
     (n === ADMIN_CONTENT_HOME ||
       n === ADMIN_SCHOLARSHIPS_HOME ||
+      n === ADMIN_INTERNSHIPS_HOME ||
       n === ADMIN_ANNOUNCEMENTS_HOME ||
       n === ADMIN_NEWS_HOME ||
       n === ADMIN_WEBINARS_HOME ||
       n === ADMIN_STUDENT_STORIES_HOME) &&
     !isAdminUniversityDetailPath(n) &&
     !isAdminScholarshipDetailPath(n) &&
+    !isAdminInternshipDetailPath(n) &&
     !isAdminWebinarDetailPath(n)
   );
 }

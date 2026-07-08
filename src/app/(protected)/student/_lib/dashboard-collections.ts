@@ -73,10 +73,20 @@ function unwrapJoin<T>(joined: T | T[] | null | undefined): T | null {
   return Array.isArray(joined) ? (joined[0] ?? null) : joined;
 }
 
+function formatInternshipSub(row: {
+  provider: string | null;
+  pay_label: string | null;
+}): string {
+  const provider = row.provider?.trim() ?? "";
+  const pay = row.pay_label?.trim() ?? "";
+  if (provider && pay) return `${provider} · ${pay}`;
+  return provider || pay || "Internship";
+}
+
 export async function fetchDashboardSavedByTab(
   supabase: DashboardSupabaseClient,
 ): Promise<DashboardCollectionCard[][]> {
-  const [uniRes, schRes, advRes, ambRes] = await Promise.all([
+  const [uniRes, schRes, intRes, advRes, ambRes] = await Promise.all([
     supabase
       .from("student_activities")
       .select(
@@ -109,6 +119,26 @@ export async function fetchDashboardSavedByTab(
       `,
       )
       .eq("entity_type", "scholarship")
+      .eq("type", "save")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("student_activities")
+      .select(
+        `
+        id,
+        created_at,
+        internship_id,
+        internships (
+          id,
+          slug,
+          name,
+          provider,
+          country_code,
+          pay_label
+        )
+      `,
+      )
+      .eq("entity_type", "internship")
       .eq("type", "save")
       .order("created_at", { ascending: false }),
     supabase
@@ -204,6 +234,31 @@ export async function fetchDashboardSavedByTab(
       .filter((x): x is DashboardCollectionCard => x != null);
   })();
 
+  const internships = (() => {
+    if (intRes.error || !intRes.data) return [];
+    const rows = uniqByEntityId(
+      intRes.data as InternshipActivityRow[],
+      (r) => r.internship_id ?? null,
+    );
+    return rows
+      .map((r): DashboardCollectionCard | null => {
+        const i = unwrapJoin(r.internships);
+        if (!i?.id) return null;
+        const detailId = i.slug?.trim() || i.id;
+        return {
+          key: `int-save-${i.id}`,
+          countryCode: i.country_code,
+          name: i.name?.trim() || "Internship",
+          sub: formatInternshipSub({
+            provider: i.provider,
+            pay_label: i.pay_label,
+          }),
+          href: `/student/internships?detail=${encodeURIComponent(detailId)}`,
+        };
+      })
+      .filter((x): x is DashboardCollectionCard => x != null);
+  })();
+
   const advisors = (() => {
     if (advRes.error || !advRes.data) return [];
     const rows = uniqByEntityId(
@@ -254,7 +309,7 @@ export async function fetchDashboardSavedByTab(
       .filter((x): x is DashboardCollectionCard => x != null);
   })();
 
-  return [universities, scholarships, advisors, ambassadors];
+  return [universities, scholarships, internships, advisors, ambassadors];
 }
 
 export async function fetchDashboardShortlistedUniScholarship(
@@ -368,6 +423,20 @@ type UniversityJoin = {
 type ScholarshipActivityRow = {
   scholarship_id: string | null;
   scholarships: Record<string, unknown> | Record<string, unknown>[] | null;
+};
+
+type InternshipJoin = {
+  id: string;
+  slug: string | null;
+  name: string | null;
+  provider: string | null;
+  country_code: string | null;
+  pay_label: string | null;
+};
+
+type InternshipActivityRow = {
+  internship_id: string | null;
+  internships: InternshipJoin | InternshipJoin[] | null;
 };
 
 type AdvisorJoin = {

@@ -1587,6 +1587,151 @@ export type Database = {
         }
         Relationships: []
       }
+      internship_support_requests: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          grade: string
+          id: string
+          interests: string[]
+          message: string | null
+          pay_preference: string
+          preferred_format: string
+          preferred_location: string
+          school_name: string
+          student_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          grade: string
+          id?: string
+          interests?: string[]
+          message?: string | null
+          pay_preference: string
+          preferred_format: string
+          preferred_location: string
+          school_name: string
+          student_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          grade?: string
+          id?: string
+          interests?: string[]
+          message?: string | null
+          pay_preference?: string
+          preferred_format?: string
+          preferred_location?: string
+          school_name?: string
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_support_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internships: {
+        Row: {
+          country_code: string
+          created_at: string
+          duration: string
+          eligibility: string
+          field: string
+          format: Database["public"]["Enums"]["internship_format"]
+          how_to_apply: string
+          id: string
+          is_active: boolean
+          location_label: string
+          name: string
+          nationals_only: boolean
+          needs_review: boolean
+          official_url: string
+          pay_label: string
+          pay_tier: Database["public"]["Enums"]["internship_pay_tier"]
+          phone: string | null
+          provider: string
+          section: Database["public"]["Enums"]["internship_section"]
+          slug: string
+          summary: string
+          updated_at: string
+          url_status: Database["public"]["Enums"]["internship_url_status"]
+          what_youll_do: string[]
+          what_youll_gain: string[]
+        }
+        Insert: {
+          country_code: string
+          created_at?: string
+          duration: string
+          eligibility: string
+          field: string
+          format: Database["public"]["Enums"]["internship_format"]
+          how_to_apply: string
+          id?: string
+          is_active?: boolean
+          location_label: string
+          name: string
+          nationals_only?: boolean
+          needs_review?: boolean
+          official_url: string
+          pay_label: string
+          pay_tier: Database["public"]["Enums"]["internship_pay_tier"]
+          phone?: string | null
+          provider: string
+          section: Database["public"]["Enums"]["internship_section"]
+          slug: string
+          summary: string
+          updated_at?: string
+          url_status?: Database["public"]["Enums"]["internship_url_status"]
+          what_youll_do?: string[]
+          what_youll_gain?: string[]
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          duration?: string
+          eligibility?: string
+          field?: string
+          format?: Database["public"]["Enums"]["internship_format"]
+          how_to_apply?: string
+          id?: string
+          is_active?: boolean
+          location_label?: string
+          name?: string
+          nationals_only?: boolean
+          needs_review?: boolean
+          official_url?: string
+          pay_label?: string
+          pay_tier?: Database["public"]["Enums"]["internship_pay_tier"]
+          phone?: string | null
+          provider?: string
+          section?: Database["public"]["Enums"]["internship_section"]
+          slug?: string
+          summary?: string
+          updated_at?: string
+          url_status?: Database["public"]["Enums"]["internship_url_status"]
+          what_youll_do?: string[]
+          what_youll_gain?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internships_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       news_items: {
         Row: {
           created_at: string | null
@@ -2380,6 +2525,7 @@ export type Database = {
           created_at: string | null
           entity_type: Database["public"]["Enums"]["student_activity_entity_type"]
           id: number
+          internship_id: string | null
           scholarship_id: string | null
           student_id: string
           type: Database["public"]["Enums"]["student_activity_type"] | null
@@ -2392,6 +2538,7 @@ export type Database = {
           created_at?: string | null
           entity_type: Database["public"]["Enums"]["student_activity_entity_type"]
           id?: number
+          internship_id?: string | null
           scholarship_id?: string | null
           student_id: string
           type?: Database["public"]["Enums"]["student_activity_type"] | null
@@ -2404,6 +2551,7 @@ export type Database = {
           created_at?: string | null
           entity_type?: Database["public"]["Enums"]["student_activity_entity_type"]
           id?: number
+          internship_id?: string | null
           scholarship_id?: string | null
           student_id?: string
           type?: Database["public"]["Enums"]["student_activity_type"] | null
@@ -2423,6 +2571,13 @@ export type Database = {
             columns: ["ambassador_id"]
             isOneToOne: false
             referencedRelation: "ambassadors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_activities_internship_id_fkey"
+            columns: ["internship_id"]
+            isOneToOne: false
+            referencedRelation: "internships"
             referencedColumns: ["id"]
           },
           {
@@ -3671,6 +3826,10 @@ export type Database = {
         Args: { p_limit?: number; p_school_id?: string }
         Returns: Json
       }
+      rpc_internships_discovery: {
+        Args: { p_loc?: string; p_pay?: string }
+        Returns: Json
+      }
       advisor_can_read_application: {
         Args: { p_application_id: number }
         Returns: boolean
@@ -3849,6 +4008,15 @@ export type Database = {
         | "active_package"
       contact_submission_status: "new" | "read" | "archived"
       gender: "male" | "female"
+      internship_format: "in_person" | "remote" | "hybrid" | "directory"
+      internship_pay_tier: "paid" | "free" | "unpaid"
+      internship_section: "live" | "global" | "competition" | "find"
+      internship_url_status:
+        | "deep_link"
+        | "hub_link"
+        | "news_driven"
+        | "directory"
+        | "homepage"
       news_tag: "visa" | "deadline" | "update"
       post_admission_status:
         | "lead"
@@ -3872,6 +4040,7 @@ export type Database = {
         | "scholarship"
         | "advisor"
         | "ambassador"
+        | "internship"
       student_activity_type: "save" | "shortlist" | "block" | "viewed"
       student_credits_status: "used" | "refunded" | "added"
       student_credits_type:
@@ -4075,6 +4244,16 @@ export const Constants = {
       ],
       contact_submission_status: ["new", "read", "archived"],
       gender: ["male", "female"],
+      internship_format: ["in_person", "remote", "hybrid", "directory"],
+      internship_pay_tier: ["paid", "free", "unpaid"],
+      internship_section: ["live", "global", "competition", "find"],
+      internship_url_status: [
+        "deep_link",
+        "hub_link",
+        "news_driven",
+        "directory",
+        "homepage",
+      ],
       news_tag: ["visa", "deadline", "update"],
       payment_status: ["pending", "paid", "failed"],
       payout_status: ["pending", "paid", "canceled"],
@@ -4093,6 +4272,7 @@ export const Constants = {
         "scholarship",
         "advisor",
         "ambassador",
+        "internship",
       ],
       student_activity_type: ["save", "shortlist", "block", "viewed"],
       student_credits_status: ["used", "refunded", "added"],

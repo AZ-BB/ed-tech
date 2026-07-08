@@ -6,6 +6,7 @@ async function countTable(
   table:
     | "universities"
     | "scholarships"
+    | "internships"
     | "announcements"
     | "news_items"
     | "webinars"
@@ -25,10 +26,18 @@ async function countTable(
 }
 
 export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
-  const [universities, scholarships, announcements, news, webinars, studentStories] =
-    await Promise.all([
+  const [
+    universities,
+    scholarships,
+    internships,
+    announcements,
+    news,
+    webinars,
+    studentStories,
+  ] = await Promise.all([
     countTable("universities"),
     countTable("scholarships"),
+    countTable("internships"),
     countTable("announcements"),
     countTable("news_items"),
     countTable("webinars"),
@@ -38,6 +47,7 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
   return {
     universities,
     scholarships,
+    internships,
     announcements,
     news,
     webinars,

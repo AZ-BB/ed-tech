@@ -12,6 +12,7 @@ export const STUDENT_PLATFORM_COMPLETION_FLAGS = {
     viewed_ambassadors: "viewed_ambassadors",
     viewed_application_support: "viewed_application_support",
     viewed_scholarships: "viewed_scholarships",
+    viewed_internships: "viewed_internships",
 } as const;
 
 export function hasPlatformCompletionFlag(pc: Json | null, flagKey: string): boolean {

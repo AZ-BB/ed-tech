@@ -41,6 +41,11 @@ export const sidebarNavItems: SidebarNavItem[] = [
   },
   {
     type: "link",
+    id: "internships",
+    href: "/student/internships",
+  },
+  {
+    type: "link",
     id: "advisor-sessions",
     href: "/student/advisor-sessions",
   },
@@ -243,6 +248,7 @@ export const quickActions: QuickAction[] = [
 export const savedTabLabels = [
   "Universities",
   "Scholarships",
+  "Internships",
   "Advisors",
   "Ambassadors",
 ] as const;
