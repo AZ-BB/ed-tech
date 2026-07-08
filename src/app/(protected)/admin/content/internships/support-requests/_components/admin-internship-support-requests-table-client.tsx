@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-import type { AdminInternshipSupportRequestTableRow } from "../../_lib/fetch-admin-internship-support-requests-page";
+import type { AdminInternshipSupportRequestTableRow } from "../../../_lib/fetch-admin-internship-support-requests-page";
 
 const LIMIT_OPTIONS = [10, 20, 30, 50] as const;
 
