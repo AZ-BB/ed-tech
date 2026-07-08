@@ -331,7 +331,7 @@ export function StudentDashboard({
         {d.quickActions}
       </div>
       <div className="mb-5 w-full min-w-0">
-        <div className="grid w-full min-w-0 grid-cols-4 grid-rows-2 gap-3 max-[800px]:grid-cols-1 max-[800px]:grid-rows-none sm:max-[800px]:grid-cols-2">
+        <div className="grid w-full min-w-0 grid-cols-4 auto-rows-fr gap-3 max-[800px]:grid-cols-1 max-[800px]:auto-rows-auto sm:max-[800px]:grid-cols-2">
           {quickActions.map((action) => {
             const actionCopy = d.quickActionsItems[action.dictKey];
             return (
@@ -339,9 +339,9 @@ export function StudentDashboard({
               key={action.dictKey}
               href={action.href}
               scroll={false}
-              className="block min-w-0 text-inherit no-underline"
+              className="block h-full min-w-0 text-inherit no-underline"
             >
-              <div className="flex min-w-0 cursor-pointer items-start gap-3.5 rounded-2xl border border-[var(--border-light)] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+              <div className="flex h-full min-h-[88px] min-w-0 cursor-pointer items-start gap-3.5 rounded-2xl border border-[var(--border-light)] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
                 <div
                   className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl ${action.iconWrap}`}
                 >
@@ -357,11 +357,11 @@ export function StudentDashboard({
                     {action.icon}
                   </svg>
                 </div>
-                <div className="min-w-0">
-                  <div className="mb-0.5 text-sm font-semibold">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                  <div className="mb-0.5 line-clamp-1 text-sm font-semibold">
                     {actionCopy.name}
                   </div>
-                  <div className="text-[11px] leading-snug text-[var(--text-light)]">
+                  <div className="line-clamp-2 text-[11px] leading-snug text-[var(--text-light)]">
                     {actionCopy.desc}
                   </div>
                 </div>

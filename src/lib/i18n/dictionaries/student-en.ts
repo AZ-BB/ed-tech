@@ -875,15 +875,15 @@ export const studentEn = {
       },
       discoverUniversities: {
         name: "Discover Universities",
-        desc: "Search and filter 500+ universities",
+        desc: "Search and filter 500+ universities locally and globally",
       },
       scholarships: {
         name: "Scholarships",
-        desc: "Discover funding opportunities",
+        desc: "Discover localized funding opportunities",
       },
       advisorSessions: {
-        name: "1-1 Advisors",
-        desc: "Book 1:1 guidance with an expert",
+        name: "1:1 Advisor",
+        desc: "Book 1:1 guidance with an expert on demand",
       },
       ambassadors: {
         name: "Ambassadors",
@@ -891,11 +891,11 @@ export const studentEn = {
       },
       applicationSupport: {
         name: "Application Support",
-        desc: "We handle your full application",
+        desc: "We handle your full application end to end",
       },
       postAdmission: {
         name: "Post Admission",
-        desc: "Visa, housing, and arrival guidance",
+        desc: "Visa, housing, insurance and arrival guidance",
       },
     },
   },
