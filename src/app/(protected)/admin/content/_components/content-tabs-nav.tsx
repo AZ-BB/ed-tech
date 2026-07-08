@@ -6,19 +6,12 @@ import { usePathname } from "next/navigation";
 import type { ContentTabCounts } from "../_data/content-tabs-data";
 import {
   contentTabs,
+  getContentTabFromPath,
   isAdminInternshipDetailPath,
   isAdminScholarshipDetailPath,
   isAdminUniversityDetailPath,
   isAdminWebinarDetailPath,
 } from "../_data/content-tabs-data";
-
-function normalizePath(pathname: string) {
-  return pathname.replace(/\/$/, "") || "/";
-}
-
-function tabActive(pathname: string, href: string): boolean {
-  return normalizePath(pathname) === normalizePath(href);
-}
 
 export type ContentTabsNavProps = {
   counts: ContentTabCounts;
@@ -26,6 +19,7 @@ export type ContentTabsNavProps = {
 
 export function ContentTabsNav({ counts }: ContentTabsNavProps) {
   const pathname = usePathname() ?? "";
+  const activeTabId = getContentTabFromPath(pathname);
 
   if (
     isAdminUniversityDetailPath(pathname) ||
@@ -42,7 +36,7 @@ export function ContentTabsNav({ counts }: ContentTabsNavProps) {
       aria-label="Content types"
     >
       {contentTabs.map((tab) => {
-        const active = tabActive(pathname, tab.href);
+        const active = tab.id === activeTabId;
         const count = tab.showCount ? counts[tab.id] : null;
 
         return (

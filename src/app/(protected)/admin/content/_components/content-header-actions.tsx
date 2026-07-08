@@ -4,6 +4,7 @@ import { exportAdminInternshipsExcel } from "@/actions/admin-internships";
 import { exportAdminScholarshipsExcel } from "@/actions/admin-scholarships";
 import { getAdminStudentStoryTopicsForForm } from "@/actions/admin-student-stories";
 import { exportAdminUniversitiesExcel } from "@/actions/admin-universities";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
@@ -11,10 +12,12 @@ import {
   ADMIN_ANNOUNCEMENTS_HOME,
   ADMIN_CONTENT_HOME,
   ADMIN_INTERNSHIPS_HOME,
+  ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME,
   ADMIN_NEWS_HOME,
   ADMIN_SCHOLARSHIPS_HOME,
   ADMIN_STUDENT_STORIES_HOME,
   ADMIN_WEBINARS_HOME,
+  isAdminInternshipSupportRequestsPath,
 } from "../_data/content-tabs-data";
 import {
   triggerAdminInternshipsExcelDownload,
@@ -115,6 +118,8 @@ export function ContentHeaderActions() {
   const isUniversitiesList = normalized === ADMIN_CONTENT_HOME;
   const isScholarshipsList = normalized === ADMIN_SCHOLARSHIPS_HOME;
   const isInternshipsList = normalized === ADMIN_INTERNSHIPS_HOME;
+  const isInternshipSupportRequests =
+    isAdminInternshipSupportRequestsPath(normalized);
   const isAnnouncementsList = normalized === ADMIN_ANNOUNCEMENTS_HOME;
   const isNewsList = normalized === ADMIN_NEWS_HOME;
   const isWebinarsList = normalized === ADMIN_WEBINARS_HOME;
@@ -137,6 +142,7 @@ export function ContentHeaderActions() {
     !isUniversitiesList &&
     !isScholarshipsList &&
     !isInternshipsList &&
+    !isInternshipSupportRequests &&
     !isAnnouncementsList &&
     !isNewsList &&
     !isWebinarsList &&
@@ -352,10 +358,31 @@ export function ContentHeaderActions() {
     );
   }
 
+  if (isInternshipSupportRequests) {
+    return (
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+        <Link
+          href={ADMIN_INTERNSHIPS_HOME}
+          prefetch={false}
+          className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+        >
+          ← Back to Internships
+        </Link>
+      </div>
+    );
+  }
+
   if (isInternshipsList) {
     return (
       <>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+          <Link
+            href={ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME}
+            prefetch={false}
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+          >
+            Support Requests
+          </Link>
           <button
             type="button"
             disabled={isExportPending}
