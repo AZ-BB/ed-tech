@@ -1,6 +1,7 @@
 export const ADMIN_CONTENT_HOME = "/admin/content";
 export const ADMIN_SCHOLARSHIPS_HOME = `${ADMIN_CONTENT_HOME}/scholarships`;
 export const ADMIN_INTERNSHIPS_HOME = `${ADMIN_CONTENT_HOME}/internships`;
+export const ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME = `${ADMIN_INTERNSHIPS_HOME}/support-requests`;
 export const ADMIN_ANNOUNCEMENTS_HOME = `${ADMIN_CONTENT_HOME}/announcements`;
 export const ADMIN_NEWS_HOME = `${ADMIN_CONTENT_HOME}/news`;
 export const ADMIN_WEBINARS_HOME = `${ADMIN_CONTENT_HOME}/webinars`;
@@ -105,6 +106,11 @@ export function isAdminScholarshipDetailPath(pathname: string): boolean {
   return UUID_RE.test(id);
 }
 
+/** e.g. /admin/content/internships/support-requests */
+export function isAdminInternshipSupportRequestsPath(pathname: string): boolean {
+  return normalizePath(pathname) === ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME;
+}
+
 /** e.g. /admin/content/internships/{uuid} — hide list chrome (tabs, header actions). */
 export function isAdminInternshipDetailPath(pathname: string): boolean {
   const n = normalizePath(pathname);
@@ -112,6 +118,7 @@ export function isAdminInternshipDetailPath(pathname: string): boolean {
   if (!n.startsWith(prefix)) return false;
   const id = n.slice(prefix.length).split("/")[0];
   if (!id || n.slice(prefix.length).includes("/")) return false;
+  if (id === "support-requests") return false;
   return UUID_RE.test(id);
 }
 
@@ -131,6 +138,7 @@ export function isAdminContentListPath(pathname: string): boolean {
     (n === ADMIN_CONTENT_HOME ||
       n === ADMIN_SCHOLARSHIPS_HOME ||
       n === ADMIN_INTERNSHIPS_HOME ||
+      n === ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME ||
       n === ADMIN_ANNOUNCEMENTS_HOME ||
       n === ADMIN_NEWS_HOME ||
       n === ADMIN_WEBINARS_HOME ||
@@ -145,6 +153,7 @@ export function isAdminContentListPath(pathname: string): boolean {
 export function getContentTabFromPath(pathname: string): ContentTabId {
   const n = normalizePath(pathname);
   if (n === ADMIN_CONTENT_HOME) return "universities";
+  if (isAdminInternshipSupportRequestsPath(n)) return "internships";
 
   const segment = n.slice(`${ADMIN_CONTENT_HOME}/`.length).split("/")[0];
   const match = contentTabs.find((tab) => tab.id === segment);
