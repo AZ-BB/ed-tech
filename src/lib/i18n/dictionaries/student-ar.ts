@@ -29,6 +29,7 @@ export const studentAr: {
   logout: Localize<typeof studentEn.logout>;
   universities: Localize<typeof studentEn.universities>;
   scholarships: Localize<typeof studentEn.scholarships>;
+  internships: Localize<typeof studentEn.internships>;
   aiMatching: Localize<typeof studentEn.aiMatching>;
   essayReview: Localize<typeof studentEn.essayReview>;
   stories: Localize<typeof studentEn.stories>;
@@ -802,6 +803,7 @@ export const studentAr: {
     programDiscovery: "اكتشاف البرامج",
     universitySearch: "البحث عن الجامعات",
     scholarships: "المنح الدراسية",
+    internships: "التدريبات",
     advisorSessions: "جلسات فردية مع مستشارين",
     ambassadors: "السفراء",
     applicationSupport: "دعم التقديم",
@@ -817,7 +819,7 @@ export const studentAr: {
     platformCompletion: "إكمال المنصة",
     completionInfoTitle: "معلومات الإكمال",
     completionTooltip:
-      "للاستفادة الكاملة من المنصة، استكشف جميع الميزات: البحث عن الجامعات (بما في ذلك المطابقة بالذكاء الاصطناعي)، مراجعة المقالات (ضمن طلباتي ← المقالات)، جلسات المستشارين، السفراء، المنح الدراسية، ودعم التقديم.",
+      "للاستفادة الكاملة من المنصة، استكشف جميع الميزات: البحث عن الجامعات (بما في ذلك المطابقة بالذكاء الاصطناعي)، مراجعة المقالات (ضمن طلباتي ← المقالات)، جلسات المستشارين، السفراء، المنح الدراسية، التدريبات، ودعم التقديم.",
     platformExplored: "لقد استكشفت {completed} من {total} ميزات المنصة",
     myApplicationsTitle: "طلباتي",
     myApplicationsDesc: "أبقِ مدرستك على اطلاع بخياراتك الجامعية وتقدمك.",
@@ -863,6 +865,7 @@ export const studentAr: {
       savedTabs: {
         universities: "الجامعات",
         scholarships: "المنح الدراسية",
+        internships: "التدريبات",
         advisors: "المستشارون",
         ambassadors: "السفراء",
       },

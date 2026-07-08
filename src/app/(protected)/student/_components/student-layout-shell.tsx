@@ -13,6 +13,7 @@ import {
   LogOut,
   Package,
   ScanSearch,
+  Briefcase,
   Send,
   Settings,
   Star,
@@ -35,6 +36,7 @@ const NAV_ID_TO_KEY: Record<string, keyof Dictionary["student"]["nav"]> = {
   "program-discovery": "programDiscovery",
   "university-search": "universitySearch",
   scholarships: "scholarships",
+  internships: "internships",
   "advisor-sessions": "advisorSessions",
   ambassadors: "ambassadors",
   "application-support": "applicationSupport",
@@ -75,6 +77,8 @@ function StudentNavIcon({
       return <ScanSearch {...common} />;
     case "scholarships":
       return <Star {...common} />;
+    case "internships":
+      return <Briefcase {...common} />;
     case "advisor-sessions":
       return <UserRound {...common} />;
     case "ambassadors":
@@ -159,6 +163,14 @@ function isStudentWebinarsPath(pathname: string) {
   return normalized === "/student/webinars" || normalized.startsWith("/student/webinars/");
 }
 
+function isStudentInternshipsPath(pathname: string) {
+  const normalized = normalizePath(pathname);
+  return (
+    normalized === "/student/internships" ||
+    normalized.startsWith("/student/internships/")
+  );
+}
+
 function isStudentApplicationSupportPath(pathname: string) {
   return normalizePath(pathname) === "/student/application-support";
 }
@@ -169,6 +181,9 @@ function shellHeaderWidthClass(pathname: string): string {
   }
   if (isStudentWebinarsPath(pathname)) {
     return "mx-auto w-full max-w-[1180px]";
+  }
+  if (isStudentInternshipsPath(pathname)) {
+    return "mx-auto w-full max-w-[1100px]";
   }
   return "";
 }

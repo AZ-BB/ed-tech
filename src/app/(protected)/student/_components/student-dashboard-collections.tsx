@@ -96,6 +96,7 @@ export function StudentDashboardCollections() {
     () => [
       t.savedTabs.universities,
       t.savedTabs.scholarships,
+      t.savedTabs.internships,
       t.savedTabs.advisors,
       t.savedTabs.ambassadors,
     ],
@@ -111,6 +112,7 @@ export function StudentDashboardCollections() {
   const [savedTab, setSavedTab] = useState(0);
   const [shortlistTab, setShortlistTab] = useState(0);
   const [savedByTab, setSavedByTab] = useState<DashboardCollectionCard[][]>([
+    [],
     [],
     [],
     [],

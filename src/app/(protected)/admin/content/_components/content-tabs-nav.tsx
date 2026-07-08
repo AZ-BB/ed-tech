@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import type { ContentTabCounts } from "../_data/content-tabs-data";
 import {
   contentTabs,
+  isAdminInternshipDetailPath,
   isAdminScholarshipDetailPath,
   isAdminUniversityDetailPath,
   isAdminWebinarDetailPath,
@@ -29,6 +30,7 @@ export function ContentTabsNav({ counts }: ContentTabsNavProps) {
   if (
     isAdminUniversityDetailPath(pathname) ||
     isAdminScholarshipDetailPath(pathname) ||
+    isAdminInternshipDetailPath(pathname) ||
     isAdminWebinarDetailPath(pathname)
   ) {
     return null;

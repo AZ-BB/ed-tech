@@ -793,6 +793,7 @@ export const studentEn = {
     programDiscovery: "Program Discovery",
     universitySearch: "University Search",
     scholarships: "Scholarships",
+    internships: "Internships",
     advisorSessions: "1-1 Advisors",
     ambassadors: "Ambassadors",
     applicationSupport: "Application Support",
@@ -808,7 +809,7 @@ export const studentEn = {
     platformCompletion: "Platform completion",
     completionInfoTitle: "Completion info",
     completionTooltip:
-      "To unlock full value, explore all features: university search (including AI matching), essay feedback (under My applications → Essays), advisor sessions, ambassadors, scholarships, and application support.",
+      "To unlock full value, explore all features: university search (including AI matching), essay feedback (under My applications → Essays), advisor sessions, ambassadors, scholarships, internships, and application support.",
     platformExplored: "You've explored {completed} of {total} platform features",
     myApplicationsTitle: "My Applications",
     myApplicationsDesc:
@@ -856,6 +857,7 @@ export const studentEn = {
       savedTabs: {
         universities: "Universities",
         scholarships: "Scholarships",
+        internships: "Internships",
         advisors: "Advisors",
         ambassadors: "Ambassadors",
       },
