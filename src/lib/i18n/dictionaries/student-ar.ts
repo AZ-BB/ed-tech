@@ -33,6 +33,7 @@ export const studentAr: {
   aiMatching: Localize<typeof studentEn.aiMatching>;
   essayReview: Localize<typeof studentEn.essayReview>;
   stories: Localize<typeof studentEn.stories>;
+  programs: Localize<typeof studentEn.programs>;
   postAdmission: Localize<typeof studentEn.postAdmission>;
 } = {
   advisors: {

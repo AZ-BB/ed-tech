@@ -109,7 +109,7 @@ function isSidebarNavLinkActive(
   const h = normalizePath(item.href);
   if (item.id === "program-discovery") {
     return (
-      n === "/student/ai-matching" || n.startsWith("/student/ai-matching/")
+      n === "/student/programs" || n.startsWith("/student/programs/")
     );
   }
   if (item.id === "university-search") {
@@ -175,7 +175,18 @@ function isStudentApplicationSupportPath(pathname: string) {
   return normalizePath(pathname) === "/student/application-support";
 }
 
+function isStudentProgramsPath(pathname: string) {
+  const normalized = normalizePath(pathname);
+  return (
+    normalized === "/student/programs" ||
+    normalized.startsWith("/student/programs/")
+  );
+}
+
 function shellHeaderWidthClass(pathname: string): string {
+  if (isStudentProgramsPath(pathname)) {
+    return "mx-auto w-full max-w-[1180px]";
+  }
   if (isStudentAmbassadorsCatalogPath(pathname)) {
     return "mx-auto w-full max-w-7xl";
   }

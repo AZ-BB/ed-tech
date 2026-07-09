@@ -2038,6 +2038,87 @@ export type Database = {
           },
         ]
       }
+      programs_discovery: {
+        Row: {
+          active: boolean | null
+          ai_resilience: string | null
+          career_examples: Json | null
+          career_paths: Json | null
+          category: string
+          characteristic_ids: string[] | null
+          core_skills: Json | null
+          created_at: string | null
+          day_in_life: Json | null
+          demand_level: string | null
+          description: string | null
+          employers: Json | null
+          featured: boolean | null
+          id: string
+          math_intensity: string | null
+          salary_potential: string | null
+          salary_regions: Json | null
+          short_description: string | null
+          slug: string
+          study_plan: Json | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          videos: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          ai_resilience?: string | null
+          career_examples?: Json | null
+          career_paths?: Json | null
+          category: string
+          characteristic_ids?: string[] | null
+          core_skills?: Json | null
+          created_at?: string | null
+          day_in_life?: Json | null
+          demand_level?: string | null
+          description?: string | null
+          employers?: Json | null
+          featured?: boolean | null
+          id?: string
+          math_intensity?: string | null
+          salary_potential?: string | null
+          salary_regions?: Json | null
+          short_description?: string | null
+          slug: string
+          study_plan?: Json | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          videos?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          ai_resilience?: string | null
+          career_examples?: Json | null
+          career_paths?: Json | null
+          category?: string
+          characteristic_ids?: string[] | null
+          core_skills?: Json | null
+          created_at?: string | null
+          day_in_life?: Json | null
+          demand_level?: string | null
+          description?: string | null
+          employers?: Json | null
+          featured?: boolean | null
+          id?: string
+          math_intensity?: string | null
+          salary_potential?: string | null
+          salary_regions?: Json | null
+          short_description?: string | null
+          slug?: string
+          study_plan?: Json | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          videos?: Json | null
+        }
+        Relationships: []
+      }
       programs: {
         Row: {
           created_at: string | null
@@ -2526,6 +2607,7 @@ export type Database = {
           entity_type: Database["public"]["Enums"]["student_activity_entity_type"]
           id: number
           internship_id: string | null
+          program_discovery_id: string | null
           scholarship_id: string | null
           student_id: string
           type: Database["public"]["Enums"]["student_activity_type"] | null
@@ -2539,6 +2621,7 @@ export type Database = {
           entity_type: Database["public"]["Enums"]["student_activity_entity_type"]
           id?: number
           internship_id?: string | null
+          program_discovery_id?: string | null
           scholarship_id?: string | null
           student_id: string
           type?: Database["public"]["Enums"]["student_activity_type"] | null
@@ -2552,6 +2635,7 @@ export type Database = {
           entity_type?: Database["public"]["Enums"]["student_activity_entity_type"]
           id?: number
           internship_id?: string | null
+          program_discovery_id?: string | null
           scholarship_id?: string | null
           student_id?: string
           type?: Database["public"]["Enums"]["student_activity_type"] | null
@@ -2578,6 +2662,13 @@ export type Database = {
             columns: ["internship_id"]
             isOneToOne: false
             referencedRelation: "internships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_activities_program_discovery_id_fkey"
+            columns: ["program_discovery_id"]
+            isOneToOne: false
+            referencedRelation: "programs_discovery"
             referencedColumns: ["id"]
           },
           {
@@ -3598,6 +3689,60 @@ export type Database = {
           },
         ]
       }
+      university_programs: {
+        Row: {
+          created_at: string
+          featured: boolean
+          id: string
+          program_id: string
+          program_school_note: string | null
+          ranking_note: string | null
+          short_description: string | null
+          tuition_note: string | null
+          university_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          featured?: boolean
+          id?: string
+          program_id: string
+          program_school_note?: string | null
+          ranking_note?: string | null
+          short_description?: string | null
+          tuition_note?: string | null
+          university_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          featured?: boolean
+          id?: string
+          program_id?: string
+          program_school_note?: string | null
+          ranking_note?: string | null
+          short_description?: string | null
+          tuition_note?: string | null
+          university_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_programs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "university_programs_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       university_major_programs: {
         Row: {
           created_at: string | null
@@ -4041,6 +4186,7 @@ export type Database = {
         | "advisor"
         | "ambassador"
         | "internship"
+        | "program"
       student_activity_type: "save" | "shortlist" | "block" | "viewed"
       student_credits_status: "used" | "refunded" | "added"
       student_credits_type:
@@ -4273,6 +4419,7 @@ export const Constants = {
         "advisor",
         "ambassador",
         "internship",
+        "program",
       ],
       student_activity_type: ["save", "shortlist", "block", "viewed"],
       student_credits_status: ["used", "refunded", "added"],
