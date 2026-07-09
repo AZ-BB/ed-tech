@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { loadProgramExplorerPageFromSearchParams } from "@/actions/programs-discovery";
 import { ProgramsExplorer } from "./_components/programs-explorer";
+import { ProgramsPageLoadingFallback } from "./_components/programs-loading-fallback";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +14,7 @@ export default async function StudentProgramsPage({ searchParams }: PageProps) {
   const pageData = await loadProgramExplorerPageFromSearchParams(searchParams);
 
   return (
-    <Suspense
-      fallback={
-        <div className="mx-auto w-full px-4 py-12 text-center text-[14px] text-[var(--text-light)]">
-          Loading programs…
-        </div>
-      }
-    >
+    <Suspense fallback={<ProgramsPageLoadingFallback />}>
       <ProgramsExplorer pageData={pageData} />
     </Suspense>
   );

@@ -1,4 +1,8 @@
 import { aiMatchingOptionsAr } from "./ai-matching-options-ar";
+import {
+  programsInterestTilesAr,
+  programsRailsAr,
+} from "./student-discovery-programs-tiles-ar";
 
 /** Arabic discovery pages — mirrors student-discovery-en.ts */
 export const studentDiscoveryAr = {
@@ -549,6 +553,7 @@ export const studentDiscoveryAr = {
     pageSubtitle:
       "اكتشف التخصصات والمسارات المهنية مع معلومات الرواتب والمهارات وخطط الدراسة وأمثلة من الواقع.",
     heroEyebrow: "مستكشف البرامج",
+    heroFloatLabels: ["علوم الحاسوب", "المالية", "العمارة"] as const,
     heroTitle: "لست متأكداً مما تدرس؟ لن <em>نكتشف ذلك معاً</em>.",
     heroSubtitle:
       "استكشف مسارات مختلفة، افهم إلى أين تقود، واعثر على ما يناسبك فعلاً. كل برنامج يأتي مع نتائج مهنية حقيقية ورؤى رواتب وإيجابيات وسلبيات صادقة.",
@@ -664,6 +669,7 @@ export const studentDiscoveryAr = {
       "تريد تجنب البيئات المؤسسية أو المنظمة",
     ] as const,
     studyPlanEyebrow: "سنة بعد سنة",
+    studyYearLabel: "سنة",
     studyPlanTitleDetail: "ما ستدرسه فعلاً",
     studyPlanSubtitleDetail:
       "رحلة نموذجية. تختلف البرامج حسب الجامعة، لكن معظمها يتبع هذا الإيقاع.",
@@ -783,5 +789,12 @@ export const studentDiscoveryAr = {
     thingsToKnow: "أشياء يجب معرفتها",
     selfAssessment: "تقييم ذاتي",
     loading: "جارٍ تحميل البرامج…",
+    loadingProgram: "جارٍ تحميل البرنامج…",
+    featuredBadge: "مميز",
+    scrollPrevious: "التمرير للخلف",
+    scrollNext: "التمرير للأمام",
+    interestProgramsMeta: "{count} برامج · {meta}",
+    interestTiles: programsInterestTilesAr,
+    rails: programsRailsAr,
   },
 } as const;

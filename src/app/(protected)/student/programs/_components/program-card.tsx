@@ -25,8 +25,7 @@ export function ProgramCard({ program, onOpenDetail }: ProgramCardProps) {
           onOpenDetail();
         }
       }}
-      className="relative w-full min-w-0 cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-4 text-left transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:p-5"
-      dir="ltr"
+      className="relative w-full min-w-0 cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-4 text-start transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:p-5"
     >
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -39,7 +38,7 @@ export function ProgramCard({ program, onOpenDetail }: ProgramCardProps) {
         </div>
         {program.featured ? (
           <span className="shrink-0 rounded-full bg-[#FAEEDA] px-2.5 py-0.5 text-[10px] font-semibold text-[#854F0B]">
-            Featured
+            {t.featuredBadge}
           </span>
         ) : null}
       </div>

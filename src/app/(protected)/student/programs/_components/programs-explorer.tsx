@@ -5,11 +5,16 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useLocale } from "@/lib/i18n/locale-context";
+import { ArrowBackIcon } from "../../_components/directional-icons";
 import {
   HERO_FLOAT_PROGRAMS,
   PROGRAM_QUICK_CHIPS,
   PROGRAM_RAILS,
 } from "../_lib/program-discovery-constants";
+import {
+  localizeInterestTiles,
+  localizeProgramRail,
+} from "../_lib/program-discovery-i18n";
 import type { ProgramExplorerPageData } from "../_lib/get-program-explorer-page";
 import { resolvePopularProgramSlug } from "../_lib/resolve-popular-program-slug";
 import {
@@ -39,7 +44,7 @@ export function ProgramsExplorer({
 }: {
   pageData: ProgramExplorerPageData;
 }) {
-  const { dict } = useLocale();
+  const { dict, locale } = useLocale();
   const t = dict.student.programs;
   const router = useRouter();
   const pathname = usePathname();
@@ -63,7 +68,7 @@ export function ProgramsExplorer({
   const rails = useMemo(
     () =>
       PROGRAM_RAILS.map((rail) => ({
-        ...rail,
+        ...localizeProgramRail(rail, t),
         programs: pageData.programs.filter((program) =>
           rail.filter({
             salaryPotential: program.salaryPotential,
@@ -73,7 +78,12 @@ export function ProgramsExplorer({
           }),
         ),
       })).filter((rail) => rail.programs.length > 0),
-    [pageData.programs],
+    [pageData.programs, t],
+  );
+
+  const localizedTiles = useMemo(
+    () => localizeInterestTiles(pageData.interestTiles, t),
+    [pageData.interestTiles, t],
   );
 
   const popularChips = useMemo(
@@ -86,15 +96,18 @@ export function ProgramsExplorer({
   );
 
   const floatLabels = useMemo(() => {
-    return HERO_FLOAT_PROGRAMS.map((label) => {
+    return HERO_FLOAT_PROGRAMS.map((englishLabel, index) => {
+      if (locale === "ar") {
+        return t.heroFloatLabels[index] ?? englishLabel;
+      }
       const match = pageData.programs.find(
-        (program) => program.title.toLowerCase() === label.toLowerCase(),
+        (program) => program.title.toLowerCase() === englishLabel.toLowerCase(),
       );
-      return match?.title ?? label;
+      return match?.title ?? t.heroFloatLabels[index] ?? englishLabel;
     });
-  }, [pageData.programs]);
+  }, [locale, pageData.programs, t]);
 
-  const selectedTile = pageData.interestTiles.find(
+  const selectedTile = localizedTiles.find(
     (tile) => tile.characteristicId === pageData.selectedInterest,
   );
 
@@ -102,26 +115,18 @@ export function ProgramsExplorer({
 
   if (pageData.selectedInterest && selectedTile) {
     return (
-      <div className={explorerStyles.page}>
+      <div id="programs-discovery-scope" className={explorerStyles.page}>
         <div className={explorerStyles.selView}>
           <nav className={explorerStyles.selBreadcrumb} aria-label="Breadcrumb">
             <Link href="/student/programs">{t.pageTitle}</Link>
-            <span className={explorerStyles.selBcSep}>/</span>
+            <span className={explorerStyles.selBcSep} aria-hidden>
+              /
+            </span>
             <span>{selectedTile.listTitle}</span>
           </nav>
 
           <Link href="/student/programs" className={explorerStyles.selBackBtn}>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              aria-hidden
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
+            <ArrowBackIcon size={14} strokeWidth={2.5} />
             {t.backToExplorer}
           </Link>
 
@@ -179,7 +184,7 @@ export function ProgramsExplorer({
   }
 
   return (
-    <div className={explorerStyles.page}>
+    <div id="programs-discovery-scope" className={explorerStyles.page}>
       <section className={explorerStyles.hero}>
         <div className={explorerStyles.floats} aria-hidden>
           <div className={`${explorerStyles.floatCard} ${explorerStyles.floatCardF1}`}>
@@ -346,6 +351,7 @@ export function ProgramsExplorer({
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
+            className="icon-directional"
             aria-hidden
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
@@ -358,7 +364,7 @@ export function ProgramsExplorer({
         <h2 className={explorerStyles.sectionTitle}>{t.interestTitle}</h2>
         <p className={explorerStyles.sectionSub}>{t.interestSubtitle}</p>
         <div className={explorerStyles.interestGrid}>
-          {pageData.interestTiles.map((tile) => (
+          {localizedTiles.map((tile) => (
             <button
               key={tile.id}
               type="button"
@@ -370,7 +376,7 @@ export function ProgramsExplorer({
               </div>
               <div className={explorerStyles.interestTitle}>{tile.title}</div>
               <div className={explorerStyles.interestMeta}>
-                {formatInterestMeta(tile, tile.count)}
+                {formatInterestMeta(tile, tile.count ?? 0, t.interestProgramsMeta)}
               </div>
             </button>
           ))}
@@ -385,6 +391,8 @@ export function ProgramsExplorer({
           programs={rail.programs}
           salaryLabel={t.cardSalaryLabel}
           demandLabel={t.cardDemandLabel}
+          scrollPreviousLabel={t.scrollPrevious}
+          scrollNextLabel={t.scrollNext}
         />
       ))}
         </>
@@ -406,6 +414,7 @@ export function ProgramsExplorer({
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
+            className="icon-directional"
             aria-hidden
           >
             <path d="M5 12h14M13 5l7 7-7 7" />

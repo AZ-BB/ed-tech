@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ProgramDetailView } from "../_components/program-detail-view";
+import { ProgramDetailLoadingFallback } from "../_components/programs-loading-fallback";
 import { getProgramUniversityOfferings } from "../_lib/get-program-university-offerings";
 import {
   getProgramDetailBySlug,
@@ -30,13 +31,7 @@ export default async function StudentProgramDetailPage({ params }: PageProps) {
   ]);
 
   return (
-    <Suspense
-      fallback={
-        <div className="mx-auto w-full px-4 py-12 text-center text-[14px] text-[var(--text-light)]">
-          Loading program…
-        </div>
-      }
-    >
+    <Suspense fallback={<ProgramDetailLoadingFallback />}>
       <ProgramDetailView
         program={program}
         universityOfferings={universityOfferings}
