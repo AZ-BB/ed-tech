@@ -27,7 +27,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "program-discovery",
-    href: "/student/ai-matching",
+    href: "/student/programs",
   },
   {
     type: "link",
@@ -162,7 +162,7 @@ export const quickActions: QuickAction[] = [
   },
   {
     dictKey: "programDiscovery",
-    href: "/student/ai-matching",
+    href: "/student/programs",
     iconWrap: "bg-[#E0F2FE]",
     iconStroke: "#0369A1",
     icon: (

@@ -1,6 +1,7 @@
 export type ImportProgressPhase =
   | "universities"
   | "programs"
+  | "university_programs"
   | "scholarships"
   | "destinations"
   | "internships";
@@ -15,6 +16,7 @@ export type ImportProgressPayload = {
 const PHASE_LABELS: Record<ImportProgressPhase, string> = {
   universities: "Saving universities",
   programs: "Syncing programs",
+  university_programs: "Saving university program links",
   scholarships: "Saving scholarships",
   destinations: "Syncing destinations",
   internships: "Saving internships",

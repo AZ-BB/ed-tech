@@ -1,4 +1,6 @@
 export const ADMIN_CONTENT_HOME = "/admin/content";
+export const ADMIN_PROGRAMS_DISCOVERY_HOME = `${ADMIN_CONTENT_HOME}/programs-discovery`;
+export const ADMIN_UNIVERSITY_PROGRAMS_HOME = `${ADMIN_CONTENT_HOME}/university-programs`;
 export const ADMIN_SCHOLARSHIPS_HOME = `${ADMIN_CONTENT_HOME}/scholarships`;
 export const ADMIN_INTERNSHIPS_HOME = `${ADMIN_CONTENT_HOME}/internships`;
 export const ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME = `${ADMIN_INTERNSHIPS_HOME}/support-requests`;
@@ -11,6 +13,8 @@ export type ContentTabId =
   | "universities"
   | "scholarships"
   | "internships"
+  | "programs-discovery"
+  | "university-programs"
   | "announcements"
   | "news"
   | "webinars"
@@ -20,6 +24,8 @@ export type ContentTabCounts = Record<
   | "universities"
   | "scholarships"
   | "internships"
+  | "programs-discovery"
+  | "university-programs"
   | "announcements"
   | "news"
   | "webinars"
@@ -46,6 +52,18 @@ export const contentTabs: readonly ContentTab[] = [
     id: "internships",
     label: "Internships",
     href: ADMIN_INTERNSHIPS_HOME,
+    showCount: true,
+  },
+  {
+    id: "programs-discovery",
+    label: "Program Discovery",
+    href: ADMIN_PROGRAMS_DISCOVERY_HOME,
+    showCount: true,
+  },
+  {
+    id: "university-programs",
+    label: "University Programs",
+    href: ADMIN_UNIVERSITY_PROGRAMS_HOME,
     showCount: true,
   },
   {
@@ -111,6 +129,16 @@ export function isAdminInternshipSupportRequestsPath(pathname: string): boolean 
   return normalizePath(pathname) === ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME;
 }
 
+/** e.g. /admin/content/programs-discovery/{uuid} — hide list chrome (tabs, header actions). */
+export function isAdminProgramDiscoveryDetailPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  const prefix = `${ADMIN_PROGRAMS_DISCOVERY_HOME}/`;
+  if (!n.startsWith(prefix)) return false;
+  const id = n.slice(prefix.length).split("/")[0];
+  if (!id || n.slice(prefix.length).includes("/")) return false;
+  return UUID_RE.test(id);
+}
+
 /** e.g. /admin/content/internships/{uuid} — hide list chrome (tabs, header actions). */
 export function isAdminInternshipDetailPath(pathname: string): boolean {
   const n = normalizePath(pathname);
@@ -139,6 +167,8 @@ export function isAdminContentListPath(pathname: string): boolean {
       n === ADMIN_SCHOLARSHIPS_HOME ||
       n === ADMIN_INTERNSHIPS_HOME ||
       n === ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME ||
+      n === ADMIN_PROGRAMS_DISCOVERY_HOME ||
+      n === ADMIN_UNIVERSITY_PROGRAMS_HOME ||
       n === ADMIN_ANNOUNCEMENTS_HOME ||
       n === ADMIN_NEWS_HOME ||
       n === ADMIN_WEBINARS_HOME ||
@@ -146,6 +176,7 @@ export function isAdminContentListPath(pathname: string): boolean {
     !isAdminUniversityDetailPath(n) &&
     !isAdminScholarshipDetailPath(n) &&
     !isAdminInternshipDetailPath(n) &&
+    !isAdminProgramDiscoveryDetailPath(n) &&
     !isAdminWebinarDetailPath(n)
   );
 }

@@ -110,3 +110,31 @@ export function pushUpdatedRow(
     updated.push(entry);
   }
 }
+
+export type ImportResultSummaryCore = {
+  processed: number;
+  created: number;
+  updated: number;
+  unchangedCount: number;
+  added: ImportRowAddition[];
+  updatedRows: ImportRowUpdate[];
+  errors: { rowNumber: number; message: string }[];
+};
+
+export function buildImportResultSummary(options: {
+  processed: number;
+  additions: ImportRowAddition[];
+  updates: ImportRowUpdate[];
+  errors: { rowNumber: number; message: string }[];
+  unchangedCount?: number;
+}): ImportResultSummaryCore {
+  return {
+    processed: options.processed,
+    created: options.additions.length,
+    updated: options.updates.length,
+    unchangedCount: options.unchangedCount ?? 0,
+    added: options.additions,
+    updatedRows: options.updates,
+    errors: options.errors,
+  };
+}

@@ -40,11 +40,18 @@ function ChangeLine({ change }: { change: ImportFieldChange }) {
 }
 
 export function ContentImportResultPanel({ summary, entityLabel }: ContentImportResultPanelProps) {
+  const created = summary.created ?? 0;
+  const updated = summary.updated ?? 0;
+  const unchangedCount = summary.unchangedCount ?? 0;
+  const added = summary.added ?? [];
+  const updatedRows = summary.updatedRows ?? [];
+  const errors = summary.errors ?? [];
+
   const summaryParts: string[] = [];
-  if (summary.created > 0) summaryParts.push(`${summary.created} added`);
-  if (summary.updated > 0) summaryParts.push(`${summary.updated} updated`);
-  if (summary.unchangedCount > 0) summaryParts.push(`${summary.unchangedCount} unchanged`);
-  if (summary.errors.length > 0) summaryParts.push(`${summary.errors.length} error${summary.errors.length === 1 ? "" : "s"}`);
+  if (created > 0) summaryParts.push(`${created} added`);
+  if (updated > 0) summaryParts.push(`${updated} updated`);
+  if (unchangedCount > 0) summaryParts.push(`${unchangedCount} unchanged`);
+  if (errors.length > 0) summaryParts.push(`${errors.length} error${errors.length === 1 ? "" : "s"}`);
 
   const summaryLine =
     summaryParts.length > 0 ? summaryParts.join(" · ") : `No ${entityLabel} changes`;
@@ -54,13 +61,13 @@ export function ContentImportResultPanel({ summary, entityLabel }: ContentImport
       <p className="font-semibold text-[#1a1a1a]">{summaryLine}</p>
       <p className="mt-1 text-[12px] text-[#666]">Rows processed: {summary.processed}</p>
 
-      {summary.added.length > 0 ? (
+      {created > 0 ? (
         <div className="mt-3">
           <p className="text-[12px] font-semibold uppercase tracking-wide text-[#2D6A4F]">
-            Added
+            Added ({created})
           </p>
           <ul className="mt-1.5 max-h-28 space-y-1 overflow-y-auto">
-            {summary.added.map((item) => (
+            {added.map((item) => (
               <li key={`add-${item.rowNumber}-${item.name}`} className="text-[12px] text-[#4a4a4a]">
                 Row {item.rowNumber}: {item.name}
               </li>
@@ -69,16 +76,16 @@ export function ContentImportResultPanel({ summary, entityLabel }: ContentImport
         </div>
       ) : null}
 
-      {summary.updatedRows.length > 0 ? (
+      {updated > 0 ? (
         <div className="mt-3">
           <p className="text-[12px] font-semibold uppercase tracking-wide text-[#1d4ed8]">
-            Updated
-            {summary.updated > summary.updatedRows.length
-              ? ` (showing ${summary.updatedRows.length} of ${summary.updated})`
+            Updated ({updated})
+            {updated > updatedRows.length
+              ? ` · showing ${updatedRows.length}`
               : null}
           </p>
           <ul className="mt-1.5 max-h-40 space-y-2 overflow-y-auto">
-            {summary.updatedRows.map((item) => (
+            {updatedRows.map((item) => (
               <li
                 key={`upd-${item.rowNumber}-${item.name}`}
                 className="rounded-[6px] border border-[#ece9e4] bg-white px-2.5 py-2"
@@ -99,11 +106,13 @@ export function ContentImportResultPanel({ summary, entityLabel }: ContentImport
         </div>
       ) : null}
 
-      {summary.errors.length > 0 ? (
+      {errors.length > 0 ? (
         <div className="mt-3">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-red-700">Errors</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-red-700">
+            Errors ({errors.length})
+          </p>
           <ul className="mt-1.5 max-h-28 list-disc space-y-0.5 overflow-y-auto pl-5 text-[12px] text-red-700">
-            {summary.errors.map((item) => {
+            {errors.map((item) => {
               const message = formatImportError(item.message);
               return (
                 <li key={`${item.rowNumber}-${message}`} className="break-words">

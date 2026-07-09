@@ -8,6 +8,7 @@ import {
   contentTabs,
   getContentTabFromPath,
   isAdminInternshipDetailPath,
+  isAdminProgramDiscoveryDetailPath,
   isAdminScholarshipDetailPath,
   isAdminUniversityDetailPath,
   isAdminWebinarDetailPath,
@@ -25,6 +26,7 @@ export function ContentTabsNav({ counts }: ContentTabsNavProps) {
     isAdminUniversityDetailPath(pathname) ||
     isAdminScholarshipDetailPath(pathname) ||
     isAdminInternshipDetailPath(pathname) ||
+    isAdminProgramDiscoveryDetailPath(pathname) ||
     isAdminWebinarDetailPath(pathname)
   ) {
     return null;

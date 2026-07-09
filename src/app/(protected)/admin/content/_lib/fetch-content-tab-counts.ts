@@ -7,6 +7,8 @@ async function countTable(
     | "universities"
     | "scholarships"
     | "internships"
+    | "programs_discovery"
+    | "university_programs"
     | "announcements"
     | "news_items"
     | "webinars"
@@ -30,6 +32,8 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     universities,
     scholarships,
     internships,
+    programsDiscovery,
+    universityPrograms,
     announcements,
     news,
     webinars,
@@ -38,6 +42,8 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     countTable("universities"),
     countTable("scholarships"),
     countTable("internships"),
+    countTable("programs_discovery"),
+    countTable("university_programs"),
     countTable("announcements"),
     countTable("news_items"),
     countTable("webinars"),
@@ -48,6 +54,8 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     universities,
     scholarships,
     internships,
+    "programs-discovery": programsDiscovery,
+    "university-programs": universityPrograms,
     announcements,
     news,
     webinars,

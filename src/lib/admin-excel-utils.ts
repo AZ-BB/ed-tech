@@ -100,3 +100,64 @@ export function isExcelFilename(filename: string): boolean {
   const lower = filename.toLowerCase();
   return lower.endsWith(".xlsx") || lower.endsWith(".xls");
 }
+
+export async function buildMultiSheetAdminWorkbook(
+  sheets: {
+    sheetName: string;
+    columns: AdminExcelColumnDef[];
+    rows: Record<string, string>[];
+    sampleRowIndexes?: number[];
+  }[],
+): Promise<ArrayBuffer> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Univeera Admin";
+  workbook.created = new Date();
+
+  for (const sheetDef of sheets) {
+    const sheet = workbook.addWorksheet(sheetDef.sheetName, {
+      views: [{ state: "frozen", ySplit: 1 }],
+    });
+
+    sheet.columns = sheetDef.columns.map((column) => ({
+      key: column.key,
+      header: column.header,
+      width: column.width,
+    }));
+
+    const headerRow = sheet.getRow(1);
+    headerRow.height = 24;
+    headerRow.eachCell((cell) => {
+      cell.fill = HEADER_FILL;
+      cell.font = HEADER_FONT;
+      cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      cell.border = {
+        bottom: { style: "thin", color: { argb: "FF1B4332" } },
+      };
+    });
+
+    const sampleIndexes = new Set(sheetDef.sampleRowIndexes ?? []);
+
+    for (let rowIndex = 0; rowIndex < sheetDef.rows.length; rowIndex++) {
+      const values = sheetDef.columns.map(
+        (column) => sheetDef.rows[rowIndex]?.[column.key] ?? "",
+      );
+      const row = sheet.addRow(values);
+      row.alignment = { vertical: "top", wrapText: true };
+
+      if (sampleIndexes.has(rowIndex)) {
+        row.eachCell((cell) => {
+          cell.fill = SAMPLE_FILL;
+          cell.font = { italic: true, color: { argb: "FF666666" } };
+        });
+      }
+    }
+
+    const lastRow = Math.max(1, sheetDef.rows.length + 1);
+    sheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: lastRow, column: sheetDef.columns.length },
+    };
+  }
+
+  return (await workbook.xlsx.writeBuffer()) as ArrayBuffer;
+}

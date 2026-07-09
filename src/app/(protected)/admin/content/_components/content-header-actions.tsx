@@ -1,5 +1,7 @@
 "use client";
 
+import { exportAdminProgramsDiscoveryExcel } from "@/actions/admin-programs-discovery";
+import { exportAdminUniversityProgramsExcel } from "@/actions/admin-university-programs";
 import { exportAdminInternshipsExcel } from "@/actions/admin-internships";
 import { exportAdminScholarshipsExcel } from "@/actions/admin-scholarships";
 import { getAdminStudentStoryTopicsForForm } from "@/actions/admin-student-stories";
@@ -14,11 +16,21 @@ import {
   ADMIN_INTERNSHIPS_HOME,
   ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME,
   ADMIN_NEWS_HOME,
+  ADMIN_PROGRAMS_DISCOVERY_HOME,
+  ADMIN_UNIVERSITY_PROGRAMS_HOME,
   ADMIN_SCHOLARSHIPS_HOME,
   ADMIN_STUDENT_STORIES_HOME,
   ADMIN_WEBINARS_HOME,
   isAdminInternshipSupportRequestsPath,
 } from "../_data/content-tabs-data";
+import {
+  triggerAdminUniversityProgramsExcelDownload,
+  triggerUniversityProgramsSampleExcelDownload,
+} from "../_lib/admin-university-programs-excel";
+import {
+  triggerAdminProgramsDiscoveryExcelDownload,
+  triggerProgramsDiscoverySampleExcelDownload,
+} from "../_lib/admin-programs-discovery-excel";
 import {
   triggerAdminInternshipsExcelDownload,
   triggerInternshipsSampleExcelDownload,
@@ -32,6 +44,8 @@ import {
   triggerUniversitiesSampleExcelDownload,
 } from "../_lib/admin-universities-excel";
 import { AdminAddAnnouncementDialog } from "./admin-add-announcement-dialog";
+import { AdminAddProgramDialog } from "./admin-add-program-dialog";
+import { AdminAddUniversityProgramDialog } from "./admin-add-university-program-dialog";
 import { AdminAddInternshipDialog } from "./admin-add-internship-dialog";
 import { AdminAddNewsDialog } from "./admin-add-news-dialog";
 import { AdminAddScholarshipDialog } from "./admin-add-scholarship-dialog";
@@ -39,6 +53,8 @@ import { AdminAddUniversityDialog } from "./admin-add-university-dialog";
 import { AdminAddWebinarDialog } from "./admin-add-webinar-dialog";
 import { AdminAddStudentStoryDialog } from "./admin-add-student-story-dialog";
 import { AdminAddStudentStoryTopicDialog } from "./admin-add-student-story-topic-dialog";
+import { ContentProgramsDiscoveryImportDialog } from "./content-programs-discovery-import-dialog";
+import { ContentUniversityProgramsImportDialog } from "./content-university-programs-import-dialog";
 import { ContentInternshipsImportDialog } from "./content-internships-import-dialog";
 import { ContentScholarshipsImportDialog } from "./content-scholarships-import-dialog";
 import { ContentUniversitiesImportDialog } from "./content-universities-import-dialog";
@@ -118,6 +134,8 @@ export function ContentHeaderActions() {
   const isUniversitiesList = normalized === ADMIN_CONTENT_HOME;
   const isScholarshipsList = normalized === ADMIN_SCHOLARSHIPS_HOME;
   const isInternshipsList = normalized === ADMIN_INTERNSHIPS_HOME;
+  const isProgramsDiscoveryList = normalized === ADMIN_PROGRAMS_DISCOVERY_HOME;
+  const isUniversityProgramsList = normalized === ADMIN_UNIVERSITY_PROGRAMS_HOME;
   const isInternshipSupportRequests =
     isAdminInternshipSupportRequestsPath(normalized);
   const isAnnouncementsList = normalized === ADMIN_ANNOUNCEMENTS_HOME;
@@ -142,6 +160,8 @@ export function ContentHeaderActions() {
     !isUniversitiesList &&
     !isScholarshipsList &&
     !isInternshipsList &&
+    !isProgramsDiscoveryList &&
+    !isUniversityProgramsList &&
     !isInternshipSupportRequests &&
     !isAnnouncementsList &&
     !isNewsList &&
@@ -351,6 +371,151 @@ export function ContentHeaderActions() {
         <AdminAddScholarshipDialog open={addOpen} onClose={() => setAddOpen(false)} />
 
         <ContentScholarshipsImportDialog
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+        />
+      </>
+    );
+  }
+
+  function handleExportProgramsDiscovery() {
+    startExportTransition(async () => {
+      const result = await exportAdminProgramsDiscoveryExcel();
+
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+
+      if (result.rows.length === 0) {
+        window.alert("No programs to export.");
+        return;
+      }
+
+      const day = new Date().toISOString().slice(0, 10);
+      await triggerAdminProgramsDiscoveryExcelDownload(
+        result.rows,
+        `admin-programs-discovery-${day}.xlsx`,
+      );
+    });
+  }
+
+  if (isProgramsDiscoveryList) {
+    return (
+      <>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+          <button
+            type="button"
+            disabled={isExportPending}
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleExportProgramsDiscovery}
+          >
+            <HeaderActionIcon icon="export" />
+            {isExportPending ? "Exporting…" : "Export"}
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => void triggerProgramsDiscoverySampleExcelDownload()}
+          >
+            <HeaderActionIcon icon="download" />
+            Download Sample
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => setImportOpen(true)}
+          >
+            <HeaderActionIcon icon="import" />
+            Bulk Import
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-[7px] text-[12px] font-semibold text-white transition-all duration-150 hover:bg-[#1B4332]"
+            onClick={() => setAddOpen(true)}
+          >
+            <HeaderActionIcon icon="add" />
+            Add Program
+          </button>
+        </div>
+
+        <AdminAddProgramDialog open={addOpen} onClose={() => setAddOpen(false)} />
+
+        <ContentProgramsDiscoveryImportDialog
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+        />
+      </>
+    );
+  }
+
+  function handleExportUniversityPrograms() {
+    startExportTransition(async () => {
+      const result = await exportAdminUniversityProgramsExcel();
+
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+
+      if (result.rows.length === 0) {
+        window.alert("No university program links to export.");
+        return;
+      }
+
+      const day = new Date().toISOString().slice(0, 10);
+      await triggerAdminUniversityProgramsExcelDownload(
+        result.rows,
+        `admin-university-programs-${day}.xlsx`,
+      );
+    });
+  }
+
+  if (isUniversityProgramsList) {
+    return (
+      <>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+          <button
+            type="button"
+            disabled={isExportPending}
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleExportUniversityPrograms}
+          >
+            <HeaderActionIcon icon="export" />
+            {isExportPending ? "Exporting…" : "Export"}
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => void triggerUniversityProgramsSampleExcelDownload()}
+          >
+            <HeaderActionIcon icon="download" />
+            Download Sample
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => setImportOpen(true)}
+          >
+            <HeaderActionIcon icon="import" />
+            Bulk Import
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-[7px] text-[12px] font-semibold text-white transition-all duration-150 hover:bg-[#1B4332]"
+            onClick={() => setAddOpen(true)}
+          >
+            <HeaderActionIcon icon="add" />
+            Add Link
+          </button>
+        </div>
+
+        <AdminAddUniversityProgramDialog
+          open={addOpen}
+          onClose={() => setAddOpen(false)}
+        />
+
+        <ContentUniversityProgramsImportDialog
           open={importOpen}
           onClose={() => setImportOpen(false)}
         />
