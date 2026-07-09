@@ -1,4 +1,8 @@
 import { aiMatchingOptionsEn } from "./ai-matching-options-en";
+import {
+  programsInterestTilesEn,
+  programsRailsEn,
+} from "./student-discovery-programs-tiles-en";
 
 /** Discovery pages: universities, scholarships, AI matching, essay review, stories */
 export const studentDiscoveryEn = {
@@ -549,6 +553,7 @@ export const studentDiscoveryEn = {
     pageSubtitle:
       "Discover majors and career paths with salary insights, skills, study plans, and real-world examples.",
     heroEyebrow: "Programs Explorer",
+    heroFloatLabels: ["Computer Science", "Finance", "Architecture"] as const,
     heroTitle: "Not sure what to study? Let's <em>figure it out</em>.",
     heroSubtitle:
       "Explore different paths, understand where they lead, and find what actually fits you. Every program comes with real career outcomes, salary insights, and honest pros and cons.",
@@ -664,6 +669,7 @@ export const studentDiscoveryEn = {
       "You want to avoid corporate or structured environments",
     ] as const,
     studyPlanEyebrow: "Year by year",
+    studyYearLabel: "Year",
     studyPlanTitleDetail: "What you'll actually study",
     studyPlanSubtitleDetail:
       "A typical journey. Programs vary by university, but most follow this rhythm.",
@@ -783,5 +789,12 @@ export const studentDiscoveryEn = {
     thingsToKnow: "Things to know",
     selfAssessment: "Self assessment",
     loading: "Loading programs…",
+    loadingProgram: "Loading program…",
+    featuredBadge: "Featured",
+    scrollPrevious: "Scroll previous",
+    scrollNext: "Scroll next",
+    interestProgramsMeta: "{count} programs · {meta}",
+    interestTiles: programsInterestTilesEn,
+    rails: programsRailsEn,
   },
 } as const;

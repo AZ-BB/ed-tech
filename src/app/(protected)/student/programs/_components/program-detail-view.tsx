@@ -122,7 +122,7 @@ export function ProgramDetailView({
   };
 
   return (
-    <div className={detailStyles.page}>
+    <div id="programs-discovery-scope" className={detailStyles.page}>
       <nav className={detailStyles.crumbs} aria-label="Breadcrumb">
         <Link href="/student/programs">{t.pageTitle}</Link>
         <span className={detailStyles.crumbsSep}>›</span>
@@ -240,15 +240,17 @@ export function ProgramDetailView({
           <div className={detailStyles.journey}>
             <div
               className={detailStyles.journeyTrack}
-              style={{
-                gridTemplateColumns: `repeat(${Math.min(program.studyPlan.length, 4)}, 1fr)`,
-              }}
+              style={
+                {
+                  "--journey-cols": Math.min(program.studyPlan.length, 4),
+                } as React.CSSProperties
+              }
             >
               {program.studyPlan.map((year) => (
                 <div key={`${year.year}-${year.title}`} className={detailStyles.journeyYear}>
                   <div className={detailStyles.journeyNum}>
                     <span className={detailStyles.journeyNumBig}>{year.year}</span>
-                    <span className={detailStyles.journeyNumSmall}>YEAR</span>
+                    <span className={detailStyles.journeyNumSmall}>{t.studyYearLabel}</span>
                   </div>
                   <div className={detailStyles.journeyTitle}>{year.title}</div>
                   <div className={detailStyles.journeyTopics}>

@@ -87,9 +87,13 @@ export function InterestTileIcon({ tileId }: InterestIconProps) {
   }
 }
 
-export function formatInterestMeta(tile: InterestTile, count: number): string {
+export function formatInterestMeta(
+  tile: InterestTile,
+  count: number,
+  metaTemplate: string,
+): string {
   if (count > 0) {
-    return `${count} programs · ${tile.meta}`;
+    return metaTemplate.replace("{count}", String(count)).replace("{meta}", tile.meta);
   }
   return tile.meta;
 }

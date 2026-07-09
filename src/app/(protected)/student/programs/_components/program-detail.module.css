@@ -275,25 +275,9 @@
 
 .journeyTrack {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--journey-cols, 4), 1fr);
   gap: 0;
   position: relative;
-}
-
-.journeyTrack::before {
-  content: "";
-  position: absolute;
-  top: 32px;
-  left: 6%;
-  right: 6%;
-  height: 2px;
-  background: repeating-linear-gradient(
-    to right,
-    var(--border) 0,
-    var(--border) 4px,
-    transparent 4px,
-    transparent 8px
-  );
 }
 
 .journeyTrack::before {
@@ -363,7 +347,7 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
-  text-align: left;
+  text-align: start;
   font-size: 12.5px;
   color: var(--text-mid);
   line-height: 1.4;
@@ -629,7 +613,7 @@
 .salaryRange {
   font-size: 13px;
   color: var(--text-light);
-  text-align: right;
+  text-align: end;
 }
 
 .salaryNote {
@@ -702,7 +686,7 @@
 .salaryRange {
   font-size: 13px;
   color: var(--text-light);
-  text-align: right;
+  text-align: end;
 }
 
 .salaryNote {
@@ -1355,7 +1339,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  text-align: left;
+  text-align: start;
   font-family: inherit;
 }
 
@@ -1749,7 +1733,7 @@
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
-  text-align: left;
+  text-align: start;
   font-family: inherit;
   color: inherit;
   text-decoration: none;
@@ -1858,7 +1842,7 @@
   border-left: none;
   border-right: none;
   border-top: none;
-  text-align: left;
+  text-align: start;
   font-family: inherit;
 }
 
@@ -2057,8 +2041,17 @@
 }
 
 @media (max-width: 900px) {
+  .page {
+    padding: 16px 0 100px;
+  }
   .heroTitle {
     font-size: 38px;
+  }
+  .sectionTitle {
+    font-size: 26px;
+  }
+  .section {
+    margin-bottom: 48px;
   }
   .snapshot {
     grid-template-columns: repeat(2, 1fr);
@@ -2082,13 +2075,76 @@
   }
   .journeyTrack {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 0;
   }
   .journeyTrack::before {
     display: none;
   }
+  .journey {
+    padding: 24px 20px;
+  }
+  .journeyYear {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: 14px;
+    row-gap: 8px;
+    padding: 0 0 22px;
+    text-align: start;
+    position: relative;
+  }
+  .journeyYear:last-child {
+    padding-bottom: 0;
+  }
+  .journeyYear:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 27px;
+    top: 60px;
+    bottom: 2px;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      var(--green-light) 0%,
+      var(--border) 100%
+    );
+  }
+  .journeyNum {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    margin: 0;
+    align-self: start;
+  }
+  .journeyNumBig {
+    font-size: 20px;
+  }
+  .journeyNumSmall {
+    font-size: 8.5px;
+    letter-spacing: 0.6px;
+  }
+  .journeyTitle {
+    grid-column: 2;
+    grid-row: 1;
+    margin-bottom: 0;
+    font-size: 15px;
+    line-height: 1.35;
+    align-self: center;
+    padding-top: 2px;
+  }
+  .journeyTopics {
+    grid-column: 2;
+    grid-row: 2;
+    gap: 6px;
+  }
+  .journeyTopic {
+    padding: 8px 12px;
+  }
   .skillsGrid {
     grid-template-columns: 1fr;
+    padding: 24px;
   }
   .careerGrid,
   .demandGrid,
@@ -2103,6 +2159,10 @@
   }
   .salaryRow {
     grid-template-columns: 100px 1fr 80px;
+    gap: 14px;
+  }
+  .salaryCard {
+    padding: 28px 24px;
   }
   .reality {
     grid-template-columns: 1fr;
@@ -2112,16 +2172,36 @@
     margin: 0 auto;
   }
   .pnsBlock {
-    padding: 24px;
+    padding: 28px 24px;
   }
   .uniGrid {
     grid-template-columns: 1fr;
   }
+  .stickyCtaInner {
+    gap: 14px;
+  }
 }
 
 @media (max-width: 600px) {
+  .page {
+    padding: 8px 0 108px;
+  }
+  .crumbs {
+    font-size: 11.5px;
+    margin-bottom: 16px;
+    gap: 6px;
+  }
   .hero {
-    padding: 32px 24px;
+    padding: 28px 20px;
+    border-radius: 18px;
+    margin-bottom: 24px;
+  }
+  .heroTop {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .heroActions {
+    margin-inline-start: auto;
   }
   .heroSaveBtn {
     padding: 8px 14px;
@@ -2129,8 +2209,302 @@
   }
   .heroTitle {
     font-size: 32px;
+    letter-spacing: -0.5px;
+  }
+  .heroTagline {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+  .sectionTitle {
+    font-size: 22px;
+  }
+  .sectionSub {
+    margin-bottom: 20px;
+    font-size: 13.5px;
+  }
+  .section {
+    margin-bottom: 40px;
+  }
+  .snapshot {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 0;
+  }
+  .snapItem {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .snapItem:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .snapItem:first-child {
+    padding-top: 0;
+  }
+  .journey {
+    padding: 18px 16px;
+  }
+  .journeyYear {
+    grid-template-columns: 52px minmax(0, 1fr);
+    column-gap: 12px;
+    padding-bottom: 18px;
+  }
+  .journeyYear:not(:last-child)::after {
+    inset-inline-start: 25px;
+    top: 56px;
+  }
+  .journeyNum {
+    width: 52px;
+    height: 52px;
+    min-height: 52px;
+  }
+  .journeyNumBig {
+    font-size: 18px;
+  }
+  .journeyTitle {
+    font-size: 14px;
+  }
+  .journeyTopic {
+    padding: 7px 10px;
+    font-size: 12px;
   }
   .skillsGrid {
     grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 18px;
+    border-radius: 16px;
+  }
+  .careerGrid {
+    gap: 12px;
+  }
+  .demandCard {
+    padding: 22px 20px;
+    border-radius: 16px;
+  }
+  .demandNum {
+    font-size: 42px;
+  }
+  .employersGrid {
+    grid-template-columns: 1fr;
+  }
+  .salaryCard {
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+  .salaryTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .salaryTabs::-webkit-scrollbar {
+    display: none;
+  }
+  .salaryTab {
+    flex-shrink: 0;
+  }
+  .salaryRow {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .salaryRange {
+    text-align: start;
+  }
+  .pnsBlock {
+    padding: 22px 18px;
+    border-radius: 18px;
+  }
+  .pnsHead h3 {
+    font-size: 22px;
+  }
+  .fitQuestions,
+  .fitResult {
+    padding: 20px;
+    border-radius: 16px;
+  }
+  .fitQRow {
+    gap: 12px;
+    padding: 12px 0;
+  }
+  .fitQText {
+    font-size: 13.5px;
+  }
+  .fitResultTitle {
+    font-size: 20px;
+  }
+  .stickyCta {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .stickyCtaInner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .stickyCtaText {
+    font-size: 13px;
+  }
+  .stickyCtaTextSub {
+    font-size: 11px;
+  }
+  .stickyCtaBtn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+  }
+  .uniModalOverlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .uniModal {
+    max-height: 88vh;
+    padding: 24px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    border-radius: 20px 20px 0 0;
+  }
+  .uniModalName {
+    font-size: 20px;
+    padding-inline-end: 36px;
+  }
+  .uniModalStats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .uniModalActions {
+    flex-direction: column;
+  }
+  .uniModalBtn,
+  .uniModalBtnPrimary {
+    width: 100%;
+    justify-content: center;
+  }
+  .relatedChip {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .relatedArrow {
+    opacity: 1;
+  }
+  .uniFilters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    margin-bottom: 14px;
+  }
+  .uniFilters::-webkit-scrollbar {
+    display: none;
+  }
+  .uniFilter {
+    flex-shrink: 0;
+  }
+}
+
+/* RTL — program detail */
+.student-portal[dir="rtl"] #programs-discovery-scope,
+html[dir="rtl"] .student-portal #programs-discovery-scope {
+  direction: rtl;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .hero::before,
+html[dir="rtl"] .student-portal #programs-discovery-scope .hero::before {
+  right: auto;
+  left: -100px;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .sectionEyebrow,
+html[dir="rtl"] .student-portal #programs-discovery-scope .sectionEyebrow {
+  flex-direction: row-reverse;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .crumbsSep,
+html[dir="rtl"] .student-portal #programs-discovery-scope .crumbsSep {
+  transform: scaleX(-1);
+  display: inline-block;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .snapItem,
+html[dir="rtl"] .student-portal #programs-discovery-scope .snapItem {
+  border-right: none;
+  border-left: 1px solid var(--border-light);
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .snapItem:last-child,
+html[dir="rtl"] .student-portal #programs-discovery-scope .snapItem:last-child {
+  border-left: none;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .snapItem:first-child,
+html[dir="rtl"] .student-portal #programs-discovery-scope .snapItem:first-child {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .dayItem,
+html[dir="rtl"] .student-portal #programs-discovery-scope .dayItem {
+  padding-left: 0;
+  padding-right: 16px;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .dayItem::before,
+html[dir="rtl"] .student-portal #programs-discovery-scope .dayItem::before {
+  left: auto;
+  right: 0;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .fitNotList div,
+html[dir="rtl"] .student-portal #programs-discovery-scope .fitNotList div {
+  padding-left: 0;
+  padding-right: 16px;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .fitNotList div::before,
+html[dir="rtl"] .student-portal #programs-discovery-scope .fitNotList div::before {
+  left: auto;
+  right: 0;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .pnsCard:hover,
+html[dir="rtl"] .student-portal #programs-discovery-scope .pnsCard:hover {
+  transform: translateX(-2px);
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .uniModalClose,
+html[dir="rtl"] .student-portal #programs-discovery-scope .uniModalClose {
+  right: auto;
+  left: 14px;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .careerCard,
+.student-portal[dir="rtl"] #programs-discovery-scope .skillCard,
+.student-portal[dir="rtl"] #programs-discovery-scope .employerCard,
+.student-portal[dir="rtl"] #programs-discovery-scope .videoCard,
+.student-portal[dir="rtl"] #programs-discovery-scope .pnsCard,
+html[dir="rtl"] .student-portal #programs-discovery-scope .careerCard,
+html[dir="rtl"] .student-portal #programs-discovery-scope .skillCard,
+html[dir="rtl"] .student-portal #programs-discovery-scope .employerCard,
+html[dir="rtl"] .student-portal #programs-discovery-scope .videoCard,
+html[dir="rtl"] .student-portal #programs-discovery-scope .pnsCard {
+  text-align: start;
+}
+
+.student-portal[dir="rtl"] #programs-discovery-scope .stickyCtaInner,
+html[dir="rtl"] .student-portal #programs-discovery-scope .stickyCtaInner {
+  flex-direction: row-reverse;
+}
+
+@media (max-width: 900px) {
+  .student-portal[dir="rtl"] #programs-discovery-scope .snapItem,
+  html[dir="rtl"] .student-portal #programs-discovery-scope .snapItem {
+    border-left: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .student-portal[dir="rtl"] #programs-discovery-scope .stickyCtaInner,
+  html[dir="rtl"] .student-portal #programs-discovery-scope .stickyCtaInner {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

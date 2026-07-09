@@ -410,10 +410,10 @@ export function StudentLayoutShell({
       dir={portalDir}
       lang={locale}
     >
-      <div className="mx-auto w-full min-w-0 px-6 md:px-10 lg:px-16 pt-6 pb-16">
+      <div className="mx-auto w-full min-w-0 px-4 sm:px-6 md:px-10 lg:px-16 pt-4 sm:pt-6 pb-12 sm:pb-16">
         {hideTopNav ? null : (
           <header
-            className={`relative z-10 mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-5 py-3.5${
+            className={`relative z-10 mb-4 sm:mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-4 py-3 sm:px-5 sm:py-3.5${
               headerWidthClass ? ` ${headerWidthClass}` : ""
             }`}
           >

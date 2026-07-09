@@ -45,6 +45,7 @@ export function ProgramDetailStickyCta({
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
+            className="icon-directional"
             aria-hidden
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
