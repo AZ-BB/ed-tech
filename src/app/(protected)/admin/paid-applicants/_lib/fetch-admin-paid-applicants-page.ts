@@ -1,15 +1,47 @@
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import {
+  fetchActiveApplicationPlans,
+  hydrateApplicationsPlansEmbeds,
+  type ApplicationPlanCatalogRow,
+} from "@/lib/applications-plans";
+import {
+  parseApplicationPackageData,
+  resolveApplicationUniversitiesTotal,
+} from "@/lib/application-package-data";
+import { mapApplicationToPaymentRequestOption } from "@/lib/payment-request-application-option";
+import { expireOverduePendingPayments } from "@/lib/payment-request-utils";
+import { resolvePaymentFromEmailDisplay } from "@/lib/resend/application-payment-request-email";
+import type { SendPaymentRequestApplicationOption } from "@/components/application-support/send-payment-request-dialog";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
 
 import type { AdminPaidApplicantsPageFilters } from "./parse-admin-paid-applicants-search-params";
 
 export type AdminPaidApplicantTableRow = {
   applicationId: number;
   studentName: string;
+  schoolId: string | null;
+  schoolName: string;
   packageLabel: string;
-  packagePrice: number;
   paidAmount: number;
   paidAt: string | null;
+};
+
+export type AdminPaidApplicantsPanelProps = {
+  rows: AdminPaidApplicantTableRow[];
+  totalRows: number;
+  page: number;
+  limit: number;
+  q: string;
+  schoolId: string;
+  planId: string;
+  paymentRequestApplications: SendPaymentRequestApplicationOption[];
+  availablePlans: ApplicationPlanCatalogRow[];
+  adminName: string;
+  adminEmail: string;
+  fromEmailDisplay: string;
 };
 
 type PersonEmbed =
@@ -25,11 +57,28 @@ type AppEmbed = {
   school_id: string | null;
   school_name: string | null;
   plan_id: number;
+  package_data: unknown;
   applications_plans:
     | { name: string; price: number; universities_count: number }
     | { name: string; price: number; universities_count: number }[]
     | null;
-  schools: { name: string } | { name: string }[] | null;
+  payments:
+    | {
+        status: string | null;
+        amount: number;
+        due_date: string | null;
+        payment_request_sent_at: string | null;
+        payment_request_token: string | null;
+      }
+    | {
+        status: string | null;
+        amount: number;
+        due_date: string | null;
+        payment_request_sent_at: string | null;
+        payment_request_token: string | null;
+      }[]
+    | null;
+  schools: { id: string; name: string } | { id: string; name: string }[] | null;
   student_profiles: PersonEmbed;
 };
 
@@ -77,61 +126,118 @@ function resolveStudentName(app: AppEmbed): string {
   return combined || "—";
 }
 
+function resolveSchoolName(app: AppEmbed): string {
+  const school = firstEmbed(app.schools);
+  const fromSchool = school?.name?.trim();
+  if (fromSchool) return fromSchool;
+  return app.school_name?.trim() || "—";
+}
+
+function resolveSchoolId(app: AppEmbed): string | null {
+  const fromApp = app.school_id?.trim();
+  if (fromApp) return fromApp;
+  const school = firstEmbed(app.schools);
+  return school?.id?.trim() || null;
+}
+
 function resolvePackageLabel(app: AppEmbed): string {
   const plan = firstEmbed(app.applications_plans);
   if (!plan) return "—";
-  const count = plan.universities_count;
-  if (Number.isFinite(count) && count > 0) {
-    return `${count} ${count === 1 ? "university" : "universities"}`;
-  }
-  return plan.name?.trim() || "—";
-}
 
-function resolvePackagePrice(app: AppEmbed): number {
-  const plan = firstEmbed(app.applications_plans);
-  return plan?.price ?? 0;
+  const packageData = parseApplicationPackageData(app.package_data);
+  const universitiesTotal = resolveApplicationUniversitiesTotal(
+    packageData,
+    plan.universities_count,
+  );
+
+  return universitiesTotal > 0 ? String(universitiesTotal) : "—";
 }
 
 function resolvePaidAt(payment: PaymentRowRaw): string | null {
   return payment.paid_at ?? payment.updated_at;
 }
 
-function mapPaymentRow(payment: PaymentRowRaw): AdminPaidApplicantTableRow | null {
+function mapPaymentRow(
+  payment: PaymentRowRaw,
+  appById: Map<number, AppEmbed>,
+): {
+  row: AdminPaidApplicantTableRow;
+  paymentRequestOption: SendPaymentRequestApplicationOption;
+} | null {
   const app = firstEmbed(payment.applications);
   if (!app) return null;
 
+  const hydratedApp = appById.get(app.id) ?? app;
+
   return {
-    applicationId: app.id,
-    studentName: resolveStudentName(app),
-    packageLabel: resolvePackageLabel(app),
-    packagePrice: resolvePackagePrice(app),
-    paidAmount: payment.amount ?? 0,
-    paidAt: resolvePaidAt(payment),
+    row: {
+      applicationId: hydratedApp.id,
+      studentName: resolveStudentName(hydratedApp),
+      schoolId: resolveSchoolId(hydratedApp),
+      schoolName: resolveSchoolName(hydratedApp),
+      packageLabel: resolvePackageLabel(hydratedApp),
+      paidAmount: payment.amount ?? 0,
+      paidAt: resolvePaidAt(payment),
+    },
+    paymentRequestOption: mapApplicationToPaymentRequestOption(hydratedApp),
   };
 }
 
 function dedupeByApplication(
   payments: PaymentRowRaw[],
-): AdminPaidApplicantTableRow[] {
+  appById: Map<number, AppEmbed>,
+): {
+  rows: AdminPaidApplicantTableRow[];
+  paymentRequestApplications: SendPaymentRequestApplicationOption[];
+} {
   const seen = new Set<number>();
   const rows: AdminPaidApplicantTableRow[] = [];
+  const paymentRequestApplications: SendPaymentRequestApplicationOption[] = [];
 
   for (const payment of payments) {
-    const row = mapPaymentRow(payment);
-    if (!row || seen.has(row.applicationId)) continue;
-    seen.add(row.applicationId);
-    rows.push(row);
+    const mapped = mapPaymentRow(payment, appById);
+    if (!mapped || seen.has(mapped.row.applicationId)) continue;
+    seen.add(mapped.row.applicationId);
+    rows.push(mapped.row);
+    paymentRequestApplications.push(mapped.paymentRequestOption);
   }
 
-  return rows;
+  return { rows, paymentRequestApplications };
+}
+
+async function resolveAdminSender(): Promise<{ name: string; email: string }> {
+  const authClient = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+
+  if (!user?.id) {
+    return { name: "Admin", email: "" };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: admin } = await secret
+    .from("admins")
+    .select("first_name, last_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const name =
+    [admin?.first_name, admin?.last_name].filter(Boolean).join(" ").trim() || "Admin";
+
+  return { name, email: user.email?.trim() || "" };
 }
 
 export async function fetchAdminPaidApplicantsPage(
   filters: AdminPaidApplicantsPageFilters,
-): Promise<{ rows: AdminPaidApplicantTableRow[]; totalRows: number }> {
+): Promise<
+  Pick<AdminPaidApplicantsPanelProps, "rows" | "totalRows" | "paymentRequestApplications">
+> {
   const supabase = await createSupabaseSecretClient();
   const { q, schoolId, planId, page, limit } = filters;
   const offset = (Math.max(1, page) - 1) * limit;
+
+  await expireOverduePendingPayments(supabase);
 
   let query = supabase
     .from("payments")
@@ -149,9 +255,11 @@ export async function fetchAdminPaidApplicantsPage(
         school_id,
         school_name,
         plan_id,
+        package_data,
         applications_plans ( name, price, universities_count ),
-        schools ( name ),
-        student_profiles ( first_name, last_name, email )
+        schools ( id, name ),
+        student_profiles ( first_name, last_name, email ),
+        payments ( status, amount, due_date, payment_request_sent_at, payment_request_token )
       )
     `,
     )
@@ -180,12 +288,45 @@ export async function fetchAdminPaidApplicantsPage(
 
   if (error) {
     console.error("[fetchAdminPaidApplicantsPage]", error);
-    return { rows: [], totalRows: 0 };
+    return { rows: [], totalRows: 0, paymentRequestApplications: [] };
   }
 
-  const deduped = dedupeByApplication((data ?? []) as unknown as PaymentRowRaw[]);
+  const rawPayments = (data ?? []) as unknown as PaymentRowRaw[];
+  const applications = rawPayments
+    .map((payment) => firstEmbed(payment.applications))
+    .filter((app): app is AppEmbed => app != null);
+  const hydratedApplications = await hydrateApplicationsPlansEmbeds(supabase, applications);
+  const appById = new Map(hydratedApplications.map((app) => [app.id, app]));
+
+  const { rows: deduped, paymentRequestApplications } = dedupeByApplication(
+    rawPayments,
+    appById,
+  );
   const totalRows = deduped.length;
   const rows = deduped.slice(offset, offset + limit);
 
-  return { rows, totalRows };
+  return { rows, totalRows, paymentRequestApplications };
+}
+
+export async function fetchAdminPaidApplicantsPanel(
+  filters: AdminPaidApplicantsPageFilters,
+): Promise<AdminPaidApplicantsPanelProps> {
+  const [pageData, availablePlans, adminSender] = await Promise.all([
+    fetchAdminPaidApplicantsPage(filters),
+    fetchActiveApplicationPlans(await createSupabaseSecretClient()),
+    resolveAdminSender(),
+  ]);
+
+  return {
+    ...pageData,
+    page: filters.page,
+    limit: filters.limit,
+    q: filters.q,
+    schoolId: filters.schoolId,
+    planId: filters.planId,
+    availablePlans,
+    adminName: adminSender.name,
+    adminEmail: adminSender.email,
+    fromEmailDisplay: resolvePaymentFromEmailDisplay(),
+  };
 }

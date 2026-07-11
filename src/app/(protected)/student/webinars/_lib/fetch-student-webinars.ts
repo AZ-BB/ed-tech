@@ -59,7 +59,8 @@ const WEBINAR_SELECT = `
     last_name,
     title,
     description,
-    about
+    about,
+    avatar_url
   )
 `;
 
@@ -84,6 +85,7 @@ type WebinarRow = {
         title: string | null;
         description: string | null;
         about: string | null;
+        avatar_url: string | null;
       }
     | {
         first_name: string | null;
@@ -91,6 +93,7 @@ type WebinarRow = {
         title: string | null;
         description: string | null;
         about: string | null;
+        avatar_url: string | null;
       }[]
     | null;
 };

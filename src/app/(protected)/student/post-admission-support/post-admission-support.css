@@ -404,6 +404,116 @@
   background: var(--green-dark);
 }
 
+.pas-service-selection-modal {
+  max-width: 520px;
+}
+
+.pas-service-selection-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px 24px;
+}
+
+.pas-service-selection-subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-light);
+}
+
+.pas-service-selection-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pas-service-selection-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+
+.pas-service-selection-select,
+.pas-service-selection-textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  padding: 12px 14px;
+  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pas-service-selection-select {
+  cursor: pointer;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px 6px;
+  padding-right: 36px;
+}
+
+.pas-service-selection-select:focus,
+.pas-service-selection-textarea:focus {
+  border-color: var(--green-light);
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.08);
+}
+
+.pas-service-selection-textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.pas-service-selection-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pas-service-selection-cancel,
+.pas-service-selection-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.pas-service-selection-cancel {
+  border: 1.5px solid var(--border);
+  background: white;
+  color: var(--text-mid);
+}
+
+.pas-service-selection-cancel:hover:not(:disabled) {
+  border-color: var(--text-hint);
+}
+
+.pas-service-selection-submit {
+  border: none;
+  background: var(--green);
+  color: white;
+}
+
+.pas-service-selection-submit:hover:not(:disabled) {
+  background: var(--green-dark);
+}
+
+.pas-service-selection-cancel:disabled,
+.pas-service-selection-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 #post-admission-support-scope .pas-error {
   margin-top: 12px;
   font-size: 13px;

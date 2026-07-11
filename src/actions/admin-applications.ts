@@ -1,6 +1,7 @@
 "use server";
 
 import { fetchAdminApplicationsExportRows } from "@/app/(protected)/admin/applications/_lib/fetch-admin-applications-export";
+import { parseAdminAssigneeOptionValue } from "@/app/(protected)/admin/applications/_lib/fetch-admin-application-admin-options";
 import {
   APPLICATION_ACTIVITY_ENTITY_TYPE,
   applicationActivityEntityId,
@@ -260,9 +261,8 @@ export async function addAdminApplicationInternalNote(
   return { ok: true };
 }
 
-export async function assignAdminApplicationAdvisor(
+export async function toggleAdminStudentFlag(
   applicationIdRaw: string,
-  advisorIdRaw: string,
 ): Promise<AdminApplicationActionResult> {
   const access = await assertAdminAccess();
   if (!access.ok) return access;
@@ -272,82 +272,190 @@ export async function assignAdminApplicationAdvisor(
     return { ok: false, error: "Invalid application." };
   }
 
-  const advisorId = advisorIdRaw.trim();
-  const unassign = advisorId === "" || advisorId === "unassigned";
-
-  if (!unassign && !UUID_RE.test(advisorId)) {
-    return { ok: false, error: "Select a valid advisor." };
-  }
-
   const secret = await createSupabaseSecretClient();
-
-  const [{ data: existing, error: fetchErr }, { data: advisor }] = await Promise.all([
-    secret
-      .from("applications")
-      .select("id, student_id, assigned_to")
-      .eq("id", applicationId)
-      .maybeSingle(),
-    unassign
-      ? Promise.resolve({ data: null, error: null })
-      : secret
-          .from("advisors")
-          .select("id, first_name, last_name, is_active")
-          .eq("id", advisorId)
-          .maybeSingle(),
-  ]);
+  const { data: existing, error: fetchErr } = await secret
+    .from("applications")
+    .select("id, student_id")
+    .eq("id", applicationId)
+    .maybeSingle();
 
   if (fetchErr || !existing) {
-    console.error("[assignAdminApplicationAdvisor] fetch", fetchErr);
+    console.error("[toggleAdminStudentFlag] fetch application", fetchErr);
     return { ok: false, error: "Application not found." };
   }
 
-  if (!unassign) {
-    if (!advisor) {
-      return { ok: false, error: "Advisor not found." };
-    }
-    if (advisor.is_active === false) {
-      return { ok: false, error: "That advisor is inactive." };
-    }
+  const { data: studentRow, error: studentFetchErr } = await secret
+    .from("student_profiles")
+    .select("id, flagged")
+    .eq("id", existing.student_id)
+    .maybeSingle();
+
+  if (studentFetchErr || !studentRow) {
+    console.error("[toggleAdminStudentFlag] fetch student", studentFetchErr);
+    return { ok: false, error: "Student not found." };
   }
 
-  const nextAssignedTo = unassign ? null : advisorId;
-  if (existing.assigned_to === nextAssignedTo) {
-    return { ok: true };
-  }
-
+  const nextFlagged = !studentRow.flagged;
   const now = new Date().toISOString();
   const { error: updateErr } = await secret
-    .from("applications")
+    .from("student_profiles")
     .update({
-      assigned_to: nextAssignedTo,
-      assigned_at: unassign ? null : now,
+      flagged: nextFlagged,
+      flagged_by: null,
       updated_at: now,
     })
-    .eq("id", applicationId);
+    .eq("id", existing.student_id);
 
   if (updateErr) {
-    console.error("[assignAdminApplicationAdvisor] update", updateErr);
-    return { ok: false, error: "Could not assign advisor." };
+    console.error("[toggleAdminStudentFlag] update", updateErr);
+    return { ok: false, error: "Could not update student flag." };
   }
-
-  const advisorName = advisor
-    ? [advisor.first_name, advisor.last_name].filter(Boolean).join(" ").trim() || "Advisor"
-    : null;
-
-  const message = unassign
-    ? `${access.actorName} unassigned the advisor on application #${applicationId}.`
-    : `${access.actorName} assigned ${advisorName} as advisor on application #${applicationId}.`;
 
   await insertApplicationActivityLog({
     applicationId,
     studentId: existing.student_id,
     adminId: access.userId,
-    action: unassign ? "application_advisor_unassigned" : "application_advisor_assigned",
+    action: nextFlagged ? "student_flagged" : "student_unflagged",
+    message: nextFlagged
+      ? `${access.actorName} flagged the student for follow-up on application #${applicationId}.`
+      : `${access.actorName} removed the follow-up flag on application #${applicationId}.`,
+  });
+
+  revalidateApplicationPaths(applicationId);
+  revalidatePath("/admin/users/students");
+  return { ok: true };
+}
+
+export async function assignAdminApplicationAssignee(
+  applicationIdRaw: string,
+  assigneeRaw: string,
+): Promise<AdminApplicationActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const applicationId = parseApplicationId(applicationIdRaw);
+  if (applicationId == null) {
+    return { ok: false, error: "Invalid application." };
+  }
+
+  const trimmed = assigneeRaw.trim();
+  const unassign = trimmed === "" || trimmed === "unassigned";
+  const parsed = unassign ? null : parseAdminAssigneeOptionValue(trimmed);
+
+  if (!unassign && !parsed) {
+    return { ok: false, error: "Select a valid admin or advisor." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+
+  const { data: existing, error: fetchErr } = await secret
+    .from("applications")
+    .select("id, student_id, assigned_to, assigned_admin_id")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    console.error("[assignAdminApplicationAssignee] fetch", fetchErr);
+    return { ok: false, error: "Application not found." };
+  }
+
+  const now = new Date().toISOString();
+  let nextAssignedTo: string | null = null;
+  let nextAssignedAdminId: string | null = null;
+  let assigneeName: string | null = null;
+  let action: string;
+  let message: string;
+
+  if (unassign) {
+    if (!existing.assigned_to && !existing.assigned_admin_id) {
+      return { ok: true };
+    }
+    action = "application_assignee_unassigned";
+    message = `${access.actorName} unassigned the owner on application #${applicationId}.`;
+  } else if (parsed!.kind === "admin") {
+    const { data: admin, error: adminErr } = await secret
+      .from("admins")
+      .select("id, first_name, last_name, is_active")
+      .eq("id", parsed!.id)
+      .maybeSingle();
+
+    if (adminErr || !admin) {
+      return { ok: false, error: "Admin not found." };
+    }
+    if (admin.is_active === false) {
+      return { ok: false, error: "That admin is inactive." };
+    }
+
+    if (existing.assigned_admin_id === parsed!.id && !existing.assigned_to) {
+      return { ok: true };
+    }
+
+    nextAssignedAdminId = parsed!.id;
+    assigneeName =
+      [admin.first_name, admin.last_name].filter(Boolean).join(" ").trim() || "Admin";
+    action = "application_admin_assigned";
+    message = `${access.actorName} assigned ${assigneeName} as admin on application #${applicationId}.`;
+  } else {
+    const { data: advisor, error: advisorErr } = await secret
+      .from("advisors")
+      .select("id, first_name, last_name, is_active")
+      .eq("id", parsed!.id)
+      .maybeSingle();
+
+    if (advisorErr || !advisor) {
+      return { ok: false, error: "Advisor not found." };
+    }
+    if (advisor.is_active === false) {
+      return { ok: false, error: "That advisor is inactive." };
+    }
+
+    if (existing.assigned_to === parsed!.id && !existing.assigned_admin_id) {
+      return { ok: true };
+    }
+
+    nextAssignedTo = parsed!.id;
+    assigneeName =
+      [advisor.first_name, advisor.last_name].filter(Boolean).join(" ").trim() || "Advisor";
+    action = "application_advisor_assigned";
+    message = `${access.actorName} assigned ${assigneeName} as advisor on application #${applicationId}.`;
+  }
+
+  const { error: updateErr } = await secret
+    .from("applications")
+    .update({
+      assigned_to: nextAssignedTo,
+      assigned_at: nextAssignedTo ? now : null,
+      assigned_admin_id: nextAssignedAdminId,
+      assigned_admin_at: nextAssignedAdminId ? now : null,
+      updated_at: now,
+    })
+    .eq("id", applicationId);
+
+  if (updateErr) {
+    console.error("[assignAdminApplicationAssignee] update", updateErr);
+    return { ok: false, error: "Could not assign owner." };
+  }
+
+  await insertApplicationActivityLog({
+    applicationId,
+    studentId: existing.student_id,
+    adminId: access.userId,
+    action,
     message,
   });
 
   revalidateApplicationPaths(applicationId);
   return { ok: true };
+}
+
+export async function assignAdminApplicationAdvisor(
+  applicationIdRaw: string,
+  advisorIdRaw: string,
+): Promise<AdminApplicationActionResult> {
+  const advisorId = advisorIdRaw.trim();
+  const unassign = advisorId === "" || advisorId === "unassigned";
+  const assigneeRaw = unassign ? "unassigned" : `advisor:${advisorId}`;
+  return assignAdminApplicationAssignee(applicationIdRaw, assigneeRaw);
 }
 
 export async function exportAdminApplicationsExcel(): Promise<ExportAdminApplicationsResult> {

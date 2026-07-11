@@ -197,8 +197,8 @@ export function UniversitiesFilter({
             </div>
 
             <div className="rounded-[16px] border border-[#ece9e4] bg-white px-4 py-3 sm:px-5">
-                <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-                    <div className="flex min-h-9 min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]">
+                <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-h-9 min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]">
                 <select
                     aria-label={t.major}
                     className={filterSelectClass}
@@ -304,7 +304,7 @@ export function UniversitiesFilter({
                 </select>
                     </div>
 
-                    <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:flex-nowrap">
+                    <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2 sm:ml-4 sm:flex-nowrap">
                     <button
                         type="button"
                         aria-pressed={shortlistOnly}

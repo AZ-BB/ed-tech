@@ -2,10 +2,12 @@ import type { Database } from "@/database.types";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type AdminApplicationsStats = {
-  activeCases: number;
-  pendingAssignment: number;
-  inProgress: number;
-  submitted: number;
+  lead: number;
+  not_suitable: number;
+  payment_requested: number;
+  active_package: number;
+  /** Unassigned applications (used by admin dashboard, not status cards). */
+  unassigned: number;
 };
 
 type ApplicationStatus = Database["public"]["Enums"]["application_status"];
@@ -42,20 +44,20 @@ async function countApplications(filter?: {
 }
 
 export async function fetchAdminApplicationsStats(): Promise<AdminApplicationsStats> {
-  const [activeCases, pendingAssignment, inProgress, submitted] =
+  const [lead, not_suitable, payment_requested, active_package, unassigned] =
     await Promise.all([
-      countApplications({
-        status: ["lead", "payment_requested", "active_package"],
-      }),
-      countApplications({ assignedToNull: true }),
+      countApplications({ status: "lead" }),
+      countApplications({ status: "not_suitable" }),
       countApplications({ status: "payment_requested" }),
       countApplications({ status: "active_package" }),
+      countApplications({ assignedToNull: true }),
     ]);
 
   return {
-    activeCases,
-    pendingAssignment,
-    inProgress,
-    submitted,
+    lead,
+    not_suitable,
+    payment_requested,
+    active_package,
+    unassigned,
   };
 }

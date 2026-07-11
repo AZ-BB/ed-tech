@@ -166,11 +166,11 @@ function RiskPill({
 
 function SnapItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3.5">
+    <div className="min-w-0 rounded-[10px] border border-[var(--border-light)] bg-[#faf9f4] p-3.5">
       <div className="mb-1 text-[11.5px] font-medium uppercase tracking-[0.05em] text-[var(--text-light)]">
         {label}
       </div>
-      <div className="text-[13.5px] font-semibold text-[var(--text)]">
+      <div className="break-words text-[13.5px] font-semibold text-[var(--text)]">
         {value}
       </div>
     </div>
@@ -1154,7 +1154,7 @@ export function SchoolStudentViewClient({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0 max-w-full">
       <Link
         href={backHref}
         className="sd-back mb-3.5 inline-flex cursor-pointer items-center gap-1.5 py-1.5 text-[12.5px] font-medium text-[var(--text-mid)] hover:text-[var(--green)] [&_svg]:h-[13px] [&_svg]:w-[13px]"
@@ -1170,8 +1170,8 @@ export function SchoolStudentViewClient({
         Back to all students
       </Link>
 
-      <div className="sd-grid grid grid-cols-1 items-start gap-5 xl:grid-cols-[280px_1fr] xl:gap-5">
-        <aside className="sd-side flex flex-col gap-3.5 rounded-[14px] border border-[var(--border-light)] bg-white p-[22px] xl:sticky xl:top-[80px]">
+      <div className="sd-grid grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)] xl:gap-5">
+        <aside className="sd-side flex w-full min-w-0 max-w-full flex-col gap-3.5 rounded-[14px] border border-[var(--border-light)] bg-white p-[22px] xl:sticky xl:top-[80px]">
           <div className="sd-side-top flex flex-col items-center gap-2.5 border-b border-[var(--border-light)] pb-[18px] text-center">
             <PersonProfileAvatar
               avatarUrl={student.avatarUrl}
@@ -1202,11 +1202,11 @@ export function SchoolStudentViewClient({
           {sidebarRows.map((r) => (
             <div
               key={r.lab}
-              className="flex justify-between gap-2 py-1 text-[12.5px]"
+              className="flex min-w-0 justify-between gap-2 py-1 text-[12.5px]"
             >
               <span className="shrink-0 text-[var(--text-light)]">{r.lab}</span>
               <span
-                className={`max-w-[60%] text-right font-medium text-[var(--text)] ${r.valSmall ? "text-[11.5px] leading-snug" : ""}`}
+                className={`min-w-0 max-w-[60%] break-words text-right font-medium text-[var(--text)] ${r.valSmall ? "text-[11.5px] leading-snug" : ""}`}
               >
                 {r.val}
               </span>
@@ -1249,8 +1249,8 @@ export function SchoolStudentViewClient({
           </div>
         </aside>
 
-        <div className="sd-main flex flex-col gap-[18px]">
-          <div className="sd-tabs flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
+        <div className="sd-main flex min-w-0 max-w-full flex-col gap-[18px]">
+          <div className="sd-tabs flex min-w-0 gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1 [-webkit-overflow-scrolling:touch]">
             {TAB_DEFS.map((t) => {
               const active = tab === t.id;
               return (
@@ -1270,7 +1270,9 @@ export function SchoolStudentViewClient({
             })}
           </div>
 
-          <div id="sd-tab-content">{tabBody}</div>
+          <div id="sd-tab-content" className="min-w-0 max-w-full">
+            {tabBody}
+          </div>
         </div>
       </div>
     </div>

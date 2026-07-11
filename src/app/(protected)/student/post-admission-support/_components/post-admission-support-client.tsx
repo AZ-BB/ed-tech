@@ -103,7 +103,7 @@ export function PostAdmissionSupportClient() {
   const { canBook, isPending, error, bookSession } = usePostAdmissionBooking();
 
   function handleTalkToAdvisor() {
-    bookSession({ serviceLabel: t.landing.genericServiceLabel });
+    bookSession();
   }
 
   function scrollToServices() {

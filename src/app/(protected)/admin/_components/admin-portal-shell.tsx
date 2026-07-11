@@ -285,7 +285,7 @@ export function AdminPortalShell({
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[240px]">
         <AdminPermissionsProvider permissions={permissions}>
           <header
             className={`sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-4 max-[760px]:px-4 lg:gap-[10px] lg:px-7 ${detailPage ? "lg:hidden" : ""}`}
@@ -405,7 +405,7 @@ export function AdminPortalShell({
         </header>
 
         <main
-          className={`flex-1 px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${detailPage ? "lg:px-6 lg:pt-4" : ""}`}
+          className={`min-w-0 flex-1 overflow-x-hidden px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${detailPage ? "lg:px-6 lg:pt-4" : ""}`}
         >
           {children}
         </main>

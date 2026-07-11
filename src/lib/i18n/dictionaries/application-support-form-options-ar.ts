@@ -28,11 +28,11 @@ export const applicationSupportFormOptionsAr = {
 } as const;
 
 export const applicationSupportJourneyStepsAr = [
-  "أخبرنا عنك",
-  "شارك اتجاهك: أين تريد الدراسة وماذا تريد أن تدرس",
-  "اختر استراتيجية التقديم",
-  "راجع خطتك المخصصة",
-  "احجز جلسة التأهيل",
+  "املأ المعلومات",
+  "احجز موعداً للتحدث مع مستشار",
+  "أجرِ جلسة التأهيل",
+  "استلم خطة مخصصة من المستشار",
+  "ابدأ رحلة دعم التقديم",
 ] as const;
 
 export const applicationSupportIncludedCompactAr = [

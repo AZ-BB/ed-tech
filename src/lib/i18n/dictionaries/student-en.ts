@@ -448,6 +448,8 @@ export const studentEn = {
     preferredDestinations: "Preferred destinations",
     preferredDestinationsSub:
       "Full country list. Tick every destination you are considering; remove with the chip ×.",
+    preferredDestinationsSelectPlaceholder: "Select destination countries",
+    preferredDestinationsSelectedSummary: "{count} selected — click to edit",
     preferredDestinationsSearchPlaceholder: "Search by country name or code…",
     preferredDestinationsFilterAria: "Filter country list",
     preferredDestinationsCountriesAria: "Countries",
@@ -565,11 +567,10 @@ export const studentEn = {
   },
   applicationSupport: {
     steps: {
-      basic: { label: "Basic information", stepOf: "Step 1 of 5" },
-      direction: { label: "Your direction", stepOf: "Step 2 of 5" },
-      strategy: { label: "Application strategy", stepOf: "Step 3 of 5" },
-      summary: { label: "Your plan", stepOf: "Step 4 of 5" },
-      pay: { label: "Book your session", stepOf: "Step 5 of 5" },
+      basic: { label: "Basic information", stepOf: "Step 1 of 4" },
+      direction: { label: "Your direction", stepOf: "Step 2 of 4" },
+      strategy: { label: "Book your session", stepOf: "Step 3 of 4" },
+      summary: { label: "Your plan", stepOf: "Step 4 of 4" },
     },
     back: "Back",
     continue: "Continue",
@@ -597,7 +598,7 @@ export const studentEn = {
       clarityBanner:
         "We guide and support you through every step — the final submit stays in your hands.",
       howItWorks: "How it works",
-      howItWorksSub: "A clear path from your first conversation to your first day on campus.",
+      howItWorksSub: "From your first details to a custom plan and ongoing application support.",
       ctaTitle: "Ready to start your application journey?",
       ctaSub: "Tell us where you stand today and we'll help you build a clear path forward.",
     },
@@ -692,9 +693,9 @@ export const studentEn = {
       removeMajor: "Remove {major}",
     },
     strategy: {
-      title: "Choose your application strategy",
+      title: "What's included in your support",
       subtitle:
-        "How many universities would you like support with? You can confirm your final plan after your onboarding session.",
+        "Book your onboarding session below to get started. Your final package is confirmed during the session.",
       pack5: "Best for focused applications with a clear shortlist.",
       pack10: "Balanced approach for the strongest chances of acceptance.",
       pack15: "Maximize your chances across more programs and countries.",
@@ -702,6 +703,13 @@ export const studentEn = {
       universities: "Universities",
       select: "Select",
       everyPackageIncludes: "Every package includes",
+      saving: "Saving your details…",
+      bookBelow: "Book your onboarding session",
+      calendlyTitle: "Book your onboarding session — Calendly",
+      openCalendar: "Open calendar in a new tab",
+      calendlyUnavailableTitle: "Scheduling unavailable",
+      calendlyUnavailableMessage:
+        "Our application advisor has not set up scheduling yet. You can continue and we'll follow up when booking is available.",
     },
     summary: {
       pill: "You're minutes away from getting started",
@@ -726,12 +734,11 @@ export const studentEn = {
       advisorReady: "Your advisor is ready",
       advisorDesc:
         "A real person who has helped students just like you get into top universities. In your onboarding session, we'll refine your list, build your strategy, and map every deadline.",
-      readyWhen: "Ready when you are",
-      bookOnboarding: "Let's book your onboarding",
-      saving: "Saving…",
-      chooseTime: "Choose your session time",
-      bookSub:
-        "Pick a time that works for you and meet your dedicated advisor — we'll map out your full plan together.",
+      readyWhen: "Almost there",
+      bookOnboarding: "Review and finish",
+      finish: "Finish",
+      finishSub:
+        "Take a moment to review your plan snapshot, then we'll show you what happens next.",
     },
     pay: {
       title: "Ready to book your onboarding session",
@@ -757,17 +764,12 @@ export const studentEn = {
         "Pick your time on the next step — you'll get a calendar invite and confirmation by email.",
     },
     done: {
-      title: "Pick your onboarding time",
+      title: "You're all set",
       subtitle:
-        "Choose a slot that works for you below. You'll get a calendar invite and confirmation email within minutes.",
-      calendlyTitle: "Book your onboarding session — Calendly",
-      openCalendar: "Open calendar in a new tab",
-      calendlyUnavailableTitle: "Scheduling unavailable",
-      calendlyUnavailableMessage:
-        "Our application advisor has not set up scheduling yet. Please check back soon or contact support.",
+        "We've saved your details and you're on your way. Here's what happens next on your application journey.",
       whatNext: "What happens next",
       nextSteps: [
-        "Pick a time above — you'll receive a calendar invite and confirmation email within minutes",
+        "You'll receive a calendar invite and confirmation email if you booked a session",
         "Your advisor will review everything you shared before the session",
         "During the session, we'll turn your inputs into a clear, personalized action plan",
         "After the session, you'll decide on your final package and we'll continue the journey together",
@@ -833,6 +835,12 @@ export const studentEn = {
     newsTagUpdate: "Update",
     recentActivity: "Recent activity",
     noRecentActivity: "No recent activity yet.",
+    findInternshipsTitle: "Find Internship Opportunities",
+    findInternshipsDesc: "Search our list of vetted internship opportunities",
+    findInternshipsCta: "Vetted Internships",
+    findEventsTitle: "Find University Events",
+    findEventsDesc: "Search the list of events taking place in your country",
+    findEventsCta: "Find Event",
     activity: {
       universities_viewed: "Universities Viewed",
       universities_saved: "Universities Saved",

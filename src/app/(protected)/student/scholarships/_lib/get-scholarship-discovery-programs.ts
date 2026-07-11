@@ -123,14 +123,11 @@ export function parseScholarshipDiscoverySearchParams(
   const destRaw = pickFilterAny(sp, "dest");
   const destination = destRaw === "any" ? "any" : destRaw;
 
-  const covRaw = pickFilterAny(sp, "cov");
-  const coverage = covRaw === "any" ? "any" : covRaw.toLowerCase();
-
   return {
     q: pick(sp, "q", "").trim(),
     nationality,
     destination,
-    coverage,
+    coverage: "any",
     favouritesOnly: truthyQueryFlag(pick(sp, "favourites", "") || undefined),
     tab,
     governmentPage: Math.max(1, governmentPage),

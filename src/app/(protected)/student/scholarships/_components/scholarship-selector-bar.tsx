@@ -143,12 +143,10 @@ type Props = {
   q: string;
   nationality: string;
   destination: string;
-  coverage: string;
   favouritesOnly: boolean;
   hasActiveFilters: boolean;
   onNationalityChange: (v: string) => void;
   onDestinationChange: (v: string) => void;
-  onCoverageChange: (v: string) => void;
   onFavouritesToggle: () => void;
   onSearchSubmit: (q: string) => void;
   onClearFilters: () => void;
@@ -158,12 +156,10 @@ export function ScholarshipSelectorBar({
   q,
   nationality,
   destination,
-  coverage,
   favouritesOnly,
   hasActiveFilters,
   onNationalityChange,
   onDestinationChange,
-  onCoverageChange,
   onFavouritesToggle,
   onSearchSubmit,
   onClearFilters,
@@ -242,20 +238,6 @@ export function ScholarshipSelectorBar({
                 </option>
               ))}
             </optgroup>
-          </select>
-          <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
-        </div>
-        <span className="shrink-0">{t.andWantA}</span>
-        <div className={selectWrapClass}>
-          <select
-            className={selectClass}
-            value={coverage}
-            onChange={(e) => onCoverageChange(e.target.value)}
-            aria-label={t.coverageType}
-          >
-            <option value="any">{t.anyCoverage}</option>
-            <option value="full">{t.fullScholarship}</option>
-            <option value="partial">{t.partialScholarship}</option>
           </select>
           <Chevron className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
         </div>

@@ -6,6 +6,7 @@ export type AdminApplicationAdvisorOption = {
 };
 
 export const ADMIN_APPLICATIONS_UNASSIGNED_FILTER = "unassigned" as const;
+export const ADMIN_APPLICATIONS_ADVISOR_PREFIX = "advisor:" as const;
 
 type FetchAdminApplicationAdvisorOptionsParams = {
   /** Keep the current assignment visible in the assign modal when marked inactive. */

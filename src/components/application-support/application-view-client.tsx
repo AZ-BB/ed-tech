@@ -7,6 +7,10 @@ import {
   type AdminApplicationAdvisorOption,
 } from "@/app/(protected)/admin/applications/_lib/fetch-admin-application-advisor-options";
 import {
+  adminAssigneeOptionValue,
+  type AdminApplicationAdminOption,
+} from "@/app/(protected)/admin/applications/_lib/fetch-admin-application-admin-options";
+import {
   ADMIN_APPLICATION_STATUS_FILTER_OPTIONS,
   ADMIN_APPLICATION_STATUS_LABEL,
   adminApplicationStatusPillClass,
@@ -106,7 +110,12 @@ export type ApplicationViewActions = {
   ) => Promise<ActionResult>;
   sendPaymentRequest: (input: SendPaymentRequestInput) => Promise<PaymentActionResult>;
   toggleStudentFlag?: (applicationId: string) => Promise<ActionResult>;
+  updateIntake?: (
+    applicationId: string,
+    payload: ApplicationSupportPayload,
+  ) => Promise<ActionResult>;
   assignAdvisor?: (applicationId: string, advisorId: string) => Promise<ActionResult>;
+  assignAssignee?: (applicationId: string, assigneeRaw: string) => Promise<ActionResult>;
   calls: ApplicationCallsActions;
   tasks: ApplicationTasksActions;
   package: ApplicationPackageActions;
@@ -119,6 +128,7 @@ export type ApplicationViewClientProps = {
   config: ApplicationViewConfig;
   actions: ApplicationViewActions;
   advisorOptions?: AdminApplicationAdvisorOption[];
+  adminOptions?: AdminApplicationAdminOption[];
   initialTab?: ApplicationDetailTab;
   applicationPayouts?: ApplicationPayoutRow[];
   paymentRequestContext?: PaymentRequestModalContext | null;
@@ -223,12 +233,33 @@ function resolveApplicationDetailTab(
   return parsed;
 }
 
+function resolveAssigneeSelection(payload: ApplicationDetailPayload): string {
+  if (payload.admin?.id) {
+    return adminAssigneeOptionValue("admin", payload.admin.id);
+  }
+  if (payload.advisor?.id) {
+    return adminAssigneeOptionValue("advisor", payload.advisor.id);
+  }
+  return ADMIN_APPLICATIONS_UNASSIGNED_FILTER;
+}
+
+function resolveOwnerLabel(payload: ApplicationDetailPayload): string {
+  if (payload.admin?.name) {
+    return `${payload.admin.name} (Admin)`;
+  }
+  if (payload.advisor?.name) {
+    return `${payload.advisor.name} (Advisor)`;
+  }
+  return "Unassigned";
+}
+
 export function ApplicationViewClient({
   payload,
   activityLogsPanel,
   config,
   actions,
   advisorOptions = [],
+  adminOptions = [],
   applicationPayouts = [],
   paymentRequestContext = null,
   intakeEdit = null,
@@ -245,10 +276,9 @@ export function ApplicationViewClient({
     useState<ApplicationNoteVisibility>("internal");
   const [advisorId, setAdvisorId] = useState(payload.advisor?.id ?? "");
   const [advisorName, setAdvisorName] = useState(payload.advisor?.name ?? "Unassigned");
+  const [ownerLabel, setOwnerLabel] = useState(resolveOwnerLabel(payload));
   const [assignOpen, setAssignOpen] = useState(false);
-  const [assignSelection, setAssignSelection] = useState(
-    payload.advisor?.id ?? ADMIN_APPLICATIONS_UNASSIGNED_FILTER,
-  );
+  const [assignSelection, setAssignSelection] = useState(resolveAssigneeSelection(payload));
   const [actionError, setActionError] = useState<string | null>(null);
   const [noteError, setNoteError] = useState<string | null>(null);
   const [paymentRequestMessage, setPaymentRequestMessage] = useState<string | null>(
@@ -262,9 +292,7 @@ export function ApplicationViewClient({
   const [addNoteError, setAddNoteError] = useState<string | null>(null);
   const [logCallOpen, setLogCallOpen] = useState(false);
   const [logCallError, setLogCallError] = useState<string | null>(null);
-  const [intakeEditOpen, setIntakeEditOpen] = useState(
-    () => config.canEditIntake === true && intakeEdit != null,
-  );
+  const [intakeEditOpen, setIntakeEditOpen] = useState(false);
   const [studentFlagged, setStudentFlagged] = useState(payload.student.flagged);
   const [isPending, startTransition] = useTransition();
 
@@ -309,7 +337,8 @@ export function ApplicationViewClient({
     setStatus(payload.application.status);
     setAdvisorId(payload.advisor?.id ?? "");
     setAdvisorName(payload.advisor?.name ?? "Unassigned");
-    setAssignSelection(payload.advisor?.id ?? ADMIN_APPLICATIONS_UNASSIGNED_FILTER);
+    setOwnerLabel(resolveOwnerLabel(payload));
+    setAssignSelection(resolveAssigneeSelection(payload));
     setStudentFlagged(payload.student.flagged);
   }, [payload]);
 
@@ -344,7 +373,7 @@ export function ApplicationViewClient({
   const sidebarRows = [
     { lab: "Application #", val: String(application.id) },
     { lab: "Package", val: `${packageUniversitiesTotal} universities` },
-    { lab: "Advisor", val: advisorName },
+    { lab: "Assigned to", val: ownerLabel },
     { lab: "Scheduled at", val: formatDateTime(application.scheduledAt) },
     { lab: "Submitted", val: formatDate(application.submittedAt) },
     { lab: "Created", val: formatDate(application.createdAt) },
@@ -516,23 +545,43 @@ export function ApplicationViewClient({
   }
 
   function handleAssign() {
-    if (!actions.assignAdvisor) return;
+    const assignAction = actions.assignAssignee ?? actions.assignAdvisor;
+    if (!assignAction) return;
     setActionError(null);
 
     startTransition(async () => {
-      const result = await actions.assignAdvisor!(
-        String(application.id),
-        assignSelection,
-      );
+      const result = await assignAction(String(application.id), assignSelection);
       if (!result.ok) {
         setActionError(result.error);
         return;
       }
 
       const unassign = assignSelection === ADMIN_APPLICATIONS_UNASSIGNED_FILTER;
-      const selected = advisorOptions.find((option) => option.id === assignSelection);
-      setAdvisorId(unassign ? "" : assignSelection);
-      setAdvisorName(unassign ? "Unassigned" : (selected?.label ?? "Advisor"));
+      if (actions.assignAssignee) {
+        if (unassign) {
+          setAdvisorId("");
+          setAdvisorName("Unassigned");
+          setOwnerLabel("Unassigned");
+        } else if (assignSelection.startsWith("admin:")) {
+          const adminId = assignSelection.slice("admin:".length);
+          const selected = adminOptions.find((option) => option.id === adminId);
+          setAdvisorId("");
+          setAdvisorName("Unassigned");
+          setOwnerLabel(selected ? `${selected.label} (Admin)` : "Admin");
+        } else if (assignSelection.startsWith("advisor:")) {
+          const nextAdvisorId = assignSelection.slice("advisor:".length);
+          const selected = advisorOptions.find((option) => option.id === nextAdvisorId);
+          setAdvisorId(nextAdvisorId);
+          setAdvisorName(selected?.label ?? "Advisor");
+          setOwnerLabel(selected ? `${selected.label} (Advisor)` : "Advisor");
+        }
+      } else {
+        const selected = advisorOptions.find((option) => option.id === assignSelection);
+        setAdvisorId(unassign ? "" : assignSelection);
+        setAdvisorName(unassign ? "Unassigned" : (selected?.label ?? "Advisor"));
+        setOwnerLabel(unassign ? "Unassigned" : (selected?.label ?? "Advisor"));
+      }
+
       setAssignOpen(false);
       router.refresh();
     });
@@ -1162,7 +1211,7 @@ export function ApplicationViewClient({
               type="button"
               disabled={isPending}
               onClick={() => {
-                setAssignSelection(advisorId || ADMIN_APPLICATIONS_UNASSIGNED_FILTER);
+                setAssignSelection(resolveAssigneeSelection(payload));
                 setAssignOpen(true);
               }}
               className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-4 py-[7px] text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
@@ -1273,17 +1322,17 @@ export function ApplicationViewClient({
               id="assign-advisor-title"
               className="text-[15px] font-semibold text-[var(--text)]"
             >
-              Assign advisor
+              Assign owner
             </h3>
             <p className="mt-1 text-[12px] text-[var(--text-light)]">
-              Choose the advisor responsible for this application case.
+              Choose the admin or advisor responsible for this application case.
             </p>
 
             <label
               htmlFor="assign-advisor-select"
               className="mt-4 mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]"
             >
-              Advisor
+              Admin / Advisor
             </label>
             <select
               id="assign-advisor-select"
@@ -1294,11 +1343,36 @@ export function ApplicationViewClient({
               style={{ backgroundImage: SELECT_CHEVRON }}
             >
               <option value={ADMIN_APPLICATIONS_UNASSIGNED_FILTER}>Unassigned</option>
-              {advisorOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
+              {actions.assignAssignee ? (
+                <>
+                  <optgroup label="Admins">
+                    {adminOptions.map((option) => (
+                      <option
+                        key={option.id}
+                        value={adminAssigneeOptionValue("admin", option.id)}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Advisors">
+                    {advisorOptions.map((option) => (
+                      <option
+                        key={option.id}
+                        value={adminAssigneeOptionValue("advisor", option.id)}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                </>
+              ) : (
+                advisorOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))
+              )}
             </select>
 
             <div className="mt-5 flex justify-end gap-2">
@@ -1384,6 +1458,11 @@ export function ApplicationViewClient({
           initialPayload={intakeEdit.initialPayload}
           onClose={() => setIntakeEditOpen(false)}
           onSaved={() => router.refresh()}
+          onSubmit={
+            actions.updateIntake
+              ? (applicationId, payload) => actions.updateIntake!(applicationId, payload)
+              : undefined
+          }
         />
       ) : null}
     </div>

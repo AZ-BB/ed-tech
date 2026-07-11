@@ -1,3 +1,7 @@
+import {
+  ADMIN_APPLICATION_STATUS_LABEL,
+  type ApplicationStatus,
+} from "../_lib/application-status-labels";
 import type { AdminApplicationsStats } from "../_lib/fetch-admin-applications-stats";
 
 const fontSerif = '"DM Serif Display", Georgia, serif' as const;
@@ -5,49 +9,53 @@ const fontSerif = '"DM Serif Display", Georgia, serif' as const;
 type StatCard = {
   key: string;
   label: string;
-  value: string | number;
+  value: number;
   accentColor: string;
   valueColor: string;
 };
 
-export type AdminApplicationsStatsGridProps = AdminApplicationsStats;
+const STATUS_CARD_COLORS: Record<ApplicationStatus, { accent: string; value: string }> = {
+  lead: { accent: "#E67E22", value: "#E67E22" },
+  not_suitable: { accent: "#E74C3C", value: "#E74C3C" },
+  payment_requested: { accent: "#F57F17", value: "#F57F17" },
+  active_package: { accent: "#2D6A4F", value: "#2D6A4F" },
+};
+
+const STATUS_CARD_ORDER: ApplicationStatus[] = [
+  "lead",
+  "payment_requested",
+  "active_package",
+  "not_suitable",
+];
+
+export type AdminApplicationsStatsGridProps = Pick<
+  AdminApplicationsStats,
+  "lead" | "not_suitable" | "payment_requested" | "active_package"
+>;
 
 export function AdminApplicationsStatsGrid({
-  activeCases,
-  pendingAssignment,
-  inProgress,
-  submitted,
+  lead,
+  not_suitable,
+  payment_requested,
+  active_package,
 }: AdminApplicationsStatsGridProps) {
-  const cards: StatCard[] = [
-    {
-      key: "active-cases",
-      label: "Active Cases",
-      value: activeCases,
-      accentColor: "#E67E22",
-      valueColor: "#E67E22",
-    },
-    {
-      key: "pending-assignment",
-      label: "Pending Assignment",
-      value: pendingAssignment,
-      accentColor: "#E74C3C",
-      valueColor: "#E74C3C",
-    },
-    {
-      key: "in-progress",
-      label: "In Progress",
-      value: inProgress,
-      accentColor: "#3498DB",
-      valueColor: "#3498DB",
-    },
-    {
-      key: "submitted",
-      label: "Submitted",
-      value: submitted,
-      accentColor: "#2D6A4F",
-      valueColor: "#2D6A4F",
-    },
-  ];
+  const counts: Record<ApplicationStatus, number> = {
+    lead,
+    not_suitable,
+    payment_requested,
+    active_package,
+  };
+
+  const cards: StatCard[] = STATUS_CARD_ORDER.map((status) => {
+    const colors = STATUS_CARD_COLORS[status];
+    return {
+      key: status,
+      label: ADMIN_APPLICATION_STATUS_LABEL[status],
+      value: counts[status],
+      accentColor: colors.accent,
+      valueColor: colors.value,
+    };
+  });
 
   return (
     <div className="mb-6 grid grid-cols-1 gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
@@ -64,9 +72,7 @@ export function AdminApplicationsStatsGrid({
             className="mb-0.5 text-[26px] leading-none"
             style={{ fontFamily: fontSerif, color: card.valueColor }}
           >
-            {typeof card.value === "number"
-              ? card.value.toLocaleString()
-              : card.value}
+            {card.value.toLocaleString()}
           </div>
           <div className="text-[11px] font-medium text-[#6a6a6a]">{card.label}</div>
         </div>

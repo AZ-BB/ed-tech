@@ -73,6 +73,11 @@ export type ApplicationDetailPayload = {
     name: string;
     email: string;
   } | null;
+  admin: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
   student: {
     id: string;
     firstName: string;
@@ -135,6 +140,8 @@ export const APPLICATION_DETAIL_SELECT = `
   additional_notes,
   status,
   assigned_to,
+  assigned_admin_id,
+  assigned_admin_at,
   submitted_at,
   assigned_at,
   scheduled_at,
@@ -146,6 +153,7 @@ export const APPLICATION_DETAIL_SELECT = `
   plan_id,
   applications_plans!applications_plan_id_fkey ( name, description, price, universities_count ),
   advisors:assigned_to ( id, first_name, last_name, email, phone ),
+  admins:assigned_admin_id ( id, first_name, last_name, email ),
   schools (
     id,
     name,
@@ -198,6 +206,8 @@ type ApplicationRowRaw = {
   additional_notes: string | null;
   status: string | null;
   assigned_to: string | null;
+  assigned_admin_id: string | null;
+  assigned_admin_at: string | null;
   submitted_at: string | null;
   assigned_at: string | null;
   scheduled_at: string | null;
@@ -214,6 +224,10 @@ type ApplicationRowRaw = {
   advisors:
     | { id: string; first_name: string; last_name: string; email: string | null; phone: string | null }
     | { id: string; first_name: string; last_name: string; email: string | null; phone: string | null }[]
+    | null;
+  admins:
+    | { id: string; first_name: string; last_name: string; email: string | null }
+    | { id: string; first_name: string; last_name: string; email: string | null }[]
     | null;
   schools:
     | {
@@ -324,6 +338,7 @@ export function mapApplicationDetailPayload(
 ): ApplicationDetailPayload {
   const plan = firstEmbed(data.applications_plans);
   const advisorEmbed = firstEmbed(data.advisors);
+  const adminEmbed = firstEmbed(data.admins);
   const schoolEmbed = firstEmbed(data.schools);
   const studentEmbed = firstEmbed(data.student_profiles);
 
@@ -426,6 +441,16 @@ export function mapApplicationDetailPayload(
             advisorEmbed.email?.trim() ||
             "Advisor",
           email: advisorEmbed.email?.trim() || "—",
+        }
+      : null,
+    admin: adminEmbed?.id
+      ? {
+          id: adminEmbed.id,
+          name:
+            personName(adminEmbed.first_name, adminEmbed.last_name) ||
+            adminEmbed.email?.trim() ||
+            "Admin",
+          email: adminEmbed.email?.trim() || "—",
         }
       : null,
     student: {

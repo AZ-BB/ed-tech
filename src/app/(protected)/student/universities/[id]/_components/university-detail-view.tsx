@@ -464,7 +464,6 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                     uni.majorBlocks.map((block, i) => (
                                         <details
                                             key={`${block.majorName}-${i}`}
-                                            open={i === 0}
                                             className="group border-b border-[#ece9e4] last:border-b-0"
                                         >
                                             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[13.5px] font-semibold transition-colors hover:bg-[#f4f3f0] [&::-webkit-details-marker]:hidden">

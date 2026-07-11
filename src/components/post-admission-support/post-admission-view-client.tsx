@@ -28,6 +28,7 @@ import {
 } from "@/lib/application-call-constants";
 import type { PostAdmissionDetailPayload } from "@/lib/post-admission-detail-mapper";
 import type { PostAdmissionNoteVisibility } from "@/lib/post-admission-internal-notes";
+import { formatPostAdmissionServiceLabel } from "@/lib/post-admission-services";
 import { hasActivePendingPaymentRequest, resolveActivePendingPaymentRequest } from "@/lib/payment-request-utils";
 import {
   POST_ADMISSION_STATUS_FILTER_OPTIONS,
@@ -395,6 +396,7 @@ export function PostAdmissionViewClient({
       <SchoolStudentPanel head="Case overview" sub={`Post-admission support case #${caseRow.id}`}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <SnapItem label="Status" value={POST_ADMISSION_STATUS_LABEL[status] ?? status} />
+          <SnapItem label="Service" value={formatPostAdmissionServiceLabel(caseRow.selectedService, caseRow.serviceOtherDetail)} />
           <SnapItem label="Advisor" value={advisorName} />
           <SnapItem label="School" value={schoolName} />
           <SnapItem label="Meeting scheduled" value={formatDateTime(caseRow.scheduledAt)} />

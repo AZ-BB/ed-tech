@@ -11,6 +11,7 @@ import {
   POST_ADMISSION_STATUS_LABEL,
   type PostAdmissionStatus,
 } from "@/lib/post-admission-status-labels";
+import { formatPostAdmissionServiceLabel } from "@/lib/post-admission-services";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -61,6 +62,8 @@ type PostAdmissionLeadRowRaw = {
   student_name: string | null;
   student_email: string | null;
   school_name: string | null;
+  selected_service: string | null;
+  service_other_detail: string | null;
   status: string | null;
   scheduled_at: string | null;
   schools: { name: string } | { name: string }[] | null;
@@ -204,6 +207,10 @@ function mapPostAdmissionLeadRow(
     profile?.email?.trim() || row.student_email?.trim() || "—";
   const school = firstEmbed(row.schools);
   const schoolName = school?.name?.trim() || row.school_name?.trim() || "—";
+  const serviceLabel = formatPostAdmissionServiceLabel(
+    row.selected_service,
+    row.service_other_detail,
+  );
 
   return {
     kind: "post_admission_lead",
@@ -214,7 +221,7 @@ function mapPostAdmissionLeadRow(
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
     statusLabel: postAdmissionStatusLabel(row.status),
-    subtitle: "Post-admission support",
+    subtitle: serviceLabel === "—" ? "Post-admission support" : serviceLabel,
   };
 }
 
@@ -317,6 +324,8 @@ async function fetchPostAdmissionLeadRows(
       student_name,
       student_email,
       school_name,
+      selected_service,
+      service_other_detail,
       status,
       scheduled_at,
       schools ( name ),
@@ -362,6 +371,8 @@ async function fetchPostAdmissionScheduledCallRows(
         student_name,
         student_email,
         school_name,
+        selected_service,
+        service_other_detail,
         status,
         scheduled_at,
         assigned_to,

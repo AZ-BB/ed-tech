@@ -48,6 +48,23 @@ export const postAdmissionSupportEn = {
     closeAria: "Close booking modal",
     loading: "Loading calendar...",
   },
+  serviceSelection: {
+    title: "What do you need help with?",
+    subtitle: "Choose the service you'd like to discuss with your advisor.",
+    serviceLabel: "Service",
+    servicePlaceholder: "Select a service",
+    otherLabel: "Tell us more",
+    otherPlaceholder: "Describe what you need help with...",
+    continue: "Continue to scheduling",
+    continuing: "Starting...",
+    cancel: "Cancel",
+    closeAria: "Close service selection",
+    errors: {
+      serviceRequired: "Please select a service.",
+      otherRequired: "Please describe the service you need.",
+    },
+    otherOption: "Other",
+  },
   services: {
     visaSupport: {
       slug: "visa-support",

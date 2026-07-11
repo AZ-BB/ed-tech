@@ -20,6 +20,8 @@ export type PostAdmissionDetailPayload = {
     studentName: string | null;
     studentEmail: string | null;
     schoolName: string | null;
+    selectedService: string | null;
+    serviceOtherDetail: string | null;
     scheduledAt: string | null;
     assignedAt: string | null;
     createdAt: string | null;
@@ -94,6 +96,8 @@ export function mapPostAdmissionDetailPayload(input: {
       studentName: caseRow.student_name,
       studentEmail: caseRow.student_email,
       schoolName: caseRow.school_name,
+      selectedService: caseRow.selected_service,
+      serviceOtherDetail: caseRow.service_other_detail,
       scheduledAt: caseRow.scheduled_at,
       assignedAt: caseRow.assigned_at,
       createdAt: caseRow.created_at,

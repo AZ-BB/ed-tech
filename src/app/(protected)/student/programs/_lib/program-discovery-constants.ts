@@ -131,6 +131,8 @@ export type ProgramRailConfig = {
   }) => boolean;
 };
 
+export const PROGRAM_SECTION_DISPLAY_LIMIT = 10;
+
 export const PROGRAM_RAILS: ProgramRailConfig[] = [
   {
     id: "high-income",

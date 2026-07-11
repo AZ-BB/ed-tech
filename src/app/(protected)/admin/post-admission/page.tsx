@@ -13,15 +13,6 @@ export default async function AdminPostAdmissionPage({
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6">
-      <div className="mb-5">
-        <h1 className="font-[family-name:var(--font-dm-serif)] text-2xl text-[var(--text)]">
-          Post-admission support
-        </h1>
-        <p className="mt-1 text-[13px] text-[var(--text-light)]">
-          Manage student post-admission support cases
-        </p>
-      </div>
-
       <AdminPostAdmissionTableClient
         rows={rows}
         totalRows={totalRows}

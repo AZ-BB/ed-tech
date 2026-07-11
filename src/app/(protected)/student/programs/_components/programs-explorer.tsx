@@ -10,6 +10,7 @@ import {
   HERO_FLOAT_PROGRAMS,
   PROGRAM_QUICK_CHIPS,
   PROGRAM_RAILS,
+  PROGRAM_SECTION_DISPLAY_LIMIT,
 } from "../_lib/program-discovery-constants";
 import {
   localizeInterestTiles,
@@ -51,10 +52,34 @@ export function ProgramsExplorer({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState(pageData.filters.q);
+  const [selectedInterest, setSelectedInterest] = useState<string | null>(
+    pageData.selectedInterest,
+  );
 
   useEffect(() => {
     setSearchValue(pageData.filters.q);
   }, [pageData.filters.q]);
+
+  useEffect(() => {
+    setSelectedInterest(pageData.selectedInterest);
+  }, [pageData.selectedInterest]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const interest =
+        new URLSearchParams(window.location.search).get("interest")?.trim() ||
+        null;
+      setSelectedInterest(interest);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedInterest) return;
+    window.scrollTo(0, 0);
+  }, [selectedInterest]);
 
   const navigate = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -65,18 +90,38 @@ export function ProgramsExplorer({
     [pathname, router, searchParams],
   );
 
+  const setInterest = useCallback(
+    (interest: string | undefined) => {
+      const next = interest?.trim() || null;
+      setSelectedInterest(next);
+      const url = mergeSearchHref(pathname, searchParams, {
+        interest: next ?? undefined,
+      });
+      window.history.pushState(null, "", url);
+    },
+    [pathname, searchParams],
+  );
+
+  const clearInterest = useCallback(() => {
+    setSelectedInterest(null);
+    const url = mergeSearchHref(pathname, searchParams, { interest: undefined });
+    window.history.replaceState(null, "", url);
+  }, [pathname, searchParams]);
+
   const rails = useMemo(
     () =>
       PROGRAM_RAILS.map((rail) => ({
         ...localizeProgramRail(rail, t),
-        programs: pageData.programs.filter((program) =>
-          rail.filter({
-            salaryPotential: program.salaryPotential,
-            aiResilience: program.aiResilience,
-            category: program.category,
-            characteristicIds: program.characteristicIds,
-          }),
-        ),
+        programs: pageData.programs
+          .filter((program) =>
+            rail.filter({
+              salaryPotential: program.salaryPotential,
+              aiResilience: program.aiResilience,
+              category: program.category,
+              characteristicIds: program.characteristicIds,
+            }),
+          )
+          .slice(0, PROGRAM_SECTION_DISPLAY_LIMIT),
       })).filter((rail) => rail.programs.length > 0),
     [pageData.programs, t],
   );
@@ -108,27 +153,47 @@ export function ProgramsExplorer({
   }, [locale, pageData.programs, t]);
 
   const selectedTile = localizedTiles.find(
-    (tile) => tile.characteristicId === pageData.selectedInterest,
+    (tile) => tile.characteristicId === selectedInterest,
+  );
+
+  const interestPrograms = useMemo(
+    () =>
+      selectedInterest
+        ? pageData.programs.filter((program) =>
+            program.characteristicIds.includes(selectedInterest),
+          )
+        : [],
+    [pageData.programs, selectedInterest],
   );
 
   const isSearchActive = Boolean(pageData.filters.q.trim());
 
-  if (pageData.selectedInterest && selectedTile) {
+  if (selectedInterest && selectedTile) {
     return (
       <div id="programs-discovery-scope" className={explorerStyles.page}>
         <div className={explorerStyles.selView}>
           <nav className={explorerStyles.selBreadcrumb} aria-label="Breadcrumb">
-            <Link href="/student/programs">{t.pageTitle}</Link>
+            <button
+              type="button"
+              className={explorerStyles.selBreadcrumbLink}
+              onClick={clearInterest}
+            >
+              {t.pageTitle}
+            </button>
             <span className={explorerStyles.selBcSep} aria-hidden>
               /
             </span>
             <span>{selectedTile.listTitle}</span>
           </nav>
 
-          <Link href="/student/programs" className={explorerStyles.selBackBtn}>
+          <button
+            type="button"
+            className={explorerStyles.selBackBtn}
+            onClick={clearInterest}
+          >
             <ArrowBackIcon size={14} strokeWidth={2.5} />
             {t.backToExplorer}
-          </Link>
+          </button>
 
           <div className={explorerStyles.selCatHeader}>
             <div className={explorerStyles.sectionEyebrow}>
@@ -139,7 +204,7 @@ export function ProgramsExplorer({
             <span className={explorerStyles.selCatCount}>
               {t.programsCount.replace(
                 "{count}",
-                String(pageData.interestPrograms.length),
+                String(interestPrograms.length),
               )}
             </span>
           </div>
@@ -163,11 +228,13 @@ export function ProgramsExplorer({
             </div>
           ) : null}
 
-          {pageData.interestPrograms.length === 0 ? (
+          {interestPrograms.length === 0 ? (
             <div className={explorerStyles.emptyState}>{t.noMatch}</div>
           ) : (
             <div className={explorerStyles.selProgramGrid}>
-              {pageData.interestPrograms.map((program) => (
+              {interestPrograms
+                .slice(0, PROGRAM_SECTION_DISPLAY_LIMIT)
+                .map((program) => (
                 <ProgramExplorerCard
                   key={program.id}
                   program={program}
@@ -369,7 +436,7 @@ export function ProgramsExplorer({
               key={tile.id}
               type="button"
               className={explorerStyles.interestTile}
-              onClick={() => navigate({ interest: tile.characteristicId })}
+              onClick={() => setInterest(tile.characteristicId)}
             >
               <div className={explorerStyles.interestIcon} aria-hidden>
                 <InterestTileIcon tileId={tile.id} />

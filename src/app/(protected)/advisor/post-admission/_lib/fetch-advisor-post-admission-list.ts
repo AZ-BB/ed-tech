@@ -1,6 +1,7 @@
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import type { Database } from "@/database.types";
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
+import { formatPostAdmissionServiceLabel } from "@/lib/post-admission-services";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import type { AdminPostAdmissionListFilters, AdminPostAdmissionTableRow } from "@/app/(protected)/admin/post-admission/_lib/fetch-admin-post-admission-list";
@@ -15,6 +16,8 @@ type CaseRowRaw = {
   student_name: string | null;
   student_email: string | null;
   school_name: string | null;
+  selected_service: string | null;
+  service_other_detail: string | null;
   status: string | null;
   scheduled_at: string | null;
   created_at: string;
@@ -65,6 +68,10 @@ function mapCaseRow(row: CaseRowRaw): AdminPostAdmissionTableRow {
     studentName: resolveStudentName(row),
     studentEmail: resolveStudentEmail(row),
     schoolName: resolveSchoolName(row),
+    serviceLabel: formatPostAdmissionServiceLabel(
+      row.selected_service,
+      row.service_other_detail,
+    ),
     status: row.status?.trim() || "lead",
     advisorName: personNameFromEmbed(row.advisors),
     scheduledAt: row.scheduled_at,
@@ -90,6 +97,8 @@ export async function fetchAdvisorPostAdmissionList(
       student_name,
       student_email,
       school_name,
+      selected_service,
+      service_other_detail,
       status,
       scheduled_at,
       created_at,

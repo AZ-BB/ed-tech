@@ -282,12 +282,12 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
     {
       key: "applications",
       label: "Applications Active",
-      value: appsStats.activeCases,
+      value: appsStats.lead + appsStats.payment_requested + appsStats.active_package,
       accentColor: "#E74C3C",
       valueColor: "#E74C3C",
       trend: {
-        label: `${appsStats.pendingAssignment} pending review`,
-        direction: appsStats.pendingAssignment > 0 ? "down" : "up",
+        label: `${appsStats.unassigned} pending assignment`,
+        direction: appsStats.unassigned > 0 ? "down" : "up",
       },
     },
   ];
@@ -323,10 +323,10 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
 
   const attentionItems: AdminDashboardAttentionItem[] = [];
 
-  if ((appsStats.pendingAssignment ?? 0) > 0) {
+  if ((appsStats.unassigned ?? 0) > 0) {
     attentionItems.push({
       id: "pending-assignment",
-      text: `${appsStats.pendingAssignment} applications pending advisor assignment`,
+      text: `${appsStats.unassigned} applications pending advisor assignment`,
       hint: "Action required",
       href: "/admin/applications",
       tone: "red",

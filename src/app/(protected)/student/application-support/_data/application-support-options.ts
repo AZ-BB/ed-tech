@@ -420,11 +420,11 @@ export const VF_FIELD_OF_STUDY_SUGGESTIONS = [
 ] as const;
 
 export const VF_JOURNEY_STEPS = [
-  "Tell us about yourself",
-  "Share your direction — where and what you want to study",
-  "Choose your application strategy",
-  "Review your personalized plan",
-  "Book your onboarding session",
+  "Fill in information",
+  "Book time to speak to an advisor",
+  "Conduct onboarding session",
+  "Receive custom plan by advisor",
+  "Begin application support journey",
 ] as const;
 
 export const VF_INCLUDED_COMPACT = [

@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { useMemo, useState, type ReactNode } from "react";
 
 import { useLocale } from "@/lib/i18n/locale-context";
+import { ArrowBackIcon } from "../../_components/directional-icons";
 import type { ProgramCareerPath } from "@/lib/programs-discovery-types";
 import { initialsFromName, skillLevelToPercent } from "../_lib/program-discovery-metrics";
 import {
@@ -123,6 +124,11 @@ export function ProgramDetailView({
 
   return (
     <div id="programs-discovery-scope" className={detailStyles.page}>
+      <Link href="/student/programs" className={detailStyles.backBtn}>
+        <ArrowBackIcon size={14} strokeWidth={2.5} />
+        {t.backToExplorer}
+      </Link>
+
       <nav className={detailStyles.crumbs} aria-label="Breadcrumb">
         <Link href="/student/programs">{t.pageTitle}</Link>
         <span className={detailStyles.crumbsSep}>›</span>
@@ -579,20 +585,6 @@ export function ProgramDetailView({
                 ) : null}
                 <div className={detailStyles.personBottom}>
                   <span className={detailStyles.personRegion}>{person.tag ?? "—"}</span>
-                  <span className={detailStyles.personLink}>
-                    {t.viewCareerPath}
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      aria-hidden
-                    >
-                      <path d="M5 12h14M13 5l7 7-7 7" />
-                    </svg>
-                  </span>
                 </div>
               </article>
             ))}

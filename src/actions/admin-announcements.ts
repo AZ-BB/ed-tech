@@ -4,6 +4,10 @@ import {
   ADMIN_ANNOUNCEMENTS_HOME,
 } from "@/app/(protected)/admin/content/_data/content-tabs-data";
 import {
+  fetchAdminAnnouncementsPage,
+  type AdminAnnouncementTableRow,
+} from "@/app/(protected)/admin/content/_lib/fetch-admin-announcements-page";
+import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
@@ -56,7 +60,19 @@ function parseAnnouncementId(raw: FormDataEntryValue | null): number | null {
 
 function revalidateAnnouncementPaths() {
   revalidatePath(ADMIN_ANNOUNCEMENTS_HOME);
+  revalidatePath("/admin");
   revalidatePath("/student");
+}
+
+export async function loadAdminAnnouncements(): Promise<
+  | { ok: true; rows: AdminAnnouncementTableRow[] }
+  | { ok: false; error: string }
+> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const rows = await fetchAdminAnnouncementsPage();
+  return { ok: true, rows };
 }
 
 export async function createAdminAnnouncement(
