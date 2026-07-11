@@ -9,6 +9,10 @@ import type { ApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags"
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { StudentFormDefaults } from "@/lib/load-student-form-defaults";
 import {
+  formatPostAdmissionServiceLabel,
+  type PostAdmissionServiceKey,
+} from "@/lib/post-admission-services";
+import {
   createContext,
   useCallback,
   useContext,
@@ -19,9 +23,10 @@ import {
 } from "react";
 
 import { PostAdmissionCalendlyModal } from "./post-admission-calendly-modal";
+import { PostAdmissionServiceSelectionDialog } from "./post-admission-service-selection-dialog";
 
 type BookSessionOptions = {
-  serviceLabel?: string;
+  preselectedServiceKey?: PostAdmissionServiceKey;
 };
 
 type PostAdmissionBookingContextValue = {
@@ -58,10 +63,17 @@ export function PostAdmissionBookingProvider({
 }: PostAdmissionBookingProviderProps) {
   const { dict } = useLocale();
   const t = dict.student.postAdmission;
-  const [modalOpen, setModalOpen] = useState(false);
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [preselectedServiceKey, setPreselectedServiceKey] = useState<
+    PostAdmissionServiceKey | undefined
+  >();
+  const [calendlyModalOpen, setCalendlyModalOpen] = useState(false);
   const [caseId, setCaseId] = useState<number | null>(null);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
-  const [serviceLabel, setServiceLabel] = useState(t.landing.genericServiceLabel);
+  const [selectedService, setSelectedService] = useState<PostAdmissionServiceKey | null>(
+    null,
+  );
+  const [serviceOtherDetail, setServiceOtherDetail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -75,6 +87,13 @@ export function PostAdmissionBookingProvider({
   const receivingAdvisorName = postAdmissionReceivingAdvisor
     ? `${postAdmissionReceivingAdvisor.firstName} ${postAdmissionReceivingAdvisor.lastName}`.trim()
     : "";
+
+  const serviceLabel = useMemo(
+    () =>
+      formatPostAdmissionServiceLabel(selectedService, serviceOtherDetail) ||
+      t.landing.genericServiceLabel,
+    [selectedService, serviceOtherDetail, t.landing.genericServiceLabel],
+  );
 
   const calendlyUrl = useMemo(() => {
     if (!canBook || !calendlySchedulingUrl || caseId == null) return "";
@@ -104,33 +123,63 @@ export function PostAdmissionBookingProvider({
     (options?: BookSessionOptions) => {
       if (!canBook) return;
       setError(null);
-      setServiceLabel(options?.serviceLabel?.trim() || t.landing.genericServiceLabel);
+      setPreselectedServiceKey(options?.preselectedServiceKey);
+      setServiceDialogOpen(true);
+    },
+    [canBook],
+  );
+
+  const handleServiceConfirm = useCallback(
+    (input: {
+      selectedService: PostAdmissionServiceKey;
+      serviceOtherDetail?: string;
+    }) => {
+      setError(null);
       startTransition(async () => {
-        const result = await createPostAdmissionCase();
+        const result = await createPostAdmissionCase({
+          selectedService: input.selectedService,
+          serviceOtherDetail: input.serviceOtherDetail,
+        });
         if (!result.ok) {
           setError(result.error);
           return;
         }
+
+        setSelectedService(input.selectedService);
+        setServiceOtherDetail(
+          input.selectedService === "other"
+            ? input.serviceOtherDetail?.trim() || null
+            : null,
+        );
+        setServiceDialogOpen(false);
+
         if (result.kind === "already_scheduled") {
           setScheduledAt(result.scheduledAt);
           setCaseId(null);
-          setModalOpen(true);
+          setCalendlyModalOpen(true);
           return;
         }
+
         setScheduledAt(null);
         setCaseId(result.caseId);
-        setModalOpen(true);
+        setCalendlyModalOpen(true);
       });
     },
-    [canBook, t.landing.genericServiceLabel],
+    [],
   );
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  const closeModal = useCallback(() => {
-    setModalOpen(false);
+  const closeServiceDialog = useCallback(() => {
+    if (isPending) return;
+    setServiceDialogOpen(false);
+    setPreselectedServiceKey(undefined);
+  }, [isPending]);
+
+  const closeCalendlyModal = useCallback(() => {
+    setCalendlyModalOpen(false);
     setScheduledAt(null);
   }, []);
 
@@ -144,7 +193,8 @@ export function PostAdmissionBookingProvider({
     }),
     [bookSession, canBook, clearError, error, isPending],
   );
-  const modalTitle = scheduledAt
+
+  const calendlyModalTitle = scheduledAt
     ? t.modal.alreadyScheduledTitle
     : t.modal.title.includes("{service}")
       ? t.modal.title.replace("{service}", serviceLabel)
@@ -153,12 +203,19 @@ export function PostAdmissionBookingProvider({
   return (
     <PostAdmissionBookingContext.Provider value={value}>
       {children}
+      <PostAdmissionServiceSelectionDialog
+        open={serviceDialogOpen}
+        preselectedServiceKey={preselectedServiceKey}
+        isPending={isPending}
+        onClose={closeServiceDialog}
+        onConfirm={handleServiceConfirm}
+      />
       <PostAdmissionCalendlyModal
-        open={modalOpen}
-        onClose={closeModal}
+        open={calendlyModalOpen}
+        onClose={closeCalendlyModal}
         url={calendlyUrl}
         prefill={{ name: fullName, email }}
-        title={modalTitle}
+        title={calendlyModalTitle}
         scheduledAt={scheduledAt}
       />
     </PostAdmissionBookingContext.Provider>

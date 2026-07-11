@@ -11,6 +11,8 @@ import { fetchApplicationUniversityTargets } from "@/lib/fetch-application-unive
 import { hydrateApplicationsPlansEmbeds } from "@/lib/applications-plans";
 import { buildPaymentRequestModalContext } from "@/lib/fetch-payment-request-modal-context";
 import { expireOverduePendingPayments } from "@/lib/payment-request-utils";
+import { mapApplicationRowToEditableIntake } from "@/lib/fetch-advisor-session-editable-application";
+import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import {
   fetchApplicationPayoutSummary,
@@ -18,9 +20,14 @@ import {
   fetchPayoutsByPaymentIds,
 } from "@/lib/advisor-payouts/fetch-application-payouts";
 
+export type AdminApplicationIntakeEdit = {
+  initialPayload: ApplicationSupportPayload;
+};
+
 export type AdminApplicationDetailPayload = ApplicationDetailPayload & {
   applicationPayouts: Awaited<ReturnType<typeof fetchApplicationPayouts>>;
   paymentRequestContext: Awaited<ReturnType<typeof buildPaymentRequestModalContext>> | null;
+  intakeEdit: AdminApplicationIntakeEdit;
 };
 export type AdminApplicationPaymentRow = ApplicationDetailPayload["payments"][number];
 
@@ -120,9 +127,14 @@ export async function fetchAdminApplicationDetail(
     adminSender,
   );
 
+  const intakeMapped = mapApplicationRowToEditableIntake(hydratedData);
+
   return {
     ...payload,
     applicationPayouts,
     paymentRequestContext,
+    intakeEdit: {
+      initialPayload: intakeMapped.initialPayload,
+    },
   };
 }

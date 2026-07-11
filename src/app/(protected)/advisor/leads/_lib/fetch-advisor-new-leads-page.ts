@@ -8,6 +8,7 @@ import {
 } from "@/lib/applications-plans";
 import { mapApplicationToPaymentRequestOption } from "@/lib/payment-request-application-option";
 import { mapPostAdmissionToPaymentRequestOption } from "@/lib/payment-request-post-admission-option";
+import { formatPostAdmissionServiceLabel } from "@/lib/post-admission-services";
 import type { SendPaymentRequestApplicationOption } from "@/components/application-support/send-payment-request-dialog";
 import type { SendPostAdmissionPaymentRequestOption } from "@/components/post-admission-support/send-post-admission-payment-request-dialog";
 import { resolvePaymentFromEmailDisplay } from "@/lib/resend/application-payment-request-email";
@@ -64,6 +65,8 @@ type PostAdmissionLeadRowRaw = {
   student_name: string | null;
   student_email: string | null;
   school_name: string | null;
+  selected_service: string | null;
+  service_other_detail: string | null;
   created_at: string | null;
   scheduled_at: string | null;
   schools: { name: string } | { name: string }[] | null;
@@ -110,6 +113,7 @@ export type AdvisorNewLeadRow =
       studentInitials: string;
       studentEmail: string;
       schoolName: string;
+      serviceLabel: string;
       dateBooked: string | null;
       meetingDate: string | null;
       paymentRequestOption: SendPostAdmissionPaymentRequestOption;
@@ -200,6 +204,10 @@ function mapPostAdmissionLeadRow(row: PostAdmissionLeadRowRaw): AdvisorNewLeadRo
     studentInitials: studentInitials(studentName),
     studentEmail,
     schoolName,
+    serviceLabel: formatPostAdmissionServiceLabel(
+      row.selected_service,
+      row.service_other_detail,
+    ),
     dateBooked: row.created_at,
     meetingDate: row.scheduled_at,
     paymentRequestOption: mapPostAdmissionToPaymentRequestOption(row),
@@ -276,6 +284,8 @@ async function fetchPostAdmissionLeads(
       student_name,
       student_email,
       school_name,
+      selected_service,
+      service_other_detail,
       created_at,
       scheduled_at,
       schools ( name ),

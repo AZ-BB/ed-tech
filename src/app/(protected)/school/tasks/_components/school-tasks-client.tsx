@@ -290,7 +290,7 @@ export function SchoolTasksClient({
   const bodyPad = isStudentProfile ? "px-5 py-[18px]" : "px-5 py-4";
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div
         className={`overflow-hidden border border-[var(--border-light)] bg-white ${panelRound}`}
       >

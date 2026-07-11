@@ -8,7 +8,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { getStudentEssayFileViewUrl } from "@/actions/essay-my-application-files";
 import {
@@ -3220,7 +3220,11 @@ function PreferredDestinationsMultiSelect({
 }) {
   const { dict } = useLocale();
   const app = dict.student.applications;
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listId = useId();
   const orderedCountries = useMemo(
     () => [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name, "en")),
     [],
@@ -3240,6 +3244,36 @@ function PreferredDestinationsMultiSelect({
     [values],
   );
 
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (open) {
+      searchRef.current?.focus();
+    }
+  }, [open]);
+
   function toggle(alpha2: string) {
     const u = alpha2.toUpperCase();
     if (selectedUpper.has(u)) {
@@ -3248,6 +3282,14 @@ function PreferredDestinationsMultiSelect({
       onChange([...values, u]);
     }
   }
+
+  const triggerLabel =
+    values.length > 0
+      ? app.preferredDestinationsSelectedSummary.replace(
+          "{count}",
+          String(values.length),
+        )
+      : app.preferredDestinationsSelectPlaceholder;
 
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
@@ -3288,42 +3330,86 @@ function PreferredDestinationsMultiSelect({
           ))}
         </div>
       ) : null}
-      <input
-        type="search"
-        className={fieldClass}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={app.preferredDestinationsSearchPlaceholder}
-        autoComplete="off"
-        aria-label={app.preferredDestinationsFilterAria}
-      />
-      <div
-        className="max-h-[min(280px,45vh)] overflow-y-auto rounded-lg border-[1.5px] border-[var(--border)] bg-white [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]"
-        role="group"
-        aria-label={app.preferredDestinationsCountriesAria}
-      >
-        {filtered.map((c) => {
-          const checked = selectedUpper.has(c.alpha2);
-          return (
-            <label
-              key={c.alpha2}
-              className="flex cursor-pointer items-center gap-2.5 border-b border-[var(--border-light)] px-3 py-2.5 last:border-b-0 hover:bg-[var(--sand)]"
-            >
-              <input
-                type="checkbox"
-                className="h-3.5 w-3.5 shrink-0 rounded border-[var(--border)] accent-[var(--green)]"
-                checked={checked}
-                onChange={() => toggle(c.alpha2)}
-              />
-              <span className="min-w-0 flex-1 text-[13px] leading-snug text-[var(--text)]">
-                {c.name}
-              </span>
-              <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
-                {c.alpha2}
-              </span>
-            </label>
-          );
-        })}
+      <div ref={rootRef} className="relative">
+        <button
+          type="button"
+          className={`${fieldClass} flex w-full cursor-pointer items-center justify-between gap-2 text-left`}
+          aria-expanded={open}
+          aria-controls={listId}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span
+            className={
+              values.length > 0
+                ? "text-[var(--text)]"
+                : "text-[var(--text-hint)]"
+            }
+          >
+            {triggerLabel}
+          </span>
+          <svg
+            width="10"
+            height="6"
+            viewBox="0 0 10 6"
+            fill="none"
+            className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          >
+            <path
+              d="M1 1l4 4 4-4"
+              stroke="#7a7a7a"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+        {open ? (
+          <div
+            id={listId}
+            className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border-[1.5px] border-[var(--border)] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+          >
+          <div className="border-b border-[var(--border-light)] p-2">
+            <input
+              ref={searchRef}
+              type="search"
+              className={`${fieldClass} w-full`}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={app.preferredDestinationsSearchPlaceholder}
+              autoComplete="off"
+              aria-label={app.preferredDestinationsFilterAria}
+            />
+          </div>
+          <div
+            className="max-h-[min(280px,45vh)] overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]"
+            role="group"
+            aria-label={app.preferredDestinationsCountriesAria}
+          >
+            {filtered.map((c) => {
+              const checked = selectedUpper.has(c.alpha2);
+              return (
+                <label
+                  key={c.alpha2}
+                  className="flex cursor-pointer items-center gap-2.5 border-b border-[var(--border-light)] px-3 py-2.5 last:border-b-0 hover:bg-[var(--sand)]"
+                >
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 shrink-0 rounded border-[var(--border)] accent-[var(--green)]"
+                    checked={checked}
+                    onChange={() => toggle(c.alpha2)}
+                  />
+                  <span className="min-w-0 flex-1 text-[13px] leading-snug text-[var(--text)]">
+                    {c.name}
+                  </span>
+                  <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
+                    {c.alpha2}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+        ) : null}
       </div>
     </div>
   );

@@ -113,10 +113,6 @@ export function ScholarshipDiscovery({
     setOptimisticFilters((prev) => ({ ...prev, dest: v === "any" ? "any" : v }));
     navigate({ dest: v === "any" ? undefined : v }, true);
   };
-  const onCoverageChange = (v: string) => {
-    setOptimisticFilters((prev) => ({ ...prev, cov: v === "any" ? "any" : v }));
-    navigate({ cov: v === "any" ? undefined : v }, true);
-  };
   const onSearchSubmit = (q: string) => {
     navigate({ q: q.trim() ? q.trim() : undefined }, true);
   };
@@ -130,7 +126,6 @@ export function ScholarshipDiscovery({
   const hasActiveFilters =
     optimisticFilters.nat !== "any" ||
     optimisticFilters.dest !== "any" ||
-    optimisticFilters.cov !== "any" ||
     optimisticFilters.q.trim().length > 0 ||
     optimisticFilters.favouritesOnly;
 
@@ -140,14 +135,12 @@ export function ScholarshipDiscovery({
       q: "",
       nat: "any",
       dest: "any",
-      cov: "any",
       favouritesOnly: false,
     }));
     navigate(
       {
         nat: undefined,
         dest: undefined,
-        cov: undefined,
         q: undefined,
         favourites: undefined,
       },
@@ -315,12 +308,10 @@ export function ScholarshipDiscovery({
         q={optimisticFilters.q}
         nationality={optimisticFilters.nat}
         destination={optimisticFilters.dest}
-        coverage={optimisticFilters.cov}
         favouritesOnly={optimisticFilters.favouritesOnly}
         hasActiveFilters={hasActiveFilters}
         onNationalityChange={onNationalityChange}
         onDestinationChange={onDestinationChange}
-        onCoverageChange={onCoverageChange}
         onFavouritesToggle={onFavouritesToggle}
         onSearchSubmit={onSearchSubmit}
         onClearFilters={onClearFilters}

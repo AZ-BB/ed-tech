@@ -34,7 +34,7 @@ export function SchoolStudentPanel({
           <div className="flex shrink-0 items-center gap-2">{actions}</div>
         ) : null}
       </div>
-      <div className="px-5 py-[18px]">{children}</div>
+      <div className="min-w-0 px-5 py-[18px]">{children}</div>
     </div>
   );
 }

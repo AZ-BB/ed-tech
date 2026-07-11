@@ -221,13 +221,14 @@ export function AdvisorNewLeadsTable({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1060px] border-collapse text-[13px]">
+        <table className="w-full min-w-[1160px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Student name</th>
               <th className="px-4 py-3">Student email</th>
               <th className="px-4 py-3">School</th>
+              <th className="px-4 py-3">Service</th>
               <th className="px-4 py-3">Date booked</th>
               <th className="px-4 py-3">Meeting date</th>
               <th className="px-4 py-3">Actions</th>
@@ -237,7 +238,7 @@ export function AdvisorNewLeadsTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {search.trim()
@@ -294,6 +295,9 @@ export function AdvisorNewLeadsTable({
                     </td>
                     <td className="px-4 py-3 text-[var(--text-mid)]">
                       {row.schoolName}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--text-mid)]">
+                      {row.kind === "post_admission" ? row.serviceLabel : "—"}
                     </td>
                     <td className="px-4 py-3 text-[var(--text-light)]">
                       {formatWhen(row.dateBooked)}

@@ -1,9 +1,18 @@
 "use client";
 
-import { Pagination } from "@/components/pagination";
+import { sendApplicationPaymentRequest } from "@/actions/admin-application-payments";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import type { AdminPlanOption } from "@/app/(protected)/admin/applications/_lib/fetch-admin-plan-options";
+import {
+  SendPaymentRequestDialog,
+  type SendPaymentRequestApplicationOption,
+} from "@/components/application-support/send-payment-request-dialog";
+import { Pagination } from "@/components/pagination";
+import type { ApplicationPlanCatalogRow } from "@/lib/applications-plans";
+import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
 import type { AdminPaidApplicantTableRow } from "../_lib/fetch-admin-paid-applicants-page";
 import type { AdminSchoolOption } from "@/app/(protected)/admin/users/_lib/fetch-admin-school-options";
 
@@ -40,6 +49,11 @@ export type AdminPaidApplicantsTableClientProps = {
   q: string;
   schoolId: string;
   planId: string;
+  paymentRequestApplications: SendPaymentRequestApplicationOption[];
+  availablePlans: ApplicationPlanCatalogRow[];
+  adminName: string;
+  adminEmail: string;
+  fromEmailDisplay: string;
   schoolOptions: AdminSchoolOption[];
   planOptions: AdminPlanOption[];
 };
@@ -52,16 +66,67 @@ export function AdminPaidApplicantsTableClient({
   q,
   schoolId,
   planId,
+  paymentRequestApplications,
+  availablePlans,
+  adminName,
+  adminEmail,
+  fromEmailDisplay,
   schoolOptions,
   planOptions,
 }: AdminPaidApplicantsTableClientProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [paymentRequestOpen, setPaymentRequestOpen] = useState(false);
+  const [requestPaymentError, setRequestPaymentError] = useState<string | null>(null);
+  const [requestPaymentMessage, setRequestPaymentMessage] = useState<string | null>(null);
   const filtersActive =
     q.trim().length > 0 || schoolId !== "" || planId !== "";
+  const hasPaymentTargets = paymentRequestApplications.length > 0;
+
+  function handleOpenRequestPayment() {
+    setRequestPaymentError(null);
+    setPaymentRequestOpen(true);
+  }
+
+  function handleSendPaymentRequest(input: SendPaymentRequestInput) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendApplicationPaymentRequest(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setPaymentRequestOpen(false);
+      setRequestPaymentMessage(
+        `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
+      router.refresh();
+    });
+  }
 
   return (
-    <div className="overflow-hidden rounded-[12px] border border-[#ece9e4] bg-white">
+    <div className={isPending ? "opacity-75" : ""} aria-busy={isPending}>
+      {hasPaymentTargets ? (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={handleOpenRequestPayment}
+            disabled={isPending}
+            className="cursor-pointer rounded-[8px] border-[1.5px] border-[#2D6A4F] bg-[#2D6A4F] px-3.5 py-2 text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Request payment
+          </button>
+        </div>
+      ) : null}
+
+      {requestPaymentMessage ? (
+        <p className="mb-3 text-[12px] font-medium text-[#2D6A4F]">
+          {requestPaymentMessage}
+        </p>
+      ) : null}
+
+      <div className="overflow-hidden rounded-[12px] border border-[#ece9e4] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ece9e4] px-5 py-4">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="text-[14px] font-bold text-[#1a1a1a]">Paid Applicants</h2>
@@ -75,71 +140,71 @@ export function AdminPaidApplicantsTableClient({
           action={pathname}
           method="get"
         >
-          <input type="hidden" name="page" value="1" />
-          <input type="hidden" name="limit" value={String(limit)} />
+            <input type="hidden" name="page" value="1" />
+            <input type="hidden" name="limit" value={String(limit)} />
 
-          <div className="relative w-full max-w-[220px]">
-            <svg
-              className="pointer-events-none absolute left-[10px] top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-[#a0a0a0]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden
+            <div className="relative w-full max-w-[220px]">
+              <svg
+                className="pointer-events-none absolute left-[10px] top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-[#a0a0a0]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <label htmlFor="admin-paid-applicants-search" className="sr-only">
+                Search students
+              </label>
+              <input
+                id="admin-paid-applicants-search"
+                key={`${q}-${schoolId}-${planId}`}
+                type="search"
+                name="q"
+                defaultValue={q}
+                placeholder="Search students..."
+                className="w-full rounded-[8px] border border-[#e0deda] bg-white py-[7px] pl-8 pr-3 text-[12px] text-[#1a1a1a] outline-none transition-colors placeholder:text-[#a0a0a0] focus:border-[#40916C]"
+              />
+            </div>
+
+            <select
+              name="school"
+              aria-label="Filter by school"
+              className={`${filterSelectClass} max-w-[220px]`}
+              style={{ backgroundImage: SELECT_CHEVRON }}
+              defaultValue={schoolId}
             >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <label htmlFor="admin-paid-applicants-search" className="sr-only">
-              Search students
-            </label>
-            <input
-              id="admin-paid-applicants-search"
-              key={`${q}-${schoolId}-${planId}`}
-              type="search"
-              name="q"
-              defaultValue={q}
-              placeholder="Search students..."
-              className="w-full rounded-[8px] border border-[#e0deda] bg-white py-[7px] pl-8 pr-3 text-[12px] text-[#1a1a1a] outline-none transition-colors placeholder:text-[#a0a0a0] focus:border-[#40916C]"
-            />
-          </div>
+              <option value="">All schools</option>
+              {schoolOptions.map((school) => (
+                <option key={school.id} value={school.id}>
+                  {school.name}
+                </option>
+              ))}
+            </select>
 
-          <select
-            name="school"
-            aria-label="Filter by school"
-            className={`${filterSelectClass} max-w-[220px]`}
-            style={{ backgroundImage: SELECT_CHEVRON }}
-            defaultValue={schoolId}
-          >
-            <option value="">All schools</option>
-            {schoolOptions.map((school) => (
-              <option key={school.id} value={school.id}>
-                {school.name}
-              </option>
-            ))}
-          </select>
+            <select
+              name="package"
+              aria-label="Filter by package"
+              className={filterSelectClass}
+              style={{ backgroundImage: SELECT_CHEVRON }}
+              defaultValue={planId}
+            >
+              <option value="">All packages</option>
+              {planOptions.map((plan) => (
+                <option key={plan.id} value={String(plan.id)}>
+                  {plan.label}
+                </option>
+              ))}
+            </select>
 
-          <select
-            name="package"
-            aria-label="Filter by package"
-            className={filterSelectClass}
-            style={{ backgroundImage: SELECT_CHEVRON }}
-            defaultValue={planId}
-          >
-            <option value="">All packages</option>
-            {planOptions.map((plan) => (
-              <option key={plan.id} value={String(plan.id)}>
-                {plan.label}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="submit"
-            className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
-          >
-            Apply
-          </button>
+            <button
+              type="submit"
+              className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            >
+              Apply
+            </button>
         </form>
       </div>
 
@@ -147,7 +212,7 @@ export function AdminPaidApplicantsTableClient({
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#fafaf8]">
-              {["Student", "Package", "Paid amount", "Paid at"].map((heading) => (
+              {["Student", "School", "Package", "Paid amount", "Paid at"].map((heading) => (
                 <th
                   key={heading}
                   className="border-b border-[#ece9e4] px-4 py-[10px] text-left text-[10px] font-bold uppercase tracking-[0.8px] text-[#a0a0a0]"
@@ -161,7 +226,7 @@ export function AdminPaidApplicantsTableClient({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-4 py-10 text-center text-[13px] text-[#a0a0a0]"
                 >
                   {filtersActive
@@ -199,11 +264,23 @@ export function AdminPaidApplicantsTableClient({
                         {row.studentName}
                       </div>
                     </td>
+                    <td
+                      className={`${cellBorder} px-4 py-3 text-[13px] text-[#4a4a4a]`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {row.schoolId ? (
+                        <Link
+                          href={`/admin/schools/${row.schoolId}`}
+                          className="font-medium text-[#2D6A4F] hover:underline"
+                        >
+                          {row.schoolName}
+                        </Link>
+                      ) : (
+                        row.schoolName
+                      )}
+                    </td>
                     <td className={`${cellBorder} px-4 py-3 text-[13px] text-[#4a4a4a]`}>
-                      <span>{row.packageLabel}</span>
-                      <span className="ml-1.5 font-medium text-[#2D6A4F]">
-                        · {formatAmount(row.packagePrice)}
-                      </span>
+                      {row.packageLabel}
                     </td>
                     <td className={`${cellBorder} px-4 py-3 text-[13px] font-medium text-[#4a4a4a]`}>
                       {formatAmount(row.paidAmount)}
@@ -227,6 +304,22 @@ export function AdminPaidApplicantsTableClient({
           limitOptions={LIMIT_OPTIONS}
         />
       </div>
+      </div>
+
+      <SendPaymentRequestDialog
+        open={paymentRequestOpen}
+        onClose={() => {
+          if (!isPending) setPaymentRequestOpen(false);
+        }}
+        applicationOptions={paymentRequestApplications}
+        availablePlans={availablePlans}
+        senderName={adminName}
+        senderEmail={adminEmail}
+        fromEmailDisplay={fromEmailDisplay}
+        onSubmit={handleSendPaymentRequest}
+        isSubmitting={isPending}
+        error={requestPaymentError}
+      />
     </div>
   );
 }

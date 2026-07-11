@@ -382,8 +382,8 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 </p>
             ) : null}
 
-            <footer className="relative z-10 mt-auto flex flex-col gap-2 border-t border-[#ece9e4] pt-4 pointer-events-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                <div className="flex items-center gap-2 sm:contents">
+            <footer className="relative z-10 mt-auto flex flex-col gap-2 border-t border-[#ece9e4] pt-4 pointer-events-none sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center">
                 {optimisticFavourite ? (
                     <button
                         type="button"
@@ -411,6 +411,8 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                         <IconStarOutline />
                     </button>
                 )}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                 {optimisticListed ? (
                     <button
                         type="button"
@@ -437,13 +439,13 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                         {t.addToShortlist}
                     </button>
                 )}
-                </div>
                 <Link
                     href={detailHref}
                     className="pointer-events-auto flex w-full cursor-pointer items-center justify-center rounded-[50px] border-0 bg-[#2D6A4F] px-5 py-2.5 text-[11px] !font-semibold !text-white no-underline transition-colors hover:bg-[#1B4332] sm:inline-flex sm:w-auto sm:py-2"
                 >
                     {t.viewDetails}
                 </Link>
+                </div>
             </footer>
             </div>
         </article>

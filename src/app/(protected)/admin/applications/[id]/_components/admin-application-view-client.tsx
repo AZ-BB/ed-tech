@@ -23,11 +23,15 @@ import {
   updateAdminUniversityTargetDecision,
   updateAdminUniversityTargetStatus,
 } from "@/actions/admin-application-university-targets";
+import { updateAdminApplicationSupportIntake } from "@/actions/admin-application-support-intake";
 import {
   assignAdminApplicationAdvisor,
+  assignAdminApplicationAssignee,
   addAdminApplicationInternalNote,
+  toggleAdminStudentFlag,
   updateAdminApplicationStatus,
 } from "@/actions/admin-applications";
+import type { AdminApplicationAdminOption } from "@/app/(protected)/admin/applications/_lib/fetch-admin-application-admin-options";
 import type { AdminApplicationAdvisorOption } from "@/app/(protected)/admin/applications/_lib/fetch-admin-application-advisor-options";
 import {
   ApplicationViewClient,
@@ -47,6 +51,9 @@ const ADMIN_CONFIG: ApplicationViewConfig = {
   showSchoolAdminLink: true,
   showPayoutsTab: true,
   documentsPortal: "admin",
+  showHeaderQuickActions: true,
+  blockPaymentRequestIfPending: true,
+  canEditIntake: true,
 };
 
 const ADMIN_ACTIONS: ApplicationViewActions = {
@@ -54,6 +61,9 @@ const ADMIN_ACTIONS: ApplicationViewActions = {
   addInternalNote: addAdminApplicationInternalNote,
   sendPaymentRequest: sendApplicationPaymentRequest,
   assignAdvisor: assignAdminApplicationAdvisor,
+  assignAssignee: assignAdminApplicationAssignee,
+  toggleStudentFlag: toggleAdminStudentFlag,
+  updateIntake: updateAdminApplicationSupportIntake,
   calls: {
     logCall: logAdminApplicationCall,
     updateCall: updateAdminApplicationCall,
@@ -82,6 +92,7 @@ export type AdminApplicationViewClientProps = {
   payload: AdminApplicationDetailPayload;
   activityLogsPanel: StudentActivityLogsPanelProps;
   advisorOptions: AdminApplicationAdvisorOption[];
+  adminOptions: AdminApplicationAdminOption[];
   initialTab?: AdminApplicationDetailTab;
 };
 
@@ -89,6 +100,7 @@ export function AdminApplicationViewClient({
   payload,
   activityLogsPanel,
   advisorOptions,
+  adminOptions,
   initialTab = "intake",
 }: AdminApplicationViewClientProps) {
   return (
@@ -96,11 +108,13 @@ export function AdminApplicationViewClient({
       payload={payload}
       activityLogsPanel={activityLogsPanel}
       advisorOptions={advisorOptions}
+      adminOptions={adminOptions}
       initialTab={initialTab}
       config={ADMIN_CONFIG}
       actions={ADMIN_ACTIONS}
       applicationPayouts={payload.applicationPayouts}
       paymentRequestContext={payload.paymentRequestContext}
+      intakeEdit={payload.intakeEdit}
     />
   );
 }

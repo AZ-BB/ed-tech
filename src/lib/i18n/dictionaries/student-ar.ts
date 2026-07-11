@@ -472,6 +472,8 @@ export const studentAr: {
     preferredDestinations: "الوجهات المفضلة",
     preferredDestinationsSub:
       "قائمة الدول الكاملة. حدّد كل وجهة تفكر بها، ويمكنك إزالتها من الشريحة.",
+    preferredDestinationsSelectPlaceholder: "اختر دول الوجهة",
+    preferredDestinationsSelectedSummary: "تم اختيار {count} — انقر للتعديل",
     preferredDestinationsSearchPlaceholder: "ابحث باسم الدولة أو الرمز…",
     preferredDestinationsFilterAria: "تصفية قائمة الدول",
     preferredDestinationsCountriesAria: "الدول",
@@ -584,11 +586,10 @@ export const studentAr: {
   },
   applicationSupport: {
     steps: {
-      basic: { label: "المعلومات الأساسية", stepOf: "الخطوة 1 من 5" },
-      direction: { label: "اتجاهك", stepOf: "الخطوة 2 من 5" },
-      strategy: { label: "استراتيجية التقديم", stepOf: "الخطوة 3 من 5" },
-      summary: { label: "خطتك", stepOf: "الخطوة 4 من 5" },
-      pay: { label: "احجز جلستك", stepOf: "الخطوة 5 من 5" },
+      basic: { label: "المعلومات الأساسية", stepOf: "الخطوة 1 من 4" },
+      direction: { label: "اتجاهك", stepOf: "الخطوة 2 من 4" },
+      strategy: { label: "احجز جلستك", stepOf: "الخطوة 3 من 4" },
+      summary: { label: "خطتك", stepOf: "الخطوة 4 من 4" },
     },
     back: "رجوع",
     continue: "متابعة",
@@ -615,7 +616,7 @@ export const studentAr: {
       clarityBannerBold: "أنت تقدّم طلباتك بنفسك.",
       clarityBanner: "نرشدك وندعمك في كل خطوة — الإرسال النهائي بيدك.",
       howItWorks: "كيف يعمل",
-      howItWorksSub: "مسار واضح من أول محادثة إلى أول يوم في الحرم الجامعي.",
+      howItWorksSub: "من إدخال معلوماتك إلى خطة مخصصة ودعم مستمر في التقديم.",
       ctaTitle: "مستعد لبدء رحلة التقديم؟",
       ctaSub: "أخبرنا أين أنت اليوم وسنساعدك في بناء مسار واضح.",
     },
@@ -705,9 +706,9 @@ export const studentAr: {
       removeMajor: "إزالة {major}",
     },
     strategy: {
-      title: "اختر استراتيجية التقديم",
+      title: "ما يتضمنه دعمك",
       subtitle:
-        "كم جامعة تريد أن تحصل على دعم معها؟ يمكنك تأكيد خطتك النهائية بعد جلسة التأهيل.",
+        "احجز جلسة التأهيل أدناه للبدء. تُؤكد باقتك النهائية أثناء الجلسة.",
       pack5: "الأفضل لطلبات مركزة وقائمة مختصرة واضحة.",
       pack10: "خيار متوازن يمنحك فرص قبول أقوى.",
       pack15: "وسّع فرصك عبر برامج ودول أكثر.",
@@ -715,6 +716,13 @@ export const studentAr: {
       universities: "جامعات",
       select: "اختر",
       everyPackageIncludes: "كل باقة تتضمن",
+      saving: "جارٍ حفظ بياناتك…",
+      bookBelow: "احجز جلسة التأهيل",
+      calendlyTitle: "احجز جلسة التأهيل — Calendly",
+      openCalendar: "فتح التقويم في تبويب جديد",
+      calendlyUnavailableTitle: "الحجز غير متاح",
+      calendlyUnavailableMessage:
+        "لم يقم مستشار التقديم بإعداد الجدولة بعد. يمكنك المتابعة وسنتواصل معك عند توفر الحجز.",
     },
     summary: {
       pill: "أنت على بعد دقائق من البدء",
@@ -739,11 +747,11 @@ export const studentAr: {
       advisorReady: "مستشارك جاهز",
       advisorDesc:
         "مستشار حقيقي ساعد طلاباً مثلك على القبول في جامعات مرموقة. في جلسة التأهيل، سنحدد قائمتك، ونبني استراتيجيتك، ونرسم كل موعد مهم.",
-      readyWhen: "جاهزون عندما تكون أنت",
-      bookOnboarding: "احجز جلسة التأهيل",
-      saving: "جارٍ الحفظ…",
-      chooseTime: "اختر وقت جلستك",
-      bookSub: "اختر وقتاً يناسبك والتقِ مستشارك — سنرسم خطتك الكاملة معاً.",
+      readyWhen: "أوشكت على الانتهاء",
+      bookOnboarding: "راجع وأنهِ",
+      finish: "إنهاء",
+      finishSub:
+        "راجع ملخص خطتك، ثم سنعرض لك الخطوات التالية.",
     },
     pay: {
       title: "جاهز لحجز جلسة التأهيل؟",
@@ -768,17 +776,12 @@ export const studentAr: {
         "اختر وقتك في الخطوة التالية — ستتلقى دعوة تقويم وتأكيداً بالبريد.",
     },
     done: {
-      title: "اختر وقت التأهيل",
+      title: "كل شيء جاهز",
       subtitle:
-        "اختر موعداً يناسبك أدناه. ستتلقى دعوة تقويم وتأكيداً بالبريد خلال دقائق.",
-      calendlyTitle: "احجز جلسة التأهيل — Calendly",
-      openCalendar: "فتح التقويم في تبويب جديد",
-      calendlyUnavailableTitle: "الحجز غير متاح",
-      calendlyUnavailableMessage:
-        "لم يقم مستشار التقديم بإعداد الجدولة بعد. يرجى المحاولة لاحقاً أو التواصل مع الدعم.",
+        "حفظنا بياناتك وأنت على الطريق. إليك ما يحدث بعد ذلك في رحلة التقديم.",
       whatNext: "ما التالي",
       nextSteps: [
-        "اختر وقتاً أعلاه — ستتلقى دعوة تقويم وتأكيداً بالبريد خلال دقائق",
+        "ستتلقى دعوة تقويم وتأكيداً بالبريد إذا حجزت جلسة",
         "سيراجع مستشارك كل ما شاركته قبل الجلسة",
         "أثناء الجلسة، نحوّل مدخلاتك إلى خطة عمل واضحة ومخصصة",
         "بعد الجلسة، تقرر باقتك النهائية ونواصل الرحلة معاً",
@@ -843,6 +846,12 @@ export const studentAr: {
     newsTagUpdate: "تحديث",
     recentActivity: "النشاط الأخير",
     noRecentActivity: "لا يوجد نشاط حديث بعد.",
+    findInternshipsTitle: "اعثر على فرص التدريب",
+    findInternshipsDesc: "ابحث في قائمتنا من فرص التدريب المعتمدة",
+    findInternshipsCta: "التدريبات المعتمدة",
+    findEventsTitle: "اعثر على فعاليات الجامعات",
+    findEventsDesc: "ابحث في قائمة الفعاليات التي تقام في بلدك",
+    findEventsCta: "اعثر على فعالية",
     activity: {
       universities_viewed: "الجامعات المُشاهَدة",
       universities_saved: "الجامعات المحفوظة",

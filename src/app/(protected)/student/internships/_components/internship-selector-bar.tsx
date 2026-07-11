@@ -34,6 +34,7 @@ export function InternshipSelectorBar({
 
   return (
     <div className="internship-selector-bar">
+      <div className="internship-selector-filters">
       <span>{t.location}</span>
       <select
         className="internship-sel"
@@ -72,6 +73,8 @@ export function InternshipSelectorBar({
         <option value="paid">{t.paidOnly}</option>
         <option value="free">{t.freeNoCost}</option>
       </select>
+      </div>
+      <div className="internship-selector-actions">
       <button
         type="button"
         className={
@@ -119,6 +122,7 @@ export function InternshipSelectorBar({
           {t.clearFilters}
         </button>
       ) : null}
+      </div>
     </div>
   );
 }

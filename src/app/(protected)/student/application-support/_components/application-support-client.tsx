@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  submitApplicationSupport,
-  type ApplicationSupportPayload,
-} from "@/actions/application-support";
+import { submitApplicationSupport } from "@/actions/application-support";
+import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
 import type { Database } from "@/database.types";
 import clsx from "clsx";
 import Link from "next/link";
@@ -40,7 +38,6 @@ type Step =
   | "direction"
   | "strategy"
   | "summary"
-  | "pay"
   | "done";
 
 type PlanClarity = "clear" | "some" | "help";
@@ -231,11 +228,10 @@ function ProgressTracker({
   >;
 }) {
   const pctMap: Record<Exclude<Step, "landing" | "done">, number> = {
-    basic: 20,
-    direction: 40,
-    strategy: 60,
-    summary: 80,
-    pay: 100,
+    basic: 25,
+    direction: 50,
+    strategy: 75,
+    summary: 100,
   };
   const p = { pct: pctMap[step], ...steps[step] };
   return (
@@ -307,12 +303,11 @@ export function ApplicationSupportClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applicationId, setApplicationId] = useState<number | null>(null);
 
-  const planByCount = useMemo(() => {
-    const m = new Map<number, PlanRow>();
-    for (const p of plans) {
-      m.set(p.universities_count, p);
-    }
-    return m;
+  const defaultPack = useMemo((): 5 | 10 | 15 | null => {
+    const preferred = plans.find((p) => p.universities_count === 10);
+    const fallback = plans[0];
+    const count = (preferred ?? fallback)?.universities_count;
+    return count === 5 || count === 10 || count === 15 ? count : null;
   }, [plans]);
 
   const [fullName, setFullName] = useState(profileDefaults?.fullName ?? "");
@@ -328,8 +323,6 @@ export function ApplicationSupportClient({
   const [majorInput, setMajorInput] = useState("");
   const [applyTiming, setApplyTiming] = useState<string | null>(null);
   const [planClarity, setPlanClarity] = useState<PlanClarity | null>(null);
-
-  const [selectedPack, setSelectedPack] = useState<5 | 10 | 15 | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -370,11 +363,11 @@ export function ApplicationSupportClient({
   };
 
   function buildPayload(): ApplicationSupportPayload {
-    if (!selectedPack) {
+    if (!defaultPack) {
       throw new Error("Package required");
     }
     return {
-      planUniversitiesCount: selectedPack,
+      planUniversitiesCount: defaultPack,
       studentName: fullName.trim(),
       email: email.trim(),
       phone: phone.trim(),
@@ -394,7 +387,7 @@ export function ApplicationSupportClient({
 
   async function persistApplication(): Promise<boolean> {
     if (applicationId != null) return true;
-    if (!selectedPack) return false;
+    if (!defaultPack) return false;
     setIsSubmitting(true);
     setSubmitError(null);
     try {
@@ -416,10 +409,13 @@ export function ApplicationSupportClient({
     }
   }
 
-  async function goFromSummaryToPay() {
-    const ok = await persistApplication();
-    if (ok) goToStep("pay");
-  }
+  useEffect(() => {
+    if (step !== "strategy") return;
+    if (applicationId != null) return;
+    if (!defaultPack) return;
+    void persistApplication();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- persist on strategy entry only
+  }, [step, applicationId, defaultPack]);
 
   const basicValid = Boolean(
     fullName.trim() &&
@@ -431,7 +427,8 @@ export function ApplicationSupportClient({
       gradeYear,
   );
 
-  const strategyValid = selectedPack != null;
+  const strategyContinueDisabled =
+    !defaultPack || applicationId == null || isSubmitting;
 
   const summaryNarrative = useMemo(() => {
     if (planClarity === "help") return as.summary.narrativeHelp;
@@ -483,7 +480,7 @@ export function ApplicationSupportClient({
     if (destinations.length)
       ctx.push(`Destinations: ${destinations.join(", ")}`);
     if (majors.length) ctx.push(`Field: ${majors.join(", ")}`);
-    if (selectedPack) ctx.push(`Strategy: ${selectedPack} universities`);
+    ctx.push("Package: TBD after onboarding");
     if (applyTiming) ctx.push(`Timing: ${applyTiming}`);
     if (planClarity) ctx.push(`Clarity: ${planClarity}`);
     if (applicationId != null) ctx.push(`Application ref: #${applicationId}`);
@@ -506,7 +503,6 @@ export function ApplicationSupportClient({
     majors,
     planClarity,
     receivingAdvisorName,
-    selectedPack,
   ]);
 
   const sectionLabel = (children: ReactNode) => (
@@ -676,7 +672,7 @@ export function ApplicationSupportClient({
             </div>
           </div>
 
-          <div className="as-clarity-banner">
+          <div className="as-clarity-banner bg-white">
             <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-white shadow-[0_2px_8px_rgba(45,106,79,0.1)]">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
                 <path d="M9 12l2 2 4-4" />
@@ -941,59 +937,15 @@ export function ApplicationSupportClient({
       ) : null}
 
       {step === "strategy" ? (
-        <div className={formShellClass}>
+        <div className={formWideShellClass}>
           <ProgressTracker step="strategy" steps={as.steps} />
-          <div className={formCardClass}>
+          <div className={`${formCardClass} md:px-7 md:py-7`}>
             <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-xl sm:text-2xl">{as.strategy.title}</h2>
             <p className="mb-6 text-sm text-[var(--text-light)]">
               {as.strategy.subtitle}
             </p>
 
-            <div className="mb-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
-              {(
-                [
-                  { n: 5 as const, desc: as.strategy.pack5, badge: false },
-                  { n: 10 as const, desc: as.strategy.pack10, badge: true },
-                  { n: 15 as const, desc: as.strategy.pack15, badge: false },
-                ] as const
-              ).map(({ n, desc, badge }) => {
-                const available = planByCount.has(n);
-                const sel = selectedPack === n;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    disabled={!available}
-                    onClick={() => available && setSelectedPack(n)}
-                    className={`as-pack-card relative rounded-[var(--radius-xl)] border-2 px-4 pb-5 pt-7 text-center transition-all sm:px-[22px] sm:pb-6 sm:pt-8 ${
-                      !available
-                        ? "cursor-not-allowed opacity-45"
-                        : "cursor-pointer hover:border-[var(--green-light)]"
-                    } ${sel ? "as-selected border-[var(--green)] bg-[var(--green-pale)] shadow-[0_4px_20px_rgba(45,106,79,0.12)]" : "border-[var(--border-light)] bg-white"}`}
-                  >
-                    {badge ? (
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-pill)] bg-[var(--green)] px-4 py-1 text-[10.5px] font-bold uppercase tracking-wide text-white">
-                        {as.strategy.mostPopular}
-                      </span>
-                    ) : null}
-                    <div className="font-[family-name:var(--font-dm-serif)] text-[36px] leading-none text-[var(--green)] sm:text-[44px]">{n}</div>
-                    <div className="mt-1 text-sm font-bold text-[var(--text)]">{as.strategy.universities}</div>
-                    <p className="mx-auto mb-4 mt-2 min-h-[58px] max-w-[200px] text-[13px] leading-snug text-[var(--text-light)]">{desc}</p>
-                    <span
-                      className={`inline-block rounded-[var(--radius-pill)] border-[1.5px] px-6 py-2 text-xs font-semibold ${
-                        sel
-                          ? "border-[var(--green)] bg-[var(--green)] text-white"
-                          : "border-[var(--border)] bg-white text-[var(--text-mid)]"
-                      }`}
-                    >
-                      {as.strategy.select}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="as-included-compact">
+            <div className="as-included-compact mb-6">
               <div className="as-included-compact-title">{as.strategy.everyPackageIncludes}</div>
               <div className="as-included-compact-grid">
                 {as.includedCompact.map((line) => (
@@ -1007,7 +959,46 @@ export function ApplicationSupportClient({
               </div>
             </div>
 
-            {formNav(() => goToStep("direction"), () => goToStep("summary"), !strategyValid)}
+            <div className="mb-2 text-[15px] font-bold text-[var(--text)]">{as.strategy.bookBelow}</div>
+
+            {isSubmitting && applicationId == null ? (
+              <p className="mb-4 text-sm text-[var(--text-light)]">{as.strategy.saving}</p>
+            ) : null}
+            {submitError ? (
+              <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {submitError}
+              </p>
+            ) : null}
+
+            <div className="as-calendly-wrap !mx-0 !mb-0 !max-w-none !px-0">
+              {applicationId != null && canBookCalendly && calendlyUrl ? (
+                <>
+                  <div className="as-calendly-embed-box shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                    <CalendlyInlineEmbed
+                      url={calendlyUrl}
+                      title={as.strategy.calendlyTitle}
+                      className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[780px]"
+                    />
+                  </div>
+                  <p className="mt-4 text-center text-xs text-[var(--text-hint)]">
+                    <a href={calendlyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--green)] underline-offset-2 hover:underline">
+                      {as.strategy.openCalendar}
+                    </a>
+                  </p>
+                </>
+              ) : applicationId != null ? (
+                <div className={`${formCardClass} text-center`}>
+                  <h3 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">
+                    {as.strategy.calendlyUnavailableTitle}
+                  </h3>
+                  <p className="mx-auto mt-3 max-w-[480px] text-sm leading-relaxed text-[var(--text-mid)]">
+                    {as.strategy.calendlyUnavailableMessage}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+
+            {formNav(() => goToStep("direction"), () => goToStep("summary"), strategyContinueDisabled)}
           </div>
         </div>
       ) : null}
@@ -1028,7 +1019,7 @@ export function ApplicationSupportClient({
             <div className="as-snapshot-eyebrow">{as.summary.snapshotEyebrow}</div>
 
             <div className="as-summary-grid">
-              <div className={`as-summary-block as-full-row hero-block ${selectedPack ? "as-filled" : "as-empty"}`}>
+              <div className="as-summary-block as-full-row hero-block as-empty">
                 <div className="mb-2.5 flex items-center gap-2.5">
                   <div className="as-summary-block-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8" aria-hidden>
@@ -1039,11 +1030,7 @@ export function ApplicationSupportClient({
                   </div>
                   <span className="as-summary-block-label">{as.summary.applicationPlan}</span>
                 </div>
-                <div className="as-summary-block-value">
-                  {selectedPack
-                    ? formatTemplate(as.summary.universitiesCount, { count: selectedPack })
-                    : as.summary.notSelected}
-                </div>
+                <div className="as-summary-block-value">{as.summary.notSelected}</div>
                 <p className="as-summary-block-sub">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                     <circle cx="12" cy="12" r="10" />
@@ -1129,22 +1116,16 @@ export function ApplicationSupportClient({
               <h3 className="mb-4 font-[family-name:var(--font-dm-serif)] text-[22px] leading-tight text-[var(--text)] break-words sm:text-[26px]">
                 {as.summary.bookOnboarding}
               </h3>
-              {submitError ? (
-                <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-start text-sm text-red-800">
-                  {submitError}
-                </p>
-              ) : null}
               <button
                 type="button"
-                disabled={isSubmitting}
-                onClick={() => void goFromSummaryToPay()}
-                className="as-btn-cta-hero mx-auto disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => goToStep("done")}
+                className="as-btn-cta-hero mx-auto"
               >
-                {isSubmitting ? as.summary.saving : as.summary.chooseTime}
+                {as.summary.finish}
                 <ChevronRight />
               </button>
               <p className="mx-auto mt-3.5 max-w-[440px] text-[12.5px] leading-snug text-[var(--text-light)]">
-                {as.summary.bookSub}
+                {as.summary.finishSub}
               </p>
             </div>
 
@@ -1161,177 +1142,57 @@ export function ApplicationSupportClient({
         </div>
       ) : null}
 
-      {step === "pay" ? (
-        <div className={formWideShellClass}>
-          <ProgressTracker step="pay" steps={as.steps} />
-          <div className={`${formCardClass} md:px-7 md:py-7`}>
-            <div className="as-pay-layout">
-              <div className="min-w-0">
-                <h2 className="mb-1.5 font-[family-name:var(--font-dm-serif)] text-xl sm:text-2xl">{as.pay.title}</h2>
-                <p className="mb-6 text-sm text-[var(--text-light)]">
-                  {as.pay.subtitle}
-                </p>
-                <div className="mb-3 text-[15px] font-bold text-[var(--text)]">{as.pay.includesTitle}</div>
-                <ul className="flex flex-col gap-3">
-                  {as.pay.includes.map((line) => (
-                    <li key={line} className="flex items-start gap-3 text-[13.5px] leading-snug text-[var(--text-mid)]">
-                      <span className="mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)]">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="3" aria-hidden>
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      </span>
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-                <div className="final-info-box mt-6 flex items-center gap-3 rounded-xl bg-[var(--green-pale)] px-[18px] py-3.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
-                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
-                    </svg>
-                  </div>
-                  <p className="text-[13px] font-medium leading-snug text-[var(--green-dark)]">
-                    {as.pay.noCommitment}
-                  </p>
-                </div>
-              </div>
+      {step === "done" ? (
+        <div className={`${formWideShellClass} pb-12 sm:pb-16`}>
+          <div className={`${formCardClass} text-center`}>
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--green-bg)] sm:h-[72px] sm:w-[72px]">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                <path d="M22 4L12 14.01l-3-3" />
+              </svg>
+            </div>
+            <h2 className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[24px] text-[var(--text)] sm:text-[28px]">
+              {as.done.title}
+            </h2>
+            <p className="mx-auto max-w-[420px] text-sm leading-relaxed text-[var(--text-light)]">
+              {as.done.subtitle}
+            </p>
+          </div>
 
-              <div className="min-w-0">
-                <div className="as-pay-summary">
-                  <div className="mb-[18px] text-[15px] font-bold text-[var(--text)]">{as.pay.sessionDetails}</div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 py-2 text-[12.5px] sm:text-[13px]">
-                    <span className="text-[var(--text-light)]">{as.pay.onboardingSession}</span>
-                    <span className="font-semibold text-[var(--text)]">{as.pay.minutes45}</span>
+          <div className={`${formCardClass} mt-4`}>
+            <div className="rounded-[14px] bg-[var(--sand)] px-4 py-4 sm:px-5 sm:py-5">
+              <div className="mb-3.5 text-[13px] font-bold uppercase tracking-wide text-[var(--text)]">
+                {as.done.whatNext}
+              </div>
+              <div className="flex flex-col gap-3.5">
+                {as.done.nextSteps.map((text, i) => (
+                  <div key={text} className="flex items-start gap-3.5">
+                    <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11px] font-bold text-[var(--green)]">
+                      {i + 1}
+                    </div>
+                    <p className="text-sm leading-snug text-[var(--text-mid)]">{text}</p>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 py-2 text-[12.5px] sm:text-[13px]">
-                    <span className="text-[var(--text-light)]">{as.pay.selectedStrategy}</span>
-                    <span className="rounded-[var(--radius-pill)] bg-[var(--sand)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-light)]">
-                      {selectedPack
-                        ? formatTemplate(as.summary.universitiesCount, { count: selectedPack })
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 py-2 text-[12.5px] sm:text-[13px]">
-                    <span className="text-[var(--text-light)]">{as.pay.format}</span>
-                    <span className="font-semibold text-[var(--text)]">{as.pay.oneOnOne}</span>
-                  </div>
-                  <div className="my-3 h-px bg-[var(--border-light)]" />
-                  <button
-                    type="button"
-                    onClick={() => goToStep("done")}
-                    className="mb-3.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-pill)] border-0 bg-[var(--green)] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)]"
-                  >
-                    {as.pay.bookSession}
-                    <ChevronRight />
-                  </button>
-                  <div className="flex items-start gap-2 rounded-[10px] bg-[var(--green-pale)] px-3.5 py-3 text-[11.5px] leading-snug text-[var(--green-dark)]">
-                    <svg width="14" height="14" className="mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    <span>{as.pay.calendlyNote}</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-
-            <div className="mt-6 flex justify-start">
+            <div className="mt-6 flex flex-col items-stretch gap-3 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
+              <Link
+                href="/student"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--green)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)] sm:w-auto sm:px-9"
+              >
+                {as.done.goToDashboard}
+                <ChevronRight />
+              </Link>
               <button
                 type="button"
                 onClick={() => goToStep("summary")}
-                className="cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-2.5 text-[13px] font-medium text-[var(--text-mid)]"
+                className="w-full cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-3 text-sm font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)] sm:w-auto"
               >
                 {as.back}
               </button>
             </div>
           </div>
         </div>
-      ) : null}
-
-      {step === "done" ? (
-        <>
-          <div className={formWideShellClass}>
-            <div className={`${formCardClass} text-center`}>
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--green-bg)] sm:h-[72px] sm:w-[72px]">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" aria-hidden>
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
-              </div>
-              <h2 className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[24px] text-[var(--text)] sm:text-[28px]">
-                {as.done.title}
-              </h2>
-              <p className="mx-auto max-w-[420px] text-sm leading-relaxed text-[var(--text-light)]">
-                {as.done.subtitle}
-              </p>
-            </div>
-          </div>
-
-          <div className="as-calendly-wrap">
-            {canBookCalendly && calendlyUrl ? (
-              <>
-                <div className="as-calendly-embed-box shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-                  <CalendlyInlineEmbed
-                    url={calendlyUrl}
-                    title={as.done.calendlyTitle}
-                    className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[780px]"
-                  />
-                </div>
-                <p className="mt-4 text-center text-xs text-[var(--text-hint)]">
-                  <a href={calendlyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--green)] underline-offset-2 hover:underline">
-                    {as.done.openCalendar}
-                  </a>
-                </p>
-              </>
-            ) : (
-              <div className={`${formWideShellClass} pb-0`}>
-                <div className={`${formCardClass} text-center`}>
-                  <h3 className="font-[family-name:var(--font-dm-serif)] text-xl text-[var(--text)]">
-                    {as.done.calendlyUnavailableTitle}
-                  </h3>
-                  <p className="mx-auto mt-3 max-w-[480px] text-sm leading-relaxed text-[var(--text-mid)]">
-                    {as.done.calendlyUnavailableMessage}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className={`${formWideShellClass} pb-12 sm:pb-16`}>
-            <div className={formCardClass}>
-              <div className="rounded-[14px] bg-[var(--sand)] px-4 py-4 sm:px-5 sm:py-5">
-                <div className="mb-3.5 text-[13px] font-bold uppercase tracking-wide text-[var(--text)]">
-                  {as.done.whatNext}
-                </div>
-                <div className="flex flex-col gap-3.5">
-                  {as.done.nextSteps.map((text, i) => (
-                    <div key={text} className="flex items-start gap-3.5">
-                      <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11px] font-bold text-[var(--green)]">
-                        {i + 1}
-                      </div>
-                      <p className="text-sm leading-snug text-[var(--text-mid)]">{text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-6 flex flex-col items-stretch gap-3 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
-                <Link
-                  href="/student"
-                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--green)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)] sm:w-auto sm:px-9"
-                >
-                  {as.done.goToDashboard}
-                  <ChevronRight />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => goToStep("pay")}
-                  className="w-full cursor-pointer rounded-[var(--radius-pill)] border-[1.5px] border-[var(--border)] bg-white px-6 py-3 text-sm font-medium text-[var(--text-mid)] hover:border-[var(--text-mid)] sm:w-auto"
-                >
-                  {as.back}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
       ) : null}
     </div>
   );

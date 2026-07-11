@@ -71,7 +71,7 @@ export function PostAdmissionServiceDetail({
   const { canBook, isPending, error, bookSession } = usePostAdmissionBooking();
 
   function handleBookSession() {
-    bookSession({ serviceLabel: service.title });
+    bookSession({ preselectedServiceKey: serviceKey });
   }
 
   return (

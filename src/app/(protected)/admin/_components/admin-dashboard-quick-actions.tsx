@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { AdminAddAnnouncementDialog } from "../content/_components/admin-add-announcement-dialog";
+import { AdminManageAnnouncementsDialog } from "../content/_components/admin-manage-announcements-dialog";
 import {
   AdminUserCreateDialogs,
   type AdminUserCreateRole,
@@ -115,7 +115,7 @@ export function AdminDashboardQuickActions() {
         </div>
       ) : null}
 
-      <AdminAddAnnouncementDialog
+      <AdminManageAnnouncementsDialog
         open={addAnnouncementOpen}
         onClose={() => setAddAnnouncementOpen(false)}
       />

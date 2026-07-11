@@ -4,6 +4,7 @@ export type WebinarAdvisorHost = {
   title?: string | null;
   description?: string | null;
   about?: string | null;
+  avatar_url?: string | null;
 } | null;
 
 export type WebinarHostRow = {
@@ -53,7 +54,8 @@ export function resolveWebinarHost(row: WebinarHostRow): ResolvedWebinarHost {
     speakerTitle: advisor?.title?.trim() || "Univeera Advisor",
     speakerBio: advisor?.about?.trim() || advisor?.description?.trim() || "",
     speakerInitials: initialsFromFullName(speakerName || "Advisor"),
-    speakerImageUrl: null,
+    speakerImageUrl:
+      row.host_image_url?.trim() || advisor?.avatar_url?.trim() || null,
     hostLabelForEmail: speakerName || "your advisor",
   };
 }

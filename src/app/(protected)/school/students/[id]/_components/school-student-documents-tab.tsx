@@ -383,7 +383,7 @@ export function SchoolStudentDocumentsTab({
   );
 
   return (
-    <div className="mb-[18px] overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
+    <div className="mb-[18px] min-w-0 overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
       {isManagePortal ? (
         <input
           ref={fileInputRef}
@@ -400,7 +400,7 @@ export function SchoolStudentDocumentsTab({
           {headerSubtitle}
         </div>
       </div>
-      <div className="px-5 py-[18px]">
+      <div className="min-w-0 px-5 py-[18px]">
         <div className="flex flex-col gap-2">
           {predictedDoc ? (
             <div className="flex flex-col gap-3 rounded-[10px] border border-[var(--border-light)] bg-[linear-gradient(to_right,rgba(82,183,135,0.04),transparent)] px-3.5 py-3 sm:flex-row sm:items-center sm:gap-3.5">

@@ -523,6 +523,45 @@ export function StudentDashboard({
           </div>
         </div>
       </div>
+
+      <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-2">
+        <div className="flex flex-col gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-6">
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-[var(--text)]">
+              {d.findInternshipsTitle}
+            </h2>
+            <p className="mt-1 max-w-xl text-[13px] leading-snug text-[var(--text-light)]">
+              {d.findInternshipsDesc}
+            </p>
+          </div>
+          <Link
+            href="/student/internships"
+            className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[var(--green)] px-6 py-3 text-[13px] font-semibold text-white no-underline transition-all hover:bg-[var(--green-dark)] hover:-translate-y-px sm:self-center"
+          >
+            {d.findInternshipsCta}
+            <ArrowForwardIcon size={16} />
+          </Link>
+        </div>
+
+        <div className="flex flex-col gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-6">
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-[var(--text)]">
+              {d.findEventsTitle}
+            </h2>
+            <p className="mt-1 max-w-xl text-[13px] leading-snug text-[var(--text-light)]">
+              {d.findEventsDesc}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled
+            className="inline-flex shrink-0 cursor-not-allowed items-center justify-center gap-2 self-start rounded-full border border-[var(--border)] bg-[var(--sand)] px-6 py-3 text-[13px] font-semibold text-[var(--text-light)] sm:self-center"
+          >
+            {d.findEventsCta}
+            <ArrowForwardIcon size={16} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

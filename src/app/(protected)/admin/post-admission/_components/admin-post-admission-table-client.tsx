@@ -168,11 +168,12 @@ export function AdminPostAdmissionTableClient({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse text-left">
+        <table className="w-full min-w-[1000px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#ece9e4] bg-[#faf9f4] text-[11px] font-semibold uppercase tracking-[0.06em] text-[#a0a0a0]">
               <th className="px-5 py-3">Student</th>
               <th className="px-5 py-3">School</th>
+              <th className="px-5 py-3">Service</th>
               <th className="px-5 py-3">Advisor</th>
               <th className="px-5 py-3">Status</th>
               <th className="px-5 py-3">Meeting</th>
@@ -182,7 +183,7 @@ export function AdminPostAdmissionTableClient({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-[13px] text-[#a0a0a0]">
+                <td colSpan={7} className="px-5 py-10 text-center text-[13px] text-[#a0a0a0]">
                   No post-admission cases found.
                 </td>
               </tr>
@@ -200,6 +201,7 @@ export function AdminPostAdmissionTableClient({
                     <div className="text-[11px] text-[#a0a0a0]">{row.studentEmail}</div>
                   </td>
                   <td className="px-5 py-3.5 text-[13px] text-[#4a4a4a]">{row.schoolName}</td>
+                  <td className="px-5 py-3.5 text-[13px] text-[#4a4a4a]">{row.serviceLabel}</td>
                   <td className="px-5 py-3.5">
                     <AdvisorCell advisorName={row.advisorName} />
                   </td>

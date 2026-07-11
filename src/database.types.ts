@@ -1331,6 +1331,8 @@ export type Database = {
         Row: {
           act: number | null
           additional_notes: string | null
+          assigned_admin_at: string | null
+          assigned_admin_id: string | null
           assigned_at: string | null
           assigned_to: string | null
           awards: string | null
@@ -1371,6 +1373,8 @@ export type Database = {
         Insert: {
           act?: number | null
           additional_notes?: string | null
+          assigned_admin_at?: string | null
+          assigned_admin_id?: string | null
           assigned_at?: string | null
           assigned_to?: string | null
           awards?: string | null
@@ -1411,6 +1415,8 @@ export type Database = {
         Update: {
           act?: number | null
           additional_notes?: string | null
+          assigned_admin_at?: string | null
+          assigned_admin_id?: string | null
           assigned_at?: string | null
           assigned_to?: string | null
           awards?: string | null
@@ -1449,6 +1455,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "applications_assigned_admin_id_fkey"
+            columns: ["assigned_admin_id"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "applications_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -1825,6 +1838,8 @@ export type Database = {
           scheduled_at: string | null
           school_id: string | null
           school_name: string | null
+          selected_service: string | null
+          service_other_detail: string | null
           status: Database["public"]["Enums"]["post_admission_status"]
           student_email: string | null
           student_id: string
@@ -1843,6 +1858,8 @@ export type Database = {
           scheduled_at?: string | null
           school_id?: string | null
           school_name?: string | null
+          selected_service?: string | null
+          service_other_detail?: string | null
           status?: Database["public"]["Enums"]["post_admission_status"]
           student_email?: string | null
           student_id: string
@@ -1861,6 +1878,8 @@ export type Database = {
           scheduled_at?: string | null
           school_id?: string | null
           school_name?: string | null
+          selected_service?: string | null
+          service_other_detail?: string | null
           status?: Database["public"]["Enums"]["post_admission_status"]
           student_email?: string | null
           student_id?: string

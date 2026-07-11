@@ -6,6 +6,8 @@ import type { ApplicationSupportPayload } from "@/lib/application-support-intake
 
 import { ApplicationSupportIntakeForm } from "./application-support-intake-form";
 
+type IntakeSubmitResult = { ok: true } | { ok: false; error: string };
+
 type ApplicationSupportIntakeDialogProps = {
   open: boolean;
   applicationId: number;
@@ -14,6 +16,11 @@ type ApplicationSupportIntakeDialogProps = {
   initialPayload: ApplicationSupportPayload;
   onClose: () => void;
   onSaved?: () => void;
+  onSubmit?: (
+    applicationId: string,
+    payload: ApplicationSupportPayload,
+    sessionId?: string,
+  ) => Promise<IntakeSubmitResult>;
 };
 
 export function ApplicationSupportIntakeDialog({
@@ -24,6 +31,7 @@ export function ApplicationSupportIntakeDialog({
   initialPayload,
   onClose,
   onSaved,
+  onSubmit,
 }: ApplicationSupportIntakeDialogProps) {
   const [form, setForm] = useState<ApplicationSupportPayload>(initialPayload);
   const [error, setError] = useState<string | null>(null);
@@ -51,11 +59,17 @@ export function ApplicationSupportIntakeDialog({
     setError(null);
     setIsSubmitting(true);
 
-    const result = await updateAdvisorApplicationSupportIntake(
-      String(applicationId),
-      form,
-      sessionId != null ? String(sessionId) : undefined,
-    );
+    const result = onSubmit
+      ? await onSubmit(
+          String(applicationId),
+          form,
+          sessionId != null ? String(sessionId) : undefined,
+        )
+      : await updateAdvisorApplicationSupportIntake(
+          String(applicationId),
+          form,
+          sessionId != null ? String(sessionId) : undefined,
+        );
 
     setIsSubmitting(false);
 

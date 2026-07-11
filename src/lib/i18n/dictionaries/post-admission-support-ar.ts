@@ -57,6 +57,23 @@ export const postAdmissionSupportAr: Localize<typeof postAdmissionSupportEn> = {
     closeAria: "إغلاق نافذة الحجز",
     loading: "جارٍ تحميل التقويم...",
   },
+  serviceSelection: {
+    title: "بماذا تحتاج المساعدة؟",
+    subtitle: "اختر الخدمة التي تريد مناقشتها مع مستشارك.",
+    serviceLabel: "الخدمة",
+    servicePlaceholder: "اختر خدمة",
+    otherLabel: "أخبرنا المزيد",
+    otherPlaceholder: "صف ما تحتاج المساعدة فيه...",
+    continue: "المتابعة إلى الحجز",
+    continuing: "جارٍ البدء...",
+    cancel: "إلغاء",
+    closeAria: "إغلاق اختيار الخدمة",
+    errors: {
+      serviceRequired: "يرجى اختيار خدمة.",
+      otherRequired: "يرجى وصف الخدمة التي تحتاجها.",
+    },
+    otherOption: "أخرى",
+  },
   services: {
     visaSupport: {
       slug: "visa-support",

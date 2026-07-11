@@ -76,8 +76,6 @@ function resolveContentType(file: File): string {
   return byExt[ext] ?? "application/octet-stream";
 }
 
-export type { ApplicationSupportPayload };
-
 export async function submitApplicationSupport(
   formData: FormData,
 ): Promise<{ ok: true; applicationId: number } | { ok: false; error: string }> {

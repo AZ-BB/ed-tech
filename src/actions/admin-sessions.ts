@@ -239,6 +239,7 @@ function revalidateSessionPaths(kind: AdminSessionKind, id: number) {
   revalidatePath("/admin/sessions/ambassador");
   revalidatePath("/admin/sessions/pending");
   revalidatePath("/admin/sessions/completed");
+  revalidatePath("/admin/applications");
   revalidatePath(getAdminSessionDetailHref(kind, id));
 }
 
@@ -252,6 +253,75 @@ function parseOptionalIsoDateTime(raw: string): string | null {
   const date = new Date(raw);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString();
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export async function assignAdminAdvisorSessionAdvisor(
+  sessionIdRaw: string,
+  advisorIdRaw: string,
+): Promise<AdminSessionActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const sessionId = parseSessionId(sessionIdRaw);
+  if (sessionId == null) {
+    return { ok: false, error: "Invalid session." };
+  }
+
+  const advisorId = advisorIdRaw.trim();
+  if (!UUID_RE.test(advisorId)) {
+    return { ok: false, error: "Select a valid advisor." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+
+  const [{ data: existing, error: fetchErr }, { data: advisor, error: advisorErr }] =
+    await Promise.all([
+      secret
+        .from("advisor_sessions")
+        .select("id, advisor_id")
+        .eq("id", sessionId)
+        .maybeSingle(),
+      secret
+        .from("advisors")
+        .select("id, is_active")
+        .eq("id", advisorId)
+        .maybeSingle(),
+    ]);
+
+  if (fetchErr || !existing) {
+    return { ok: false, error: "Session not found." };
+  }
+
+  if (advisorErr || !advisor) {
+    return { ok: false, error: "Advisor not found." };
+  }
+
+  if (advisor.is_active === false) {
+    return { ok: false, error: "That advisor is inactive." };
+  }
+
+  if (existing.advisor_id === advisorId) {
+    return { ok: true };
+  }
+
+  const { error: updateErr } = await secret
+    .from("advisor_sessions")
+    .update({
+      advisor_id: advisorId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", sessionId);
+
+  if (updateErr) {
+    console.error("[assignAdminAdvisorSessionAdvisor]", updateErr);
+    return { ok: false, error: "Could not assign advisor." };
+  }
+
+  revalidateSessionPaths("advisor", sessionId);
+  return { ok: true };
 }
 
 export async function updateAdminAdvisorSessionStatus(

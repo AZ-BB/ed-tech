@@ -57,6 +57,7 @@ async function assertAdminAccess() {
 function revalidateApplicationPaths(applicationId: number) {
   revalidatePath("/admin/applications");
   revalidatePath("/admin/applications/paid");
+  revalidatePath("/admin/paid-applicants");
   revalidatePath(`/admin/applications/${applicationId}`);
   revalidatePath("/advisor/applications");
   revalidatePath(`/advisor/applications/${applicationId}`);
