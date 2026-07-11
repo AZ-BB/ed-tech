@@ -31,6 +31,7 @@ export const studentAr: {
   scholarships: Localize<typeof studentEn.scholarships>;
   internships: Localize<typeof studentEn.internships>;
   aiMatching: Localize<typeof studentEn.aiMatching>;
+  programFitTest: Localize<typeof studentEn.programFitTest>;
   essayReview: Localize<typeof studentEn.essayReview>;
   stories: Localize<typeof studentEn.stories>;
   programs: Localize<typeof studentEn.programs>;

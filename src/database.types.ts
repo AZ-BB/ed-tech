@@ -4140,7 +4140,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "confirmed"
-      ai_usage_type: "matching" | "essay_review"
+      ai_usage_type: "matching" | "essay_review" | "program_matching"
       ambassador_session_request_status:
         | "pending"
         | "confirmed"
@@ -4373,7 +4373,7 @@ export const Constants = {
         "cancelled",
         "confirmed",
       ],
-      ai_usage_type: ["matching", "essay_review"],
+      ai_usage_type: ["matching", "essay_review", "program_matching"],
       ambassador_session_request_status: [
         "pending",
         "confirmed",

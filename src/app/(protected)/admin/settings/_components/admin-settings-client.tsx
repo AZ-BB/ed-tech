@@ -31,6 +31,7 @@ const sectionClassName =
 
 const FEATURE_KEYS: PlatformFeatureKey[] = [
   "ai_university_matching",
+  "ai_program_matching",
   "essay_review",
   "advisor_sessions",
   "ambassador_booking",

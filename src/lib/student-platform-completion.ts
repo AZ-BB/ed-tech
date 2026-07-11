@@ -7,6 +7,7 @@ export type StudentRouteSupabase = Awaited<ReturnType<typeof createSupabaseServe
 export const STUDENT_PLATFORM_COMPLETION_FLAGS = {
     viewed_universities: "viewed_universities",
     viewed_ai_matching: "viewed_ai_matching",
+    viewed_program_fit_test: "viewed_program_fit_test",
     viewed_essay_review: "viewed_essay_review",
     viewed_advisor_sessions: "viewed_advisor_sessions",
     viewed_ambassadors: "viewed_ambassadors",

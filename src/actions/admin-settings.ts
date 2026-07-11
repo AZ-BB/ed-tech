@@ -116,6 +116,7 @@ export async function updatePlatformFeatureFlags(
 
   const featureKeys: PlatformFeatureKey[] = [
     "ai_university_matching",
+    "ai_program_matching",
     "essay_review",
     "advisor_sessions",
     "ambassador_booking",
@@ -133,6 +134,7 @@ export async function updatePlatformFeatureFlags(
 
   revalidatePath("/admin/settings");
   revalidatePath("/student/ai-matching");
+  revalidatePath("/student/program-fit-test");
   revalidatePath("/student/essay-review");
   revalidatePath("/student/advisor-sessions");
   revalidatePath("/student/ambassadors");

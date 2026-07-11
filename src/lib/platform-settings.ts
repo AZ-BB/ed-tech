@@ -4,6 +4,7 @@ export const PLATFORM_SETTING_KEYS = {
   defaultAdvisorCreditLimit: "default_advisor_credit_limit",
   defaultAmbassadorCreditLimit: "default_ambassador_credit_limit",
   featureAiUniversityMatching: "feature_ai_university_matching",
+  featureAiProgramMatching: "feature_ai_program_matching",
   featureEssayReview: "feature_essay_review",
   featureAdvisorSessions: "feature_advisor_sessions",
   featureAmbassadorBooking: "feature_ambassador_booking",
@@ -12,6 +13,7 @@ export const PLATFORM_SETTING_KEYS = {
 
 export type PlatformFeatureKey =
   | "ai_university_matching"
+  | "ai_program_matching"
   | "essay_review"
   | "advisor_sessions"
   | "ambassador_booking"
@@ -19,6 +21,7 @@ export type PlatformFeatureKey =
 
 export const PLATFORM_FEATURE_LABELS: Record<PlatformFeatureKey, string> = {
   ai_university_matching: "AI University Matching",
+  ai_program_matching: "AI Program Matching",
   essay_review: "Essay Review",
   advisor_sessions: "Advisor Sessions",
   ambassador_booking: "Ambassador Booking",
@@ -27,6 +30,7 @@ export const PLATFORM_FEATURE_LABELS: Record<PlatformFeatureKey, string> = {
 
 const FEATURE_KEY_TO_SETTING: Record<PlatformFeatureKey, string> = {
   ai_university_matching: PLATFORM_SETTING_KEYS.featureAiUniversityMatching,
+  ai_program_matching: PLATFORM_SETTING_KEYS.featureAiProgramMatching,
   essay_review: PLATFORM_SETTING_KEYS.featureEssayReview,
   advisor_sessions: PLATFORM_SETTING_KEYS.featureAdvisorSessions,
   ambassador_booking: PLATFORM_SETTING_KEYS.featureAmbassadorBooking,
@@ -70,6 +74,9 @@ function buildSettingsFromRows(rows: { key: string; value: string }[]): Platform
     features: {
       ai_university_matching: parseBooleanSetting(
         byKey.get(PLATFORM_SETTING_KEYS.featureAiUniversityMatching),
+      ),
+      ai_program_matching: parseBooleanSetting(
+        byKey.get(PLATFORM_SETTING_KEYS.featureAiProgramMatching),
       ),
       essay_review: parseBooleanSetting(byKey.get(PLATFORM_SETTING_KEYS.featureEssayReview)),
       advisor_sessions: parseBooleanSetting(

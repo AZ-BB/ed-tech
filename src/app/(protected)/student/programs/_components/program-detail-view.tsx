@@ -820,7 +820,7 @@ export function ProgramDetailView({
                 <div className={detailStyles.pnsSub}>{t.pnsApplicationDesc}</div>
               </div>
             </Link>
-            <span className={clsx(detailStyles.pnsCard, detailStyles.pnsCardDisabled)}>
+            <Link href="/student/program-fit-test" className={detailStyles.pnsCard}>
               <div className={detailStyles.pnsIcon} aria-hidden>
                 <svg
                   width="20"
@@ -836,13 +836,10 @@ export function ProgramDetailView({
                 </svg>
               </div>
               <div className={detailStyles.pnsText}>
-                <div className={detailStyles.pnsTitle}>
-                  {t.pnsAiFit}
-                  <span className={detailStyles.pnsComing}>{t.comingSoon}</span>
-                </div>
+                <div className={detailStyles.pnsTitle}>{t.pnsAiFit}</div>
                 <div className={detailStyles.pnsSub}>{t.pnsAiFitDesc}</div>
               </div>
-            </span>
+            </Link>
           </div>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { aiMatchingOptionsAr } from "./ai-matching-options-ar";
+import { programFitTestOptionsAr } from "./program-fit-test-options-ar";
 import {
   programsInterestTilesAr,
   programsRailsAr,
@@ -484,6 +485,65 @@ export const studentDiscoveryAr = {
       outOfMax: "(من {max})",
     },
     options: aiMatchingOptionsAr,
+  },
+  programFitTest: {
+    backToPrograms: "العودة إلى البرامج",
+    eyebrow: "اختبار الملاءمة بالذكاء الاصطناعي",
+    heroTitle: "اعثر على البرنامج الأنسب لك",
+    heroSubtitle:
+      "أجب عن بعض الأسئلة المدروسة حول طريقة تفكيرك وما يحفزك ونوع المستقبل الذي تريده. سنقترح 3 برامج قد تكون مناسبة لك.",
+    badgeSteps: "8 خطوات قصيرة",
+    badgePersonalised: "توصيات مخصصة",
+    startBtn: "ابدأ اختبار الملاءمة",
+    heroDisclaimer: "يستغرق حوالي 5 دقائق · لا تغييرات على حسابك",
+    stepOf: "الخطوة {current} من {total}",
+    back: "رجوع",
+    next: "التالي",
+    finish: "اعرض توصياتي",
+    loadingTitle: "جارٍ بناء توصياتك",
+    loadingMessages: [
+      "مراجعة اهتماماتك…",
+      "ربط نقاط قوتك بالبرامج…",
+      "مقارنة المسارات المهنية…",
+      "بناء توصياتك…",
+    ] as const,
+    resultsEyebrow: "توصياتك جاهزة",
+    resultsTitle: "ثلاثة برامج تستحق نظرة أقرب",
+    resultsSubtitle:
+      "بناءً على إجاباتك، هذه هي البرامج الأقرب لطريقة تفكيرك وما يحفزك والمستقبل الذي وصفته.",
+    profileEyebrow: "ملفك الشخصي",
+    matchesSectionLabel: "توصياتك",
+    whyItFits: "لماذا يناسبك",
+    whereItLeads: "إلى أين يقودك",
+    universitiesToExplore: "جامعات لاستكشافها",
+    exploreProgram: "استكشف {program}",
+    talkToAdvisor: "تحدث مع مستشار",
+    disclaimer:
+      "هذه التوصيات نقطة بداية وليست قراراً نهائياً. استخدمها لاستكشاف البرامج بعمق ومقارنة الخيارات والتحدث مع مستشار إذا أردت مساعدة في التفكير.",
+    nextStepsEyebrow: "الخطوات التالية",
+    nextStepsTitle: "هل تريد التعمق أكثر؟",
+    nextStepsSubtitle:
+      "لديك ثلاث نقاط بداية قوية. إليك كيفية معرفة المزيد عن كل منها والبدء في بناء قائمة جامعاتك.",
+    ctaAdvisorTitle: "تحدث مع مستشار",
+    ctaAdvisorDesc:
+      "احجز جلسة فردية مع مستشار خبير يمكنه مساعدتك في مقارنة الخيارات وتخطيط طلباتك.",
+    ctaAdvisorLink: "احجز جلسة",
+    ctaAmbassadorTitle: "تحدث مع سفير جامعة",
+    ctaAmbassadorDesc:
+      "احصل على منظور صادق من طالب حالي في الجامعات التي تفكر فيها.",
+    ctaAmbassadorLink: "تصفح السفراء",
+    ctaUniversitiesTitle: "استكشف الجامعات",
+    ctaUniversitiesDesc:
+      "ابحث عن أفضل الجامعات حسب البرنامج والمنطقة والتصنيف — وابدأ ببناء قائمتك المختصرة.",
+    ctaUniversitiesLink: "عرض الجامعات",
+    ctaApplicationTitle: "ابدأ دعم التقديم",
+    ctaApplicationDesc:
+      "مساعدة شاملة في الطلبات والمقالات وخطابات التوصية والجداول الزمنية.",
+    ctaApplicationLink: "عرض الخطط",
+    retake: "أعد اختبار الملاءمة",
+    somethingWrong: "حدث خطأ ما.",
+    networkError: "خطأ في الشبكة. تحقق من اتصالك وحاول مرة أخرى.",
+    options: programFitTestOptionsAr,
   },
   essayReview: {
     title: "مراجعة المقال",
