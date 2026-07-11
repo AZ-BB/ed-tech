@@ -183,6 +183,10 @@ function isStudentProgramsPath(pathname: string) {
   );
 }
 
+function isStudentProgramFitTestPath(pathname: string) {
+  return normalizePath(pathname) === "/student/program-fit-test";
+}
+
 function shellHeaderWidthClass(pathname: string): string {
   if (isStudentProgramsPath(pathname)) {
     return "mx-auto w-full max-w-[1180px]";
@@ -383,7 +387,8 @@ export function StudentLayoutShell({
   const hideTopNav =
     isStudentUniversityDetailPath(pathname) ||
     isStudentAdvisorSessionBookPath(pathname) ||
-    isStudentAmbassadorSessionBookPath(pathname);
+    isStudentAmbassadorSessionBookPath(pathname) ||
+    isStudentProgramFitTestPath(pathname);
   const headerWidthClass = shellHeaderWidthClass(pathname);
   const useGreenPageBackground = isStudentApplicationSupportPath(pathname);
 

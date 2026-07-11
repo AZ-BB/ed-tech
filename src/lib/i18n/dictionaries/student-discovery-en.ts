@@ -1,4 +1,5 @@
 import { aiMatchingOptionsEn } from "./ai-matching-options-en";
+import { programFitTestOptionsEn } from "./program-fit-test-options-en";
 import {
   programsInterestTilesEn,
   programsRailsEn,
@@ -485,6 +486,65 @@ export const studentDiscoveryEn = {
       outOfMax: "(out of {max})",
     },
     options: aiMatchingOptionsEn,
+  },
+  programFitTest: {
+    backToPrograms: "Back to programs",
+    eyebrow: "AI-powered fit test",
+    heroTitle: "Find your best-fit program",
+    heroSubtitle:
+      "Answer a few thoughtful questions about how you think, what motivates you, and the kind of future you want. We'll suggest 3 programs that could be a strong fit.",
+    badgeSteps: "8 short steps",
+    badgePersonalised: "Personalised recommendations",
+    startBtn: "Start the fit test",
+    heroDisclaimer: "Takes about 5 minutes · No account changes required",
+    stepOf: "Step {current} of {total}",
+    back: "Back",
+    next: "Next",
+    finish: "See my matches",
+    loadingTitle: "Building your recommendations",
+    loadingMessages: [
+      "Reviewing your interests…",
+      "Mapping your strengths to programs…",
+      "Comparing career pathways…",
+      "Building your recommendations…",
+    ] as const,
+    resultsEyebrow: "Your matches are ready",
+    resultsTitle: "Three programs worth a closer look",
+    resultsSubtitle:
+      "Based on your answers, these are the programs that map most closely to how you think, what motivates you, and the future you described.",
+    profileEyebrow: "Your profile",
+    matchesSectionLabel: "Your matches",
+    whyItFits: "Why this fits you",
+    whereItLeads: "Where this leads",
+    universitiesToExplore: "Universities to explore",
+    exploreProgram: "Explore {program}",
+    talkToAdvisor: "Talk to an advisor",
+    disclaimer:
+      "These recommendations are a starting point, not a final decision. Use them to explore the programs more deeply, compare options, and speak to an advisor if you want help thinking it through.",
+    nextStepsEyebrow: "Next steps",
+    nextStepsTitle: "Want to go deeper on these?",
+    nextStepsSubtitle:
+      "You've got three solid starting points. Here's how to learn more about each one and start building your university list.",
+    ctaAdvisorTitle: "Talk to an advisor",
+    ctaAdvisorDesc:
+      "Book a 1:1 session with an experienced advisor who can help you compare options and plan your applications.",
+    ctaAdvisorLink: "Book a session",
+    ctaAmbassadorTitle: "Speak to a university ambassador",
+    ctaAmbassadorDesc:
+      "Get an honest, unfiltered perspective from a current student at the universities you're considering.",
+    ctaAmbassadorLink: "Browse ambassadors",
+    ctaUniversitiesTitle: "Explore universities",
+    ctaUniversitiesDesc:
+      "Search top universities by program, region, and ranking — and start building your shortlist.",
+    ctaUniversitiesLink: "View universities",
+    ctaApplicationTitle: "Start application support",
+    ctaApplicationDesc:
+      "End-to-end help with applications, essays, recommendation letters, and timelines.",
+    ctaApplicationLink: "See plans",
+    retake: "Retake the fit test",
+    somethingWrong: "Something went wrong.",
+    networkError: "Network error. Check your connection and try again.",
+    options: programFitTestOptionsEn,
   },
   essayReview: {
     title: "Essay review",

@@ -313,10 +313,10 @@ export function ProgramsExplorer({
               placeholder={t.searchPlaceholder}
             />
           </div>
-          <button type="button" className={explorerStyles.btnAi}>
+          <Link href="/student/program-fit-test" className={explorerStyles.btnAi}>
             <span className={explorerStyles.btnAiIcon}>✦</span>
             {t.helpChooseCta}
-          </button>
+          </Link>
         </div>
 
         {popularChips.some((chip) => chip.slug) ? (
@@ -409,7 +409,7 @@ export function ProgramsExplorer({
         <p className={explorerStyles.fbText}>
           <strong>{t.fitTestBannerStrong}</strong> {t.fitTestBannerText}
         </p>
-        <button type="button" className={explorerStyles.fbCta}>
+        <Link href="/student/program-fit-test" className={explorerStyles.fbCta}>
           {t.startFitTestCta}
           <svg
             width="14"
@@ -423,7 +423,7 @@ export function ProgramsExplorer({
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
           </svg>
-        </button>
+        </Link>
       </div>
 
       <section className={explorerStyles.sectionBlock}>
@@ -472,7 +472,7 @@ export function ProgramsExplorer({
           <h2 className={explorerStyles.bottomCtaTitle}>{t.bottomCtaTitle}</h2>
           <p className={explorerStyles.bottomCtaSub}>{t.bottomCtaSubtitle}</p>
         </div>
-        <button type="button" className={explorerStyles.bottomCtaBtn}>
+        <Link href="/student/program-fit-test" className={explorerStyles.bottomCtaBtn}>
           {t.bottomCtaBtn}
           <svg
             width="14"
@@ -486,7 +486,7 @@ export function ProgramsExplorer({
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
           </svg>
-        </button>
+        </Link>
       </div>
       ) : null}
     </div>
