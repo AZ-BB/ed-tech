@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import {
-  ArrowLeft,
-  ArrowRight,
   Check,
   GraduationCap,
   Loader2,
@@ -15,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { ProgramFitMatchResponse } from "@/app/api/ai/program-matching/route";
+import { ArrowBackIcon, ArrowForwardIcon } from "../../_components/directional-icons";
 import { useLocale } from "@/lib/i18n/locale-context";
 import {
   PROGRAM_FIT_TEST_STEPS,
@@ -324,7 +323,7 @@ export function AiProgramFitTest() {
           <div className={styles.topBarTitle}>{t.heroTitle}</div>
         </div>
         <Link href="/student/programs" className={styles.backLink}>
-          <ArrowLeft size={14} />
+          <ArrowBackIcon size={14} />
           {t.backToPrograms}
         </Link>
       </div>
@@ -356,7 +355,7 @@ export function AiProgramFitTest() {
             }}
           >
             {t.startBtn}
-            <ArrowRight size={16} />
+            <ArrowForwardIcon size={16} />
           </button>
           <p className={styles.heroDisclaimer}>{t.heroDisclaimer}</p>
         </section>
@@ -393,7 +392,7 @@ export function AiProgramFitTest() {
               onClick={handleBack}
               disabled={stepIndex === 0}
             >
-              <ArrowLeft size={14} />
+              <ArrowBackIcon size={14} />
               {t.back}
             </button>
             <button
@@ -403,7 +402,7 @@ export function AiProgramFitTest() {
               disabled={!stepValid}
             >
               {stepIndex === totalSteps - 1 ? t.finish : t.next}
-              <ArrowRight size={14} />
+              <ArrowForwardIcon size={14} />
             </button>
           </div>
         </section>
@@ -534,7 +533,7 @@ export function AiProgramFitTest() {
                 <div className={styles.recActions}>
                   <Link href={rec.href} className={styles.recBtnPrimary}>
                     {formatTemplate(t.exploreProgram, { program: rec.title })}
-                    <ArrowRight size={12} />
+                    <ArrowForwardIcon size={12} />
                   </Link>
                   <Link href="/student/advisor-sessions" className={styles.recBtnSecondary}>
                     {t.talkToAdvisor}
@@ -565,7 +564,7 @@ export function AiProgramFitTest() {
                 <div className={styles.ctaDesc}>{t.ctaAdvisorDesc}</div>
               </div>
               <span className={styles.ctaLink}>
-                {t.ctaAdvisorLink} <ArrowRight size={12} />
+                {t.ctaAdvisorLink} <ArrowForwardIcon size={12} />
               </span>
             </Link>
             <Link href="/student/ambassadors" className={styles.ctaCard}>
@@ -577,7 +576,7 @@ export function AiProgramFitTest() {
                 <div className={styles.ctaDesc}>{t.ctaAmbassadorDesc}</div>
               </div>
               <span className={styles.ctaLink}>
-                {t.ctaAmbassadorLink} <ArrowRight size={12} />
+                {t.ctaAmbassadorLink} <ArrowForwardIcon size={12} />
               </span>
             </Link>
             <Link href="/student/universities" className={styles.ctaCard}>
@@ -589,7 +588,7 @@ export function AiProgramFitTest() {
                 <div className={styles.ctaDesc}>{t.ctaUniversitiesDesc}</div>
               </div>
               <span className={styles.ctaLink}>
-                {t.ctaUniversitiesLink} <ArrowRight size={12} />
+                {t.ctaUniversitiesLink} <ArrowForwardIcon size={12} />
               </span>
             </Link>
             <Link href="/student/application-support" className={styles.ctaCard}>
@@ -601,7 +600,7 @@ export function AiProgramFitTest() {
                 <div className={styles.ctaDesc}>{t.ctaApplicationDesc}</div>
               </div>
               <span className={styles.ctaLink}>
-                {t.ctaApplicationLink} <ArrowRight size={12} />
+                {t.ctaApplicationLink} <ArrowForwardIcon size={12} />
               </span>
             </Link>
           </div>
