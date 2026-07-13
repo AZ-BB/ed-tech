@@ -187,6 +187,14 @@ function isStudentProgramFitTestPath(pathname: string) {
   return normalizePath(pathname) === "/student/program-fit-test";
 }
 
+function isStudentDiscoveryJourneyPath(pathname: string) {
+  const normalized = normalizePath(pathname);
+  return (
+    normalized === "/student/discovery-journey" ||
+    normalized.startsWith("/student/discovery-journey/")
+  );
+}
+
 function shellHeaderWidthClass(pathname: string): string {
   if (isStudentProgramsPath(pathname)) {
     return "mx-auto w-full max-w-[1180px]";
@@ -198,6 +206,9 @@ function shellHeaderWidthClass(pathname: string): string {
     return "mx-auto w-full max-w-[1180px]";
   }
   if (isStudentInternshipsPath(pathname)) {
+    return "mx-auto w-full max-w-[1100px]";
+  }
+  if (isStudentDiscoveryJourneyPath(pathname)) {
     return "mx-auto w-full max-w-[1100px]";
   }
   return "";
@@ -388,9 +399,14 @@ export function StudentLayoutShell({
     isStudentUniversityDetailPath(pathname) ||
     isStudentAdvisorSessionBookPath(pathname) ||
     isStudentAmbassadorSessionBookPath(pathname) ||
-    isStudentProgramFitTestPath(pathname);
+    isStudentProgramFitTestPath(pathname) ||
+    isStudentDiscoveryJourneyPath(pathname);
   const headerWidthClass = shellHeaderWidthClass(pathname);
   const useGreenPageBackground = isStudentApplicationSupportPath(pathname);
+  const isDiscoveryJourney = isStudentDiscoveryJourneyPath(pathname);
+  const contentPaddingClass = isDiscoveryJourney
+    ? "px-4 sm:px-6"
+    : "px-4 sm:px-6 md:px-10 lg:px-16";
 
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -409,13 +425,19 @@ export function StudentLayoutShell({
     };
   }, [sidebarOpen, closeSidebar]);
 
+  useEffect(() => {
+    const openFromDiscovery = () => setSidebarOpen(true);
+    window.addEventListener("student-open-sidebar", openFromDiscovery);
+    return () => window.removeEventListener("student-open-sidebar", openFromDiscovery);
+  }, []);
+
   return (
     <div
       className={`student-portal min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}
       dir={portalDir}
       lang={locale}
     >
-      <div className="mx-auto w-full min-w-0 px-4 sm:px-6 md:px-10 lg:px-16 pt-4 sm:pt-6 pb-12 sm:pb-16">
+      <div className={`mx-auto w-full min-w-0 ${contentPaddingClass} pt-4 sm:pt-6 pb-12 sm:pb-16`}>
         {hideTopNav ? null : (
           <header
             className={`relative z-10 mb-4 sm:mb-5 flex items-center justify-between rounded-xl border border-[var(--border-light)] bg-white px-4 py-3 sm:px-5 sm:py-3.5${

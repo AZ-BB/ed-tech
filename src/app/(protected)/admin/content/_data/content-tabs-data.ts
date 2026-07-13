@@ -8,6 +8,7 @@ export const ADMIN_ANNOUNCEMENTS_HOME = `${ADMIN_CONTENT_HOME}/announcements`;
 export const ADMIN_NEWS_HOME = `${ADMIN_CONTENT_HOME}/news`;
 export const ADMIN_WEBINARS_HOME = `${ADMIN_CONTENT_HOME}/webinars`;
 export const ADMIN_STUDENT_STORIES_HOME = `${ADMIN_CONTENT_HOME}/student-stories`;
+export const ADMIN_DISCOVERY_JOURNEY_HOME = `${ADMIN_CONTENT_HOME}/discovery-journey`;
 
 export type ContentTabId =
   | "universities"
@@ -15,6 +16,7 @@ export type ContentTabId =
   | "internships"
   | "programs-discovery"
   | "university-programs"
+  | "discovery-journey"
   | "announcements"
   | "news"
   | "webinars"
@@ -26,6 +28,7 @@ export type ContentTabCounts = Record<
   | "internships"
   | "programs-discovery"
   | "university-programs"
+  | "discovery-journey"
   | "announcements"
   | "news"
   | "webinars"
@@ -64,6 +67,12 @@ export const contentTabs: readonly ContentTab[] = [
     id: "university-programs",
     label: "University Programs",
     href: ADMIN_UNIVERSITY_PROGRAMS_HOME,
+    showCount: true,
+  },
+  {
+    id: "discovery-journey",
+    label: "Discovery Journey",
+    href: ADMIN_DISCOVERY_JOURNEY_HOME,
     showCount: true,
   },
   {
@@ -169,6 +178,7 @@ export function isAdminContentListPath(pathname: string): boolean {
       n === ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME ||
       n === ADMIN_PROGRAMS_DISCOVERY_HOME ||
       n === ADMIN_UNIVERSITY_PROGRAMS_HOME ||
+      n === ADMIN_DISCOVERY_JOURNEY_HOME ||
       n === ADMIN_ANNOUNCEMENTS_HOME ||
       n === ADMIN_NEWS_HOME ||
       n === ADMIN_WEBINARS_HOME ||

@@ -27,6 +27,20 @@ async function countTable(
   return count ?? 0;
 }
 
+async function countDiscoveryModules() {
+  const supabase = await createSupabaseSecretClient();
+  const { count, error } = await supabase
+    .from("discovery_modules")
+    .select("id", { count: "exact", head: true });
+
+  if (error) {
+    console.error("[admin-content] count discovery_modules", error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
 export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
   const [
     universities,
@@ -34,6 +48,7 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     internships,
     programsDiscovery,
     universityPrograms,
+    discoveryJourney,
     announcements,
     news,
     webinars,
@@ -44,6 +59,7 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     countTable("internships"),
     countTable("programs_discovery"),
     countTable("university_programs"),
+    countDiscoveryModules(),
     countTable("announcements"),
     countTable("news_items"),
     countTable("webinars"),
@@ -56,6 +72,7 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     internships,
     "programs-discovery": programsDiscovery,
     "university-programs": universityPrograms,
+    "discovery-journey": discoveryJourney,
     announcements,
     news,
     webinars,

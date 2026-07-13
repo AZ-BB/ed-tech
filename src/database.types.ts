@@ -1579,6 +1579,97 @@ export type Database = {
         }
         Relationships: []
       }
+      discovery_modules: {
+        Row: {
+          answer_format: string
+          content_json: Json
+          description: string | null
+          id: string
+          is_active: boolean
+          num_items: number
+          number: string
+          sort_order: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answer_format: string
+          content_json?: Json
+          description?: string | null
+          id: string
+          is_active?: boolean
+          num_items?: number
+          number: string
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answer_format?: string
+          content_json?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          num_items?: number
+          number?: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_modules_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discovery_settings: {
+        Row: {
+          combined_profiles_json: Json
+          id: string
+          scales_json: Json
+          scoring_rules_json: Json
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          combined_profiles_json?: Json
+          id: string
+          scales_json?: Json
+          scoring_rules_json?: Json
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          combined_profiles_json?: Json
+          id?: string
+          scales_json?: Json
+          scoring_rules_json?: Json
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       majors: {
         Row: {
           created_at: string | null
@@ -2614,6 +2705,86 @@ export type Database = {
             columns: ["country_code"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_discovery_attempts: {
+        Row: {
+          answers_json: Json
+          completed_at: string
+          config_version: number
+          id: string
+          module_id: string
+          result_json: Json
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          answers_json: Json
+          completed_at?: string
+          config_version: number
+          id?: string
+          module_id: string
+          result_json: Json
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          answers_json?: Json
+          completed_at?: string
+          config_version?: number
+          id?: string
+          module_id?: string
+          result_json?: Json
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_discovery_attempts_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "discovery_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_discovery_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_discovery_profiles: {
+        Row: {
+          combined_profile_json: Json
+          completed_modules: string[]
+          config_version: number
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          combined_profile_json?: Json
+          completed_modules?: string[]
+          config_version?: number
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          combined_profile_json?: Json
+          completed_modules?: string[]
+          config_version?: number
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_discovery_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "student_profiles"
             referencedColumns: ["id"]
           },
         ]

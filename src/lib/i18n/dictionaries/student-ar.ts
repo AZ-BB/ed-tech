@@ -35,6 +35,7 @@ export const studentAr: {
   essayReview: Localize<typeof studentEn.essayReview>;
   stories: Localize<typeof studentEn.stories>;
   programs: Localize<typeof studentEn.programs>;
+  discoveryJourney: Localize<typeof studentEn.discoveryJourney>;
   postAdmission: Localize<typeof studentEn.postAdmission>;
 } = {
   advisors: {
