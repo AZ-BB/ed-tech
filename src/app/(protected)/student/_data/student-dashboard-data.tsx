@@ -22,7 +22,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
   {
     type: "link",
     id: "personality-check",
-    href: "#",
+    href: "/student/discovery-journey",
   },
   {
     type: "link",
@@ -148,7 +148,7 @@ export type QuickAction = {
 export const quickActions: QuickAction[] = [
   {
     dictKey: "personalityOverview",
-    href: "#",
+    href: "/student/discovery-journey",
     iconWrap: "bg-[#F3E8FF]",
     iconStroke: "#6B21A8",
     icon: (

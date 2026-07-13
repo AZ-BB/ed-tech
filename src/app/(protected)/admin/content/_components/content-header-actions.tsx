@@ -1,5 +1,6 @@
 "use client";
 
+import { exportAdminDiscoveryJourneyJson } from "@/actions/admin-discovery-journey";
 import { exportAdminProgramsDiscoveryExcel } from "@/actions/admin-programs-discovery";
 import { exportAdminUniversityProgramsExcel } from "@/actions/admin-university-programs";
 import { exportAdminInternshipsExcel } from "@/actions/admin-internships";
@@ -11,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import {
+  ADMIN_DISCOVERY_JOURNEY_HOME,
   ADMIN_ANNOUNCEMENTS_HOME,
   ADMIN_CONTENT_HOME,
   ADMIN_INTERNSHIPS_HOME,
@@ -53,6 +55,7 @@ import { AdminAddUniversityDialog } from "./admin-add-university-dialog";
 import { AdminAddWebinarDialog } from "./admin-add-webinar-dialog";
 import { AdminAddStudentStoryDialog } from "./admin-add-student-story-dialog";
 import { AdminAddStudentStoryTopicDialog } from "./admin-add-student-story-topic-dialog";
+import { ContentDiscoveryJourneyImportDialog } from "./content-discovery-journey-import-dialog";
 import { ContentProgramsDiscoveryImportDialog } from "./content-programs-discovery-import-dialog";
 import { ContentUniversityProgramsImportDialog } from "./content-university-programs-import-dialog";
 import { ContentInternshipsImportDialog } from "./content-internships-import-dialog";
@@ -136,6 +139,7 @@ export function ContentHeaderActions() {
   const isInternshipsList = normalized === ADMIN_INTERNSHIPS_HOME;
   const isProgramsDiscoveryList = normalized === ADMIN_PROGRAMS_DISCOVERY_HOME;
   const isUniversityProgramsList = normalized === ADMIN_UNIVERSITY_PROGRAMS_HOME;
+  const isDiscoveryJourneyList = normalized === ADMIN_DISCOVERY_JOURNEY_HOME;
   const isInternshipSupportRequests =
     isAdminInternshipSupportRequestsPath(normalized);
   const isAnnouncementsList = normalized === ADMIN_ANNOUNCEMENTS_HOME;
@@ -162,6 +166,7 @@ export function ContentHeaderActions() {
     !isInternshipsList &&
     !isProgramsDiscoveryList &&
     !isUniversityProgramsList &&
+    !isDiscoveryJourneyList &&
     !isInternshipSupportRequests &&
     !isAnnouncementsList &&
     !isNewsList &&
@@ -534,6 +539,55 @@ export function ContentHeaderActions() {
           ← Back to Internships
         </Link>
       </div>
+    );
+  }
+
+  if (isDiscoveryJourneyList) {
+    function handleExportDiscoveryJourney() {
+      startExportTransition(async () => {
+        const result = await exportAdminDiscoveryJourneyJson();
+        if (!result.ok || !result.data) {
+          window.alert(result.ok ? "Export failed." : result.error);
+          return;
+        }
+
+        const blob = new Blob([result.data.json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = result.data.filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    return (
+      <>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+          <button
+            type="button"
+            disabled={isExportPending}
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleExportDiscoveryJourney}
+          >
+            <HeaderActionIcon icon="export" />
+            {isExportPending ? "Exporting…" : "Export JSON"}
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => setImportOpen(true)}
+          >
+            <HeaderActionIcon icon="import" />
+            Import JSON
+          </button>
+        </div>
+
+        <ContentDiscoveryJourneyImportDialog
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+        />
+      </>
     );
   }
 
