@@ -10,12 +10,22 @@ export type CalendlyWebhookEnvelope = {
   created_at?: string;
   payload?: {
     uri?: string;
+    email?: string;
+    name?: string;
+    timezone?: string;
     tracking?: {
       utm_content?: string | null;
     };
     scheduled_event?: {
       uri?: string;
+      name?: string;
       start_time?: string;
+      end_time?: string;
+      location?: {
+        type?: string;
+        location?: string;
+        join_url?: string;
+      };
     };
     questions_and_answers?: Array<{
       question?: string;

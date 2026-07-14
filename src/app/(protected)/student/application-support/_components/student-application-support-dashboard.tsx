@@ -10,17 +10,11 @@ import type { UniversityTargetFormState } from "@/components/application-support
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { sortApplicationDocumentsBySlotOrder } from "@/lib/ensure-student-application-documents";
 import {
-  APPLICATION_TASK_PRIORITY_LABEL,
-  formatRelativeTaskDue,
-  formatApplicationTaskMeta,
+  isApplicationTaskOverdue,
+  type ApplicationTaskPriority,
 } from "@/lib/application-task-constants";
-import {
-  UNIVERSITY_TARGET_DECISION_LABEL,
-  UNIVERSITY_TARGET_STATUS_LABEL,
-} from "@/lib/application-university-target-constants";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
-import { ADMIN_APPLICATION_STATUS_LABEL } from "@/app/(protected)/admin/applications/_lib/application-status-labels";
 import type { Database } from "@/database.types";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
@@ -40,20 +34,20 @@ type DocRow =
 type TabId = "intake" | "universities" | "documents" | "tasks";
 
 const PANEL_CLASS =
-  "mb-3.5 min-w-0 overflow-x-clip rounded-[14px] border border-[var(--border-light)] bg-white";
+  "mb-3.5 min-w-0 overflow-x-clip rounded-[12px] border border-[var(--border-light)] bg-white sm:rounded-[14px]";
 const PANEL_HEAD_CLASS =
-  "flex min-w-0 flex-col gap-3 border-b border-[var(--border-light)] px-5 py-4 md:flex-row md:items-start md:justify-between md:gap-4";
-const PANEL_BODY_CLASS = "min-w-0 px-5 py-5 sm:py-[18px]";
+  "flex min-w-0 flex-col gap-2.5 border-b border-[var(--border-light)] px-3.5 py-3.5 sm:gap-3 sm:px-5 sm:py-4 md:flex-row md:items-start md:justify-between md:gap-4";
+const PANEL_BODY_CLASS = "min-w-0 px-3.5 py-4 sm:px-5 sm:py-[18px]";
 
 function btnSmClass(primary?: boolean) {
   return primary
-    ? "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
-    : "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]";
+    ? "inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-lg border border-[var(--green)] bg-[var(--green)] px-2.5 py-1.5 text-[11.5px] font-semibold text-white hover:bg-[var(--green-dark)]"
+    : "inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]";
 }
 
 function CalloutInfo({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-3.5 flex gap-3 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3.5 py-3.5">
+    <div className="mb-3.5 flex gap-2.5 rounded-[10px] border border-[var(--green-bg)] bg-[var(--green-pale)] px-3 py-3 sm:gap-3 sm:px-3.5 sm:py-3.5">
       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--green)] text-white">
         <svg
           className="h-3.5 w-3.5"
@@ -67,7 +61,7 @@ function CalloutInfo({ children }: { children: ReactNode }) {
           <path d="M12 8v4M12 16h.01" />
         </svg>
       </div>
-      <p className="text-[12.5px] leading-relaxed text-[var(--green-dark)]">
+      <p className="min-w-0 text-[12px] leading-relaxed text-[var(--green-dark)] sm:text-[12.5px]">
         {children}
       </p>
     </div>
@@ -76,11 +70,11 @@ function CalloutInfo({ children }: { children: ReactNode }) {
 
 function SnapItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] px-3.5 py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
+    <div className="min-w-0 rounded-[10px] border border-[var(--border-light)] bg-[var(--cream)] px-3 py-2.5 sm:px-3.5 sm:py-3">
+      <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)] sm:text-[11px]">
         {label}
       </div>
-      <div className="mt-1 whitespace-pre-wrap text-[13px] font-medium text-[var(--text)]">
+      <div className="mt-1 break-words whitespace-pre-wrap text-[12.5px] font-medium text-[var(--text)] sm:text-[13px]">
         {value || "—"}
       </div>
     </div>
@@ -121,13 +115,8 @@ function parseTab(raw: string | null): TabId {
   return "intake";
 }
 
-function statusLabel(status: string): string {
-  if (status in ADMIN_APPLICATION_STATUS_LABEL) {
-    return ADMIN_APPLICATION_STATUS_LABEL[
-      status as keyof typeof ADMIN_APPLICATION_STATUS_LABEL
-    ];
-  }
-  return status;
+function ymdLocal(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function formToCreateInput(form: UniversityTargetFormState) {
@@ -150,9 +139,51 @@ export function StudentApplicationSupportDashboard({
 }) {
   const { dict, locale } = useLocale();
   const app = dict.student.applications;
+  const d = dict.student.applicationSupport.dashboard;
+  const emptyValue = dict.student.settings.emptyValue;
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+
+  function applicationStatusLabel(status: string): string {
+    const map = d.applicationStatuses as Record<string, string>;
+    return map[status] ?? status;
+  }
+
+  function targetStatusLabel(status: string): string {
+    const map = d.targetStatuses as Record<string, string>;
+    return map[status] ?? status;
+  }
+
+  function targetDecisionLabel(decision: string): string {
+    const map = d.targetDecisions as Record<string, string>;
+    return map[decision] ?? decision;
+  }
+
+  function priorityLabel(priority: ApplicationTaskPriority): string {
+    if (priority === "high") return app.high;
+    if (priority === "medium") return app.medium;
+    return app.low;
+  }
+
+  function formatTaskDue(dueDate: string | null, completed: boolean): string | null {
+    if (completed || !dueDate) return null;
+    const due = dueDate.slice(0, 10);
+    const today = new Date();
+    const todayYmd = ymdLocal(today);
+    const todayMs = new Date(`${todayYmd}T12:00:00`).getTime();
+    const dueMs = new Date(`${due}T12:00:00`).getTime();
+    const diffDays = Math.round((dueMs - todayMs) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) {
+      const days = Math.abs(diffDays);
+      return days === 1
+        ? d.overdueOne
+        : d.overdueMany.replace("{count}", String(days));
+    }
+    if (diffDays === 0) return d.dueToday;
+    if (diffDays === 1) return d.dueTomorrow;
+    return d.dueInDays.replace("{count}", String(diffDays));
+  }
 
   const [tab, setTab] = useState<TabId>(() => parseTab(searchParams.get("tab")));
   const [toast, setToast] = useState<string | null>(null);
@@ -340,7 +371,7 @@ export function StudentApplicationSupportDashboard({
         return;
       }
       setAddOpen(false);
-      showToast("University added.");
+      showToast(d.universityAddedToast);
       router.refresh();
     });
   };
@@ -366,59 +397,69 @@ export function StudentApplicationSupportDashboard({
   const { application, plan } = initial;
 
   return (
-    <div className="mx-auto min-w-0 max-w-full pb-14 text-[var(--text)]">
-      <div className="mb-[18px]">
+    <div className="mx-auto min-w-0 max-w-full overflow-x-clip pb-10 text-[var(--text)] sm:pb-14">
+      <div className="mb-4 sm:mb-[18px]">
         <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--green)]">
-          Application support
+          {d.workspaceLabel}
         </div>
-        <h1 className="font-[family-name:var(--font-dm-serif)] font-bold text-[28px] leading-tight tracking-tight text-[var(--text)] sm:text-[30px]">
-          Your application package
+        <h1 className="font-[family-name:var(--font-dm-serif)] text-[24px] font-bold leading-tight tracking-tight text-[var(--text)] sm:text-[30px]">
+          {d.pageTitle}
         </h1>
-        <p className="mt-1.5 max-w-[680px] text-sm leading-relaxed text-[var(--text-mid)]">
-          Review your intake, universities, documents, and tasks for this
-          application support case.
+        <p className="mt-1.5 max-w-[680px] text-[13px] leading-relaxed text-[var(--text-mid)] sm:text-sm">
+          {d.pageSubtitle}
         </p>
       </div>
 
-      <div className="relative mb-[18px] flex flex-col gap-3 overflow-hidden rounded-[14px] bg-gradient-to-br from-[var(--green-dark)] to-[var(--green)] px-5 py-5 text-white md:flex-row md:items-center md:gap-[18px]">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
+      <div className="relative mb-4 flex flex-col gap-3 overflow-hidden rounded-[12px] bg-gradient-to-br from-[var(--green-dark)] to-[var(--green)] px-4 py-4 text-white sm:mb-[18px] sm:rounded-[14px] sm:px-5 sm:py-5 md:flex-row md:items-center md:gap-[18px]">
+        <div className="pointer-events-none absolute -end-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
         <div className="relative z-[1] min-w-0 flex-1">
-          <div className="font-[family-name:var(--font-dm-serif)] text-lg leading-snug">
-            {plan?.name ?? "Application support"}
+          <div className="font-[family-name:var(--font-dm-serif)] text-base leading-snug sm:text-lg">
+            {plan?.name ?? d.fallbackPlanName}
           </div>
-          <div className="mt-1 text-[12.5px] text-white/70">
-            Status: {statusLabel(application.status)}
+          <div className="mt-1 text-[12px] text-white/70 sm:text-[12.5px]">
+            {d.statusLine.replace(
+              "{status}",
+              applicationStatusLabel(application.status),
+            )}
             {plan
-              ? ` · Up to ${plan.universitiesCount} universities`
+              ? d.universitiesIncludedLine.replace(
+                  "{count}",
+                  String(plan.universitiesCount),
+                )
               : null}
           </div>
         </div>
-        <div className="relative z-[1] text-[12.5px] text-white/80 md:text-right">
-          {initial.universityTargets.length} /{" "}
-          {initial.universitiesTotal || "—"} universities added
+        <div className="relative z-[1] text-[12px] text-white/80 sm:text-[12.5px] md:text-end">
+          {d.universitiesAddedLine
+            .replace("{added}", String(initial.universityTargets.length))
+            .replace("{total}", String(initial.universitiesTotal || emptyValue))}
         </div>
       </div>
 
-      <div className="mb-4 flex snap-x snap-mandatory gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]">
+      <div className="-mx-1 mb-4 flex snap-x snap-mandatory gap-0.5 overflow-x-auto overscroll-x-contain rounded-[10px] border border-[var(--border-light)] bg-white p-1 [scrollbar-width:thin] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]">
         {(
           [
-            ["intake", "Intake", null],
+            ["intake", d.tabs.intake, null],
             [
               "universities",
-              "Universities",
+              d.tabs.universities,
               initial.universityTargets.length > 0
                 ? initial.universityTargets.length
                 : null,
             ],
-            ["documents", "Documents", missingDocs > 0 ? missingDocs : null],
-            ["tasks", "Tasks", openTasks > 0 ? openTasks : null],
+            [
+              "documents",
+              d.tabs.documents,
+              missingDocs > 0 ? missingDocs : null,
+            ],
+            ["tasks", d.tabs.tasks, openTasks > 0 ? openTasks : null],
           ] as const
         ).map(([id, label, badge]) => (
           <button
             key={id}
             type="button"
             onClick={() => selectTab(id)}
-            className={`flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2.5 py-1.5 text-[12px] font-medium transition-colors sm:px-3.5 sm:py-2 sm:text-[12.5px] ${
+            className={`flex min-h-[40px] shrink-0 snap-start touch-manipulation items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 py-2 text-[12px] font-medium transition-colors sm:min-h-0 sm:px-3.5 sm:text-[12.5px] ${
               tab === id
                 ? "bg-[var(--green)] text-white"
                 : "text-[var(--text-light)] hover:text-[var(--text)]"
@@ -442,100 +483,113 @@ export function StudentApplicationSupportDashboard({
 
       {tab === "intake" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
-          <CalloutInfo>
-            These are the details from your application support intake. Contact
-            your advisor if anything needs updating.
-          </CalloutInfo>
+          <CalloutInfo>{d.intakeHint}</CalloutInfo>
 
           <div className={PANEL_CLASS}>
             <div className={PANEL_HEAD_CLASS}>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Application intake
+                  {d.intakeTitle}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  Academics, preferences, and notes
+                  {d.intakeSub}
                 </div>
               </div>
             </div>
             <div className={PANEL_BODY_CLASS}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SnapItem label="Full name" value={application.studentName} />
-                <SnapItem label="Email" value={application.studentEmail} />
-                <SnapItem label="Phone" value={application.studentPhone} />
                 <SnapItem
-                  label="School"
-                  value={application.schoolName ?? "—"}
+                  label={d.labels.fullName}
+                  value={application.studentName}
                 />
                 <SnapItem
-                  label="Intended fields"
+                  label={d.labels.email}
+                  value={application.studentEmail}
+                />
+                <SnapItem
+                  label={d.labels.phone}
+                  value={application.studentPhone}
+                />
+                <SnapItem
+                  label={d.labels.school}
+                  value={application.schoolName ?? emptyValue}
+                />
+                <SnapItem
+                  label={d.labels.intendedFields}
                   value={application.intendedFields}
                 />
                 <SnapItem
-                  label="Open to related fields"
-                  value={application.openToRelatedFields ? "Yes" : "No"}
+                  label={d.labels.openToRelatedFields}
+                  value={application.openToRelatedFields ? d.yes : d.no}
                 />
                 <SnapItem
-                  label="Preferred countries / universities"
+                  label={d.labels.preferredUniOrCountries}
                   value={application.preferredUniOrCountries}
                 />
                 <SnapItem
-                  label="Curriculum"
+                  label={d.labels.curriculum}
                   value={formatCurriculum(application.curriculum)}
                 />
                 <SnapItem
-                  label="Final grade / year"
+                  label={d.labels.finalGrade}
                   value={application.finalGrade}
                 />
                 <SnapItem
-                  label="Expected graduation year"
+                  label={d.labels.expectedGraduationYear}
                   value={
                     application.expectedGraduationYear != null
                       ? String(application.expectedGraduationYear)
-                      : "—"
+                      : emptyValue
                   }
                 />
                 <SnapItem
-                  label="GPA"
+                  label={d.labels.gpa}
                   value={
-                    application.gpa != null ? String(application.gpa) : "—"
+                    application.gpa != null ? String(application.gpa) : emptyValue
                   }
                 />
                 <SnapItem
-                  label="SAT"
+                  label={d.labels.sat}
                   value={
-                    application.sat != null ? String(application.sat) : "—"
+                    application.sat != null ? String(application.sat) : emptyValue
                   }
                 />
                 <SnapItem
-                  label="ACT"
+                  label={d.labels.act}
                   value={
-                    application.act != null ? String(application.act) : "—"
+                    application.act != null ? String(application.act) : emptyValue
                   }
                 />
                 <SnapItem
-                  label="IELTS"
+                  label={d.labels.ielts}
                   value={
-                    application.ielts != null ? String(application.ielts) : "—"
+                    application.ielts != null
+                      ? String(application.ielts)
+                      : emptyValue
                   }
                 />
                 <SnapItem
-                  label="TOEFL"
+                  label={d.labels.toefl}
                   value={
-                    application.toefl != null ? String(application.toefl) : "—"
+                    application.toefl != null
+                      ? String(application.toefl)
+                      : emptyValue
                   }
                 />
                 <SnapItem
-                  label="Extracurricular activities"
+                  label={d.labels.extracurricularActivities}
                   value={application.extracurricularActivities}
                 />
-                <SnapItem label="Awards" value={application.awards ?? "—"} />
+                <SnapItem
+                  label={d.labels.awards}
+                  value={application.awards ?? emptyValue}
+                />
               </div>
 
               {application.universities.length > 0 ? (
                 <div className="mt-4">
                   <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                    Target universities
+                    {d.labels.targetUniversities}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {application.universities.map((name) => (
@@ -553,7 +607,7 @@ export function StudentApplicationSupportDashboard({
               {application.preferencesUniversitiesNotes ? (
                 <div className="mt-4 grid grid-cols-1 gap-3">
                   <SnapItem
-                    label="University notes"
+                    label={d.labels.universityNotes}
                     value={application.preferencesUniversitiesNotes}
                   />
                 </div>
@@ -562,7 +616,7 @@ export function StudentApplicationSupportDashboard({
               {application.additionalNotes ? (
                 <div className="mt-4 grid grid-cols-1 gap-3">
                   <SnapItem
-                    label="Additional notes"
+                    label={d.labels.additionalNotes}
                     value={application.additionalNotes}
                   />
                 </div>
@@ -575,27 +629,27 @@ export function StudentApplicationSupportDashboard({
               <div className={PANEL_HEAD_CLASS}>
                 <div className="min-w-0">
                   <div className="text-[15px] font-semibold tracking-tight">
-                    Package
+                    {d.packageTitle}
                   </div>
                   <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                    Your application support plan
+                    {d.packageSub}
                   </div>
                 </div>
               </div>
               <div className={PANEL_BODY_CLASS}>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <SnapItem label="Plan name" value={plan.name} />
+                  <SnapItem label={d.labels.planName} value={plan.name} />
                   <SnapItem
-                    label="Universities included"
+                    label={d.labels.universitiesIncluded}
                     value={String(plan.universitiesCount)}
                   />
                   <SnapItem
-                    label="Price (AED)"
-                    value={plan.price.toLocaleString()}
+                    label={d.labels.priceAed}
+                    value={plan.price.toLocaleString(locale === "ar" ? "ar" : undefined)}
                   />
                   <SnapItem
-                    label="Description"
-                    value={plan.description ?? "—"}
+                    label={d.labels.description}
+                    value={plan.description ?? emptyValue}
                   />
                 </div>
               </div>
@@ -606,25 +660,29 @@ export function StudentApplicationSupportDashboard({
 
       {tab === "universities" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
-          <CalloutInfo>
-            Universities on your application support package. Add schools within
-            your package limit.
-          </CalloutInfo>
+          <CalloutInfo>{d.universitiesHint}</CalloutInfo>
 
           <div className={PANEL_CLASS}>
             <div className={PANEL_HEAD_CLASS}>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Universities
+                  {d.universitiesTitle}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  {initial.universityTargets.length} of{" "}
-                  {initial.universitiesTotal || "—"} added
+                  {d.universitiesCountSub
+                    .replace(
+                      "{added}",
+                      String(initial.universityTargets.length),
+                    )
+                    .replace(
+                      "{total}",
+                      String(initial.universitiesTotal || emptyValue),
+                    )}
                 </div>
               </div>
               <button
                 type="button"
-                className={`${btnSmClass(true)} shrink-0 self-start`}
+                className={`${btnSmClass(true)} w-full shrink-0 self-stretch sm:w-auto sm:self-start`}
                 disabled={atUniLimit}
                 onClick={() => {
                   setAddError(null);
@@ -642,18 +700,18 @@ export function StudentApplicationSupportDashboard({
                 >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                Add university
+                {d.addUniversity}
               </button>
             </div>
             <div className={`${PANEL_BODY_CLASS} space-y-2`}>
               {atUniLimit ? (
                 <p className="mb-2 text-[12.5px] text-[var(--text-mid)]">
-                  You have reached the university limit for this package.
+                  {d.uniLimitReached}
                 </p>
               ) : null}
               {initial.universityTargets.length === 0 ? (
                 <p className="text-sm text-[var(--text-mid)]">
-                  No universities added yet.
+                  {d.noUniversities}
                 </p>
               ) : (
                 initial.universityTargets.map((target) => {
@@ -661,38 +719,36 @@ export function StudentApplicationSupportDashboard({
                     (target.countryCode &&
                       getCountryNameByAlpha2(target.countryCode)) ||
                     target.countryCode ||
-                    "—";
+                    emptyValue;
                   return (
                     <div
                       key={target.id}
-                      className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white px-3.5 py-3.5 sm:flex-row sm:items-start sm:justify-between"
+                      className="flex min-w-0 flex-col gap-2 rounded-[10px] border border-[var(--border-light)] bg-white px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-3.5 sm:py-3.5"
                     >
                       <div className="min-w-0">
-                        <div className="text-[13.5px] font-semibold text-[var(--text)]">
+                        <div className="break-words text-[13.5px] font-semibold text-[var(--text)]">
                           {target.countryFlag ? (
-                            <span className="mr-1.5" aria-hidden>
+                            <span className="me-1.5" aria-hidden>
                               {target.countryFlag}
                             </span>
                           ) : null}
                           {target.universityName}
                         </div>
-                        <div className="mt-1 text-[12px] text-[var(--text-light)]">
+                        <div className="mt-1 break-words text-[12px] text-[var(--text-light)]">
                           {[target.program, country]
                             .filter(Boolean)
-                            .join(" · ") || "—"}
+                            .join(" · ") || emptyValue}
                           {target.deadlineDisplay
-                            ? ` · Due ${target.deadlineDisplay}`
+                            ? ` · ${d.duePrefix.replace("{date}", target.deadlineDisplay)}`
                             : null}
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         <span className="inline-flex items-center rounded-full bg-[rgba(82,183,135,0.13)] px-2.5 py-[3px] text-[11px] font-semibold text-[#1B4332]">
-                          {UNIVERSITY_TARGET_STATUS_LABEL[target.status] ??
-                            target.status}
+                          {targetStatusLabel(target.status)}
                         </span>
                         <span className="inline-flex items-center rounded-full bg-[#ECEAE5] px-2.5 py-[3px] text-[11px] font-semibold text-[var(--text-mid)]">
-                          {UNIVERSITY_TARGET_DECISION_LABEL[target.decision] ??
-                            target.decision}
+                          {targetDecisionLabel(target.decision)}
                         </span>
                       </div>
                     </div>
@@ -709,6 +765,10 @@ export function StudentApplicationSupportDashboard({
             isSubmitting={isPending}
             error={addError}
             searchUniversities={searchStudentUniversitiesForApplication}
+            labels={{
+              ...d.addDialog,
+              statusOptionLabels: d.targetStatuses,
+            }}
           />
         </div>
       ) : null}
@@ -752,7 +812,7 @@ export function StudentApplicationSupportDashboard({
                 </div>
                 <button
                   type="button"
-                  className={`${btnSmClass(false)} shrink-0 self-start sm:mt-0.5`}
+                  className={`${btnSmClass(false)} w-full shrink-0 self-stretch sm:mt-0.5 sm:w-auto sm:self-start`}
                   onClick={() => void addOtherDocument()}
                 >
                   {app.addAnotherDocument}
@@ -787,51 +847,36 @@ export function StudentApplicationSupportDashboard({
 
       {tab === "tasks" ? (
         <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
-          <CalloutInfo>
-            Tasks from your advisor for this application support case. Mark them
-            done when finished.
-          </CalloutInfo>
+          <CalloutInfo>{d.tasksHint}</CalloutInfo>
           <div className={PANEL_CLASS}>
             <div className={PANEL_HEAD_CLASS}>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-tight">
-                  Tasks
+                  {d.tasksTitle}
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                  {openTasks} open
+                  {d.openTasks.replace("{count}", String(openTasks))}
                 </div>
               </div>
             </div>
             <div className={`${PANEL_BODY_CLASS} space-y-[7px]`}>
               {tasks.length === 0 ? (
-                <p className="text-sm text-[var(--text-mid)]">No tasks yet.</p>
+                <p className="text-sm text-[var(--text-mid)]">{d.noTasks}</p>
               ) : (
                 tasks.map((task) => {
-                  const dueLabel = formatRelativeTaskDue(
+                  const dueLabel = formatTaskDue(task.dueDate, task.completed);
+                  const isOverdue = isApplicationTaskOverdue(
                     task.dueDate,
                     task.completed,
                   );
-                  const meta = formatApplicationTaskMeta(
-                    task.dueDate,
-                    task.priority,
-                    task.completed,
-                  );
-                  const isOverdue = Boolean(
-                    dueLabel &&
-                      (dueLabel.includes("overdue") ||
-                        dueLabel.endsWith("overdue")),
-                  );
-                  const disabled =
-                    isPending && togglingTaskId === task.id;
+                  const disabled = isPending && togglingTaskId === task.id;
                   return (
                     <button
                       key={task.id}
                       type="button"
                       disabled={disabled}
-                      onClick={() =>
-                        onToggleTask(task.id, !task.completed)
-                      }
-                      className={`flex w-full cursor-pointer items-start gap-3 rounded-[10px] border border-[var(--border-light)] px-3.5 py-3 text-left transition-colors hover:border-[var(--border)] disabled:opacity-60 ${
+                      onClick={() => onToggleTask(task.id, !task.completed)}
+                      className={`flex w-full min-w-0 touch-manipulation cursor-pointer items-start gap-3 rounded-[10px] border border-[var(--border-light)] px-3 py-3 text-start transition-colors hover:border-[var(--border)] disabled:opacity-60 sm:px-3.5 ${
                         task.completed ? "bg-[var(--cream)]" : "bg-white"
                       }`}
                     >
@@ -857,7 +902,7 @@ export function StudentApplicationSupportDashboard({
                       </span>
                       <div className="min-w-0 flex-1">
                         <div
-                          className={`text-[13.5px] font-semibold leading-snug text-[var(--text)] ${
+                          className={`break-words text-[13.5px] font-semibold leading-snug text-[var(--text)] ${
                             task.completed
                               ? "text-[var(--text-light)] line-through"
                               : ""
@@ -867,9 +912,9 @@ export function StudentApplicationSupportDashboard({
                         </div>
                         {task.completed ? (
                           <div className="mt-0.5 text-[12px] text-[var(--text-hint)]">
-                            Completed
+                            {d.completed}
                             {task.authorName
-                              ? ` · Assigned by ${task.authorName}`
+                              ? d.assignedBy.replace("{name}", task.authorName)
                               : null}
                           </div>
                         ) : (
@@ -877,19 +922,22 @@ export function StudentApplicationSupportDashboard({
                             {dueLabel ? (
                               <span
                                 className={
-                                  isOverdue ? "font-semibold text-[var(--red)]" : ""
+                                  isOverdue
+                                    ? "font-semibold text-[var(--red)]"
+                                    : ""
                                 }
                               >
                                 {dueLabel}
                               </span>
                             ) : null}
                             <span className="inline-flex items-center gap-1 rounded-full bg-[#ECEAE5] px-[7px] py-px text-[10px] font-bold text-[var(--text-mid)]">
-                              {APPLICATION_TASK_PRIORITY_LABEL[task.priority]}
+                              {priorityLabel(task.priority)}
                             </span>
                             {task.authorName ? (
-                              <span>From {task.authorName}</span>
+                              <span>
+                                {d.fromAuthor.replace("{name}", task.authorName)}
+                              </span>
                             ) : null}
-                            {meta && !dueLabel ? <span>{meta}</span> : null}
                           </div>
                         )}
                       </div>
@@ -903,7 +951,7 @@ export function StudentApplicationSupportDashboard({
       ) : null}
 
       {toast ? (
-        <div className="fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 rounded-lg bg-[var(--green-dark)] px-4 py-2.5 text-[13px] font-medium text-white shadow-lg">
+        <div className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[200] w-[max-content] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-lg bg-[var(--green-dark)] px-4 py-2.5 text-center text-[13px] font-medium text-white shadow-lg">
           {toast}
         </div>
       ) : null}
@@ -982,7 +1030,7 @@ function DocumentRow({
             )}
           </div>
         </div>
-        <div className="flex w-full shrink-0 items-center gap-2 border-t border-[var(--border-light)] pt-2 md:w-auto md:justify-end md:border-0 md:pt-0">
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 border-t border-[var(--border-light)] pt-2 md:w-auto md:justify-end md:border-0 md:pt-0">
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
               has
@@ -1057,11 +1105,11 @@ function DocumentRow({
               : descriptionText || app.documentNotUploaded}
         </div>
       </div>
-      <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--border-light)] pt-2 md:w-auto md:border-0 md:pt-0">
+      <div className="flex w-full shrink-0 flex-wrap items-center justify-start gap-2 border-t border-[var(--border-light)] pt-2 md:w-auto md:justify-end md:border-0 md:pt-0">
         {allowDisplayNameEdit ? (
           <button
             type="button"
-            className={btnSmClass(false)}
+            className={`${btnSmClass(false)} flex-1 sm:flex-none`}
             onClick={() => void onSaveDisplayName?.(nameDraft.trim())}
           >
             {app.saveName}
@@ -1077,7 +1125,7 @@ function DocumentRow({
           <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
           {missing ? app.missing : app.submitted}
         </span>
-        <label className="cursor-pointer">
+        <label className="min-w-0 flex-1 cursor-pointer sm:flex-none">
           <input
             type="file"
             className="sr-only"
@@ -1086,7 +1134,7 @@ function DocumentRow({
             }
           />
           <span
-            className={`inline-flex rounded-lg border px-2.5 py-1.5 text-[11.5px] font-semibold ${
+            className={`inline-flex w-full min-h-[36px] items-center justify-center rounded-lg border px-2.5 py-1.5 text-[11.5px] font-semibold sm:w-auto ${
               missing
                 ? "border-[var(--green)] bg-[var(--green)] text-white hover:bg-[var(--green-dark)]"
                 : "border-[var(--border)] bg-white text-[var(--text-mid)] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)]"
@@ -1098,7 +1146,7 @@ function DocumentRow({
         {allowRemove ? (
           <button
             type="button"
-            className={`${btnSmClass(false)} border-[rgba(231,76,60,0.35)] text-[#8c2d22] hover:bg-[rgba(231,76,60,0.08)]`}
+            className={`${btnSmClass(false)} flex-1 border-[rgba(231,76,60,0.35)] text-[#8c2d22] hover:bg-[rgba(231,76,60,0.08)] sm:flex-none`}
             onClick={() => void onRemove?.()}
           >
             {app.remove}

@@ -8,7 +8,7 @@ export const universityDialogInputClassName =
 export const universityDialogLabelClassName =
   "mb-1.5 block text-[12px] font-semibold text-[#4a4a4a]";
 
-export const universityDialogSelectClassName = `${universityDialogInputClassName} cursor-pointer appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pr-9`;
+export const universityDialogSelectClassName = `${universityDialogInputClassName} cursor-pointer appearance-none bg-[length:10px_6px] bg-[position:right_10px_center] bg-no-repeat pe-9 rtl:bg-[position:left_10px_center]`;
 
 export const UNIVERSITY_DIALOG_SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
@@ -91,26 +91,31 @@ export function UniversityTargetDialogShell({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !isSubmitting) onClose();
     };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open, onClose, isSubmitting]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
       onClick={isSubmitting ? undefined : onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
-        className={`flex max-h-[min(92vh,780px)] w-full ${maxWidthClass} flex-col overflow-hidden rounded-[12px] border border-[#e0deda] bg-white shadow-xl`}
+        className={`flex max-h-[min(92dvh,780px)] w-full ${maxWidthClass} flex-col overflow-hidden rounded-t-[16px] border border-[#e0deda] bg-white shadow-xl sm:rounded-[12px]`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#ece9e4] px-6 py-5">
-          <div>
-            <h2 className="font-[family-name:var(--font-dm-serif)] text-[20px] font-semibold text-[#1a1a1a]">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#ece9e4] px-4 py-4 sm:px-6 sm:py-5">
+          <div className="min-w-0">
+            <h2 className="font-[family-name:var(--font-dm-serif)] text-[18px] font-semibold text-[#1a1a1a] sm:text-[20px]">
               {title}
             </h2>
             {subtitle ? (
@@ -130,15 +135,17 @@ export function UniversityTargetDialogShell({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+          {children}
+        </div>
 
         {error ? (
-          <p className="shrink-0 border-t border-[#ece9e4] px-6 py-2 text-[12px] text-[#c0392b]">
+          <p className="shrink-0 border-t border-[#ece9e4] px-4 py-2 text-[12px] text-[#c0392b] sm:px-6">
             {error}
           </p>
         ) : null}
 
-        <div className="flex shrink-0 justify-end gap-2 border-t border-[#ece9e4] bg-[#f5f4f0] px-6 py-4">
+        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-[#ece9e4] bg-[#f5f4f0] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6 sm:py-4 sm:pb-4">
           {footer}
         </div>
       </div>

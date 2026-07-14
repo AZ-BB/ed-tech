@@ -15,6 +15,47 @@ import {
   type UniversityTargetFormState,
 } from "@/components/application-support/university-target-dialog-shared";
 
+export type AddUniversityTargetDialogLabels = {
+  title: string;
+  cancel: string;
+  add: string;
+  adding: string;
+  university: string;
+  searchPlaceholder: string;
+  searching: string;
+  program: string;
+  programPlaceholder: string;
+  country: string;
+  selectCountry: string;
+  deadline: string;
+  portal: string;
+  portalPlaceholder: string;
+  initialStatus: string;
+  notes: string;
+  notesPlaceholder: string;
+  statusOptionLabels?: Record<string, string>;
+};
+
+const DEFAULT_LABELS: AddUniversityTargetDialogLabels = {
+  title: "Add university to applications",
+  cancel: "Cancel",
+  add: "Add",
+  adding: "Adding…",
+  university: "University",
+  searchPlaceholder: "Start typing to search Univeera's database…",
+  searching: "Searching…",
+  program: "Program / major",
+  programPlaceholder: "e.g. BSc Economics",
+  country: "Country",
+  selectCountry: "— Select —",
+  deadline: "Application round / deadline",
+  portal: "Application portal link",
+  portalPlaceholder: "https://",
+  initialStatus: "Initial status",
+  notes: "Notes",
+  notesPlaceholder: "Why this university, any special context…",
+};
+
 type AddUniversityTargetDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -27,6 +68,7 @@ type AddUniversityTargetDialogProps = {
     | { ok: true; results: UniversityCatalogSearchResult[] }
     | { ok: false; error: string }
   >;
+  labels?: Partial<AddUniversityTargetDialogLabels>;
 };
 
 export function AddUniversityTargetDialog({
@@ -36,7 +78,9 @@ export function AddUniversityTargetDialog({
   isSubmitting,
   error,
   searchUniversities,
+  labels: labelsProp,
 }: AddUniversityTargetDialogProps) {
+  const labels = { ...DEFAULT_LABELS, ...labelsProp };
   const [form, setForm] = useState<UniversityTargetFormState>(defaultUniversityTargetFormState);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UniversityCatalogSearchResult[]>([]);
@@ -86,7 +130,7 @@ export function AddUniversityTargetDialog({
   return (
     <UniversityTargetDialogShell
       open={open}
-      title="Add university to applications"
+      title={labels.title}
       onClose={onClose}
       isSubmitting={isSubmitting}
       error={error}
@@ -96,17 +140,17 @@ export function AddUniversityTargetDialog({
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-2 text-[13px] font-semibold text-[#4a4a4a] hover:bg-[#f5f4f0] disabled:opacity-60"
+            className="w-full cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#4a4a4a] hover:bg-[#f5f4f0] disabled:opacity-60 sm:w-auto sm:py-2"
           >
-            Cancel
+            {labels.cancel}
           </button>
           <button
             type="submit"
             form="add-university-target-form"
             disabled={isSubmitting}
-            className="cursor-pointer rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-4 py-2 text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
+            className="w-full cursor-pointer rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-4 py-2.5 text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60 sm:w-auto sm:py-2"
           >
-            {isSubmitting ? "Adding…" : "Add"}
+            {isSubmitting ? labels.adding : labels.add}
           </button>
         </>
       }
@@ -114,7 +158,7 @@ export function AddUniversityTargetDialog({
       <form id="add-university-target-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
           <label htmlFor="add-uni-search" className={universityDialogLabelClassName}>
-            University
+            {labels.university}
           </label>
           <input
             id="add-uni-search"
@@ -128,7 +172,7 @@ export function AddUniversityTargetDialog({
                 universityId: "",
               }));
             }}
-            placeholder="Start typing to search Univeera's database…"
+            placeholder={labels.searchPlaceholder}
             className={universityDialogInputClassName}
             disabled={isSubmitting}
             autoComplete="off"
@@ -139,39 +183,39 @@ export function AddUniversityTargetDialog({
                 <button
                   key={result.id}
                   type="button"
-                  className="block w-full cursor-pointer px-3 py-2 text-left text-[13px] hover:bg-[var(--green-pale)]"
+                  className="block w-full cursor-pointer px-3 py-2 text-start text-[13px] hover:bg-[var(--green-pale)]"
                   onClick={() => pickUniversity(result)}
                 >
-                  <span className="font-semibold text-[#1a1a1a]">{result.name}</span>
-                  <span className="ml-2 text-[#7a7a7a]">
+                  <span className="font-semibold text-[#1a1a1a] bidi-ltr">{result.name}</span>
+                  <span className="ms-2 text-[#7a7a7a] bidi-ltr">
                     {result.city}, {result.countryCode}
                   </span>
                 </button>
               ))}
             </div>
           ) : searching ? (
-            <p className="mt-1 text-[11px] text-[#7a7a7a]">Searching…</p>
+            <p className="mt-1 text-[11px] text-[#7a7a7a]">{labels.searching}</p>
           ) : null}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="add-uni-program" className={universityDialogLabelClassName}>
-              Program / major
+              {labels.program}
             </label>
             <input
               id="add-uni-program"
               type="text"
               value={form.program}
               onChange={(event) => setForm((prev) => ({ ...prev, program: event.target.value }))}
-              placeholder="e.g. BSc Economics"
+              placeholder={labels.programPlaceholder}
               className={universityDialogInputClassName}
               disabled={isSubmitting}
             />
           </div>
           <div>
             <label htmlFor="add-uni-country" className={universityDialogLabelClassName}>
-              Country
+              {labels.country}
             </label>
             <select
               id="add-uni-country"
@@ -183,7 +227,7 @@ export function AddUniversityTargetDialog({
               style={{ backgroundImage: UNIVERSITY_DIALOG_SELECT_CHEVRON }}
               disabled={isSubmitting}
             >
-              <option value="">— Select —</option>
+              <option value="">{labels.selectCountry}</option>
               {COUNTRIES.map((country) => (
                 <option key={country.alpha2} value={country.alpha2}>
                   {country.name}
@@ -196,36 +240,37 @@ export function AddUniversityTargetDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="add-uni-deadline" className={universityDialogLabelClassName}>
-              Application round / deadline
+              {labels.deadline}
             </label>
             <input
               id="add-uni-deadline"
               type="date"
               value={form.deadline}
               onChange={(event) => setForm((prev) => ({ ...prev, deadline: event.target.value }))}
-              className={universityDialogInputClassName}
+              className={`${universityDialogInputClassName} bidi-ltr`}
               disabled={isSubmitting}
             />
           </div>
           <div>
             <label htmlFor="add-uni-portal" className={universityDialogLabelClassName}>
-              Application portal link
+              {labels.portal}
             </label>
             <input
               id="add-uni-portal"
               type="url"
               value={form.portalUrl}
               onChange={(event) => setForm((prev) => ({ ...prev, portalUrl: event.target.value }))}
-              placeholder="https://"
-              className={universityDialogInputClassName}
+              placeholder={labels.portalPlaceholder}
+              className={`${universityDialogInputClassName} bidi-ltr`}
               disabled={isSubmitting}
+              dir="ltr"
             />
           </div>
         </div>
 
         <div>
           <label htmlFor="add-uni-status" className={universityDialogLabelClassName}>
-            Initial status
+            {labels.initialStatus}
           </label>
           <select
             id="add-uni-status"
@@ -237,7 +282,7 @@ export function AddUniversityTargetDialog({
           >
             {UNIVERSITY_TARGET_STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {labels.statusOptionLabels?.[option.value] ?? option.label}
               </option>
             ))}
           </select>
@@ -245,13 +290,13 @@ export function AddUniversityTargetDialog({
 
         <div>
           <label htmlFor="add-uni-notes" className={universityDialogLabelClassName}>
-            Notes
+            {labels.notes}
           </label>
           <textarea
             id="add-uni-notes"
             value={form.notes}
             onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-            placeholder="Why this university, any special context…"
+            placeholder={labels.notesPlaceholder}
             rows={3}
             className={`${universityDialogInputClassName} min-h-[80px] resize-y`}
             disabled={isSubmitting}
