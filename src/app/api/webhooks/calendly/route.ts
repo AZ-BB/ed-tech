@@ -6,6 +6,10 @@ import {
   verifyCalendlyWebhookSignature,
 } from "@/lib/calendly-webhook";
 import { logCalendly, logCalendlyError, logCalendlyWarn } from "@/lib/calendly-log";
+import {
+  sendAdvisorSessionBookedEmail,
+  sendPostAdmissionSessionBookedEmail,
+} from "@/lib/send-session-booked-email";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import { NextResponse } from "next/server";
 
@@ -127,11 +131,13 @@ async function handleAdvisorSessionInviteeCreated(
     throw new Error("Could not update advisor session.");
   }
 
+  const bookedAtIso = bookedAt.toISOString();
+
   logCalendly("webhook", "Advisor session booked_at recorded (status unchanged)", {
     sessionId,
     advisorId: existing.advisor_id,
     studentId: existing.student_id,
-    bookedAt: bookedAt.toISOString(),
+    bookedAt: bookedAtIso,
     status: existing.status,
   });
 
@@ -142,6 +148,20 @@ async function handleAdvisorSessionInviteeCreated(
     sessionId,
     `Calendly slot booked for advisor session #${sessionId}.`,
   );
+
+  try {
+    await sendAdvisorSessionBookedEmail({
+      sessionId,
+      advisorId: existing.advisor_id,
+      studentId: existing.student_id,
+      bookedAtIso,
+      envelope,
+    });
+  } catch (err) {
+    logCalendlyError("webhook", "Advisor booking confirmation email threw", err, {
+      sessionId,
+    });
+  }
 }
 
 async function handleApplicationInviteeCreated(
@@ -282,12 +302,27 @@ async function handlePostAdmissionInviteeCreated(
     throw new Error("Could not update post-admission case.");
   }
 
+  const scheduledAtIso = scheduledAt.toISOString();
+
   logCalendly("webhook", "Post-admission scheduled_at recorded", {
     caseId,
     studentId: existing.student_id,
-    scheduledAt: scheduledAt.toISOString(),
+    scheduledAt: scheduledAtIso,
     status: existing.status,
   });
+
+  try {
+    await sendPostAdmissionSessionBookedEmail({
+      caseId,
+      studentId: existing.student_id,
+      scheduledAtIso,
+      envelope,
+    });
+  } catch (err) {
+    logCalendlyError("webhook", "Post-admission booking confirmation email threw", err, {
+      caseId,
+    });
+  }
 }
 
 export async function POST(request: Request) {
