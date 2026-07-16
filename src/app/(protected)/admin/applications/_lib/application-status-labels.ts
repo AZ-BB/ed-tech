@@ -35,6 +35,7 @@ const LEGACY_STATUS_TO_CURRENT: Record<string, ApplicationStatus> = {
 
 export const ADMIN_APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> =
   {
+    intake_draft: "Intake Draft",
     lead: "Lead",
     not_suitable: "Not Suitable",
     payment_requested: "Payment Requested",
@@ -43,6 +44,8 @@ export const ADMIN_APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> =
 
 export function adminApplicationStatusPillClass(status: string): string {
   switch (status) {
+    case "intake_draft":
+      return "bg-[#EEF2FF] text-[#4338CA]";
     case "lead":
       return "bg-[#FFF3E0] text-[#E67E22]";
     case "not_suitable":

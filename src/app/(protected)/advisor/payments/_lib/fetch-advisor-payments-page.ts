@@ -64,6 +64,7 @@ export type AdvisorPaymentRequestApplicationOption = {
   pendingPaymentAmountAed: number | null;
   pendingPaymentDueDate: string | null;
   label: string;
+  status?: string;
 };
 
 export type AdvisorPaymentsTab = "requests" | "payouts";
@@ -80,6 +81,8 @@ export type AdvisorPaymentsPanelProps = {
   fromEmailDisplay: string;
   availablePlans: ApplicationPlanCatalogRow[];
   paymentRequestApplications: AdvisorPaymentRequestApplicationOption[];
+  /** Leads + active packages for Add manual payment (not collapsed per student). */
+  manualPaymentApplications: AdvisorPaymentRequestApplicationOption[];
   paymentRequestPostAdmissionCases: SendPostAdmissionPaymentRequestOption[];
   paymentRequests: {
     rows: AdvisorPaymentRequestRow[];
@@ -302,8 +305,9 @@ export function parseAdvisorPayoutStatusFilter(
   return "all";
 }
 
-function isPaymentRequestSentFilter() {
-  return "payment_request_sent_at.not.is.null,payment_request_token.not.is.null";
+/** Payment requests that were sent, plus paid offline/manual activations. */
+function isPaymentRequestListFilter() {
+  return "payment_request_sent_at.not.is.null,payment_request_token.not.is.null,status.eq.paid";
 }
 
 async function fetchAssignedApplicationIds(
@@ -352,7 +356,7 @@ async function countAdvisorPaymentRequestsForIds(
     .from("payments")
     .select("id", { count: "exact", head: true })
     .in(column, ids)
-    .or(isPaymentRequestSentFilter());
+    .or(isPaymentRequestListFilter());
 
   if (status === "pending") {
     query = query.eq("status", "pending");
@@ -480,7 +484,7 @@ async function fetchApplicationPaymentRequestRows(
     `,
     )
     .in("application_id", applicationIds)
-    .or(isPaymentRequestSentFilter())
+    .or(isPaymentRequestListFilter())
     .order("payment_request_sent_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .order("id", { ascending: false });
@@ -561,7 +565,7 @@ async function fetchPostAdmissionPaymentRequestRows(
     `,
     )
     .in("post_admission_case_id", caseIds)
-    .or(isPaymentRequestSentFilter())
+    .or(isPaymentRequestListFilter())
     .order("payment_request_sent_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .order("id", { ascending: false });
@@ -673,6 +677,63 @@ async function fetchAdvisorPaymentRequestApplicationOptions(
   );
 }
 
+const MANUAL_PAYMENT_APPLICATION_STATUSES = [
+  "intake_draft",
+  "lead",
+  "payment_requested",
+  "active_package",
+] as const;
+
+/**
+ * All lead + active applications for Add manual payment.
+ * Does not collapse to one row per student so leads stay selectable.
+ */
+async function fetchAdvisorManualPaymentApplicationOptions(
+  client: DbClient,
+  advisorId: string,
+): Promise<AdvisorPaymentRequestApplicationOption[]> {
+  const { data, error } = await client
+    .from("applications")
+    .select(
+      `
+      id,
+      student_id,
+      plan_id,
+      status,
+      student_name,
+      student_email,
+      package_data,
+      updated_at,
+      applications_plans!applications_plan_id_fkey ( name, price, universities_count ),
+      student_profiles ( first_name, last_name, email ),
+      payments ( status, amount, due_date, payment_request_sent_at, payment_request_token )
+    `,
+    )
+    .eq("assigned_to", advisorId)
+    .in("status", [...MANUAL_PAYMENT_APPLICATION_STATUSES])
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("[fetchAdvisorManualPaymentApplicationOptions]", error);
+    return [];
+  }
+
+  const rows = await hydrateApplicationsPlansEmbeds(
+    client,
+    (data ?? []) as unknown as PaymentRequestApplicationRowRaw[],
+  );
+
+  const mapped = rows.map(mapApplicationToPaymentRequestOption);
+
+  // Leads / payment-requested first, then paying customers.
+  return mapped.sort((a, b) => {
+    const aActive = a.status === "active_package" ? 1 : 0;
+    const bActive = b.status === "active_package" ? 1 : 0;
+    if (aActive !== bActive) return aActive - bActive;
+    return a.studentName.localeCompare(b.studentName);
+  });
+}
+
 async function fetchAdvisorPaymentRequestPostAdmissionOptions(
   client: DbClient,
   advisorId: string,
@@ -738,6 +799,7 @@ export async function fetchAdvisorPaymentsPanel(options: {
     payouts,
     payoutPercentage,
     paymentRequestApplications,
+    manualPaymentApplications,
     paymentRequestPostAdmissionCases,
     availablePlans,
     advisorProfile,
@@ -760,6 +822,7 @@ export async function fetchAdvisorPaymentsPanel(options: {
     }),
     fetchAdvisorPayoutPercentage(supabase, advisorId),
     fetchAdvisorPaymentRequestApplicationOptions(supabase, advisorId),
+    fetchAdvisorManualPaymentApplicationOptions(supabase, advisorId),
     fetchAdvisorPaymentRequestPostAdmissionOptions(supabase, advisorId),
     fetchActiveApplicationPlans(supabase),
     supabase
@@ -784,6 +847,7 @@ export async function fetchAdvisorPaymentsPanel(options: {
     fromEmailDisplay: resolvePaymentFromEmailDisplay(),
     availablePlans,
     paymentRequestApplications,
+    manualPaymentApplications,
     paymentRequestPostAdmissionCases,
     paymentRequests: {
       ...paymentRequests,

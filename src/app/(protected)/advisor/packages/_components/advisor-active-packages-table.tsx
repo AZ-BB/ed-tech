@@ -131,7 +131,7 @@ export function AdvisorActivePackagesTable({
               </tr>
             ) : (
               rows.map((row) => {
-                const detailHref = `/advisor/applications/${row.id}`;
+                const detailHref = `/advisor/applications/${row.id}?from=packages`;
 
                 function openDetail() {
                   router.push(detailHref);

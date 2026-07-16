@@ -1,5 +1,6 @@
 "use client";
 
+import { updateAdvisorSessionLeadQualification } from "@/actions/advisor-session-lead-qualification";
 import type {
   AdvisorSessionsAndCallsPanelProps,
   AdvisorSessionsAndCallsRowKind,
@@ -10,6 +11,10 @@ import {
   advisorSessionsAndCallsRowHref,
 } from "@/app/(protected)/advisor/sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 import { Pagination } from "@/components/pagination";
+import {
+  LEAD_QUALIFICATION_OPTIONS,
+  type LeadQualification,
+} from "@/lib/session-lead-qualification";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
@@ -25,6 +30,12 @@ const TYPE_OPTIONS: {
   { value: "post_admission_lead", label: "Post-admission lead" },
   { value: "advisor_session", label: "Advisor session" },
 ];
+
+const SELECT_CHEVRON =
+  'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
+
+const outcomeSelectClass =
+  "min-w-[120px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat py-[6px] pl-[10px] pr-8 text-[12px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 
 function formatMeetingDateTime(iso: string): string {
   try {
@@ -61,6 +72,10 @@ function emptyMessage(
   return "No upcoming sessions or scheduled lead calls right now.";
 }
 
+function rowKey(kind: AdvisorSessionsAndCallsRowKind, id: string): string {
+  return `${kind}-${id}`;
+}
+
 export function AdvisorSessionsAndCallsTable({
   rows,
   totalRows,
@@ -75,10 +90,26 @@ export function AdvisorSessionsAndCallsTable({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search);
+  const [outcomeByRow, setOutcomeByRow] = useState<Record<string, LeadQualification>>(
+    () =>
+      Object.fromEntries(
+        rows.map((row) => [rowKey(row.kind, row.id), row.leadQualification]),
+      ),
+  );
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [pendingRowKey, setPendingRowKey] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
+
+  useEffect(() => {
+    setOutcomeByRow(
+      Object.fromEntries(
+        rows.map((row) => [rowKey(row.kind, row.id), row.leadQualification]),
+      ),
+    );
+  }, [rows]);
 
   const applySearch = useCallback(
     (value: string) => {
@@ -125,6 +156,37 @@ export function AdvisorSessionsAndCallsTable({
 
   function openRow(kind: AdvisorSessionsAndCallsRowKind, id: string) {
     router.push(advisorSessionsAndCallsRowHref(kind, id));
+  }
+
+  function handleOutcomeChange(
+    kind: AdvisorSessionsAndCallsRowKind,
+    id: string,
+    nextValue: LeadQualification,
+  ) {
+    const key = rowKey(kind, id);
+    const previous = outcomeByRow[key] ?? "none";
+    setOutcomeByRow((current) => ({ ...current, [key]: nextValue }));
+    setRowErrors((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    setPendingRowKey(key);
+
+    startTransition(async () => {
+      const result = await updateAdvisorSessionLeadQualification(
+        kind,
+        id,
+        nextValue,
+      );
+      setPendingRowKey(null);
+      if (!result.ok) {
+        setOutcomeByRow((current) => ({ ...current, [key]: previous }));
+        setRowErrors((current) => ({ ...current, [key]: result.error }));
+        return;
+      }
+      router.refresh();
+    });
   }
 
   return (
@@ -180,7 +242,7 @@ export function AdvisorSessionsAndCallsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] border-collapse text-[13px]">
+        <table className="w-full min-w-[1080px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
               <th className="px-4 py-3">Student</th>
@@ -189,79 +251,120 @@ export function AdvisorSessionsAndCallsTable({
               <th className="px-4 py-3">Info</th>
               <th className="px-4 py-3">Meeting</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Outcome</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {emptyMessage(search, type)}
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
-                <tr
-                  key={`${row.kind}-${row.id}`}
-                  className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
-                  onClick={() => openRow(row.kind, row.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openRow(row.kind, row.id);
-                    }
-                  }}
-                  tabIndex={0}
-                  role="link"
-                  aria-label={`Open ${advisorSessionsAndCallsKindLabel(row.kind)} for ${row.studentName}`}
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-[var(--green-dark)]">
-                      {row.studentName}
-                    </div>
-                    <div className="text-[11px] text-[var(--text-hint)]">
-                      {row.studentEmail}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${kindBadgeClass(row.kind)}`}
-                    >
-                      {advisorSessionsAndCallsKindLabel(row.kind)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-[var(--text-mid)]">
-                    {row.schoolName}
-                  </td>
-                  <td className="px-4 py-3 text-[var(--text-light)]">
-                    {row.subtitle}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {row.isOverdue ? (
-                        <span
-                          className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#d97706]"
-                          title="Overdue"
-                          aria-hidden
-                        />
-                      ) : null}
-                      <span className="text-[var(--text-light)]">
-                        {formatMeetingDateTime(row.meetingAt)}
+              rows.map((row) => {
+                const key = rowKey(row.kind, row.id);
+                const outcome = outcomeByRow[key] ?? row.leadQualification;
+                const error = rowErrors[key];
+                return (
+                  <tr
+                    key={key}
+                    className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[#faf9f4]"
+                    onClick={() => openRow(row.kind, row.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openRow(row.kind, row.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Open ${advisorSessionsAndCallsKindLabel(row.kind)} for ${row.studentName}`}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-[var(--green-dark)]">
+                        {row.studentName}
+                      </div>
+                      <div className="text-[11px] text-[var(--text-hint)]">
+                        {row.studentEmail}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${kindBadgeClass(row.kind)}`}
+                      >
+                        {advisorSessionsAndCallsKindLabel(row.kind)}
                       </span>
-                      {row.isOverdue ? (
-                        <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#d97706]">
-                          Overdue
+                    </td>
+                    <td className="px-4 py-3 text-[var(--text-mid)]">
+                      {row.schoolName}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--text-light)]">
+                      {row.subtitle}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {row.isOverdue ? (
+                          <span
+                            className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#d97706]"
+                            title="Overdue"
+                            aria-hidden
+                          />
+                        ) : null}
+                        <span className="text-[var(--text-light)]">
+                          {formatMeetingDateTime(row.meetingAt)}
                         </span>
+                        {row.isOverdue ? (
+                          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#d97706]">
+                            Overdue
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[var(--text-mid)]">
+                      {row.statusLabel}
+                    </td>
+                    <td
+                      className="px-4 py-3"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      <label className="sr-only" htmlFor={`outcome-${key}`}>
+                        Lead outcome for {row.studentName}
+                      </label>
+                      <select
+                        id={`outcome-${key}`}
+                        value={outcome}
+                        disabled={pendingRowKey === key || isPending}
+                        onChange={(event) =>
+                          handleOutcomeChange(
+                            row.kind,
+                            row.id,
+                            event.target.value as LeadQualification,
+                          )
+                        }
+                        className={outcomeSelectClass}
+                        style={{ backgroundImage: SELECT_CHEVRON }}
+                        aria-label={`Lead outcome for ${row.studentName}`}
+                      >
+                        {LEAD_QUALIFICATION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {error ? (
+                        <div className="mt-1 max-w-[160px] text-[11px] text-[#b91c1c]">
+                          {error}
+                        </div>
                       ) : null}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-[var(--text-mid)]">
-                    {row.statusLabel}
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

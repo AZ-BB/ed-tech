@@ -4,6 +4,7 @@ export type PostAdmissionStatus =
   Database["public"]["Enums"]["post_admission_status"];
 
 export const POST_ADMISSION_STATUS_LABEL: Record<PostAdmissionStatus, string> = {
+  intake_draft: "Intake Draft",
   lead: "Lead",
   not_suitable: "Not Suitable",
   payment_requested: "Payment Requested",
@@ -12,6 +13,7 @@ export const POST_ADMISSION_STATUS_LABEL: Record<PostAdmissionStatus, string> = 
 };
 
 export const ACTIVE_POST_ADMISSION_STATUSES: PostAdmissionStatus[] = [
+  "intake_draft",
   "lead",
   "payment_requested",
   "active",
@@ -22,6 +24,7 @@ export const POST_ADMISSION_STATUS_FILTER_OPTIONS: {
   label: string;
 }[] = [
   { value: "all", label: "All statuses" },
+  { value: "intake_draft", label: "Intake Draft" },
   { value: "lead", label: "Lead" },
   { value: "not_suitable", label: "Not Suitable" },
   { value: "payment_requested", label: "Payment Requested" },
@@ -31,6 +34,8 @@ export const POST_ADMISSION_STATUS_FILTER_OPTIONS: {
 
 export function postAdmissionStatusPillClass(status: PostAdmissionStatus): string {
   switch (status) {
+    case "intake_draft":
+      return "bg-[#EEF2FF] text-[#4338CA]";
     case "lead":
       return "bg-[#E8F5EE] text-[#1B4332]";
     case "not_suitable":

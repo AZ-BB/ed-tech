@@ -5,6 +5,7 @@ import { parseAdminApplicationDetailTab } from "@/app/(protected)/admin/applicat
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import { AdvisorApplicationViewClient } from "./_components/advisor-application-view-client";
+import { parseAdvisorApplicationBackFrom } from "./_lib/advisor-application-back-nav";
 import { fetchAdvisorApplicationDetail } from "./_lib/fetch-advisor-application-detail";
 
 function parseIntParam(raw: string | string[] | undefined, fallback: number) {
@@ -37,6 +38,7 @@ export default async function AdvisorApplicationDetailPage({
     Math.max(5, parseIntParam(sp.activityLogsLimit, 10)),
   );
   const initialTab = parseAdminApplicationDetailTab(sp.tab);
+  const backFrom = parseAdvisorApplicationBackFrom(sp.from);
 
   const supabase = await createSupabaseServerClient();
   const activityLogsPanel = await fetchApplicationActivityLogsPanel(
@@ -54,6 +56,7 @@ export default async function AdvisorApplicationDetailPage({
       payload={payload}
       activityLogsPanel={activityLogsPanel}
       initialTab={initialTab}
+      backFrom={backFrom}
     />
   );
 }

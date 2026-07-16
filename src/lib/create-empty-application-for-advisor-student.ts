@@ -32,6 +32,11 @@ export async function studentHasActiveApplication(
   return (count ?? 0) > 0;
 }
 
+/**
+ * @deprecated Lead creation from advisor-session booking was removed.
+ * Leads are created only when an advisor marks a session as Good lead
+ * (see `createApplicationLeadFromAdvisorSession`).
+ */
 export async function createEmptyApplicationForAdvisorStudentIfNeeded(
   secret: SecretClient,
   input: {

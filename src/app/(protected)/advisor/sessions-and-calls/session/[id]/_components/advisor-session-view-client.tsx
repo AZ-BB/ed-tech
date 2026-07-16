@@ -2,7 +2,6 @@
 
 import { updateAdvisorSessionStatus } from "@/actions/advisor-sessions";
 import { SchoolStudentPanel } from "@/app/(protected)/school/students/[id]/_components/school-student-panel";
-import { ApplicationSupportIntakeDialog } from "@/components/application-support/application-support-intake-dialog";
 import {
   ADMIN_ADVISOR_SESSION_STATUS_OPTIONS,
   ADMIN_SESSION_STATUS_LABEL,
@@ -57,10 +56,9 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
   const router = useRouter();
   const [status, setStatus] = useState(payload.status);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [intakeOpen, setIntakeOpen] = useState(() => Boolean(payload.editableApplication));
   const [isPending, startTransition] = useTransition();
 
-  const { student, school, editableApplication } = payload;
+  const { student, school } = payload;
   const isOverdue = isMeetingOverdue(payload.bookedAt);
   const statusLabel = ADMIN_SESSION_STATUS_LABEL[status] ?? status.replace(/_/g, " ");
 
@@ -98,23 +96,6 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {editableApplication ? (
-            <>
-              <Link
-                href={`/advisor/applications/${editableApplication.id}`}
-                className="inline-flex cursor-pointer items-center rounded-[8px] border border-[#e0deda] bg-white px-3 py-[7px] text-[12px] font-medium text-[#4a4a4a] transition-colors hover:border-[#40916C] hover:text-[#2D6A4F]"
-              >
-                Open application
-              </Link>
-              <button
-                type="button"
-                onClick={() => setIntakeOpen(true)}
-                className="inline-flex cursor-pointer items-center rounded-[8px] border border-[#40916C] bg-[#E8F5EE] px-3 py-[7px] text-[12px] font-semibold text-[#2D6A4F] transition-colors hover:bg-[#d8efe3]"
-              >
-                Edit application support
-              </button>
-            </>
-          ) : null}
           <label htmlFor="advisor-session-status" className="sr-only">
             Session status
           </label>
@@ -219,18 +200,6 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
           )}
         </SchoolStudentPanel>
       </div>
-
-      {editableApplication ? (
-        <ApplicationSupportIntakeDialog
-          open={intakeOpen}
-          applicationId={editableApplication.id}
-          sessionId={payload.id}
-          studentName={payload.studentName}
-          initialPayload={editableApplication.initialPayload}
-          onClose={() => setIntakeOpen(false)}
-          onSaved={() => router.refresh()}
-        />
-      ) : null}
     </div>
   );
 }

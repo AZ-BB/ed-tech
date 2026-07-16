@@ -144,7 +144,8 @@ async function fetchAssignedApplicationIds(
   const { data, error } = await client
     .from("applications")
     .select("id")
-    .eq("assigned_to", advisorId);
+    .eq("assigned_to", advisorId)
+    .eq("status", "active_package");
 
   if (error) {
     console.error("[fetchAssignedApplicationIds]", error);
@@ -205,7 +206,9 @@ export async function fetchAdvisorTasksPanel(options: {
 
   const [applicationIds, taskCreateOptions] = await Promise.all([
     fetchAssignedApplicationIds(supabase, advisorId),
-    fetchAdvisorStudentApplicationGroups(supabase, advisorId),
+    fetchAdvisorStudentApplicationGroups(supabase, advisorId, {
+      status: "active_package",
+    }),
   ]);
   const emptyCounts: Record<AdvisorTaskStatusFilter, number> = {
     all: 0,

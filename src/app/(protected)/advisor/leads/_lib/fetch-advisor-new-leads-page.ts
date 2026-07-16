@@ -20,7 +20,10 @@ import {
 
 type DbClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-const NON_ACTIVE_APPLICATION_STATUSES: ApplicationStatus[] = ["lead"];
+const NON_ACTIVE_APPLICATION_STATUSES: ApplicationStatus[] = [
+  "lead",
+  "payment_requested",
+];
 
 type ApplicationLeadRowRaw = {
   id: number;

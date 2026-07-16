@@ -105,33 +105,33 @@ export function AdvisorPortalShell({
   const pageTitle = settingsActive
     ? "My Profile"
     : paymentsActive
-    ? "Payment Requests"
-    : tasksActive
-      ? "Tasks"
-      : sessionsAndCallsActive
-        ? pathname.includes("/session/")
+      ? "Payment Requests"
+      : tasksActive
+        ? "Tasks"
+        : sessionsAndCallsActive
+          ? pathname.includes("/session/")
             ? "Advisor session"
-            : "Sessions and Calls"
-        : studentsActive
-        ? pathname.startsWith(`${ADVISOR_STUDENTS}/`) &&
-          pathname !== ADVISOR_STUDENTS
-          ? "Student"
-          : "My Students"
-        : leadsActive
-          ? "New Leads"
-          : packagesActive
-            ? "Active Packages"
-            : applicationsActive
-              ? pathname.startsWith(`${ADVISOR_APPLICATIONS}/`) &&
-                pathname !== ADVISOR_APPLICATIONS
-                ? "Application"
-                : "Applications"
-              : postAdmissionActive
-                ? pathname.startsWith(`${ADVISOR_POST_ADMISSION}/`) &&
-                  pathname !== ADVISOR_POST_ADMISSION
-                  ? "Post-admission case"
-                  : "Post-admission"
-                : "Dashboard";
+            : "Sessions & Calls"
+          : studentsActive
+            ? pathname.startsWith(`${ADVISOR_STUDENTS}/`) &&
+              pathname !== ADVISOR_STUDENTS
+              ? "Student"
+              : "My Students"
+            : leadsActive
+              ? "Leads"
+              : packagesActive
+                ? "Paying Customers"
+                : applicationsActive
+                  ? pathname.startsWith(`${ADVISOR_APPLICATIONS}/`) &&
+                    pathname !== ADVISOR_APPLICATIONS
+                    ? "Application"
+                    : "Applications Tracker"
+                  : postAdmissionActive
+                    ? pathname.startsWith(`${ADVISOR_POST_ADMISSION}/`) &&
+                      pathname !== ADVISOR_POST_ADMISSION
+                      ? "Post-admission case"
+                      : "Post-admission"
+                    : "Dashboard";
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -218,6 +218,30 @@ export function AdvisorPortalShell({
               <span>Dashboard</span>
             </Link>
             <Link
+              href={ADVISOR_SESSIONS_AND_CALLS}
+              prefetch={false}
+              onClick={closeSidebar}
+              className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
+                sessionsAndCallsActive
+                  ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
+                  : ""
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
+                aria-hidden
+              >
+                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Sessions & Calls</span>
+            </Link>
+            <Link
               href={ADVISOR_LEADS}
               prefetch={false}
               onClick={closeSidebar}
@@ -242,58 +266,7 @@ export function AdvisorPortalShell({
                 <line x1="19" y1="8" x2="19" y2="14" />
                 <line x1="22" y1="11" x2="16" y2="11" />
               </svg>
-              <span>New Leads</span>
-            </Link>
-            <Link
-              href={ADVISOR_SESSIONS_AND_CALLS}
-              prefetch={false}
-              onClick={closeSidebar}
-              className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
-                sessionsAndCallsActive
-                  ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
-                  : ""
-              }`}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
-                aria-hidden
-              >
-                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span>Sessions and Calls</span>
-            </Link>
-            <Link
-              href={ADVISOR_STUDENTS}
-              prefetch={false}
-              onClick={closeSidebar}
-              className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
-                studentsActive
-                  ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
-                  : ""
-              }`}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
-                aria-hidden
-              >
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                <path d="M16 3.13a4 4 0 010 7.75" />
-              </svg>
-              <span>My Students</span>
+              <span>Leads</span>
             </Link>
             <Link
               href={ADVISOR_PACKAGES}
@@ -315,11 +288,12 @@ export function AdvisorPortalShell({
                 className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
                 aria-hidden
               >
-                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                <line x1="12" y1="22.08" x2="12" y2="12" />
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                <path d="M16 3.13a4 4 0 010 7.75" />
               </svg>
-              <span>Active Packages</span>
+              <span>Paying Customers</span>
             </Link>
             <Link
               href={ADVISOR_APPLICATIONS}
@@ -344,32 +318,7 @@ export function AdvisorPortalShell({
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                 <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
               </svg>
-              <span>Applications</span>
-            </Link>
-            <Link
-              href={ADVISOR_POST_ADMISSION}
-              prefetch={false}
-              onClick={closeSidebar}
-              className={`group flex cursor-pointer items-center gap-[11px] rounded-[8px] px-[12px] py-[9px] text-[13.5px] font-medium text-[rgba(255,255,255,0.7)] transition-all duration-[150ms] hover:bg-white/[0.06] hover:text-white ${
-                postAdmissionActive
-                  ? "sidebar-link-active bg-[rgba(82,183,135,0.15)] text-[#52B788]"
-                  : ""
-              }`}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-[16px] w-[16px] shrink-0 text-white/50 transition-colors group-hover:text-inherit group-[.sidebar-link-active]:text-inherit"
-                aria-hidden
-              >
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-              <span>Post-admission</span>
+              <span>Applications Tracker</span>
             </Link>
             <Link
               href={ADVISOR_TASKS}

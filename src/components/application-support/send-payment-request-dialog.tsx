@@ -43,6 +43,8 @@ export type SendPaymentRequestApplicationOption = {
   pendingPaymentAmountAed: number | null;
   pendingPaymentDueDate: string | null;
   label: string;
+  /** Application status (e.g. lead, active_package). */
+  status?: string;
 };
 
 export type SendPaymentRequestDialogProps = {

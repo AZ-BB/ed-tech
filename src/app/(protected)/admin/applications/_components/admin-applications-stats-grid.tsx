@@ -15,6 +15,7 @@ type StatCard = {
 };
 
 const STATUS_CARD_COLORS: Record<ApplicationStatus, { accent: string; value: string }> = {
+  intake_draft: { accent: "#4338CA", value: "#4338CA" },
   lead: { accent: "#E67E22", value: "#E67E22" },
   not_suitable: { accent: "#E74C3C", value: "#E74C3C" },
   payment_requested: { accent: "#F57F17", value: "#F57F17" },
@@ -40,6 +41,7 @@ export function AdminApplicationsStatsGrid({
   active_package,
 }: AdminApplicationsStatsGridProps) {
   const counts: Record<ApplicationStatus, number> = {
+    intake_draft: 0,
     lead,
     not_suitable,
     payment_requested,

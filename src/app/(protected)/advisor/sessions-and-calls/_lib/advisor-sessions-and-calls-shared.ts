@@ -1,3 +1,5 @@
+import type { LeadQualification } from "@/lib/session-lead-qualification";
+
 export type AdvisorSessionsAndCallsRowKind =
   | "application_lead"
   | "post_admission_lead"
@@ -13,6 +15,8 @@ export type AdvisorSessionsAndCallsRow = {
   isOverdue: boolean;
   statusLabel: string;
   subtitle: string;
+  /** Advisor lead-outcome dropdown value (None / Good lead / Not suitable). */
+  leadQualification: LeadQualification;
 };
 
 export type AdvisorSessionsAndCallsTypeFilter =

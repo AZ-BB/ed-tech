@@ -19,6 +19,7 @@ type ApplicationRowRaw = {
   plan_id: number;
   student_id: string;
   student_name: string | null;
+  status: string | null;
   updated_at: string | null;
   student_profiles:
     | { first_name: string; last_name: string }
@@ -54,8 +55,9 @@ export function applicationOptionLabel(
 export async function fetchAdvisorStudentApplicationGroups(
   client: DbClient,
   advisorId: string,
+  options?: { status?: string | readonly string[] },
 ): Promise<AdvisorStudentApplicationGroup[]> {
-  const { data, error } = await client
+  let query = client
     .from("applications")
     .select(
       `
@@ -63,6 +65,7 @@ export async function fetchAdvisorStudentApplicationGroups(
       plan_id,
       student_id,
       student_name,
+      status,
       updated_at,
       student_profiles ( first_name, last_name ),
       applications_plans!applications_plan_id_fkey ( name )
@@ -70,6 +73,19 @@ export async function fetchAdvisorStudentApplicationGroups(
     )
     .eq("assigned_to", advisorId)
     .order("updated_at", { ascending: false });
+
+  if (options?.status != null) {
+    const statuses = Array.isArray(options.status)
+      ? [...options.status]
+      : [options.status];
+    if (statuses.length === 1) {
+      query = query.eq("status", statuses[0]!);
+    } else if (statuses.length > 1) {
+      query = query.in("status", statuses);
+    }
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("[fetchAdvisorStudentApplicationGroups]", error);

@@ -8,6 +8,10 @@ import {
   resolveApplicationUniversitiesTotal,
 } from "@/lib/application-package-data";
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
+import {
+  fetchAdvisorStudentApplicationGroups,
+  type AdvisorStudentApplicationOption,
+} from "@/lib/advisor-student-application-options";
 import { UNIVERSITY_TARGETS_SELECT } from "@/lib/fetch-application-university-targets";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 import {
@@ -58,6 +62,7 @@ export type AdvisorPortalUniversityTargetsPanelProps = {
   search: string;
   status: AdvisorUniversityTargetStatusFilter;
   decision: AdvisorUniversityTargetDecisionFilter;
+  applicationOptions: AdvisorStudentApplicationOption[];
 };
 
 function paginationRange(page: number, limit: number) {
@@ -80,19 +85,19 @@ function personName(
 }
 
 function resolvePackageLabel(application: ApplicationEmbed | null): string {
-  const plan = application ? firstEmbed(application.applications_plans) : null;
-  if (!plan) return "—";
+  if (!application) return "—";
 
-  const packageData = parseApplicationPackageData(application?.package_data);
+  const plan = firstEmbed(application.applications_plans);
+  const packageData = parseApplicationPackageData(application.package_data);
   const count = resolveApplicationUniversitiesTotal(
     packageData,
-    plan.universities_count,
+    plan?.universities_count ?? 0,
   );
   if (Number.isFinite(count) && count > 0) {
     return `${count} unis`;
   }
 
-  return plan.name?.trim() || "—";
+  return "—";
 }
 
 async function fetchMatchingStudentIds(
@@ -191,6 +196,7 @@ async function fetchAdvisorUniversityTargetsPage(
       { count: "exact" },
     )
     .eq("applications.assigned_to", advisorId)
+    .eq("applications.status", "active_package")
     .order("created_at", { ascending: false })
     .order("sort_order", { ascending: true });
 
@@ -231,14 +237,27 @@ export async function fetchAdvisorPortalUniversityTargetsPanel(options: {
 
   const search = options.search.trim();
 
-  const pageResult = await fetchAdvisorUniversityTargetsPage(advisorId, {
-    page: options.page,
-    limit: options.limit,
-    search,
-    status: options.status,
-    decision: options.decision,
-    client: supabase,
-  });
+  const [pageResult, studentGroups] = await Promise.all([
+    fetchAdvisorUniversityTargetsPage(advisorId, {
+      page: options.page,
+      limit: options.limit,
+      search,
+      status: options.status,
+      decision: options.decision,
+      client: supabase,
+    }),
+    fetchAdvisorStudentApplicationGroups(supabase, advisorId, {
+      status: "active_package",
+    }),
+  ]);
+
+  const applicationOptions: AdvisorStudentApplicationOption[] =
+    studentGroups.flatMap((group) =>
+      group.applications.map((application) => ({
+        applicationId: application.applicationId,
+        label: `${group.studentName} — Application #${application.applicationId}`,
+      })),
+    );
 
   return {
     ...pageResult,
@@ -247,5 +266,6 @@ export async function fetchAdvisorPortalUniversityTargetsPanel(options: {
     search,
     status: options.status,
     decision: options.decision,
+    applicationOptions,
   };
 }

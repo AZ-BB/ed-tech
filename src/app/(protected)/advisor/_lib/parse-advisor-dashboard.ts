@@ -7,6 +7,8 @@ export type AdvisorDashboardKpiCount = {
 };
 
 export type AdvisorDashboardKpis = {
+  sessionsAndCalls: AdvisorDashboardKpiCount;
+  /** @deprecated Prefer sessionsAndCalls; kept for RPC backwards compat. */
   callsCompleted: AdvisorDashboardKpiCount;
   newLeads: AdvisorDashboardKpiCount;
   activePackages: AdvisorDashboardKpiCount;
@@ -47,6 +49,7 @@ export type AdvisorDashboardAwaitingPayment = {
 
 export type AdvisorDashboardUpcomingDeadline = {
   studentId: string;
+  applicationId: number | null;
   studentName: string;
   universityName: string;
   program: string | null;
@@ -63,6 +66,7 @@ export type AdvisorDashboardPayload = {
 };
 
 const EMPTY_KPIS: AdvisorDashboardKpis = {
+  sessionsAndCalls: { total: 0, thisWeek: 0 },
   callsCompleted: { total: 0, thisWeek: 0 },
   newLeads: { total: 0, awaitingFirstCall: 0 },
   activePackages: { total: 0, newThisMonth: 0 },
@@ -193,6 +197,10 @@ function parseUpcomingDeadlines(raw: unknown): AdvisorDashboardUpcomingDeadline[
     if (!studentId || !deadline) continue;
     out.push({
       studentId,
+      applicationId:
+        o.application_id === null || o.application_id === undefined
+          ? null
+          : asInt(o.application_id),
       studentName: asString(o.student_name, "Student"),
       universityName: asString(o.university_name, "—"),
       program: asNullableString(o.program),
@@ -214,9 +222,16 @@ export function parseAdvisorDashboard(raw: unknown): AdvisorDashboardPayload {
       ? (o.conversion_metrics as Record<string, unknown>)
       : {};
 
+  const callsCompleted = parseKpiPair(kpisRaw.calls_completed, ["this_week"]);
+  const sessionsAndCallsRaw = kpisRaw.sessions_and_calls;
+  const sessionsAndCalls = sessionsAndCallsRaw
+    ? parseKpiPair(sessionsAndCallsRaw, ["this_week"])
+    : callsCompleted;
+
   return {
     kpis: {
-      callsCompleted: parseKpiPair(kpisRaw.calls_completed, ["this_week"]),
+      sessionsAndCalls,
+      callsCompleted,
       newLeads: parseKpiPair(kpisRaw.new_leads, ["awaiting_first_call"]),
       activePackages: parseKpiPair(kpisRaw.active_packages, ["new_this_month"]),
       conversionAtRisk: { total: asInt((kpisRaw.conversion_at_risk as Record<string, unknown> | undefined)?.total) },

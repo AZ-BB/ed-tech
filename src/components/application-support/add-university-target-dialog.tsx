@@ -15,11 +15,18 @@ import {
   type UniversityTargetFormState,
 } from "@/components/application-support/university-target-dialog-shared";
 
+export type AddUniversityTargetApplicationOption = {
+  applicationId: number;
+  label: string;
+};
+
 export type AddUniversityTargetDialogLabels = {
   title: string;
   cancel: string;
   add: string;
   adding: string;
+  application: string;
+  selectApplication: string;
   university: string;
   searchPlaceholder: string;
   searching: string;
@@ -41,6 +48,8 @@ const DEFAULT_LABELS: AddUniversityTargetDialogLabels = {
   cancel: "Cancel",
   add: "Add",
   adding: "Adding…",
+  application: "Application",
+  selectApplication: "Select application…",
   university: "University",
   searchPlaceholder: "Start typing to search Univeera's database…",
   searching: "Searching…",
@@ -59,7 +68,7 @@ const DEFAULT_LABELS: AddUniversityTargetDialogLabels = {
 type AddUniversityTargetDialogProps = {
   open: boolean;
   onClose: () => void;
-  onSubmit: (form: UniversityTargetFormState) => void;
+  onSubmit: (form: UniversityTargetFormState, applicationId?: number) => void;
   isSubmitting: boolean;
   error: string | null;
   searchUniversities: (
@@ -68,6 +77,8 @@ type AddUniversityTargetDialogProps = {
     | { ok: true; results: UniversityCatalogSearchResult[] }
     | { ok: false; error: string }
   >;
+  /** When provided, shows an application select as the first field. */
+  applicationOptions?: AddUniversityTargetApplicationOption[];
   labels?: Partial<AddUniversityTargetDialogLabels>;
 };
 
@@ -78,10 +89,13 @@ export function AddUniversityTargetDialog({
   isSubmitting,
   error,
   searchUniversities,
+  applicationOptions,
   labels: labelsProp,
 }: AddUniversityTargetDialogProps) {
   const labels = { ...DEFAULT_LABELS, ...labelsProp };
+  const requiresApplication = (applicationOptions?.length ?? 0) > 0;
   const [form, setForm] = useState<UniversityTargetFormState>(defaultUniversityTargetFormState);
+  const [selectedApplicationId, setSelectedApplicationId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UniversityCatalogSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -89,6 +103,7 @@ export function AddUniversityTargetDialog({
   useEffect(() => {
     if (!open) return;
     setForm(defaultUniversityTargetFormState());
+    setSelectedApplicationId("");
     setSearchQuery("");
     setSearchResults([]);
   }, [open]);
@@ -124,8 +139,18 @@ export function AddUniversityTargetDialog({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (requiresApplication) {
+      const applicationId = Number.parseInt(selectedApplicationId, 10);
+      if (!Number.isFinite(applicationId)) return;
+      onSubmit(form, applicationId);
+      return;
+    }
     onSubmit(form);
   }
+
+  const canSubmit =
+    !isSubmitting &&
+    (!requiresApplication || Boolean(selectedApplicationId));
 
   return (
     <UniversityTargetDialogShell
@@ -147,7 +172,7 @@ export function AddUniversityTargetDialog({
           <button
             type="submit"
             form="add-university-target-form"
-            disabled={isSubmitting}
+            disabled={!canSubmit}
             className="w-full cursor-pointer rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-4 py-2.5 text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60 sm:w-auto sm:py-2"
           >
             {isSubmitting ? labels.adding : labels.add}
@@ -156,6 +181,30 @@ export function AddUniversityTargetDialog({
       }
     >
       <form id="add-university-target-form" onSubmit={handleSubmit} className="space-y-4">
+        {requiresApplication ? (
+          <div>
+            <label htmlFor="add-uni-application" className={universityDialogLabelClassName}>
+              {labels.application}
+            </label>
+            <select
+              id="add-uni-application"
+              value={selectedApplicationId}
+              onChange={(event) => setSelectedApplicationId(event.target.value)}
+              className={universityDialogSelectClassName}
+              style={{ backgroundImage: UNIVERSITY_DIALOG_SELECT_CHEVRON }}
+              disabled={isSubmitting}
+              required
+            >
+              <option value="">{labels.selectApplication}</option>
+              {applicationOptions?.map((option) => (
+                <option key={option.applicationId} value={String(option.applicationId)}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
         <div className="relative">
           <label htmlFor="add-uni-search" className={universityDialogLabelClassName}>
             {labels.university}
