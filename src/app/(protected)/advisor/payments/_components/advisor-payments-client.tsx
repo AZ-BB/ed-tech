@@ -1,6 +1,10 @@
 "use client";
 
-import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
+import {
+  createAdvisorApplicationPaymentLink,
+  recordAdvisorManualApplicationPayment,
+  sendAdvisorLeadApplicationPaymentRequest,
+} from "@/actions/advisor-application-payments";
 import { sendAdvisorPostAdmissionPaymentRequest } from "@/actions/advisor-post-admission-payments";
 import type {
   AdvisorPaymentRequestStatusFilter,
@@ -8,23 +12,29 @@ import type {
   AdvisorPaymentsTab,
   AdvisorPayoutStatusFilter,
 } from "@/app/(protected)/advisor/payments/_lib/fetch-advisor-payments-page";
-import { SendPaymentRequestDialog } from "@/components/application-support/send-payment-request-dialog";
+import {
+  AddManualPaymentDialog,
+  type AddManualPaymentFormInput,
+} from "@/components/application-support/add-manual-payment-dialog";
+import { LeadPaymentRequestDialog } from "@/components/application-support/lead-payment-request-dialog";
 import {
   SendPostAdmissionPaymentRequestDialog,
   type PostAdmissionSendPaymentRequestInput,
 } from "@/components/post-admission-support/send-post-admission-payment-request-dialog";
-import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
+import type {
+  LeadApplicationPaymentEmailInput,
+  LeadApplicationPaymentLinkInput,
+} from "@/lib/lead-application-payment-types";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 const PAYMENT_REQUESTS_LIMIT_OPTIONS = [10, 20, 50] as const;
 const PAYOUTS_LIMIT_OPTIONS = [10, 20, 50] as const;
 
 const TAB_DEFS: { id: AdvisorPaymentsTab; label: string }[] = [
   { id: "requests", label: "Payment requests" },
-  { id: "payouts", label: "My payouts" },
 ];
 
 const PAYMENT_REQUEST_STATUS_OPTIONS: {
@@ -100,8 +110,8 @@ export function AdvisorPaymentsClient({
   advisorName,
   advisorEmail,
   fromEmailDisplay,
-  availablePlans,
   paymentRequestApplications,
+  manualPaymentApplications,
   paymentRequestPostAdmissionCases,
   paymentRequests,
   payouts,
@@ -115,12 +125,39 @@ export function AdvisorPaymentsClient({
   const [requestPaymentOpen, setRequestPaymentOpen] = useState(false);
   const [requestPostAdmissionPaymentOpen, setRequestPostAdmissionPaymentOpen] =
     useState(false);
+  const [manualPaymentOpen, setManualPaymentOpen] = useState(false);
   const [requestPaymentError, setRequestPaymentError] = useState<string | null>(null);
+  const [manualPaymentError, setManualPaymentError] = useState<string | null>(null);
   const [requestPaymentMessage, setRequestPaymentMessage] = useState<string | null>(null);
+  const [generatedPayUrl, setGeneratedPayUrl] = useState<string | null>(null);
 
   const hasApplicationPaymentTargets = paymentRequestApplications.length > 0;
   const hasPostAdmissionPaymentTargets =
     paymentRequestPostAdmissionCases.length > 0;
+  const hasManualPaymentTargets = manualPaymentApplications.length > 0;
+
+  const leadPaymentApplicationOptions = useMemo(
+    () =>
+      paymentRequestApplications.map((option) => ({
+        applicationId: option.applicationId,
+        studentName: option.studentName,
+        studentEmail: option.studentEmail,
+        label: option.label,
+      })),
+    [paymentRequestApplications],
+  );
+
+  const manualPaymentApplicationOptions = useMemo(
+    () =>
+      manualPaymentApplications.map((option) => ({
+        applicationId: option.applicationId,
+        studentName: option.studentName,
+        label: option.label,
+        status: option.status ?? "lead",
+        universitiesTotal: option.universitiesTotal,
+      })),
+    [manualPaymentApplications],
+  );
 
   useEffect(() => {
     setTab(initialTab);
@@ -215,7 +252,13 @@ export function AdvisorPaymentsClient({
 
   function handleOpenRequestPayment() {
     setRequestPaymentError(null);
+    setGeneratedPayUrl(null);
     setRequestPaymentOpen(true);
+  }
+
+  function handleOpenManualPayment() {
+    setManualPaymentError(null);
+    setManualPaymentOpen(true);
   }
 
   function handleOpenPostAdmissionRequestPayment() {
@@ -223,15 +266,50 @@ export function AdvisorPaymentsClient({
     setRequestPostAdmissionPaymentOpen(true);
   }
 
-  function handleSendRequestPayment(input: SendPaymentRequestInput) {
+  function handleRecordManualPayment(input: AddManualPaymentFormInput) {
+    setManualPaymentError(null);
+    startTransition(async () => {
+      const result = await recordAdvisorManualApplicationPayment(input);
+      if (!result.ok) {
+        setManualPaymentError(result.error);
+        return;
+      }
+      setManualPaymentOpen(false);
+      setRequestPaymentMessage(
+        `Manual payment of ${input.amountAed.toLocaleString()} AED recorded.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleGeneratePaymentLink(input: LeadApplicationPaymentLinkInput) {
     setRequestPaymentError(null);
     startTransition(async () => {
-      const result = await sendAdvisorApplicationPaymentRequest(input);
+      const result = await createAdvisorApplicationPaymentLink(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setGeneratedPayUrl(result.payUrl);
+      setRequestPaymentMessage(
+        `Payment link generated for ${input.amountAed.toLocaleString()} AED.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleSendLeadApplicationPayment(
+    input: LeadApplicationPaymentEmailInput,
+  ) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendAdvisorLeadApplicationPaymentRequest(input);
       if (!result.ok) {
         setRequestPaymentError(result.error);
         return;
       }
       setRequestPaymentOpen(false);
+      setGeneratedPayUrl(null);
       setRequestPaymentMessage(
         `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
       );
@@ -273,27 +351,29 @@ export function AdvisorPaymentsClient({
 
   return (
     <div className={isPending ? "opacity-75" : ""} aria-busy={isPending}>
-      <div className="mb-4 flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
-        {TAB_DEFS.map((tabDef) => {
-          const active = tab === tabDef.id;
-          return (
-            <button
-              key={tabDef.id}
-              type="button"
-              onClick={() => setTab(tabDef.id)}
-              className={`shrink-0 cursor-pointer rounded-[8px] px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                active
-                  ? "bg-[var(--green)] text-white"
-                  : "text-[var(--text-mid)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
-              }`}
-            >
-              {tabDef.label}
-            </button>
-          );
-        })}
-      </div>
+      {TAB_DEFS.length > 1 ? (
+        <div className="mb-4 flex gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1">
+          {TAB_DEFS.map((tabDef) => {
+            const active = tab === tabDef.id;
+            return (
+              <button
+                key={tabDef.id}
+                type="button"
+                onClick={() => setTab(tabDef.id)}
+                className={`shrink-0 cursor-pointer rounded-[8px] px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
+                  active
+                    ? "bg-[var(--green)] text-white"
+                    : "text-[var(--text-mid)] hover:bg-[var(--green-pale)] hover:text-[var(--green-dark)]"
+                }`}
+              >
+                {tabDef.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
-      {tab === "requests" ? (
+      {!(TAB_DEFS.some((t) => t.id === "payouts") && tab === "payouts") ? (
         <div className="overflow-hidden rounded-[14px] border border-[var(--border-light)] bg-white">
           <div className="flex flex-wrap gap-1 border-b border-[var(--border-light)] px-4 pt-3">
             {PAYMENT_REQUEST_STATUS_OPTIONS.map((option) => {
@@ -345,34 +425,42 @@ export function AdvisorPaymentsClient({
                 {requestsCountLabel}
               </span>
             </div>
-            {hasApplicationPaymentTargets || hasPostAdmissionPaymentTargets ? (
-              <div className="flex flex-wrap gap-2">
-                {hasApplicationPaymentTargets ? (
-                  <button
-                    type="button"
-                    onClick={handleOpenRequestPayment}
-                    disabled={isPending}
-                    className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3.5 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {hasPostAdmissionPaymentTargets
-                      ? "Request application payment"
-                      : "Request payment"}
-                  </button>
-                ) : null}
-                {hasPostAdmissionPaymentTargets ? (
-                  <button
-                    type="button"
-                    onClick={handleOpenPostAdmissionRequestPayment}
-                    disabled={isPending}
-                    className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--green-dark)] transition-colors hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {hasApplicationPaymentTargets
-                      ? "Request post-admission payment"
-                      : "Request payment"}
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {hasManualPaymentTargets ? (
+                <button
+                  type="button"
+                  onClick={handleOpenManualPayment}
+                  disabled={isPending}
+                  className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)] transition-colors hover:border-[var(--green)] hover:text-[var(--green-dark)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Add manual
+                </button>
+              ) : null}
+              {hasApplicationPaymentTargets ? (
+                <button
+                  type="button"
+                  onClick={handleOpenRequestPayment}
+                  disabled={isPending}
+                  className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3.5 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {hasPostAdmissionPaymentTargets
+                    ? "Request application payment"
+                    : "Request payment"}
+                </button>
+              ) : null}
+              {hasPostAdmissionPaymentTargets ? (
+                <button
+                  type="button"
+                  onClick={handleOpenPostAdmissionRequestPayment}
+                  disabled={isPending}
+                  className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--green-dark)] transition-colors hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {hasApplicationPaymentTargets
+                    ? "Request post-admission payment"
+                    : "Request payment"}
+                </button>
+              ) : null}
+            </div>
           </div>
 
           {requestPaymentMessage ? (
@@ -386,7 +474,6 @@ export function AdvisorPaymentsClient({
               <thead>
                 <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
                   <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3">Reference</th>
                   <th className="px-4 py-3">Amount</th>
@@ -400,7 +487,7 @@ export function AdvisorPaymentsClient({
                 {paymentRequests.rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="px-4 py-10 text-center text-[var(--text-light)]"
                     >
                       {paymentRequests.search.trim()
@@ -436,15 +523,21 @@ export function AdvisorPaymentsClient({
                         aria-label={`View payment request for ${row.studentName}`}
                       >
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5 text-[var(--text)]">
+                          <div className="flex items-center gap-2.5">
                             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-bold text-[var(--green-dark)]">
                               {row.studentInitials}
                             </span>
-                            <span className="font-semibold">{row.studentName}</span>
+                            <div>
+                              <div className="font-semibold text-[var(--text)]">
+                                {row.studentName}
+                              </div>
+                              {row.studentEmail ? (
+                                <div className="mt-0.5 text-[11px] text-[var(--text-hint)]">
+                                  {row.studentEmail}
+                                </div>
+                              ) : null}
+                            </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-[var(--text-light)]">
-                          {row.studentEmail}
                         </td>
                         <td className="px-4 py-3 text-[var(--text-mid)]">
                           {row.kind === "post_admission"
@@ -643,19 +736,38 @@ export function AdvisorPaymentsClient({
         </div>
       )}
 
-      <SendPaymentRequestDialog
+      <LeadPaymentRequestDialog
         open={requestPaymentOpen}
         onClose={() => {
-          if (!isPending) setRequestPaymentOpen(false);
+          if (!isPending) {
+            setRequestPaymentOpen(false);
+            setGeneratedPayUrl(null);
+            setRequestPaymentError(null);
+          }
         }}
-        applicationOptions={paymentRequestApplications}
-        availablePlans={availablePlans}
+        applicationOptions={leadPaymentApplicationOptions}
         senderName={advisorName}
         senderEmail={advisorEmail}
         fromEmailDisplay={fromEmailDisplay}
-        onSubmit={handleSendRequestPayment}
+        onGenerateLink={handleGeneratePaymentLink}
+        onSendEmail={handleSendLeadApplicationPayment}
         isSubmitting={isPending}
         error={requestPaymentError}
+        generatedPayUrl={generatedPayUrl}
+      />
+
+      <AddManualPaymentDialog
+        open={manualPaymentOpen}
+        onClose={() => {
+          if (!isPending) {
+            setManualPaymentOpen(false);
+            setManualPaymentError(null);
+          }
+        }}
+        applicationOptions={manualPaymentApplicationOptions}
+        onSubmit={handleRecordManualPayment}
+        isSubmitting={isPending}
+        error={manualPaymentError}
       />
 
       <SendPostAdmissionPaymentRequestDialog

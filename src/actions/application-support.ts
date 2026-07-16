@@ -139,7 +139,7 @@ export async function submitApplicationSupport(
     open_to_realted_fields: false,
     extracurricular_activities: "—",
     awards: null,
-    status: "lead",
+    status: "intake_draft",
   };
 
   const { data: appRow, error: insErr } = await secret
@@ -256,8 +256,8 @@ export async function submitApplicationSupport(
   const { error: logErr } = await secret.from("acitivity_logs").insert({
     entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
     entity_id: applicationActivityEntityId(applicationId),
-    action: "application_submitted",
-    message: `${name} submitted application support request #${applicationId}.`,
+    action: "application_intake_draft_submitted",
+    message: `${name} submitted application support intake #${applicationId} (awaiting lead qualification).`,
     created_by_type: "student",
     admin_id: null,
     school_admin_id: null,

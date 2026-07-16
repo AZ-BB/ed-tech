@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  createAdvisorUniversityTarget,
   searchAdvisorUniversitiesForApplication,
   updateAdvisorUniversityTarget,
   updateAdvisorUniversityTargetDecision,
@@ -14,10 +15,12 @@ import {
   ADVISOR_UNIVERSITY_TARGET_DECISION_FILTER_OPTIONS,
   ADVISOR_UNIVERSITY_TARGET_STATUS_FILTER_OPTIONS,
 } from "@/app/(protected)/advisor/applications/_lib/parse-advisor-university-targets-filters";
+import { AddUniversityTargetDialog } from "@/components/application-support/add-university-target-dialog";
 import {
   ApplicationUniversityTargetsTable,
   type ApplicationUniversityTargetsTableActions,
 } from "@/components/application-support/application-university-targets-table";
+import type { UniversityTargetFormState } from "@/components/application-support/university-target-dialog-shared";
 import { Pagination } from "@/components/pagination";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -41,6 +44,19 @@ const ADVISOR_UNIVERSITY_TARGET_ACTIONS: ApplicationUniversityTargetsTableAction
   updateTargetDecision: updateAdvisorUniversityTargetDecision,
 };
 
+function formToCreateInput(form: UniversityTargetFormState) {
+  return {
+    universityId: form.universityId || null,
+    universityName: form.universityName.trim(),
+    program: form.program.trim() || null,
+    countryCode: form.countryCode || null,
+    deadline: form.deadline || null,
+    portalUrl: form.portalUrl.trim() || null,
+    status: form.status,
+    notes: form.notes.trim() || null,
+  };
+}
+
 export function AdvisorApplicationsUniversitiesTab({
   rows,
   totalRows,
@@ -49,12 +65,15 @@ export function AdvisorApplicationsUniversitiesTab({
   search,
   status,
   decision,
+  applicationOptions,
 }: AdvisorPortalUniversityTargetsPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchInput(search);
@@ -108,6 +127,27 @@ export function AdvisorApplicationsUniversitiesTab({
   const emptyMessage = filtersActive
     ? "No university targets match your filters."
     : "No university targets yet across your assigned applications.";
+
+  function handleCreate(form: UniversityTargetFormState, applicationId?: number) {
+    if (applicationId == null) {
+      setAddError("Select an application.");
+      return;
+    }
+
+    setAddError(null);
+    startTransition(async () => {
+      const result = await createAdvisorUniversityTarget(
+        String(applicationId),
+        formToCreateInput(form),
+      );
+      if (!result.ok) {
+        setAddError(result.error);
+        return;
+      }
+      setAddOpen(false);
+      router.refresh();
+    });
+  }
 
   return (
     <>
@@ -164,6 +204,20 @@ export function AdvisorApplicationsUniversitiesTab({
               ))}
             </select>
           </div>
+          <button
+            type="button"
+            disabled={isPending || applicationOptions.length === 0}
+            onClick={() => {
+              setAddError(null);
+              setAddOpen(true);
+            }}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-3 py-2 text-[12px] font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add university
+          </button>
         </div>
 
         <ApplicationUniversityTargetsTable
@@ -199,7 +253,7 @@ export function AdvisorApplicationsUniversitiesTab({
                   >
                     {row.studentName}
                   </Link>
-                  {row.studentEmail !== "—" ? (
+                  {row.studentEmail !== "" ? (
                     <div className="mt-0.5 text-[var(--text-hint)]">
                       {row.studentEmail}
                     </div>
@@ -245,6 +299,16 @@ export function AdvisorApplicationsUniversitiesTab({
         limitOptions={UNIVERSITIES_LIMIT_OPTIONS}
         pageParam="universitiesPage"
         limitParam="universitiesLimit"
+      />
+
+      <AddUniversityTargetDialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSubmit={handleCreate}
+        isSubmitting={isPending}
+        error={addError}
+        searchUniversities={searchAdvisorUniversitiesForApplication}
+        applicationOptions={applicationOptions}
       />
     </>
   );

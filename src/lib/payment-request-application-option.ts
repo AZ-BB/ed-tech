@@ -115,6 +115,7 @@ export function mapApplicationToPaymentRequestOption(
     pendingPaymentAmountAed: pendingPayment?.amount ?? null,
     pendingPaymentDueDate: pendingPayment?.dueDate ?? null,
     label: `${studentName} — Application #${row.id}`,
+    status: row.status?.trim() || "lead",
   };
 }
 

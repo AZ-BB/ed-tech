@@ -1,7 +1,6 @@
 "use server";
 
 import { assertAdvisorAccess } from "@/lib/advisor-access";
-import { createEmptyApplicationForAdvisorStudentIfNeeded } from "@/lib/create-empty-application-for-advisor-student";
 import type { Database } from "@/database.types";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { isValidAlpha2Code } from "@/lib/countries";
@@ -254,30 +253,6 @@ export async function createAdvisorSessionBooking(
     actor.studentId,
     STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_advisor_sessions,
   ).catch(() => {});
-
-  try {
-    let schoolName: string | null = null;
-    if (studentRow?.school_id) {
-      const { data: schoolRow } = await secret
-        .from("schools")
-        .select("name")
-        .eq("id", studentRow.school_id)
-        .maybeSingle();
-      schoolName = schoolRow?.name?.trim() || null;
-    }
-
-    await createEmptyApplicationForAdvisorStudentIfNeeded(secret, {
-      studentId: actor.studentId,
-      advisorId,
-      studentName,
-      studentEmail,
-      studentPhone,
-      schoolId: studentRow?.school_id ?? null,
-      schoolName,
-    });
-  } catch (stubErr) {
-    console.error("[advisor_sessions] empty application stub:", stubErr);
-  }
 
   return { ok: true, sessionId };
 }

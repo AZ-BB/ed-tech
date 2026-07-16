@@ -7,11 +7,15 @@ import {
 } from "@/lib/applications-plans";
 import { isMeetingOverdue } from "@/lib/meeting-overdue";
 import {
-  ACTIVE_POST_ADMISSION_STATUSES,
   POST_ADMISSION_STATUS_LABEL,
   type PostAdmissionStatus,
 } from "@/lib/post-admission-status-labels";
 import { formatPostAdmissionServiceLabel } from "@/lib/post-admission-services";
+import {
+  parseLeadQualification,
+  SESSION_CALL_APPLICATION_STATUSES,
+  SESSION_CALL_POST_ADMISSION_STATUSES,
+} from "@/lib/session-lead-qualification";
 import {
   createSupabaseSecretClient,
   createSupabaseServerClient,
@@ -42,6 +46,8 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient
 type LeadRowRaw = {
   id: number;
   plan_id: number;
+  status: string | null;
+  lead_qualification: string | null;
   student_name: string | null;
   student_email: string | null;
   school_name: string | null;
@@ -65,6 +71,7 @@ type PostAdmissionLeadRowRaw = {
   selected_service: string | null;
   service_other_detail: string | null;
   status: string | null;
+  lead_qualification: string | null;
   scheduled_at: string | null;
   schools: { name: string } | { name: string }[] | null;
   student_profiles:
@@ -85,6 +92,7 @@ type PostAdmissionScheduledCallRowRaw = {
 type SessionRowRaw = {
   id: number;
   status: string | null;
+  lead_qualification: string | null;
   booked_at: string;
   destination_country_code: string | null;
   help_with: string | null;
@@ -145,6 +153,16 @@ function isMeetingScheduledToday(meetingAt: string): boolean {
   );
 }
 
+function isMeetingInRange(
+  meetingAt: string,
+  rangeStart: Date,
+  rangeEnd: Date,
+): boolean {
+  const meeting = new Date(meetingAt);
+  if (Number.isNaN(meeting.getTime())) return false;
+  return meeting >= rangeStart && meeting < rangeEnd;
+}
+
 function matchesSearch(
   row: { studentName: string; studentEmail: string },
   search: string,
@@ -155,6 +173,17 @@ function matchesSearch(
     row.studentName.toLowerCase().includes(needle) ||
     row.studentEmail.toLowerCase().includes(needle)
   );
+}
+
+function resolveLeadQualification(
+  stored: string | null | undefined,
+  status: string | null | undefined,
+): ReturnType<typeof parseLeadQualification> {
+  const parsed = parseLeadQualification(stored);
+  if (parsed !== "none") return parsed;
+  if (status === "lead" && !stored) return "good_lead";
+  if (status === "not_suitable" && !stored) return "not_suitable";
+  return "none";
 }
 
 function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
@@ -169,6 +198,7 @@ function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
   const schoolName = school?.name?.trim() || row.school_name?.trim() || "—";
   const plan = firstEmbed(row.applications_plans);
   const meetingAt = row.scheduled_at;
+  const status = row.status?.trim() || "intake_draft";
 
   return {
     kind: "application_lead",
@@ -178,13 +208,15 @@ function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
     schoolName,
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
-    statusLabel: "Lead",
+    statusLabel: status === "intake_draft" ? "Awaiting qualification" : "Lead",
     subtitle: plan?.name?.trim() || "Application support",
+    leadQualification: resolveLeadQualification(row.lead_qualification, status),
   };
 }
 
 function postAdmissionStatusLabel(status: string | null | undefined): string {
-  const normalized = (status?.trim() || "lead") as PostAdmissionStatus;
+  const normalized = (status?.trim() || "intake_draft") as PostAdmissionStatus;
+  if (normalized === "intake_draft") return "Awaiting qualification";
   return POST_ADMISSION_STATUS_LABEL[normalized] ?? normalized;
 }
 
@@ -211,6 +243,7 @@ function mapPostAdmissionLeadRow(
     row.selected_service,
     row.service_other_detail,
   );
+  const status = row.status?.trim() || "intake_draft";
 
   return {
     kind: "post_admission_lead",
@@ -220,8 +253,9 @@ function mapPostAdmissionLeadRow(
     schoolName,
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
-    statusLabel: postAdmissionStatusLabel(row.status),
+    statusLabel: postAdmissionStatusLabel(status),
     subtitle: serviceLabel === "—" ? "Post-admission support" : serviceLabel,
+    leadQualification: resolveLeadQualification(row.lead_qualification, status),
   };
 }
 
@@ -230,7 +264,9 @@ function mergePostAdmissionSessionRows(
   callRows: AdvisorSessionsAndCallsRow[],
 ): AdvisorSessionsAndCallsRow[] {
   const caseIdsWithScheduledAt = new Set(caseRows.map((row) => row.id));
-  const supplementalCallRows = callRows.filter((row) => !caseIdsWithScheduledAt.has(row.id));
+  const supplementalCallRows = callRows.filter(
+    (row) => !caseIdsWithScheduledAt.has(row.id),
+  );
   return [...caseRows, ...supplementalCallRows];
 }
 
@@ -262,6 +298,7 @@ function mapSessionRow(row: SessionRowRaw): AdvisorSessionsAndCallsRow {
     isOverdue: isMeetingOverdue(meetingAt),
     statusLabel: ADMIN_SESSION_STATUS_LABEL[status] ?? status,
     subtitle: helpWith ? `${destinationLabel} · ${helpWith}` : destinationLabel,
+    leadQualification: parseLeadQualification(row.lead_qualification),
   };
 }
 
@@ -277,6 +314,8 @@ async function fetchLeadRows(
       `
       id,
       plan_id,
+      status,
+      lead_qualification,
       student_name,
       student_email,
       school_name,
@@ -287,7 +326,7 @@ async function fetchLeadRows(
     `,
     )
     .eq("assigned_to", advisorId)
-    .eq("status", "lead")
+    .in("status", [...SESSION_CALL_APPLICATION_STATUSES])
     .not("scheduled_at", "is", null)
     .order("scheduled_at", { ascending: true });
 
@@ -327,13 +366,14 @@ async function fetchPostAdmissionLeadRows(
       selected_service,
       service_other_detail,
       status,
+      lead_qualification,
       scheduled_at,
       schools ( name ),
       student_profiles ( first_name, last_name, email )
     `,
     )
     .eq("assigned_to", advisorId)
-    .in("status", ACTIVE_POST_ADMISSION_STATUSES)
+    .in("status", [...SESSION_CALL_POST_ADMISSION_STATUSES])
     .not("scheduled_at", "is", null)
     .order("scheduled_at", { ascending: true });
 
@@ -374,6 +414,7 @@ async function fetchPostAdmissionScheduledCallRows(
         selected_service,
         service_other_detail,
         status,
+        lead_qualification,
         scheduled_at,
         assigned_to,
         schools ( name ),
@@ -383,7 +424,7 @@ async function fetchPostAdmissionScheduledCallRows(
     )
     .in("status", ["scheduled", "rescheduled"])
     .eq("post_admission_cases.assigned_to", advisorId)
-    .in("post_admission_cases.status", ACTIVE_POST_ADMISSION_STATUSES)
+    .in("post_admission_cases.status", [...SESSION_CALL_POST_ADMISSION_STATUSES])
     .order("call_date", { ascending: true });
 
   if (error) {
@@ -398,7 +439,10 @@ async function fetchPostAdmissionScheduledCallRows(
     const caseRow = firstEmbed(callRow.post_admission_cases);
     if (!caseRow?.id || !callRow.call_date?.trim()) continue;
 
-    const mapped = mapPostAdmissionLeadRow(caseRow, callDateToMeetingAt(callRow.call_date));
+    const mapped = mapPostAdmissionLeadRow(
+      caseRow,
+      callDateToMeetingAt(callRow.call_date),
+    );
     if (search && !matchesSearch(mapped, search)) continue;
     rows.push(mapped);
   }
@@ -431,6 +475,7 @@ async function fetchSessionRows(
       `
       id,
       status,
+      lead_qualification,
       booked_at,
       destination_country_code,
       help_with,
@@ -464,7 +509,7 @@ async function fetchSessionRows(
   return (data ?? []).map((row) => mapSessionRow(row as SessionRowRaw));
 }
 
-export async function fetchAdvisorTodaysSessionsAndCalls(): Promise<
+async function fetchAllBookedSessionsAndCalls(): Promise<
   AdvisorSessionsAndCallsRow[]
 > {
   const supabase = await createSupabaseServerClient();
@@ -477,10 +522,32 @@ export async function fetchAdvisorTodaysSessionsAndCalls(): Promise<
     fetchSessionRows(advisorId, ""),
   ]);
 
-  return sortRows(
-    [...leadRows, ...postAdmissionRows, ...sessionRows].filter((row) =>
-      isMeetingScheduledToday(row.meetingAt),
-    ),
+  return sortRows([...leadRows, ...postAdmissionRows, ...sessionRows]);
+}
+
+export async function fetchAdvisorTodaysSessionsAndCalls(): Promise<
+  AdvisorSessionsAndCallsRow[]
+> {
+  const rows = await fetchAllBookedSessionsAndCalls();
+  return rows.filter((row) => isMeetingScheduledToday(row.meetingAt));
+}
+
+/** Inclusive start / exclusive end (UTC-safe local Date bounds). */
+export async function fetchAdvisorSessionsAndCallsInRange(
+  rangeStart: Date,
+  rangeEnd: Date,
+): Promise<AdvisorSessionsAndCallsRow[]> {
+  if (
+    Number.isNaN(rangeStart.getTime()) ||
+    Number.isNaN(rangeEnd.getTime()) ||
+    rangeStart >= rangeEnd
+  ) {
+    return [];
+  }
+
+  const rows = await fetchAllBookedSessionsAndCalls();
+  return rows.filter((row) =>
+    isMeetingInRange(row.meetingAt, rangeStart, rangeEnd),
   );
 }
 

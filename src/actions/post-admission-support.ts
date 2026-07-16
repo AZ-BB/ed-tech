@@ -197,7 +197,7 @@ export async function createPostAdmissionCase(
     .insert({
       student_id: actor.studentId,
       school_id: schoolId,
-      status: "lead",
+      status: "intake_draft",
       student_name: studentName,
       student_email: studentEmail,
       school_name: schoolName,
@@ -222,8 +222,8 @@ export async function createPostAdmissionCase(
   const { error: logErr } = await secret.from("acitivity_logs").insert({
     entitiy_type: POST_ADMISSION_ACTIVITY_ENTITY_TYPE,
     entity_id: postAdmissionActivityEntityId(inserted.id),
-    action: "post_admission_case_created",
-    message: `Student started post-admission support for ${serviceLabel} (case #${inserted.id}).`,
+    action: "post_admission_intake_draft_created",
+    message: `Student started post-admission intake for ${serviceLabel} (case #${inserted.id}, awaiting lead qualification).`,
     created_by_type: "student",
     admin_id: null,
     school_admin_id: null,

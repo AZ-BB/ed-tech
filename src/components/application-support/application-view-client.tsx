@@ -19,6 +19,10 @@ import type { ApplicationDetailPayload } from "@/lib/application-detail-mapper";
 import type { ApplicationNoteVisibility } from "@/lib/application-internal-notes";
 import type { PaymentRequestModalContext } from "@/lib/fetch-payment-request-modal-context";
 import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
+import type {
+  LeadApplicationPaymentEmailInput,
+  LeadApplicationPaymentLinkInput,
+} from "@/lib/lead-application-payment-types";
 import { hasActivePendingPaymentRequest } from "@/lib/payment-request-utils";
 import type { StudentActivityLogsPanelProps } from "@/lib/student-activity-logs";
 import { parseAdminApplicationDetailTab } from "@/app/(protected)/admin/applications/[id]/_lib/parse-admin-application-detail-search-params";
@@ -34,6 +38,11 @@ import {
 } from "react";
 
 import { SendPaymentRequestDialog } from "@/components/application-support/send-payment-request-dialog";
+import { LeadPaymentRequestDialog } from "@/components/application-support/lead-payment-request-dialog";
+import {
+  ActivateLeadPackageDialog,
+  type ActivateLeadPackageFormInput,
+} from "@/components/application-support/activate-lead-package-dialog";
 import { AddApplicationInternalNoteDialog } from "@/components/application-support/add-application-internal-note-dialog";
 import {
   LogApplicationCallDialog,
@@ -59,7 +68,6 @@ import {
 } from "@/components/application-support/application-package-tab";
 import { AdminApplicationPayoutsTab } from "@/app/(protected)/admin/applications/[id]/_components/admin-application-payouts-tab";
 import { AdvisorApplicationPayoutsTab } from "@/app/(protected)/advisor/applications/[id]/_components/advisor-application-payouts-tab";
-import { EditApplicationPackageDialog } from "@/components/application-support/edit-application-package-dialog";
 import { ApplicationSupportIntakeDialog } from "@/components/application-support/application-support-intake-dialog";
 import type { ApplicationSupportPayload } from "@/lib/application-support-intake";
 
@@ -94,9 +102,15 @@ export type ApplicationViewConfig = {
   activitySub?: string;
   showPayoutSummary?: boolean;
   showPayoutsTab?: boolean;
+  /** Defaults to true. Set false to hide the Activity tab. */
+  showActivityTab?: boolean;
   payoutsTabVariant?: "admin" | "advisor";
   blockPaymentRequestIfPending?: boolean;
   showHeaderQuickActions?: boolean;
+  /** Header "Edit intake" button. Defaults to `canEditIntake`. */
+  showHeaderEditIntake?: boolean;
+  /** Header "Payment Request" button. Defaults to true when quick actions are shown. */
+  showHeaderPaymentRequest?: boolean;
   documentsPortal?: "admin" | "advisor";
   canEditIntake?: boolean;
 };
@@ -109,6 +123,16 @@ export type ApplicationViewActions = {
     visibility?: ApplicationNoteVisibility,
   ) => Promise<ActionResult>;
   sendPaymentRequest: (input: SendPaymentRequestInput) => Promise<PaymentActionResult>;
+  /** Leads-style payment link (no email). When set with sendLeadPaymentRequest, uses the new dialog. */
+  createPaymentLink?: (
+    input: LeadApplicationPaymentLinkInput,
+  ) => Promise<{ ok: true; payUrl: string } | { ok: false; error: string }>;
+  sendLeadPaymentRequest?: (
+    input: LeadApplicationPaymentEmailInput,
+  ) => Promise<PaymentActionResult>;
+  activatePackage?: (
+    input: ActivateLeadPackageFormInput,
+  ) => Promise<ActionResult>;
   toggleStudentFlag?: (applicationId: string) => Promise<ActionResult>;
   updateIntake?: (
     applicationId: string,
@@ -217,18 +241,13 @@ function paymentStatusClass(status: string): string {
   return "bg-[#FFF3E0] text-[#E67E22]";
 }
 
-function payoutStatusClass(status: string): string {
-  if (status === "paid") return "bg-[#e8f5ee] text-[#2D6A4F]";
-  if (status === "canceled") return "bg-[#FCEBEB] text-[#E74C3C]";
-  return "bg-[#FFF3E0] text-[#E67E22]";
-}
-
 function resolveApplicationDetailTab(
   rawTab: string | null,
   config: ApplicationViewConfig,
 ): ApplicationDetailTab {
   const parsed = parseAdminApplicationDetailTab(rawTab ?? undefined);
   if (parsed === "payouts" && !config.showPayoutsTab) return "payments";
+  if (parsed === "activity" && config.showActivityTab === false) return "notes";
   if (parsed === "profile" && config.showProfileTab === false) return "intake";
   return parsed;
 }
@@ -286,8 +305,9 @@ export function ApplicationViewClient({
   );
   const [paymentRequestOpen, setPaymentRequestOpen] = useState(false);
   const [paymentRequestError, setPaymentRequestError] = useState<string | null>(null);
-  const [editPackageOpen, setEditPackageOpen] = useState(false);
-  const [editPackageError, setEditPackageError] = useState<string | null>(null);
+  const [generatedPayUrl, setGeneratedPayUrl] = useState<string | null>(null);
+  const [activateOpen, setActivateOpen] = useState(false);
+  const [activateError, setActivateError] = useState<string | null>(null);
   const [addNoteOpen, setAddNoteOpen] = useState(false);
   const [addNoteError, setAddNoteError] = useState<string | null>(null);
   const [logCallOpen, setLogCallOpen] = useState(false);
@@ -301,21 +321,22 @@ export function ApplicationViewClient({
 
   const tabDefs = useMemo(() => {
     const profileVisible = config.showProfileTab !== false;
-    const base = profileVisible
+    const activityVisible = config.showActivityTab !== false;
+    let base = profileVisible
       ? BASE_TAB_DEFS
       : BASE_TAB_DEFS.filter((tabDef) => tabDef.id !== "profile");
+    if (!activityVisible) {
+      base = base.filter((tabDef) => tabDef.id !== "activity");
+    }
     if (!config.showPayoutsTab) return base;
     const next = [...base];
     const paymentsIndex = next.findIndex((tabDef) => tabDef.id === "payments");
     next.splice(paymentsIndex + 1, 0, { id: "payouts", label: "Payouts" });
     return next;
-  }, [config.showPayoutsTab, config.showProfileTab]);
+  }, [config.showPayoutsTab, config.showProfileTab, config.showActivityTab]);
 
   const planPrice = plan?.price ?? 0;
   const packageUniversitiesTotal = plan?.universitiesCount ?? packageView.universitiesTotal;
-  const packageDefaultUniversitiesCount =
-    plan?.defaultUniversitiesCount ?? packageUniversitiesTotal;
-  const packagePlanName = plan?.name ?? packageView.packageLabel;
   const totalPaid = useMemo(
     () =>
       payments
@@ -332,6 +353,11 @@ export function ApplicationViewClient({
   );
   const paymentRequestBlocked =
     config.blockPaymentRequestIfPending === true && hasPendingPaymentRequest;
+  const useLeadPaymentFlow = Boolean(
+    actions.createPaymentLink && actions.sendLeadPaymentRequest,
+  );
+  const canActivatePackage =
+    Boolean(actions.activatePackage) && status !== "active_package";
 
   useEffect(() => {
     setStatus(payload.application.status);
@@ -345,7 +371,7 @@ export function ApplicationViewClient({
   useEffect(() => {
     const fromUrl = resolveApplicationDetailTab(searchParams.get("tab"), config);
     setTab((current) => (current === fromUrl ? current : fromUrl));
-  }, [searchParams, config.showPayoutsTab, config.showProfileTab]);
+  }, [searchParams, config.showPayoutsTab, config.showProfileTab, config.showActivityTab]);
 
   const switchTab = useCallback(
     (next: ApplicationDetailTab) => {
@@ -380,32 +406,11 @@ export function ApplicationViewClient({
     { lab: "Updated", val: formatDateTime(application.updatedAt) },
   ];
 
-  function handleOpenEditPackage() {
-    setActionError(null);
-    setEditPackageError(null);
-    setEditPackageOpen(true);
-  }
-
-  function handleSavePackageUniversitiesTotal(universitiesTotal: number) {
-    setEditPackageError(null);
-    startTransition(async () => {
-      const result = await actions.package.updateUniversitiesTotal(
-        String(application.id),
-        universitiesTotal,
-      );
-      if (!result.ok) {
-        setEditPackageError(result.error);
-        return;
-      }
-      setEditPackageOpen(false);
-      router.refresh();
-    });
-  }
-
   function handleOpenPaymentRequest() {
     setActionError(null);
     setPaymentRequestMessage(null);
     setPaymentRequestError(null);
+    setGeneratedPayUrl(null);
     setPaymentRequestOpen(true);
   }
 
@@ -422,6 +427,67 @@ export function ApplicationViewClient({
       setPaymentRequestOpen(false);
       setPaymentRequestMessage(
         `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleGeneratePaymentLink(input: LeadApplicationPaymentLinkInput) {
+    if (!actions.createPaymentLink) return;
+    setActionError(null);
+    setPaymentRequestMessage(null);
+    setPaymentRequestError(null);
+    startTransition(async () => {
+      const result = await actions.createPaymentLink!(input);
+      if (!result.ok) {
+        setPaymentRequestError(result.error);
+        return;
+      }
+      setGeneratedPayUrl(result.payUrl);
+      setPaymentRequestMessage(
+        `Payment link generated for ${input.amountAed.toLocaleString()} AED.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleSendLeadPaymentRequest(input: LeadApplicationPaymentEmailInput) {
+    if (!actions.sendLeadPaymentRequest) return;
+    setActionError(null);
+    setPaymentRequestMessage(null);
+    setPaymentRequestError(null);
+    startTransition(async () => {
+      const result = await actions.sendLeadPaymentRequest!(input);
+      if (!result.ok) {
+        setPaymentRequestError(result.error);
+        return;
+      }
+      setPaymentRequestOpen(false);
+      setGeneratedPayUrl(null);
+      setPaymentRequestMessage(
+        `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleOpenActivate() {
+    setActivateError(null);
+    setActivateOpen(true);
+  }
+
+  function handleActivatePackage(input: ActivateLeadPackageFormInput) {
+    if (!actions.activatePackage) return;
+    setActivateError(null);
+    startTransition(async () => {
+      const result = await actions.activatePackage!(input);
+      if (!result.ok) {
+        setActivateError(result.error);
+        return;
+      }
+      setActivateOpen(false);
+      setPaymentRequestMessage(
+        `Application activated with ${input.amountAed.toLocaleString()} AED offline payment.`,
       );
       router.refresh();
     });
@@ -596,21 +662,21 @@ export function ApplicationViewClient({
   if (tab === "intake") {
     tabBody = (
       <>
-        {config.canEditIntake && intakeEdit ? (
-          <div className="mb-4 flex justify-end">
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => setIntakeEditOpen(true)}
-              className={headerQuickActionPrimaryClass}
-            >
-              Edit application support
-            </button>
-          </div>
-        ) : null}
         <SchoolStudentPanel
           head="Application intake"
           sub="Details submitted through application support"
+          actions={
+            config.canEditIntake && intakeEdit ? (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => setIntakeEditOpen(true)}
+                className={headerQuickActionPrimaryClass}
+              >
+                Edit application support
+              </button>
+            ) : null
+          }
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <SnapItem label="Intended fields" value={application.intendedFields} />
@@ -723,6 +789,13 @@ export function ApplicationViewClient({
         targets={universityTargets}
         universitiesTotal={packageUniversitiesTotal}
         actions={actions.universityTargets}
+        onUpdateUniversitiesTotal={async (universitiesTotal) => {
+          const result = await actions.package.updateUniversitiesTotal(
+            String(application.id),
+            universitiesTotal,
+          );
+          return result.ok ? { ok: true } : { ok: false, error: result.error };
+        }}
       />
     );
   } else if (tab === "profile") {
@@ -784,17 +857,33 @@ export function ApplicationViewClient({
         head="Payments"
         sub="Send a payment request to collect application support fees"
         actions={
-          <button
-            type="button"
-            disabled={isPending || !hasStudentEmail || paymentRequestBlocked}
-            onClick={handleOpenPaymentRequest}
-            className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Send Payment Request
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={
+                isPending ||
+                (!useLeadPaymentFlow &&
+                  (!hasStudentEmail || paymentRequestBlocked))
+              }
+              onClick={handleOpenPaymentRequest}
+              className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Send Payment Request
+            </button>
+            {canActivatePackage ? (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleOpenActivate}
+                className="cursor-pointer rounded-[8px] border border-[#2D6A4F] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#2D6A4F] transition-colors hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Activate
+              </button>
+            ) : null}
+          </div>
         }
       >
-        {paymentRequestBlocked ? (
+        {!useLeadPaymentFlow && paymentRequestBlocked ? (
           <p className="mb-3 text-[12px] text-[var(--text-light)]">
             A payment request is already pending for this application.
           </p>
@@ -822,8 +911,11 @@ export function ApplicationViewClient({
         ) : null}
         {payments.length === 0 ? (
           <p className="text-[13px] text-[var(--text-light)]">
-            No payment request has been sent yet. Use Send Payment Request to email
-            the student a secure checkout link.
+            {useLeadPaymentFlow
+              ? canActivatePackage
+                ? "No payments yet. Send a payment request or Activate with an offline payment."
+                : "No payments yet. Use Send Payment Request to generate a link or email the student."
+              : "No payment request has been sent yet. Use Send Payment Request to email the student a secure checkout link."}
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-[var(--border-light)]">
@@ -834,13 +926,6 @@ export function ApplicationViewClient({
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Due date</th>
                   <th className="px-4 py-3">Requested at</th>
-                  {!config.showPayoutsTab ? (
-                    <>
-                      <th className="px-4 py-3">Payout %</th>
-                      <th className="px-4 py-3">Payout (AED)</th>
-                      <th className="px-4 py-3">Payout status</th>
-                    </>
-                  ) : null}
                   <th className="px-4 py-3">Paid at</th>
                 </tr>
               </thead>
@@ -866,27 +951,6 @@ export function ApplicationViewClient({
                     <td className="px-4 py-3 whitespace-nowrap text-[var(--text-mid)]">
                       {formatDate(payment.requestedAt ?? payment.createdAt)}
                     </td>
-                    {!config.showPayoutsTab ? (
-                      <>
-                        <td className="px-4 py-3 text-[var(--text-mid)]">
-                          {payment.payout ? `${payment.payout.percentage}%` : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-[var(--text-mid)]">
-                          {payment.payout ? payment.payout.amount.toLocaleString() : "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          {payment.payout ? (
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize ${payoutStatusClass(payment.payout.status)}`}
-                            >
-                              {payment.payout.status}
-                            </span>
-                          ) : (
-                            <span className="text-[var(--text-mid)]">—</span>
-                          )}
-                        </td>
-                      </>
-                    ) : null}
                     <td className="px-4 py-3 whitespace-nowrap text-[var(--text-mid)]">
                       {formatDate(
                         payment.status === "paid" ? payment.paidAt : null,
@@ -1103,7 +1167,9 @@ export function ApplicationViewClient({
                 </svg>
                 Log Call
               </button>
-              {config.canEditIntake && intakeEdit ? (
+              {config.showHeaderEditIntake !== false &&
+              config.canEditIntake &&
+              intakeEdit ? (
                 <button
                   type="button"
                   disabled={isPending}
@@ -1154,18 +1220,20 @@ export function ApplicationViewClient({
                 </svg>
                 Flag
               </button>
-              <button
-                type="button"
-                disabled={isPending || !hasStudentEmail || paymentRequestBlocked}
-                onClick={handleOpenPaymentRequest}
-                className={headerQuickActionPrimaryClass}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
-                  <line x1="22" x2="11" y1="2" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
-                Payment Request
-              </button>
+              {config.showHeaderPaymentRequest !== false ? (
+                <button
+                  type="button"
+                  disabled={isPending || !hasStudentEmail || paymentRequestBlocked}
+                  onClick={handleOpenPaymentRequest}
+                  className={headerQuickActionPrimaryClass}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-[14px] w-[14px]">
+                    <line x1="22" x2="11" y1="2" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                  Payment Request
+                </button>
+              ) : null}
             </div>
           ) : null}
 
@@ -1190,20 +1258,6 @@ export function ApplicationViewClient({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-              Package
-            </span>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleOpenEditPackage}
-              className="cursor-pointer whitespace-nowrap rounded-[8px] border-[1.5px] border-[var(--green)] bg-white px-4 py-[7px] text-[12px] font-semibold text-[var(--green-dark)] transition-colors hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Edit package
-            </button>
           </div>
 
           {config.canAssignAdvisor ? (
@@ -1397,7 +1451,31 @@ export function ApplicationViewClient({
         </div>
       ) : null}
 
-      {paymentRequestContext ? (
+      {paymentRequestContext && useLeadPaymentFlow ? (
+        <LeadPaymentRequestDialog
+          open={paymentRequestOpen}
+          onClose={() => {
+            if (!isPending) {
+              setPaymentRequestOpen(false);
+              setGeneratedPayUrl(null);
+              setPaymentRequestError(null);
+            }
+          }}
+          applicationId={application.id}
+          studentName={application.studentName}
+          studentEmail={
+            application.studentEmail !== "—" ? application.studentEmail : ""
+          }
+          senderName={paymentRequestContext.senderName}
+          senderEmail={paymentRequestContext.senderEmail}
+          fromEmailDisplay={paymentRequestContext.fromEmailDisplay}
+          onGenerateLink={handleGeneratePaymentLink}
+          onSendEmail={handleSendLeadPaymentRequest}
+          isSubmitting={isPending}
+          error={paymentRequestError}
+          generatedPayUrl={generatedPayUrl}
+        />
+      ) : paymentRequestContext ? (
         <SendPaymentRequestDialog
           open={paymentRequestOpen}
           onClose={() => {
@@ -1411,6 +1489,23 @@ export function ApplicationViewClient({
           onSubmit={handleSendPaymentRequest}
           isSubmitting={isPending}
           error={paymentRequestError}
+        />
+      ) : null}
+
+      {canActivatePackage ? (
+        <ActivateLeadPackageDialog
+          open={activateOpen}
+          onClose={() => {
+            if (!isPending) {
+              setActivateOpen(false);
+              setActivateError(null);
+            }
+          }}
+          applicationId={application.id}
+          studentName={application.studentName}
+          onSubmit={handleActivatePackage}
+          isSubmitting={isPending}
+          error={activateError}
         />
       ) : null}
 
@@ -1434,20 +1529,6 @@ export function ApplicationViewClient({
         onSubmit={handleLogCall}
         isSubmitting={isPending}
         error={logCallError}
-      />
-
-      <EditApplicationPackageDialog
-        open={editPackageOpen}
-        planName={packagePlanName}
-        universitiesTotal={Math.max(1, packageUniversitiesTotal)}
-        defaultUniversitiesCount={Math.max(1, packageDefaultUniversitiesCount)}
-        minUniversities={universityTargets.length}
-        onClose={() => {
-          if (!isPending) setEditPackageOpen(false);
-        }}
-        onSubmit={handleSavePackageUniversitiesTotal}
-        isSubmitting={isPending}
-        error={editPackageError}
       />
 
       {config.canEditIntake && intakeEdit ? (

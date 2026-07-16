@@ -9,6 +9,7 @@ import { buildReportMeta } from "./report-scope";
 type ApplicationStatus = Database["public"]["Enums"]["application_status"];
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
+  intake_draft: "Intake Draft",
   lead: "Lead",
   not_suitable: "Not Suitable",
   payment_requested: "Payment Requested",

@@ -1,22 +1,30 @@
 "use client";
 
-import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
+import {
+  activateAdvisorApplicationPackage,
+  createAdvisorApplicationPaymentLink,
+  sendAdvisorLeadApplicationPaymentRequest,
+} from "@/actions/advisor-application-payments";
 import { sendAdvisorPostAdmissionPaymentRequest } from "@/actions/advisor-post-admission-payments";
 import { updateAdvisorApplicationStatus } from "@/actions/advisor-applications";
 import { updateAdvisorPostAdmissionStatus } from "@/actions/advisor-post-admission";
 import type { AdvisorNewLeadsPanelProps } from "@/app/(protected)/advisor/leads/_lib/fetch-advisor-new-leads-page";
 import {
-  SendPaymentRequestDialog,
-  type SendPaymentRequestApplicationOption,
-} from "@/components/application-support/send-payment-request-dialog";
+  ActivateLeadPackageDialog,
+  type ActivateLeadPackageFormInput,
+} from "@/components/application-support/activate-lead-package-dialog";
+import { LeadPaymentRequestDialog } from "@/components/application-support/lead-payment-request-dialog";
+import type { SendPaymentRequestApplicationOption } from "@/components/application-support/send-payment-request-dialog";
 import {
   SendPostAdmissionPaymentRequestDialog,
   type PostAdmissionSendPaymentRequestInput,
 } from "@/components/post-admission-support/send-post-admission-payment-request-dialog";
-import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
+import type {
+  LeadApplicationPaymentEmailInput,
+  LeadApplicationPaymentLinkInput,
+} from "@/lib/lead-application-payment-types";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
-import { Send } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
@@ -49,7 +57,6 @@ export function AdvisorNewLeadsTable({
   page,
   limit,
   search,
-  availablePlans,
   advisorName,
   advisorEmail,
   fromEmailDisplay,
@@ -61,13 +68,18 @@ export function AdvisorNewLeadsTable({
   const [searchInput, setSearchInput] = useState(search);
   const [applicationPaymentOpen, setApplicationPaymentOpen] = useState(false);
   const [postAdmissionPaymentOpen, setPostAdmissionPaymentOpen] = useState(false);
+  const [activateOpen, setActivateOpen] = useState(false);
   const [selectedApplicationPayment, setSelectedApplicationPayment] =
+    useState<SendPaymentRequestApplicationOption | null>(null);
+  const [selectedActivateLead, setSelectedActivateLead] =
     useState<SendPaymentRequestApplicationOption | null>(null);
   const [selectedPostAdmissionPayment, setSelectedPostAdmissionPayment] =
     useState<AdvisorNewLeadsPanelProps["rows"][number] | null>(null);
   const [requestPaymentError, setRequestPaymentError] = useState<string | null>(
     null,
   );
+  const [generatedPayUrl, setGeneratedPayUrl] = useState<string | null>(null);
+  const [activateError, setActivateError] = useState<string | null>(null);
   const [requestPaymentMessage, setRequestPaymentMessage] = useState<
     string | null
   >(null);
@@ -108,7 +120,7 @@ export function AdvisorNewLeadsTable({
 
   function openLead(row: AdvisorNewLeadsPanelProps["rows"][number]) {
     if (row.kind === "application") {
-      router.push(`/advisor/applications/${row.id}`);
+      router.push(`/advisor/applications/${row.id}?from=leads`);
     } else {
       router.push(`/advisor/post-admission/${row.id}`);
     }
@@ -116,6 +128,7 @@ export function AdvisorNewLeadsTable({
 
   function handleOpenRequestPayment(row: AdvisorNewLeadsPanelProps["rows"][number]) {
     setRequestPaymentError(null);
+    setGeneratedPayUrl(null);
     if (row.kind === "application") {
       setSelectedApplicationPayment(row.paymentRequestOption);
       setApplicationPaymentOpen(true);
@@ -125,16 +138,59 @@ export function AdvisorNewLeadsTable({
     }
   }
 
-  function handleSendApplicationPayment(input: SendPaymentRequestInput) {
+  function handleOpenActivate(row: AdvisorNewLeadsPanelProps["rows"][number]) {
+    if (row.kind !== "application") return;
+    setActivateError(null);
+    setSelectedActivateLead(row.paymentRequestOption);
+    setActivateOpen(true);
+  }
+
+  function handleActivatePackage(input: ActivateLeadPackageFormInput) {
+    setActivateError(null);
+    startTransition(async () => {
+      const result = await activateAdvisorApplicationPackage(input);
+      if (!result.ok) {
+        setActivateError(result.error);
+        return;
+      }
+      setActivateOpen(false);
+      setSelectedActivateLead(null);
+      setRequestPaymentMessage(
+        `${selectedActivateLead?.studentName ?? "Lead"} activated and moved to Paying Customers.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleGeneratePaymentLink(input: LeadApplicationPaymentLinkInput) {
     setRequestPaymentError(null);
     startTransition(async () => {
-      const result = await sendAdvisorApplicationPaymentRequest(input);
+      const result = await createAdvisorApplicationPaymentLink(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setGeneratedPayUrl(result.payUrl);
+      setRequestPaymentMessage(
+        `Payment link generated for ${input.amountAed.toLocaleString()} AED.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleSendLeadApplicationPayment(
+    input: LeadApplicationPaymentEmailInput,
+  ) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendAdvisorLeadApplicationPaymentRequest(input);
       if (!result.ok) {
         setRequestPaymentError(result.error);
         return;
       }
       setApplicationPaymentOpen(false);
       setSelectedApplicationPayment(null);
+      setGeneratedPayUrl(null);
       setRequestPaymentMessage(
         `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
       );
@@ -221,16 +277,14 @@ export function AdvisorNewLeadsTable({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1160px] border-collapse text-[13px]">
+        <table className="w-full min-w-[900px] border-collapse text-[13px]">
           <thead>
             <tr className="bg-[#faf9f4] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-              <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Student name</th>
+              <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Student email</th>
               <th className="px-4 py-3">School</th>
-              <th className="px-4 py-3">Service</th>
               <th className="px-4 py-3">Date booked</th>
-              <th className="px-4 py-3">Meeting date</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
@@ -238,7 +292,7 @@ export function AdvisorNewLeadsTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={6}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
                   {search.trim()
@@ -249,8 +303,9 @@ export function AdvisorNewLeadsTable({
             ) : (
               rows.map((row) => {
                 const canSendPayment =
-                  !row.paymentRequestOption.hasPendingPaymentRequest &&
-                  row.paymentRequestOption.studentEmail.trim().length > 0;
+                  row.kind === "application" ||
+                  (!row.paymentRequestOption.hasPendingPaymentRequest &&
+                    row.paymentRequestOption.studentEmail.trim().length > 0);
                 const rowKey = `${row.kind}:${row.id}`;
 
                 return (
@@ -269,13 +324,6 @@ export function AdvisorNewLeadsTable({
                     aria-label={`Open ${kindLabel(row.kind)} #${row.id} for ${row.studentName}`}
                   >
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${kindBadgeClass(row.kind)}`}
-                      >
-                        {kindLabel(row.kind)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)] text-[11.5px] font-bold text-[var(--green-dark)]">
                           {row.studentInitials}
@@ -290,51 +338,65 @@ export function AdvisorNewLeadsTable({
                         </div>
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${kindBadgeClass(row.kind)}`}
+                      >
+                        {kindLabel(row.kind)}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-[var(--text-light)]">
                       {row.studentEmail}
                     </td>
                     <td className="px-4 py-3 text-[var(--text-mid)]">
                       {row.schoolName}
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-mid)]">
-                      {row.kind === "post_admission" ? row.serviceLabel : "—"}
-                    </td>
                     <td className="px-4 py-3 text-[var(--text-light)]">
                       {formatWhen(row.dateBooked)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-light)]">
-                      {formatWhen(row.meetingDate)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           disabled={isPending || !canSendPayment}
-                          aria-label="Send payment request"
+                          aria-label="Send payment"
                           title={
+                            row.kind === "post_admission" &&
                             row.paymentRequestOption.hasPendingPaymentRequest
                               ? "A payment request is already pending"
-                              : !row.paymentRequestOption.studentEmail.trim()
+                              : row.kind === "post_admission" &&
+                                  !row.paymentRequestOption.studentEmail.trim()
                                 ? "Student email is required"
-                                : "Send payment request"
+                                : "Send payment"
                           }
                           onClick={(event) => {
                             event.stopPropagation();
                             handleOpenRequestPayment(row);
                           }}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] border border-[#e0deda] bg-white text-[var(--green-dark)] transition-colors hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="cursor-pointer rounded-[8px] border border-[var(--green-light)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--green-dark)] transition-colors hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          <Send
-                            className="h-4 w-4"
-                            strokeWidth={2.25}
-                            aria-hidden
-                          />
+                          Send payment
                         </button>
+                        {row.kind === "application" ? (
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            aria-label="Activate package"
+                            title="Activate package (offline payment)"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleOpenActivate(row);
+                            }}
+                            className="cursor-pointer rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-3 py-1.5 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Activate
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           disabled={isPending || markingNotSuitableKey === rowKey}
-                          aria-label="Mark as not suitable"
-                          title="Mark as not suitable"
+                          aria-label="Not suitable"
+                          title="Not suitable"
                           onClick={(event) => {
                             event.stopPropagation();
                             handleMarkNotSuitable(row);
@@ -343,7 +405,7 @@ export function AdvisorNewLeadsTable({
                         >
                           {markingNotSuitableKey === rowKey
                             ? "Updating..."
-                            : "Mark as not suitable"}
+                            : "Not suitable"}
                         </button>
                       </div>
                     </td>
@@ -367,22 +429,44 @@ export function AdvisorNewLeadsTable({
       </div>
 
       {selectedApplicationPayment ? (
-        <SendPaymentRequestDialog
+        <LeadPaymentRequestDialog
           open={applicationPaymentOpen}
           onClose={() => {
             if (!isPending) {
               setApplicationPaymentOpen(false);
               setSelectedApplicationPayment(null);
+              setGeneratedPayUrl(null);
+              setRequestPaymentError(null);
             }
           }}
-          fixedApplication={selectedApplicationPayment}
-          availablePlans={availablePlans}
+          applicationId={selectedApplicationPayment.applicationId}
+          studentName={selectedApplicationPayment.studentName}
+          studentEmail={selectedApplicationPayment.studentEmail}
           senderName={advisorName}
           senderEmail={advisorEmail}
           fromEmailDisplay={fromEmailDisplay}
-          onSubmit={handleSendApplicationPayment}
+          onGenerateLink={handleGeneratePaymentLink}
+          onSendEmail={handleSendLeadApplicationPayment}
           isSubmitting={isPending}
           error={requestPaymentError}
+          generatedPayUrl={generatedPayUrl}
+        />
+      ) : null}
+
+      {selectedActivateLead ? (
+        <ActivateLeadPackageDialog
+          open={activateOpen}
+          onClose={() => {
+            if (!isPending) {
+              setActivateOpen(false);
+              setSelectedActivateLead(null);
+            }
+          }}
+          applicationId={selectedActivateLead.applicationId}
+          studentName={selectedActivateLead.studentName}
+          onSubmit={handleActivatePackage}
+          isSubmitting={isPending}
+          error={activateError}
         />
       ) : null}
 

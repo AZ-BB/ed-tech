@@ -21,6 +21,7 @@ export type ApplicationSupportPayload = {
 };
 
 export const ACTIVE_APPLICATION_STATUSES = [
+  "intake_draft",
   "lead",
   "payment_requested",
   "active_package",

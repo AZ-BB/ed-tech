@@ -1,14 +1,9 @@
 import Link from "next/link";
-import { format } from "date-fns";
-
-import type { AdvisorSessionsAndCallsRow } from "../sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
-import {
-  advisorSessionsAndCallsKindLabel,
-  advisorSessionsAndCallsRowHref,
-} from "../sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 
 import type { AdvisorDashboardPayload } from "../_lib/parse-advisor-dashboard";
+import type { AdvisorSessionsAndCallsRow } from "../sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 
+import { AdvisorDashboardCallsCalendar } from "./advisor-dashboard-calls-calendar";
 import { AdvisorDashboardKpiGrid } from "./advisor-dashboard-kpi-grid";
 
 const fontSans =
@@ -26,36 +21,11 @@ type AdvisorDashboardWelcome = {
 
 type Props = {
   data: AdvisorDashboardPayload;
-  todaysSessionsAndCalls: AdvisorSessionsAndCallsRow[];
+  monthSessionsAndCalls: AdvisorSessionsAndCallsRow[];
+  calendarYear: number;
+  calendarMonthIndex: number;
   welcome: AdvisorDashboardWelcome;
 };
-
-function formatTodayHeading(count: number): string {
-  const today = new Date();
-  const dateLabel = today.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-  return `${dateLabel} · ${count} scheduled`;
-}
-
-function formatMeetingTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "All day";
-    return format(d, "h:mm a");
-  } catch {
-    return "All day";
-  }
-}
-
-function buildSessionMeta(row: AdvisorSessionsAndCallsRow): string {
-  const parts = [advisorSessionsAndCallsKindLabel(row.kind)];
-  if (row.schoolName && row.schoolName !== "—") parts.push(row.schoolName);
-  if (row.subtitle) parts.push(row.subtitle);
-  return parts.join(" · ");
-}
 
 function formatSentAgo(iso: string | null): string {
   if (!iso) return "Sent recently";
@@ -89,8 +59,14 @@ function deadlineDotClass(daysUntil: number): string {
   return "bg-[#52B788]";
 }
 
-export function AdvisorDashboard({ data, todaysSessionsAndCalls, welcome }: Props) {
-  const { kpis, conversionMetrics, awaitingPayment, upcomingDeadlines } = data;
+export function AdvisorDashboard({
+  data,
+  monthSessionsAndCalls,
+  calendarYear,
+  calendarMonthIndex,
+  welcome,
+}: Props) {
+  const { kpis, awaitingPayment, upcomingDeadlines } = data;
 
   return (
     <div style={{ fontFamily: fontSans }}>
@@ -116,46 +92,39 @@ export function AdvisorDashboard({ data, todaysSessionsAndCalls, welcome }: Prop
 
       <AdvisorDashboardKpiGrid kpis={kpis} />
 
-      <div className="mb-[18px] grid grid-cols-1 gap-[18px] min-[1101px]:grid-cols-[2fr_1fr]">
+      <AdvisorDashboardCallsCalendar
+        initialMonthRows={monthSessionsAndCalls}
+        initialYear={calendarYear}
+        initialMonthIndex={calendarMonthIndex}
+      />
+
+      <div className="grid grid-cols-1 gap-[18px] min-[900px]:grid-cols-2">
         <div className="rounded-[14px] border border-[#ece9e4] bg-white p-[20px_22px]">
           <div className="mb-[14px] flex items-center justify-between">
-            <div>
-              <div className="text-[14px] font-bold text-[#1a1a1a]">Today&apos;s calls</div>
-              <div className="text-[12px] font-medium text-[#6a6a6a]">
-                {formatTodayHeading(todaysSessionsAndCalls.length)}
-              </div>
-            </div>
-            <Link href="/advisor/sessions-and-calls" className={btnGhostClassName}>
+            <div className="text-[14px] font-bold text-[#1a1a1a]">Payments issued</div>
+            <Link href="/advisor/payments" className={btnGhostClassName}>
               View all →
             </Link>
           </div>
-
-          {todaysSessionsAndCalls.length === 0 ? (
+          {awaitingPayment.length === 0 ? (
             <div className="py-8 text-center text-[13px] text-[#6a6a6a]">
-              No calls or sessions scheduled for today
+              No pending payment requests
             </div>
           ) : (
-            todaysSessionsAndCalls.map((row) => (
+            awaitingPayment.map((item) => (
               <Link
-                key={`${row.kind}-${row.id}`}
-                href={advisorSessionsAndCallsRowHref(row.kind, row.id)}
-                className="flex items-center gap-3 border-b border-[#ece9e4] py-[11px] last:border-b-0 transition-colors hover:bg-[#faf9f4]"
+                key={item.applicationId}
+                href={`/advisor/applications/${item.applicationId}`}
+                className="flex gap-[11px] border-b border-[#ece9e4] py-[10px] last:border-b-0 transition-colors hover:bg-[#faf9f4]"
               >
-                <div className="min-w-[62px]">
-                  <div className="text-[12px] font-bold text-[#1B4332]">
-                    {formatMeetingTime(row.meetingAt)}
+                <div className="mt-[7px] h-[7px] w-[7px] shrink-0 rounded-full bg-[#2563eb]" />
+                <div>
+                  <div className="text-[12.5px] font-semibold leading-[1.45] text-[#1a1a1a]">
+                    {item.studentName}
                   </div>
-                  {row.isOverdue ? (
-                    <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#d97706]">
-                      Overdue
-                    </div>
-                  ) : null}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-[2px] text-[13.5px] font-semibold text-[#1a1a1a]">
-                    {row.studentName}
+                  <div className="mt-[2px] text-[11px] text-[#a0a0a0]">
+                    {formatSentAgo(item.sentAt)} · {formatAmountAed(item.amount)}
                   </div>
-                  <div className="text-[11.5px] text-[#6a6a6a]">{buildSessionMeta(row)}</div>
                 </div>
               </Link>
             ))
@@ -163,111 +132,44 @@ export function AdvisorDashboard({ data, todaysSessionsAndCalls, welcome }: Prop
         </div>
 
         <div className="rounded-[14px] border border-[#ece9e4] bg-white p-[20px_22px]">
-          <div className="mb-[14px] text-[14px] font-bold text-[#1a1a1a]">Conversion metrics</div>
-
-          <div className="flex items-center justify-between border-b border-[#ece9e4] py-[11px]">
-            <div className="text-[12.5px] font-medium text-[#6a6a6a]">Call-to-package conversion</div>
-            <div className="text-[14px] font-bold text-[#1a1a1a]">
-              {conversionMetrics.callToPackagePct}%
-            </div>
+          <div className="mb-[14px] text-[14px] font-bold text-[#1a1a1a]">
+            Upcoming university deadlines
           </div>
-          <div className="-mt-[6px] mb-[10px]">
-            <div className="h-[6px] overflow-hidden rounded-[3px] bg-[#f0f7f2]">
-              <div
-                className="h-full rounded-[3px] bg-[#52B788] transition-[width] duration-300"
-                style={{ width: `${Math.min(100, conversionMetrics.callToPackagePct)}%` }}
-              />
-            </div>
-          </div>
-
-          {[
-            { label: "Calls completed (month)", value: conversionMetrics.callsCompletedMonth },
-            { label: "Packages purchased", value: conversionMetrics.packagesPurchased },
-            {
-              label: "Avg. days call → signup",
-              value:
-                conversionMetrics.avgDaysCallToSignup != null
-                  ? conversionMetrics.avgDaysCallToSignup
-                  : "—",
-            },
-            {
-              label: "Students under management",
-              value: conversionMetrics.studentsUnderManagement,
-            },
-          ].map((row) => (
-            <div
-              key={row.label}
-              className="flex items-center justify-between border-b border-[#ece9e4] py-[11px] last:border-b-0"
-            >
-              <div className="text-[12.5px] font-medium text-[#6a6a6a]">{row.label}</div>
-              <div
-                className="text-[14px] font-bold text-[#1a1a1a]"
-                style={row.label === "Avg. days call → signup" ? { fontFamily: fontSerif } : undefined}
-              >
-                {row.value}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-[18px] min-[900px]:grid-cols-2">
-        <div className="rounded-[14px] border border-[#ece9e4] bg-white p-[20px_22px]">
-          <div className="mb-[14px] text-[14px] font-bold text-[#1a1a1a]">Awaiting payment</div>
-          {awaitingPayment.length === 0 ? (
-            <div className="py-8 text-center text-[13px] text-[#6a6a6a]">
-              No pending payment requests
-            </div>
-          ) : (
-            awaitingPayment.map((item) => (
-              <div
-                key={item.applicationId}
-                className="flex gap-[11px] border-b border-[#ece9e4] py-[10px] last:border-b-0"
-              >
-                <div className="mt-[7px] h-[7px] w-[7px] shrink-0 rounded-full bg-[#2563eb]" />
-                <div>
-                  <div className="text-[12.5px] leading-[1.45] text-[#4a4a4a]">
-                    <span className="font-semibold text-[#1a1a1a]">{item.studentName}</span>
-                    {" · "}
-                    {item.packageLabel}
-                  </div>
-                  <div className="mt-[2px] text-[11px] text-[#a0a0a0]">
-                    {formatSentAgo(item.sentAt)} · {formatAmountAed(item.amount)}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="rounded-[14px] border border-[#ece9e4] bg-white p-[20px_22px]">
-          <div className="mb-[14px] text-[14px] font-bold text-[#1a1a1a]">Upcoming uni deadlines</div>
           {upcomingDeadlines.length === 0 ? (
             <div className="py-8 text-center text-[13px] text-[#6a6a6a]">
               No upcoming deadlines
             </div>
           ) : (
-            upcomingDeadlines.map((item) => (
-              <div
-                key={`${item.studentId}-${item.universityName}-${item.deadline}`}
-                className="flex gap-[11px] border-b border-[#ece9e4] py-[10px] last:border-b-0"
-              >
-                <div
-                  className={`mt-[7px] h-[7px] w-[7px] shrink-0 rounded-full ${deadlineDotClass(item.daysUntil)}`}
-                />
-                <div>
-                  <div className="text-[12.5px] leading-[1.45] text-[#4a4a4a]">
-                    <span className="font-semibold text-[#1a1a1a]">{item.studentName}</span>
-                    {" · "}
-                    {item.universityName}
-                    {item.program ? ` · ${item.program}` : ""}
+            upcomingDeadlines.map((item) => {
+              const rowKey = `${item.studentId}-${item.universityName}-${item.deadline}`;
+              const href =
+                item.applicationId != null
+                  ? `/advisor/applications/${item.applicationId}`
+                  : "/advisor/applications";
+
+              return (
+                <Link
+                  key={rowKey}
+                  href={href}
+                  className="flex gap-[11px] border-b border-[#ece9e4] py-[10px] last:border-b-0 transition-colors hover:bg-[#faf9f4]"
+                >
+                  <div
+                    className={`mt-[7px] h-[7px] w-[7px] shrink-0 rounded-full ${deadlineDotClass(item.daysUntil)}`}
+                  />
+                  <div>
+                    <div className="text-[12.5px] leading-[1.45] text-[#4a4a4a]">
+                      <span className="font-semibold text-[#1a1a1a]">{item.studentName}</span>
+                      {" · "}
+                      {item.universityName}
+                      {item.program ? ` · ${item.program}` : ""}
+                    </div>
+                    <div className="mt-[2px] text-[11px] text-[#a0a0a0]">
+                      {formatDeadlineLabel(item.daysUntil)}
+                    </div>
                   </div>
-                  <div className="mt-[2px] text-[11px] text-[#a0a0a0]">
-                    {formatDeadlineLabel(item.daysUntil)}
-                  </div>
-                </div>
-              </div>
-            ))
+                </Link>
+              );
+            })
           )}
         </div>
       </div>

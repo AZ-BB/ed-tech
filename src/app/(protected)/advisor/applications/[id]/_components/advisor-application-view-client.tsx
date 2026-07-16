@@ -10,7 +10,12 @@ import {
   createAdvisorApplicationTask,
   toggleAdvisorApplicationTaskCompleted,
 } from "@/actions/advisor-application-tasks";
-import { sendAdvisorApplicationPaymentRequest } from "@/actions/advisor-application-payments";
+import {
+  activateAdvisorApplicationPackage,
+  createAdvisorApplicationPaymentLink,
+  sendAdvisorApplicationPaymentRequest,
+  sendAdvisorLeadApplicationPaymentRequest,
+} from "@/actions/advisor-application-payments";
 import {
   toggleAdvisorApplicationPackageLifecycle,
   updateAdvisorApplicationPackageStats,
@@ -34,30 +39,20 @@ import {
   type ApplicationViewConfig,
   type ApplicationDetailTab,
 } from "@/components/application-support/application-view-client";
-import type { AdvisorApplicationDetailPayload } from "../_lib/fetch-advisor-application-detail";
 import type { StudentActivityLogsPanelProps } from "@/lib/student-activity-logs";
-
-const ADVISOR_CONFIG: ApplicationViewConfig = {
-  backHref: "/advisor/applications",
-  backLabel: "Back to applications",
-  canAssignAdvisor: false,
-  showStudentAdminLink: false,
-  showSchoolAdminLink: false,
-  showProfileTab: false,
-  notesSub: "Internal notes for this application case",
-  activitySub: "Advisor actions recorded for this application case",
-  showPayoutsTab: true,
-  payoutsTabVariant: "advisor",
-  blockPaymentRequestIfPending: true,
-  showHeaderQuickActions: true,
-  documentsPortal: "advisor",
-  canEditIntake: true,
-};
+import {
+  resolveAdvisorApplicationBackNav,
+  type AdvisorApplicationBackFrom,
+} from "../_lib/advisor-application-back-nav";
+import type { AdvisorApplicationDetailPayload } from "../_lib/fetch-advisor-application-detail";
 
 const ADVISOR_ACTIONS: ApplicationViewActions = {
   updateStatus: updateAdvisorApplicationStatus,
   addInternalNote: addAdvisorApplicationInternalNote,
   sendPaymentRequest: sendAdvisorApplicationPaymentRequest,
+  createPaymentLink: createAdvisorApplicationPaymentLink,
+  sendLeadPaymentRequest: sendAdvisorLeadApplicationPaymentRequest,
+  activatePackage: activateAdvisorApplicationPackage,
   toggleStudentFlag: toggleAdvisorStudentFlag,
   calls: {
     logCall: logAdvisorApplicationCall,
@@ -83,23 +78,50 @@ const ADVISOR_ACTIONS: ApplicationViewActions = {
   },
 };
 
+function buildAdvisorConfig(
+  backFrom: AdvisorApplicationBackFrom | null,
+): ApplicationViewConfig {
+  const back = resolveAdvisorApplicationBackNav(backFrom);
+  return {
+    backHref: back.href,
+    backLabel: back.label,
+    canAssignAdvisor: false,
+    showStudentAdminLink: false,
+    showSchoolAdminLink: false,
+    showProfileTab: false,
+    notesSub: "Internal notes for this application case",
+    activitySub: "Advisor actions recorded for this application case",
+    showPayoutsTab: false,
+    showActivityTab: false,
+    payoutsTabVariant: "advisor",
+    blockPaymentRequestIfPending: false,
+    showHeaderQuickActions: true,
+    showHeaderEditIntake: false,
+    showHeaderPaymentRequest: false,
+    documentsPortal: "advisor",
+    canEditIntake: true,
+  };
+}
+
 export type AdvisorApplicationViewClientProps = {
   payload: AdvisorApplicationDetailPayload;
   activityLogsPanel: StudentActivityLogsPanelProps;
   initialTab?: ApplicationDetailTab;
+  backFrom?: AdvisorApplicationBackFrom | null;
 };
 
 export function AdvisorApplicationViewClient({
   payload,
   activityLogsPanel,
   initialTab = "intake",
+  backFrom = null,
 }: AdvisorApplicationViewClientProps) {
   return (
     <ApplicationViewClient
       payload={payload}
       activityLogsPanel={activityLogsPanel}
       initialTab={initialTab}
-      config={ADVISOR_CONFIG}
+      config={buildAdvisorConfig(backFrom)}
       actions={ADVISOR_ACTIONS}
       applicationPayouts={payload.applicationPayouts}
       paymentRequestContext={payload.paymentRequestContext}

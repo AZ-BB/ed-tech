@@ -2,6 +2,7 @@
 
 import { SchoolStudentPanel } from "@/app/(protected)/school/students/[id]/_components/school-student-panel";
 import { AddUniversityTargetDialog } from "@/components/application-support/add-university-target-dialog";
+import { EditPackageUniversitiesDialog } from "@/components/application-support/edit-package-universities-dialog";
 import {
   ApplicationUniversityTargetsTable,
   type ApplicationUniversityTargetsTableActions,
@@ -34,6 +35,9 @@ type ApplicationUniversityTargetsTabProps = {
   targets: ApplicationUniversityTargetRow[];
   universitiesTotal: number;
   actions: ApplicationUniversityTargetsActions;
+  onUpdateUniversitiesTotal?: (
+    universitiesTotal: number,
+  ) => Promise<ActionResult>;
 };
 
 function formToCreateInput(form: UniversityTargetFormState) {
@@ -79,10 +83,13 @@ export function ApplicationUniversityTargetsTab({
   targets,
   universitiesTotal,
   actions,
+  onUpdateUniversitiesTotal,
 }: ApplicationUniversityTargetsTabProps) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [editPackageOpen, setEditPackageOpen] = useState(false);
+  const [editPackageError, setEditPackageError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const atPlanLimit = universitiesTotal > 0 && targets.length >= universitiesTotal;
@@ -90,6 +97,7 @@ export function ApplicationUniversityTargetsTab({
   const underLimitMessage = underPlanLimit
     ? formatUniversityUnderLimitMessage(targets.length, universitiesTotal)
     : null;
+  const canEditPackage = Boolean(onUpdateUniversitiesTotal);
 
   function refresh() {
     router.refresh();
@@ -108,8 +116,61 @@ export function ApplicationUniversityTargetsTab({
     });
   }
 
+  function handleSavePackage(nextTotal: number) {
+    if (!onUpdateUniversitiesTotal) return;
+    setEditPackageError(null);
+    startTransition(async () => {
+      const result = await onUpdateUniversitiesTotal(nextTotal);
+      if (!result.ok) {
+        setEditPackageError(result.error);
+        return;
+      }
+      setEditPackageOpen(false);
+      refresh();
+    });
+  }
+
   return (
-    <SchoolStudentPanel head="Universities" sub="Track university applications for this case">
+    <SchoolStudentPanel
+      head="Universities"
+      sub="Track university applications for this case"
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          {universitiesTotal > 0 ? (
+            <span className="rounded-full bg-[#f5f4f0] px-2.5 py-1 text-[11px] font-semibold text-[#7a7a7a]">
+              {targets.length} of {universitiesTotal} included
+            </span>
+          ) : null}
+          {canEditPackage ? (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => {
+                setEditPackageError(null);
+                setEditPackageOpen(true);
+              }}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#2D6A4F] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#2D6A4F] transition-colors hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              Edit package
+            </button>
+          ) : null}
+          <button
+            type="button"
+            disabled={isPending || atPlanLimit}
+            onClick={() => {
+              setAddError(null);
+              setAddOpen(true);
+            }}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-3 py-1.5 text-[11.5px] font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add university
+          </button>
+        </div>
+      }
+    >
       {underLimitMessage ? (
         <div
           role="status"
@@ -121,32 +182,8 @@ export function ApplicationUniversityTargetsTab({
           <p className="text-[12px] leading-snug font-medium text-[#7a5d10]">{underLimitMessage}</p>
         </div>
       ) : null}
-      <div className="overflow-hidden rounded-[12px] border border-[#ece9e4] bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ece9e4] px-5 py-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h3 className="text-[15px] font-semibold text-[#1a1a1a]">University applications</h3>
-            {universitiesTotal > 0 ? (
-              <span className="rounded-full bg-[#f5f4f0] px-2.5 py-1 text-[11px] font-semibold text-[#7a7a7a]">
-                {targets.length} of {universitiesTotal} included
-              </span>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            disabled={isPending || atPlanLimit}
-            onClick={() => {
-              setAddError(null);
-              setAddOpen(true);
-            }}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[var(--green)] bg-[var(--green)] px-3 py-2 text-[12px] font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add university
-          </button>
-        </div>
 
+      <div className="overflow-hidden rounded-lg border border-[var(--border-light)]">
         <ApplicationUniversityTargetsTable
           targets={targets}
           actions={actions}
@@ -162,6 +199,20 @@ export function ApplicationUniversityTargetsTab({
         error={addError}
         searchUniversities={actions.searchUniversities}
       />
+
+      {canEditPackage ? (
+        <EditPackageUniversitiesDialog
+          open={editPackageOpen}
+          universitiesTotal={Math.max(1, universitiesTotal, targets.length)}
+          minUniversities={targets.length}
+          onClose={() => {
+            if (!isPending) setEditPackageOpen(false);
+          }}
+          onSubmit={handleSavePackage}
+          isSubmitting={isPending}
+          error={editPackageError}
+        />
+      ) : null}
     </SchoolStudentPanel>
   );
 }

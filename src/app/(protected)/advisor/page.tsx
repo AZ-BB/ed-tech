@@ -2,12 +2,18 @@ import { fetchAdvisorSessionProfile } from "@/lib/advisor-access";
 
 import { AdvisorDashboard } from "./_components/advisor-dashboard";
 import { fetchAdvisorDashboard } from "./_lib/fetch-advisor-dashboard";
-import { fetchAdvisorTodaysSessionsAndCalls } from "./sessions-and-calls/_lib/fetch-advisor-sessions-and-calls-page";
+import { fetchAdvisorSessionsAndCallsInRange } from "./sessions-and-calls/_lib/fetch-advisor-sessions-and-calls-page";
 
 export default async function AdvisorPage() {
-  const [data, todaysSessionsAndCalls, session] = await Promise.all([
+  const now = new Date();
+  const calendarYear = now.getFullYear();
+  const calendarMonthIndex = now.getMonth();
+  const monthStart = new Date(calendarYear, calendarMonthIndex, 1, 0, 0, 0, 0);
+  const monthEnd = new Date(calendarYear, calendarMonthIndex + 1, 1, 0, 0, 0, 0);
+
+  const [data, monthSessionsAndCalls, session] = await Promise.all([
     fetchAdvisorDashboard(),
-    fetchAdvisorTodaysSessionsAndCalls(),
+    fetchAdvisorSessionsAndCallsInRange(monthStart, monthEnd),
     fetchAdvisorSessionProfile(),
   ]);
 
@@ -24,7 +30,9 @@ export default async function AdvisorPage() {
   return (
     <AdvisorDashboard
       data={data}
-      todaysSessionsAndCalls={todaysSessionsAndCalls}
+      monthSessionsAndCalls={monthSessionsAndCalls}
+      calendarYear={calendarYear}
+      calendarMonthIndex={calendarMonthIndex}
       welcome={{ firstName, displayName, title }}
     />
   );

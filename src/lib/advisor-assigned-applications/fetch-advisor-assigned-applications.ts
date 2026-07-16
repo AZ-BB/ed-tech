@@ -241,6 +241,7 @@ export function parseAdvisorApplicationStatusFilter(
   const s =
     typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
   if (
+    s === "intake_draft" ||
     s === "lead" ||
     s === "not_suitable" ||
     s === "payment_requested" ||
@@ -264,6 +265,7 @@ export function parseAdvisorApplicationStatusFilter(
 function emptyStatusCounts(): Record<AdvisorApplicationStatusFilter, number> {
   return {
     all: 0,
+    intake_draft: 0,
     lead: 0,
     not_suitable: 0,
     payment_requested: 0,
@@ -322,12 +324,14 @@ export async function fetchAdvisorApplicationStatusCounts(
 ): Promise<Record<AdvisorApplicationStatusFilter, number>> {
   const [
     all,
+    intakeDraft,
     lead,
     notSuitable,
     paymentRequested,
     activePackage,
   ] = await Promise.all([
     countApplications(client, advisorId, undefined, search),
+    countApplications(client, advisorId, "intake_draft", search),
     countApplications(client, advisorId, "lead", search),
     countApplications(client, advisorId, "not_suitable", search),
     countApplications(client, advisorId, "payment_requested", search),
@@ -336,6 +340,7 @@ export async function fetchAdvisorApplicationStatusCounts(
 
   return {
     all,
+    intake_draft: intakeDraft,
     lead,
     not_suitable: notSuitable,
     payment_requested: paymentRequested,

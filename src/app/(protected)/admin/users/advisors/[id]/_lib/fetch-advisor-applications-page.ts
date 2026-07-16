@@ -33,6 +33,7 @@ export type AdminAdvisorApplicationsPanelProps = {
 function emptyStatusCounts(): Record<AdvisorApplicationStatusFilter, number> {
   return {
     all: 0,
+    intake_draft: 0,
     lead: 0,
     not_suitable: 0,
     payment_requested: 0,

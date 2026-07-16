@@ -290,10 +290,13 @@ export type Database = {
           advisor_id: string
           booked_at: string | null
           created_at: string | null
+          created_lead_application_id: number | null
           current_stage: string
           destination_country_code: string
           help_with: string | null
           id: number
+          lead_qualification: string | null
+          lead_qualified_at: string | null
           specific_uni: string | null
           status: Database["public"]["Enums"]["advisor_session_status"] | null
           student_email: string | null
@@ -306,10 +309,13 @@ export type Database = {
           advisor_id: string
           booked_at?: string | null
           created_at?: string | null
+          created_lead_application_id?: number | null
           current_stage: string
           destination_country_code: string
           help_with?: string | null
           id?: number
+          lead_qualification?: string | null
+          lead_qualified_at?: string | null
           specific_uni?: string | null
           status?: Database["public"]["Enums"]["advisor_session_status"] | null
           student_email?: string | null
@@ -322,10 +328,13 @@ export type Database = {
           advisor_id?: string
           booked_at?: string | null
           created_at?: string | null
+          created_lead_application_id?: number | null
           current_stage?: string
           destination_country_code?: string
           help_with?: string | null
           id?: number
+          lead_qualification?: string | null
+          lead_qualified_at?: string | null
           specific_uni?: string | null
           status?: Database["public"]["Enums"]["advisor_session_status"] | null
           student_email?: string | null
@@ -1349,6 +1358,8 @@ export type Database = {
           ielts: number | null
           in_progress_at: string | null
           inteended_fields: string
+          lead_qualification: string | null
+          lead_qualified_at: string | null
           open_to_realted_fields: boolean
           package_data: Json
           payment_completed_at: string | null
@@ -1391,6 +1402,8 @@ export type Database = {
           ielts?: number | null
           in_progress_at?: string | null
           inteended_fields: string
+          lead_qualification?: string | null
+          lead_qualified_at?: string | null
           open_to_realted_fields?: boolean
           package_data?: Json
           payment_completed_at?: string | null
@@ -1433,6 +1446,8 @@ export type Database = {
           ielts?: number | null
           in_progress_at?: string | null
           inteended_fields?: string
+          lead_qualification?: string | null
+          lead_qualified_at?: string | null
           open_to_realted_fields?: boolean
           package_data?: Json
           payment_completed_at?: string | null
@@ -1924,6 +1939,8 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: number
+          lead_qualification: string | null
+          lead_qualified_at: string | null
           payment_completed_at: string | null
           payment_in_progress_at: string | null
           scheduled_at: string | null
@@ -1944,6 +1961,8 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: number
+          lead_qualification?: string | null
+          lead_qualified_at?: string | null
           payment_completed_at?: string | null
           payment_in_progress_at?: string | null
           scheduled_at?: string | null
@@ -1964,6 +1983,8 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: number
+          lead_qualification?: string | null
+          lead_qualified_at?: string | null
           payment_completed_at?: string | null
           payment_in_progress_at?: string | null
           scheduled_at?: string | null
@@ -4337,6 +4358,7 @@ export type Database = {
         | "award"
         | "portfolio"
       application_status:
+        | "intake_draft"
         | "lead"
         | "not_suitable"
         | "payment_requested"
@@ -4354,6 +4376,7 @@ export type Database = {
         | "homepage"
       news_tag: "visa" | "deadline" | "update"
       post_admission_status:
+        | "intake_draft"
         | "lead"
         | "not_suitable"
         | "payment_requested"
@@ -4573,6 +4596,7 @@ export const Constants = {
         "portfolio",
       ],
       application_status: [
+        "intake_draft",
         "lead",
         "not_suitable",
         "payment_requested",
