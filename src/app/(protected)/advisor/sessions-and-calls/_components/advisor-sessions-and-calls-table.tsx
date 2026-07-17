@@ -1,6 +1,11 @@
 "use client";
 
 import { updateAdvisorSessionLeadQualification } from "@/actions/advisor-session-lead-qualification";
+import { updateAdvisorSessionStatus } from "@/actions/advisor-sessions";
+import {
+  ADMIN_ADVISOR_SESSION_STATUS_OPTIONS,
+  advisorSessionStatusSelectClass,
+} from "@/app/(protected)/admin/sessions/_lib/session-status-labels";
 import type {
   AdvisorSessionsAndCallsPanelProps,
   AdvisorSessionsAndCallsRowKind,
@@ -12,7 +17,13 @@ import {
 } from "@/app/(protected)/advisor/sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 import { Pagination } from "@/components/pagination";
 import {
+  getMeetingTiming,
+  meetingTimingClass,
+  meetingTimingLabel,
+} from "@/lib/meeting-overdue";
+import {
   LEAD_QUALIFICATION_OPTIONS,
+  leadQualificationSelectClass,
   type LeadQualification,
 } from "@/lib/session-lead-qualification";
 import { format } from "date-fns";
@@ -33,9 +44,6 @@ const TYPE_OPTIONS: {
 
 const SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
-
-const outcomeSelectClass =
-  "min-w-[120px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat py-[6px] pl-[10px] pr-8 text-[12px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 
 function formatMeetingDateTime(iso: string): string {
   try {
@@ -96,8 +104,19 @@ export function AdvisorSessionsAndCallsTable({
         rows.map((row) => [rowKey(row.kind, row.id), row.leadQualification]),
       ),
   );
+  const [statusByRow, setStatusByRow] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      rows
+        .filter((row) => row.sessionStatus)
+        .map((row) => [rowKey(row.kind, row.id), row.sessionStatus!]),
+    ),
+  );
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [statusErrors, setStatusErrors] = useState<Record<string, string>>({});
   const [pendingRowKey, setPendingRowKey] = useState<string | null>(null);
+  const [pendingStatusRowKey, setPendingStatusRowKey] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     setSearchInput(search);
@@ -107,6 +126,16 @@ export function AdvisorSessionsAndCallsTable({
     setOutcomeByRow(
       Object.fromEntries(
         rows.map((row) => [rowKey(row.kind, row.id), row.leadQualification]),
+      ),
+    );
+  }, [rows]);
+
+  useEffect(() => {
+    setStatusByRow(
+      Object.fromEntries(
+        rows
+          .filter((row) => row.sessionStatus)
+          .map((row) => [rowKey(row.kind, row.id), row.sessionStatus!]),
       ),
     );
   }, [rows]);
@@ -183,6 +212,29 @@ export function AdvisorSessionsAndCallsTable({
       if (!result.ok) {
         setOutcomeByRow((current) => ({ ...current, [key]: previous }));
         setRowErrors((current) => ({ ...current, [key]: result.error }));
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function handleStatusChange(id: string, nextValue: string) {
+    const key = rowKey("advisor_session", id);
+    const previous = statusByRow[key] ?? "pending";
+    setStatusByRow((current) => ({ ...current, [key]: nextValue }));
+    setStatusErrors((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    setPendingStatusRowKey(key);
+
+    startTransition(async () => {
+      const result = await updateAdvisorSessionStatus(id, nextValue);
+      setPendingStatusRowKey(null);
+      if (!result.ok) {
+        setStatusByRow((current) => ({ ...current, [key]: previous }));
+        setStatusErrors((current) => ({ ...current, [key]: result.error }));
         return;
       }
       router.refresh();
@@ -269,6 +321,10 @@ export function AdvisorSessionsAndCallsTable({
                 const key = rowKey(row.kind, row.id);
                 const outcome = outcomeByRow[key] ?? row.leadQualification;
                 const error = rowErrors[key];
+                const statusError = statusErrors[key];
+                const sessionStatus =
+                  statusByRow[key] ?? row.sessionStatus ?? "pending";
+                const meetingTiming = getMeetingTiming(row.meetingAt);
                 return (
                   <tr
                     key={key}
@@ -307,25 +363,58 @@ export function AdvisorSessionsAndCallsTable({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        {row.isOverdue ? (
-                          <span
-                            className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#d97706]"
-                            title="Overdue"
-                            aria-hidden
-                          />
-                        ) : null}
                         <span className="text-[var(--text-light)]">
                           {formatMeetingDateTime(row.meetingAt)}
                         </span>
-                        {row.isOverdue ? (
-                          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#d97706]">
-                            Overdue
+                        {meetingTiming ? (
+                          <span className={meetingTimingClass(meetingTiming)}>
+                            {meetingTimingLabel(meetingTiming)}
                           </span>
                         ) : null}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-mid)]">
-                      {row.statusLabel}
+                    <td
+                      className="px-4 py-3"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      {row.kind === "advisor_session" ? (
+                        <>
+                          <label className="sr-only" htmlFor={`status-${key}`}>
+                            Session status for {row.studentName}
+                          </label>
+                          <select
+                            id={`status-${key}`}
+                            value={sessionStatus}
+                            disabled={
+                              pendingStatusRowKey === key || isPending
+                            }
+                            onChange={(event) =>
+                              handleStatusChange(row.id, event.target.value)
+                            }
+                            className={advisorSessionStatusSelectClass(sessionStatus)}
+                            style={{ backgroundImage: SELECT_CHEVRON }}
+                            aria-label={`Session status for ${row.studentName}`}
+                          >
+                            {ADMIN_ADVISOR_SESSION_STATUS_OPTIONS.map(
+                              (option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                          {statusError ? (
+                            <div className="mt-1 max-w-[160px] text-[11px] text-[#b91c1c]">
+                              {statusError}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="text-[var(--text-mid)]">
+                          {row.statusLabel}
+                        </span>
+                      )}
                     </td>
                     <td
                       className="px-4 py-3"
@@ -346,7 +435,7 @@ export function AdvisorSessionsAndCallsTable({
                             event.target.value as LeadQualification,
                           )
                         }
-                        className={outcomeSelectClass}
+                        className={leadQualificationSelectClass(outcome)}
                         style={{ backgroundImage: SELECT_CHEVRON }}
                         aria-label={`Lead outcome for ${row.studentName}`}
                       >

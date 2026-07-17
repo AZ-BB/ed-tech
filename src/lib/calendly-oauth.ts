@@ -287,6 +287,40 @@ async function calendlyApiPost<T>(accessToken: string, path: string, body: unkno
   return data;
 }
 
+async function calendlyApiDelete(accessToken: string, path: string): Promise<void> {
+  logCalendly("api", "DELETE request", { path });
+
+  const res = await fetch(`${CALENDLY_API_BASE}${path}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    let message = `Calendly API DELETE ${path} failed (${res.status})`;
+    try {
+      const data = (await res.json()) as { message?: string; title?: string };
+      message = data.message ?? data.title ?? message;
+      logCalendlyError("api", "DELETE request failed", undefined, {
+        path,
+        status: res.status,
+        message: data.message ?? null,
+        title: data.title ?? null,
+      });
+    } catch {
+      logCalendlyError("api", "DELETE request failed", undefined, {
+        path,
+        status: res.status,
+      });
+    }
+    throw new Error(message);
+  }
+
+  logCalendly("api", "DELETE request succeeded", { path, status: res.status });
+}
+
 export async function fetchCalendlyCurrentUser(
   accessToken: string,
   tokenFallback?: CalendlyTokenIdentityFallback,
@@ -567,4 +601,192 @@ export async function getAdvisorWebhookSubscriptionUri(
   }
 
   return data?.calendly_webhook_subscription_uri?.trim() ?? null;
+}
+
+export type AdvisorCalendlyDisconnectContext = {
+  accessToken: string | null;
+  refreshToken: string | null;
+  tokenExpiresAt: string | null;
+  webhookSubscriptionUri: string | null;
+};
+
+export async function getAdvisorCalendlyDisconnectContext(
+  advisorId: string,
+): Promise<AdvisorCalendlyDisconnectContext | null> {
+  const secret = await createSupabaseSecretClient();
+  const { data, error } = await secret
+    .from("advisors")
+    .select(
+      "calendly_access_token, calendly_refresh_token, calendly_token_expires_at, calendly_webhook_subscription_uri",
+    )
+    .eq("id", advisorId)
+    .maybeSingle();
+
+  if (error) {
+    logCalendlyError("oauth", "Failed to load advisor Calendly disconnect context", error, {
+      advisorId,
+    });
+    return null;
+  }
+
+  if (!data) return null;
+
+  return {
+    accessToken: data.calendly_access_token?.trim() || null,
+    refreshToken: data.calendly_refresh_token?.trim() || null,
+    tokenExpiresAt: data.calendly_token_expires_at?.trim() || null,
+    webhookSubscriptionUri: data.calendly_webhook_subscription_uri?.trim() || null,
+  };
+}
+
+export async function resolveCalendlyAccessTokenForDisconnect(
+  ctx: AdvisorCalendlyDisconnectContext,
+): Promise<string | null> {
+  const expiresAtMs = ctx.tokenExpiresAt ? Date.parse(ctx.tokenExpiresAt) : NaN;
+  const accessStillValid =
+    Boolean(ctx.accessToken) &&
+    Number.isFinite(expiresAtMs) &&
+    expiresAtMs > Date.now() + 60_000;
+
+  if (accessStillValid && ctx.accessToken) {
+    return ctx.accessToken;
+  }
+
+  if (!ctx.refreshToken) {
+    return ctx.accessToken;
+  }
+
+  try {
+    const tokens = await refreshCalendlyAccessToken(ctx.refreshToken);
+    return tokens.access_token?.trim() || ctx.accessToken;
+  } catch (err) {
+    logCalendlyWarn("oauth", "Could not refresh access token for disconnect", {
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return ctx.accessToken;
+  }
+}
+
+export async function deleteCalendlyWebhookSubscription(
+  accessToken: string,
+  subscriptionUri: string,
+): Promise<void> {
+  const path = new URL(subscriptionUri).pathname;
+  await calendlyApiDelete(accessToken, path);
+}
+
+export async function revokeCalendlyRefreshToken(refreshToken: string): Promise<void> {
+  const config = getCalendlyOAuthConfig();
+  if (!config) {
+    throw new Error("Calendly OAuth is not configured.");
+  }
+
+  logCalendly("oauth", "Revoking Calendly refresh token");
+
+  const params = new URLSearchParams({
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    token: refreshToken,
+  });
+
+  const res = await fetch(`${CALENDLY_AUTH_BASE}/oauth/revoke`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+
+  if (!res.ok) {
+    let errorBody: { error?: string; error_description?: string } = {};
+    try {
+      errorBody = (await res.json()) as typeof errorBody;
+    } catch {
+      // ignore non-JSON body
+    }
+    const message =
+      errorBody.error_description ?? errorBody.error ?? `Token revoke failed (${res.status})`;
+    logCalendlyError("oauth", "Token revoke failed", undefined, {
+      status: res.status,
+      error: errorBody.error ?? null,
+      errorDescription: errorBody.error_description ?? null,
+    });
+    throw new Error(message);
+  }
+
+  logCalendly("oauth", "Token revoke succeeded", { status: res.status });
+}
+
+export async function clearAdvisorCalendlyConnection(advisorId: string): Promise<void> {
+  const secret = await createSupabaseSecretClient();
+  const { error } = await secret
+    .from("advisors")
+    .update({
+      calendly_access_token: null,
+      calendly_refresh_token: null,
+      calendly_token_expires_at: null,
+      calendly_user_uri: null,
+      calendly_organization_uri: null,
+      calendly_scheduling_url: null,
+      calendly_event_type_uri: null,
+      calendly_webhook_subscription_uri: null,
+      calendly_connected_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", advisorId);
+
+  if (error) {
+    logCalendlyError("oauth", "Failed to clear advisor Calendly connection", error, { advisorId });
+    throw new Error("Could not disconnect Calendly.");
+  }
+
+  logCalendly("oauth", "Cleared advisor Calendly connection", { advisorId });
+}
+
+export async function disconnectAdvisorCalendly(advisorId: string): Promise<void> {
+  logCalendly("oauth", "Disconnecting advisor Calendly", { advisorId });
+
+  const connected = await advisorHasCalendlyConnection(advisorId);
+  if (!connected) {
+    logCalendly("oauth", "Advisor Calendly already disconnected — no-op", { advisorId });
+    return;
+  }
+
+  const ctx = await getAdvisorCalendlyDisconnectContext(advisorId);
+
+  if (ctx) {
+    try {
+      const accessToken = await resolveCalendlyAccessTokenForDisconnect(ctx);
+
+      if (accessToken && ctx.webhookSubscriptionUri) {
+        try {
+          await deleteCalendlyWebhookSubscription(accessToken, ctx.webhookSubscriptionUri);
+        } catch (err) {
+          logCalendlyWarn("oauth", "Could not delete webhook subscription during disconnect", {
+            advisorId,
+            webhookSubscriptionUri: ctx.webhookSubscriptionUri,
+            err: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      if (ctx.refreshToken) {
+        try {
+          await revokeCalendlyRefreshToken(ctx.refreshToken);
+        } catch (err) {
+          logCalendlyWarn("oauth", "Could not revoke Calendly token during disconnect", {
+            advisorId,
+            err: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    } catch (err) {
+      logCalendlyWarn("oauth", "Calendly remote cleanup failed during disconnect", {
+        advisorId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  await clearAdvisorCalendlyConnection(advisorId);
+
+  logCalendly("oauth", "Advisor Calendly disconnected", { advisorId });
 }

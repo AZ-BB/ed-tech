@@ -101,3 +101,28 @@ export const ADMIN_AMBASSADOR_SESSION_STATUS_OPTIONS =
   ADMIN_AMBASSADOR_SESSION_STATUS_FILTER_OPTIONS.filter(
     (o) => o.value !== "" && o.value !== "cancelled",
   );
+
+const SESSION_STATUS_SELECT_BASE_CLASS =
+  "cursor-pointer appearance-none rounded-[8px] border bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat text-[12px] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
+
+/** Colored select styling for advisor session status dropdowns. */
+export function advisorSessionStatusSelectClass(
+  status: string,
+  size: "table" | "header" = "table",
+): string {
+  const sizeClass =
+    size === "header"
+      ? "min-w-[140px] py-[7px] pl-[10px] pr-9"
+      : "min-w-[110px] py-[6px] pl-[10px] pr-8";
+
+  switch (status) {
+    case "pending":
+      return `${SESSION_STATUS_SELECT_BASE_CLASS} ${sizeClass} border-[#fde68a] bg-[#fffbeb] text-[#b45309]`;
+    case "confirmed":
+      return `${SESSION_STATUS_SELECT_BASE_CLASS} ${sizeClass} border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]`;
+    case "completed":
+      return `${SESSION_STATUS_SELECT_BASE_CLASS} ${sizeClass} border-[#b7dfc9] bg-[#f0faf4] text-[#2D6A4F]`;
+    default:
+      return `${SESSION_STATUS_SELECT_BASE_CLASS} ${sizeClass} border-[#e0deda] bg-white text-[#4a4a4a]`;
+  }
+}

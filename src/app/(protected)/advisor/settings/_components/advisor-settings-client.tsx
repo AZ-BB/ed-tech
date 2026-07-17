@@ -1,5 +1,6 @@
 "use client";
 
+import { disconnectCalendlyAction } from "@/actions/advisor-calendly";
 import { updateAdvisorProfileAction } from "@/actions/advisor-settings";
 import type { AdvisorSettingsPagePayload } from "@/app/(protected)/advisor/settings/_lib/fetch-advisor-settings-page";
 import { CountryMultiSelectAutocomplete } from "@/app/(protected)/admin/users/_components/country-multi-select-autocomplete";
@@ -153,6 +154,7 @@ export function AdvisorSettingsClient({
   const router = useRouter();
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [calendlyDisconnecting, setCalendlyDisconnecting] = useState(false);
 
   const [specializationCountryCodes, setSpecializationCountryCodes] = useState(
     defaults.specializationCountryCodes,
@@ -286,6 +288,34 @@ export function AdvisorSettingsClient({
 
   function syncPwConfirmValue() {
     setPwConfirmValue(pwConfirmRef.current?.value ?? "");
+  }
+
+  async function handleCalendlyDisconnect() {
+    if (calendlyDisconnecting) return;
+
+    const confirmed = window.confirm(
+      "Disconnect Calendly? Students will not be able to book sessions with you until you connect again.",
+    );
+    if (!confirmed) return;
+
+    setCalendlyDisconnecting(true);
+    try {
+      const result = await disconnectCalendlyAction();
+      if (result.error) {
+        showToast(
+          typeof result.error === "string"
+            ? result.error
+            : "Could not disconnect Calendly. Please try again.",
+        );
+        return;
+      }
+      showToast("Calendly disconnected.");
+      router.refresh();
+    } catch {
+      showToast("Could not disconnect Calendly. Please try again.");
+    } finally {
+      setCalendlyDisconnecting(false);
+    }
   }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -721,6 +751,9 @@ export function AdvisorSettingsClient({
                       day: "numeric",
                     })}`
                   : ""}
+                <span className="block mt-0.5">
+                  You can disconnect to link a different Calendly account.
+                </span>
               </p>
             ) : (
               <p className="mt-1 text-[12px] text-[var(--text-light)]">
@@ -729,8 +762,13 @@ export function AdvisorSettingsClient({
             )}
           </div>
           {calendlyConnected ? (
-            <button type="button" className={btnSecondaryClass()} disabled>
-              Calendly connected
+            <button
+              type="button"
+              className={btnSecondaryClass()}
+              disabled={calendlyDisconnecting}
+              onClick={handleCalendlyDisconnect}
+            >
+              {calendlyDisconnecting ? "Disconnecting…" : "Disconnect"}
             </button>
           ) : (
             <a href="/api/integrations/calendly/setup" className={btnSecondaryClass()}>
