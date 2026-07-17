@@ -155,6 +155,8 @@ export function AdvisorSettingsClient({
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [calendlyDisconnecting, setCalendlyDisconnecting] = useState(false);
+  const [calendlyConnecting, setCalendlyConnecting] = useState(false);
+  const [calendlyError, setCalendlyError] = useState<string | null>(null);
 
   const [specializationCountryCodes, setSpecializationCountryCodes] = useState(
     defaults.specializationCountryCodes,
@@ -213,15 +215,13 @@ export function AdvisorSettingsClient({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get("calendly");
-    if (status === "connected") {
-      showToast("Calendly connected successfully.");
+    if (!status) return;
+
+    if (status === "connected" || status === "already_connected") {
       router.replace("/advisor/settings", { scroll: false });
       router.refresh();
-    } else if (status === "already_connected") {
-      showToast("Calendly is already connected.");
-      router.replace("/advisor/settings", { scroll: false });
     } else if (status === "error") {
-      showToast("Could not connect Calendly. Please try again.");
+      setCalendlyError("Could not connect Calendly. Please try again.");
       router.replace("/advisor/settings", { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for OAuth redirect
@@ -298,24 +298,31 @@ export function AdvisorSettingsClient({
     );
     if (!confirmed) return;
 
+    setCalendlyError(null);
     setCalendlyDisconnecting(true);
     try {
       const result = await disconnectCalendlyAction();
       if (result.error) {
-        showToast(
+        setCalendlyError(
           typeof result.error === "string"
             ? result.error
             : "Could not disconnect Calendly. Please try again.",
         );
         return;
       }
-      showToast("Calendly disconnected.");
       router.refresh();
     } catch {
-      showToast("Could not disconnect Calendly. Please try again.");
+      setCalendlyError("Could not disconnect Calendly. Please try again.");
     } finally {
       setCalendlyDisconnecting(false);
     }
+  }
+
+  function handleCalendlyConnect() {
+    if (calendlyConnecting) return;
+    setCalendlyError(null);
+    setCalendlyConnecting(true);
+    window.location.href = "/api/integrations/calendly/setup";
   }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -767,15 +774,45 @@ export function AdvisorSettingsClient({
               className={btnSecondaryClass()}
               disabled={calendlyDisconnecting}
               onClick={handleCalendlyDisconnect}
+              aria-busy={calendlyDisconnecting}
             >
-              {calendlyDisconnecting ? "Disconnecting…" : "Disconnect"}
+              {calendlyDisconnecting ? (
+                <>
+                  <span
+                    className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--green)]"
+                    aria-hidden
+                  />
+                  Disconnecting…
+                </>
+              ) : (
+                "Disconnect"
+              )}
             </button>
           ) : (
-            <a href="/api/integrations/calendly/setup" className={btnSecondaryClass()}>
-              Connect Calendly
-            </a>
+            <button
+              type="button"
+              className={btnSecondaryClass()}
+              disabled={calendlyConnecting}
+              onClick={handleCalendlyConnect}
+              aria-busy={calendlyConnecting}
+            >
+              {calendlyConnecting ? (
+                <>
+                  <span
+                    className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--green)]"
+                    aria-hidden
+                  />
+                  Connecting…
+                </>
+              ) : (
+                "Connect Calendly"
+              )}
+            </button>
           )}
         </div>
+        {calendlyError ? (
+          <p className="mt-3 text-[12px] font-medium text-[#E74C3C]">{calendlyError}</p>
+        ) : null}
       </SectionCard>
 
       {pwOpen ? (
