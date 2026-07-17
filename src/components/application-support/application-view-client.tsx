@@ -279,6 +279,7 @@ export function ApplicationViewClient({
   actions,
   advisorOptions = [],
   adminOptions = [],
+  initialTab = "intake",
   applicationPayouts = [],
   paymentRequestContext = null,
   intakeEdit = null,
@@ -287,7 +288,7 @@ export function ApplicationViewClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<ApplicationDetailTab>(() =>
-    resolveApplicationDetailTab(searchParams.get("tab"), config),
+    resolveApplicationDetailTab(initialTab, config),
   );
   const [status, setStatus] = useState(payload.application.status);
   const [newNoteContent, setNewNoteContent] = useState("");
@@ -369,9 +370,8 @@ export function ApplicationViewClient({
   }, [payload]);
 
   useEffect(() => {
-    const fromUrl = resolveApplicationDetailTab(searchParams.get("tab"), config);
-    setTab((current) => (current === fromUrl ? current : fromUrl));
-  }, [searchParams, config.showPayoutsTab, config.showProfileTab, config.showActivityTab]);
+    setTab(resolveApplicationDetailTab(initialTab, config));
+  }, [initialTab, config.showPayoutsTab, config.showProfileTab, config.showActivityTab]);
 
   const switchTab = useCallback(
     (next: ApplicationDetailTab) => {

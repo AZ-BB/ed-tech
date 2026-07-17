@@ -5,6 +5,8 @@ import type { UniversityTargetFormState } from "@/components/application-support
 import {
   UNIVERSITY_TARGET_DECISION_OPTIONS,
   UNIVERSITY_TARGET_STATUS_OPTIONS,
+  universityTargetDecisionSelectClass,
+  universityTargetStatusSelectClass,
 } from "@/lib/application-university-target-constants";
 import type { ApplicationUniversityTargetRow } from "@/lib/application-university-target-mapper";
 import type { UniversityCatalogSearchResult } from "@/lib/search-universities-catalog";
@@ -39,12 +41,6 @@ export type ApplicationUniversityTargetsTableActions = {
 
 export const UNIVERSITY_TARGET_SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
-
-export const universityTargetStatusSelectClass =
-  "w-[118px] max-w-[118px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_6px_center] bg-no-repeat py-1 pl-2 pr-6 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
-
-export const universityTargetDecisionSelectClass =
-  "w-[128px] max-w-[128px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_6px_center] bg-no-repeat py-1 pl-2 pr-6 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 
 const iconBtnClass =
   "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] border border-[#e0deda] bg-white text-[#4a4a4a] hover:border-[var(--green-light)] hover:bg-[var(--green-pale)] disabled:cursor-not-allowed disabled:opacity-45";
@@ -182,7 +178,7 @@ export function ApplicationUniversityTargetsTable({
                       disabled={isPending && busyTargetId === target.id}
                       onChange={(event) => handleStatusChange(target.id, event.target.value)}
                       onClick={(event) => event.stopPropagation()}
-                      className={universityTargetStatusSelectClass}
+                      className={universityTargetStatusSelectClass(target.status)}
                       style={{ backgroundImage: UNIVERSITY_TARGET_SELECT_CHEVRON }}
                       aria-label={`Status for ${target.universityName}`}
                     >
@@ -201,7 +197,7 @@ export function ApplicationUniversityTargetsTable({
                         handleDecisionChange(target.id, event.target.value)
                       }
                       onClick={(event) => event.stopPropagation()}
-                      className={universityTargetDecisionSelectClass}
+                      className={universityTargetDecisionSelectClass(target.decision)}
                       style={{ backgroundImage: UNIVERSITY_TARGET_SELECT_CHEVRON }}
                       aria-label={`Decision for ${target.universityName}`}
                     >

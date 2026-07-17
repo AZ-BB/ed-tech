@@ -209,6 +209,7 @@ function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
     statusLabel: status === "intake_draft" ? "Awaiting qualification" : "Lead",
+    sessionStatus: null,
     subtitle: plan?.name?.trim() || "Application support",
     leadQualification: resolveLeadQualification(row.lead_qualification, status),
   };
@@ -254,6 +255,7 @@ function mapPostAdmissionLeadRow(
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
     statusLabel: postAdmissionStatusLabel(status),
+    sessionStatus: null,
     subtitle: serviceLabel === "—" ? "Post-admission support" : serviceLabel,
     leadQualification: resolveLeadQualification(row.lead_qualification, status),
   };
@@ -297,6 +299,7 @@ function mapSessionRow(row: SessionRowRaw): AdvisorSessionsAndCallsRow {
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
     statusLabel: ADMIN_SESSION_STATUS_LABEL[status] ?? status,
+    sessionStatus: status,
     subtitle: helpWith ? `${destinationLabel} · ${helpWith}` : destinationLabel,
     leadQualification: parseLeadQualification(row.lead_qualification),
   };

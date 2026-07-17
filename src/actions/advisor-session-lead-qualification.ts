@@ -4,8 +4,11 @@ import { assertAdvisorAccess } from "@/lib/advisor-access";
 import {
   clearAdvisorSessionLeadQualification,
   createApplicationLeadFromAdvisorSession,
+  markAdvisorSessionNoShow,
   markAdvisorSessionNotSuitable,
+  markApplicationLeadNoShow,
   markApplicationLeadNotSuitable,
+  markPostAdmissionLeadNoShow,
   markPostAdmissionLeadNotSuitable,
   promoteApplicationIntakeDraftToLead,
   promotePostAdmissionIntakeDraftToLead,
@@ -162,6 +165,7 @@ async function clearPostAdmissionLeadQualification(
  * Update Sessions & Calls lead-outcome dropdown for any row kind.
  * - none: clear stored qualification (does not delete already-created leads)
  * - not_suitable: persist decision only (no lead created / demote draft+lead to not_suitable)
+ * - no_show: persist no-show outcome without promoting or blocking the lead
  * - good_lead: create or promote the service-specific lead
  */
 export async function updateAdvisorSessionLeadQualification(
@@ -187,7 +191,6 @@ export async function updateAdvisorSessionLeadQualification(
   }
 
   const qualification = parseLeadQualification(qualificationRaw);
-  // Ensure only none / good_lead / not_suitable are accepted (already via parse).
   leadQualificationToStored(qualification);
 
   const secret = await createSupabaseSecretClient();
@@ -204,6 +207,16 @@ export async function updateAdvisorSessionLeadQualification(
     }
     if (qualification === "not_suitable") {
       const result = await markAdvisorSessionNotSuitable(secret, {
+        sessionId: id,
+        advisorId: access.advisorId,
+        advisorName: access.advisorName,
+      });
+      if (!result.ok) return result;
+      revalidateLeadPaths({ sessionId: id });
+      return { ok: true };
+    }
+    if (qualification === "no_show") {
+      const result = await markAdvisorSessionNoShow(secret, {
         sessionId: id,
         advisorId: access.advisorId,
         advisorName: access.advisorName,
@@ -239,6 +252,16 @@ export async function updateAdvisorSessionLeadQualification(
       revalidateLeadPaths({ applicationId: id });
       return { ok: true };
     }
+    if (qualification === "no_show") {
+      const result = await markApplicationLeadNoShow(secret, {
+        applicationId: id,
+        advisorId: access.advisorId,
+        advisorName: access.advisorName,
+      });
+      if (!result.ok) return result;
+      revalidateLeadPaths({ applicationId: id });
+      return { ok: true };
+    }
     const result = await promoteApplicationIntakeDraftToLead(secret, {
       applicationId: id,
       advisorId: access.advisorId,
@@ -258,6 +281,16 @@ export async function updateAdvisorSessionLeadQualification(
   }
   if (qualification === "not_suitable") {
     const result = await markPostAdmissionLeadNotSuitable(secret, {
+      caseId: id,
+      advisorId: access.advisorId,
+      advisorName: access.advisorName,
+    });
+    if (!result.ok) return result;
+    revalidateLeadPaths({ caseId: id });
+    return { ok: true };
+  }
+  if (qualification === "no_show") {
+    const result = await markPostAdmissionLeadNoShow(secret, {
       caseId: id,
       advisorId: access.advisorId,
       advisorName: access.advisorName,

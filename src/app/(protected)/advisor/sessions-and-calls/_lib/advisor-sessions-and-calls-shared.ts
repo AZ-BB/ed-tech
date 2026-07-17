@@ -14,6 +14,8 @@ export type AdvisorSessionsAndCallsRow = {
   meetingAt: string;
   isOverdue: boolean;
   statusLabel: string;
+  /** Raw advisor session status (advisor_session rows only). */
+  sessionStatus: string | null;
   subtitle: string;
   /** Advisor lead-outcome dropdown value (None / Good lead / Not suitable). */
   leadQualification: LeadQualification;

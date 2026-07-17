@@ -207,6 +207,57 @@ export async function markApplicationLeadNotSuitable(
   return { ok: true };
 }
 
+/** Record that the student did not attend without changing application status. */
+export async function markApplicationLeadNoShow(
+  secret: SecretClient,
+  input: {
+    applicationId: number;
+    advisorId: string;
+    advisorName: string;
+  },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const now = new Date().toISOString();
+  const { data: existing, error: fetchErr } = await secret
+    .from("applications")
+    .select("id, student_id, assigned_to")
+    .eq("id", input.applicationId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    return { ok: false, error: "Application not found." };
+  }
+  if (existing.assigned_to !== input.advisorId) {
+    return { ok: false, error: "You do not have access to this application." };
+  }
+
+  const { error: updateErr } = await secret
+    .from("applications")
+    .update({
+      lead_qualification: "no_show",
+      lead_qualified_at: now,
+      updated_at: now,
+    })
+    .eq("id", existing.id);
+
+  if (updateErr) {
+    console.error("[markApplicationLeadNoShow]", updateErr);
+    return { ok: false, error: "Could not update lead qualification." };
+  }
+
+  await secret.from("acitivity_logs").insert({
+    entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
+    entity_id: applicationActivityEntityId(existing.id),
+    action: "application_lead_marked_no_show",
+    message: `${input.advisorName} marked application #${existing.id} as No show.`,
+    created_by_type: "admin",
+    admin_id: null,
+    school_admin_id: null,
+    student_id: existing.student_id,
+  });
+
+  return { ok: true };
+}
+
 export async function promotePostAdmissionIntakeDraftToLead(
   secret: SecretClient,
   input: {
@@ -334,6 +385,56 @@ export async function markPostAdmissionLeadNotSuitable(
     entity_id: postAdmissionActivityEntityId(existing.id),
     action: "post_admission_lead_marked_not_suitable",
     message: `${input.advisorName} marked post-admission case #${existing.id} as Not suitable.`,
+    created_by_type: "admin",
+    admin_id: null,
+    school_admin_id: null,
+    student_id: existing.student_id,
+  });
+
+  return { ok: true };
+}
+
+export async function markPostAdmissionLeadNoShow(
+  secret: SecretClient,
+  input: {
+    caseId: number;
+    advisorId: string;
+    advisorName: string;
+  },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const now = new Date().toISOString();
+  const { data: existing, error: fetchErr } = await secret
+    .from("post_admission_cases")
+    .select("id, student_id, assigned_to")
+    .eq("id", input.caseId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    return { ok: false, error: "Post-admission case not found." };
+  }
+  if (existing.assigned_to !== input.advisorId) {
+    return { ok: false, error: "You do not have access to this case." };
+  }
+
+  const { error: updateErr } = await secret
+    .from("post_admission_cases")
+    .update({
+      lead_qualification: "no_show",
+      lead_qualified_at: now,
+      updated_at: now,
+    })
+    .eq("id", existing.id);
+
+  if (updateErr) {
+    console.error("[markPostAdmissionLeadNoShow]", updateErr);
+    return { ok: false, error: "Could not update lead qualification." };
+  }
+
+  await secret.from("acitivity_logs").insert({
+    entitiy_type: POST_ADMISSION_ACTIVITY_ENTITY_TYPE,
+    entity_id: postAdmissionActivityEntityId(existing.id),
+    action: "post_admission_lead_marked_no_show",
+    message: `${input.advisorName} marked post-admission case #${existing.id} as No show.`,
     created_by_type: "admin",
     admin_id: null,
     school_admin_id: null,
@@ -646,6 +747,56 @@ export async function markAdvisorSessionNotSuitable(
     entity_id: input.advisorId,
     action: "advisor_session_marked_not_suitable",
     message: `${input.advisorName} marked advisor session #${session.id} as Not suitable.`,
+    created_by_type: "admin",
+    admin_id: null,
+    school_admin_id: null,
+    student_id: session.student_id,
+  });
+
+  return { ok: true };
+}
+
+export async function markAdvisorSessionNoShow(
+  secret: SecretClient,
+  input: {
+    sessionId: number;
+    advisorId: string;
+    advisorName: string;
+  },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const now = new Date().toISOString();
+  const { data: session, error: fetchErr } = await secret
+    .from("advisor_sessions")
+    .select("id, advisor_id, student_id")
+    .eq("id", input.sessionId)
+    .maybeSingle();
+
+  if (fetchErr || !session) {
+    return { ok: false, error: "Session not found." };
+  }
+  if (session.advisor_id !== input.advisorId) {
+    return { ok: false, error: "You do not have access to this session." };
+  }
+
+  const { error: updateErr } = await secret
+    .from("advisor_sessions")
+    .update({
+      lead_qualification: "no_show",
+      lead_qualified_at: now,
+      updated_at: now,
+    })
+    .eq("id", session.id);
+
+  if (updateErr) {
+    console.error("[markAdvisorSessionNoShow]", updateErr);
+    return { ok: false, error: "Could not update lead qualification." };
+  }
+
+  await secret.from("acitivity_logs").insert({
+    entitiy_type: "advisor",
+    entity_id: input.advisorId,
+    action: "advisor_session_marked_no_show",
+    message: `${input.advisorName} marked advisor session #${session.id} as No show.`,
     created_by_type: "admin",
     admin_id: null,
     school_admin_id: null,

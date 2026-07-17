@@ -5,6 +5,11 @@ import Link from "next/link";
 import { format } from "date-fns";
 
 import { fetchAdvisorDashboardMonthSessionsAndCalls } from "@/actions/advisor-dashboard-calendar";
+import {
+  getMeetingTiming,
+  meetingTimingClass,
+  meetingTimingLabel,
+} from "@/lib/meeting-overdue";
 import type { AdvisorSessionsAndCallsRow } from "../sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 import {
   advisorSessionsAndCallsKindLabel,
@@ -319,7 +324,9 @@ export function AdvisorDashboardCallsCalendar({
             No calls or sessions scheduled for this day
           </div>
         ) : (
-          selectedRows.map((row) => (
+          selectedRows.map((row) => {
+            const meetingTiming = getMeetingTiming(row.meetingAt);
+            return (
             <Link
               key={`${row.kind}-${row.id}`}
               href={advisorSessionsAndCallsRowHref(row.kind, row.id)}
@@ -329,9 +336,9 @@ export function AdvisorDashboardCallsCalendar({
                 <div className="text-[12px] font-bold text-[#1B4332]">
                   {formatMeetingTime(row.meetingAt)}
                 </div>
-                {row.isOverdue ? (
-                  <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#d97706]">
-                    Overdue
+                {meetingTiming ? (
+                  <div className={meetingTimingClass(meetingTiming)}>
+                    {meetingTimingLabel(meetingTiming)}
                   </div>
                 ) : null}
               </div>
@@ -344,7 +351,8 @@ export function AdvisorDashboardCallsCalendar({
                 </div>
               </div>
             </Link>
-          ))
+            );
+          })
         )}
       </div>
     </div>

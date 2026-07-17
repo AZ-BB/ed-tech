@@ -6,8 +6,13 @@ import {
   ADMIN_ADVISOR_SESSION_STATUS_OPTIONS,
   ADMIN_SESSION_STATUS_LABEL,
   adminSessionStatusPillClass,
+  advisorSessionStatusSelectClass,
 } from "@/app/(protected)/admin/sessions/_lib/session-status-labels";
-import { isMeetingOverdue } from "@/lib/meeting-overdue";
+import {
+  getMeetingTiming,
+  meetingTimingClass,
+  meetingTimingLabel,
+} from "@/lib/meeting-overdue";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -16,9 +21,6 @@ import type { AdvisorSessionDetailPayload } from "../_lib/fetch-advisor-session-
 
 const SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
-
-const headerSelectClass =
-  "min-w-[140px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat py-[7px] pl-[10px] pr-9 text-[12px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -59,7 +61,7 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
   const [isPending, startTransition] = useTransition();
 
   const { student, school } = payload;
-  const isOverdue = isMeetingOverdue(payload.bookedAt);
+  const meetingTiming = getMeetingTiming(payload.bookedAt);
   const statusLabel = ADMIN_SESSION_STATUS_LABEL[status] ?? status.replace(/_/g, " ");
 
   useEffect(() => {
@@ -104,7 +106,7 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
             value={status}
             disabled={isPending}
             onChange={(event) => handleStatusChange(event.target.value)}
-            className={headerSelectClass}
+            className={advisorSessionStatusSelectClass(status, "header")}
             style={{ backgroundImage: SELECT_CHEVRON }}
             aria-label="Session status"
           >
@@ -137,10 +139,9 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
             >
               {statusLabel}
             </span>
-            {isOverdue ? (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#d97706]">
-                <span className="h-[7px] w-[7px] rounded-full bg-[#d97706]" aria-hidden />
-                Overdue
+            {meetingTiming ? (
+              <span className={meetingTimingClass(meetingTiming)}>
+                {meetingTimingLabel(meetingTiming)}
               </span>
             ) : null}
           </div>
