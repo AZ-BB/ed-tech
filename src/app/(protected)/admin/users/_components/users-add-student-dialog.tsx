@@ -1,11 +1,16 @@
 "use client";
 
 import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
-import { createAdminStudentInvite } from "@/actions/admin-students";
+import {
+  createAdminStudentInvite,
+  fetchAdminStudentFormCountries,
+  type AdminCountryOption,
+} from "@/actions/admin-students";
 import { fetchAdminSchoolsForStudentImport } from "@/actions/admin-users";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { StudentFeatureAccessFields } from "./student-feature-access-fields";
 
 type UsersAddStudentDialogProps = {
   open: boolean;
@@ -18,6 +23,9 @@ type SchoolOption = {
   id: string;
   name: string;
 };
+
+/** Sentinel value for independent (no-school) students in the school select. */
+const INDEPENDENT_SCHOOL_VALUE = "__independent__";
 
 const inputClassName =
   "w-full rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C]";
@@ -33,9 +41,15 @@ export function UsersAddStudentDialog({
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingSchools, setIsLoadingSchools] = useState(false);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
+  const [countries, setCountries] = useState<AdminCountryOption[]>([]);
+  const [schoolChoice, setSchoolChoice] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successIndependent, setSuccessIndependent] = useState(false);
+
+  const isIndependent = !fixedSchoolId && schoolChoice === INDEPENDENT_SCHOOL_VALUE;
 
   useEffect(() => {
     if (!open || fixedSchoolId) return;
@@ -43,6 +57,7 @@ export function UsersAddStudentDialog({
     let cancelled = false;
     setIsLoadingSchools(true);
     setError(null);
+    setSchoolChoice("");
 
     void fetchAdminSchoolsForStudentImport().then((result) => {
       if (cancelled) return;
@@ -60,22 +75,57 @@ export function UsersAddStudentDialog({
     };
   }, [open, fixedSchoolId]);
 
+  useEffect(() => {
+    if (!open || !isIndependent) return;
+
+    let cancelled = false;
+    setIsLoadingCountries(true);
+
+    void fetchAdminStudentFormCountries().then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setError(result.error);
+        setCountries([]);
+      } else {
+        setCountries(result.countries);
+      }
+      setIsLoadingCountries(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isIndependent]);
+
   if (!open) return null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    // Independent path: empty schoolId so the server branches to direct provision.
+    if (isIndependent) {
+      formData.set("schoolId", "");
+    }
+
+    const createdIndependent = isIndependent;
 
     await runAdminFormSubmit(
       {
         setSubmitting: setIsSubmitting,
         setError,
-        onBeforeSubmit: () => setSuccess(false),
+        onBeforeSubmit: () => {
+          setSuccess(false);
+          setSuccessIndependent(false);
+        },
       },
-      () => createAdminStudentInvite(new FormData(form)),
+      () => createAdminStudentInvite(formData),
       () => {
         setSuccess(true);
+        setSuccessIndependent(createdIndependent);
         form.reset();
+        setSchoolChoice("");
         router.refresh();
       },
     );
@@ -84,8 +134,16 @@ export function UsersAddStudentDialog({
   function handleClose() {
     setError(null);
     setSuccess(false);
+    setSuccessIndependent(false);
+    setSchoolChoice("");
     onClose();
   }
+
+  const description = fixedSchoolId
+    ? "Invite a student to this school. They will appear as a pending invite until they sign up with this email."
+    : isIndependent
+      ? "Create an independent student account with no school. Login credentials are emailed immediately."
+      : "Invite a student to a school (pending until they sign up), or create an independent student with no school.";
 
   return (
     <div
@@ -96,16 +154,13 @@ export function UsersAddStudentDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="users-add-student-title"
-        className="w-full max-w-lg rounded-[12px] border border-[#e0deda] bg-white p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[12px] border border-[#e0deda] bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="users-add-student-title" className="text-[18px] font-semibold text-[#1a1a1a]">
           Add Student
         </h2>
-        <p className="mt-2 text-[13px] text-[#666]">
-          Invite a student to a school. They will appear as a pending invite until they sign up
-          with this email.
-        </p>
+        <p className="mt-2 text-[13px] text-[#666]">{description}</p>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
           {fixedSchoolId ? (
@@ -125,12 +180,14 @@ export function UsersAddStudentDialog({
                 name="schoolId"
                 required
                 disabled={isLoadingSchools || isSubmitting}
-                defaultValue=""
+                value={schoolChoice}
+                onChange={(e) => setSchoolChoice(e.target.value)}
                 className={`${inputClassName} cursor-pointer disabled:opacity-60`}
               >
                 <option value="">
                   {isLoadingSchools ? "Loading schools…" : "Select a school"}
                 </option>
+                <option value={INDEPENDENT_SCHOOL_VALUE}>No school (independent)</option>
                 {schools.map((school) => (
                   <option key={school.id} value={school.id}>
                     {school.name}
@@ -139,6 +196,35 @@ export function UsersAddStudentDialog({
               </select>
             </div>
           )}
+
+          {isIndependent ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="add-student-first-name" className={labelClassName}>
+                  First name
+                </label>
+                <input
+                  id="add-student-first-name"
+                  name="firstName"
+                  type="text"
+                  required
+                  className={inputClassName}
+                />
+              </div>
+              <div>
+                <label htmlFor="add-student-last-name" className={labelClassName}>
+                  Last name
+                </label>
+                <input
+                  id="add-student-last-name"
+                  name="lastName"
+                  type="text"
+                  required
+                  className={inputClassName}
+                />
+              </div>
+            </div>
+          ) : null}
 
           <div>
             <label htmlFor="add-student-email" className={labelClassName}>
@@ -174,9 +260,58 @@ export function UsersAddStudentDialog({
             </select>
           </div>
 
+          {isIndependent ? (
+            <>
+              <div>
+                <label htmlFor="add-student-nationality" className={labelClassName}>
+                  Nationality
+                </label>
+                <select
+                  id="add-student-nationality"
+                  name="nationalityCountryCode"
+                  required
+                  disabled={isLoadingCountries || isSubmitting}
+                  defaultValue=""
+                  className={`${inputClassName} cursor-pointer disabled:opacity-60`}
+                >
+                  <option value="">
+                    {isLoadingCountries ? "Loading countries…" : "Select nationality"}
+                  </option>
+                  {countries.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="add-student-password" className={labelClassName}>
+                  Password
+                </label>
+                <input
+                  id="add-student-password"
+                  name="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className={inputClassName}
+                />
+                <p className="mt-1 text-[11px] text-[#888]">
+                  Minimum 8 characters. Credentials are emailed to the student.
+                </p>
+              </div>
+              <StudentFeatureAccessFields />
+            </>
+          ) : null}
+
           {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
           {success ? (
-            <p className="text-[13px] text-[#2D6A4F]">Student invite created successfully.</p>
+            <p className="text-[13px] text-[#2D6A4F]">
+              {successIndependent
+                ? "Independent student account created successfully."
+                : "Student invite created successfully."}
+            </p>
           ) : null}
 
           <div className="flex justify-end gap-2">
@@ -189,10 +324,20 @@ export function UsersAddStudentDialog({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || (!fixedSchoolId && isLoadingSchools)}
+              disabled={
+                isSubmitting ||
+                (!fixedSchoolId && isLoadingSchools) ||
+                (isIndependent && isLoadingCountries)
+              }
               className="rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
             >
-              {isSubmitting ? "Adding…" : "Add Student"}
+              {isSubmitting
+                ? isIndependent
+                  ? "Creating…"
+                  : "Adding…"
+                : isIndependent
+                  ? "Create Student"
+                  : "Add Student"}
             </button>
           </div>
         </form>

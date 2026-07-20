@@ -23,7 +23,8 @@ export type AdminStudentSchoolInfo = {
 };
 
 export type AdminStudentDetailPayload = SchoolStudentDetailPayload & {
-  schoolInfo: AdminStudentSchoolInfo;
+  /** Null for independent (no-school) students. */
+  schoolInfo: AdminStudentSchoolInfo | null;
 };
 
 async function assertAdminAccess() {
@@ -61,9 +62,17 @@ export async function fetchAdminStudentDetail(
     .eq("id", studentId)
     .maybeSingle();
 
-  if (profileError || !profile?.school_id) {
+  if (profileError || !profile) {
     console.error("[fetchAdminStudentDetail] student_profiles", profileError);
     return null;
+  }
+
+  // Independent student — no school card.
+  if (!profile.school_id) {
+    return {
+      ...base,
+      schoolInfo: null,
+    };
   }
 
   const schoolId = profile.school_id;

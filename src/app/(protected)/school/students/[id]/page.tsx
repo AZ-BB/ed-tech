@@ -86,9 +86,11 @@ export default async function SchoolStudentDetailPage({
   const tabParam = typeof sp.tab === "string" ? sp.tab : "";
   const initialTab = parseStudentDetailInitialTab(tabParam);
 
-  const teacherOptions = await fetchSchoolTeacherOptions(payload.student.schoolId, {
-    includeTeacherId: payload.student.teacherId,
-  });
+  const teacherOptions = payload.student.schoolId
+    ? await fetchSchoolTeacherOptions(payload.student.schoolId, {
+        includeTeacherId: payload.student.teacherId,
+      })
+    : [];
 
   return (
     <SchoolStudentViewClient

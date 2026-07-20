@@ -13,6 +13,10 @@ import {
   studentApplicationProfileRowToCompletionInput,
 } from "@/lib/student-application-profile-completion";
 import { teacherNameFromEmbed } from "@/lib/student-teacher-assignment";
+import {
+  parseStudentFeatureAccess,
+  type StudentFeatureAccess,
+} from "@/lib/student-feature-access";
 import { netSessionCreditsByKindFromRows } from "@/app/(protected)/school/settings/_lib/net-session-credits-used";
 import {
   createSupabaseSecretClient,
@@ -73,9 +77,10 @@ export type SchoolStudentDetailPayload = {
     nationalityCountryCode: string | null;
     isActive: boolean;
     avatarUrl: string | null;
-    schoolId: string;
+    schoolId: string | null;
     teacherId: string | null;
     teacherName: string | null;
+    featureAccess: StudentFeatureAccess;
   };
   applicationProfile:
     | Database["public"]["Tables"]["student_application_profile"]["Row"]
@@ -180,6 +185,7 @@ export async function fetchSchoolStudentDetail(
       signup_advisor_credit_limit,
       signup_ambassador_credit_limit,
       total_logins,
+      feature_access,
       schools (
         name,
         credit_pool
@@ -205,7 +211,7 @@ export async function fetchSchoolStudentDetail(
     ? (schoolsEmbedRaw[0] ?? null)
     : schoolsEmbedRaw;
   const countriesEmbed = profile.countries as { name?: string } | null;
-  const schoolName = schoolsEmbed?.name?.trim() || "School";
+  const schoolName = schoolsEmbed?.name?.trim() || (profile.school_id ? "School" : "Independent");
   const teacherEmbedRaw = profile.school_admin_profiles as
     | { first_name: string | null; last_name: string | null; email: string | null }
     | { first_name: string | null; last_name: string | null; email: string | null }[]
@@ -626,6 +632,7 @@ export async function fetchSchoolStudentDetail(
       schoolId: profile.school_id,
       teacherId: profile.teacher_id,
       teacherName,
+      featureAccess: parseStudentFeatureAccess(profile.feature_access),
     },
     applicationProfile: app,
     quickStats: {

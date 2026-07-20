@@ -57,7 +57,7 @@ export async function recordStudentCreditAssignments(
   secret: SecretClient,
   input: {
     studentId: string;
-    schoolId: string;
+    schoolId: string | null;
     advisorToAdd: number;
     ambassadorToAdd: number;
     actor: StudentCreditAssignmentActor;
@@ -67,7 +67,7 @@ export async function recordStudentCreditAssignments(
   const now = new Date().toISOString();
   const inserts: Array<{
     student_id: string;
-    school_id: string;
+    school_id: string | null;
     amount: number;
     type: "advisor" | "ambassador";
     status: "added";

@@ -14,6 +14,12 @@ import {
 import { ArrowForwardIcon } from "../_components/directional-icons";
 import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
+import {
+  QUICK_ACTION_TO_FEATURE,
+  defaultStudentFeatureAccess,
+  isStudentFeatureEnabled,
+  type StudentFeatureAccess,
+} from "@/lib/student-feature-access";
 
 /** Student dashboard only: maps stored log copy to second-person. Does not change DB values. */
 function formatActivityLogMessageForStudent(message: string): string {
@@ -222,6 +228,8 @@ type StudentDashboardProps = {
   openTaskCount: number;
   essaysReviewedCount: number;
   aiMatchesGeneratedCount: number;
+  hasSchoolLinked?: boolean;
+  featureAccess?: StudentFeatureAccess;
 };
 
 export function StudentDashboard({
@@ -236,6 +244,8 @@ export function StudentDashboard({
   openTaskCount,
   essaysReviewedCount,
   aiMatchesGeneratedCount,
+  hasSchoolLinked = true,
+  featureAccess = defaultStudentFeatureAccess(true),
 }: StudentDashboardProps) {
   const { locale, dict } = useLocale();
   const d = dict.student.dashboard;
@@ -294,23 +304,25 @@ export function StudentDashboard({
             </div>
           </div>
 
-          <div className="mt-3.5 flex flex-col gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-6">
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-[var(--text)]">
-                {d.myApplicationsTitle}
-              </h2>
-              <p className="mt-1 max-w-xl text-[13px] leading-snug text-[var(--text-light)]">
-                {d.myApplicationsDesc}
-              </p>
+          {hasSchoolLinked ? (
+            <div className="mt-3.5 flex flex-col gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-6">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-[var(--text)]">
+                  {d.myApplicationsTitle}
+                </h2>
+                <p className="mt-1 max-w-xl text-[13px] leading-snug text-[var(--text-light)]">
+                  {d.myApplicationsDesc}
+                </p>
+              </div>
+              <Link
+                href="/student/my-applications"
+                className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[var(--green)] px-6 py-3 text-[13px] font-semibold text-white no-underline transition-all hover:bg-[var(--green-dark)] hover:-translate-y-px sm:self-center"
+              >
+                {d.myApplicationsCta}
+                <ArrowForwardIcon size={16} />
+              </Link>
             </div>
-            <Link
-              href="/student/my-applications"
-              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[var(--green)] px-6 py-3 text-[13px] font-semibold text-white no-underline transition-all hover:bg-[var(--green-dark)] hover:-translate-y-px sm:self-center"
-            >
-              {d.myApplicationsCta}
-              <ArrowForwardIcon size={16} />
-            </Link>
-          </div>
+          ) : null}
         </div>
 
         <div className="hidden rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 min-[801px]:block">
@@ -319,7 +331,7 @@ export function StudentDashboard({
             locale={locale}
             emptyLabel={d.noAnnouncements}
             titleLabel={d.announcements}
-            openTaskCount={openTaskCount}
+            openTaskCount={hasSchoolLinked ? openTaskCount : 0}
             oneTaskLabel={d.oneTaskToComplete}
             tasksLabel={d.tasksToComplete.replace("{count}", String(openTaskCount))}
             viewTasksLabel={d.viewTasks}
@@ -334,14 +346,24 @@ export function StudentDashboard({
         <div className="grid w-full min-w-0 grid-cols-4 auto-rows-fr gap-3 max-[800px]:grid-cols-1 max-[800px]:auto-rows-auto sm:max-[800px]:grid-cols-2">
           {quickActions.map((action) => {
             const actionCopy = d.quickActionsItems[action.dictKey];
-            return (
-            <Link
-              key={action.dictKey}
-              href={action.href}
-              scroll={false}
-              className="block h-full min-w-0 text-inherit no-underline"
-            >
-              <div className="flex h-full min-h-[88px] min-w-0 cursor-pointer items-start gap-3.5 rounded-2xl border border-[var(--border-light)] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+            const featureKey = QUICK_ACTION_TO_FEATURE[action.dictKey];
+            const disabled =
+              featureKey != null &&
+              !isStudentFeatureEnabled(featureAccess, featureKey);
+            const card = (
+              <div
+                className={`flex h-full min-h-[88px] min-w-0 items-start gap-3.5 rounded-2xl border border-[var(--border-light)] bg-white p-5 transition-all ${
+                  disabled
+                    ? "cursor-not-allowed opacity-45"
+                    : "cursor-pointer hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
+                }`}
+                aria-disabled={disabled || undefined}
+                title={
+                  disabled
+                    ? "This feature is not available on your account"
+                    : undefined
+                }
+              >
                 <div
                   className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl ${action.iconWrap}`}
                 >
@@ -357,15 +379,33 @@ export function StudentDashboard({
                     {action.icon}
                   </svg>
                 </div>
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div className="mb-0.5 line-clamp-1 text-sm font-semibold">
+                <div className="min-w-0">
+                  <div className="text-[13.5px] font-semibold text-[var(--text)]">
                     {actionCopy.name}
                   </div>
-                  <div className="line-clamp-2 text-[11px] leading-snug text-[var(--text-light)]">
+                  <div className="mt-0.5 text-[12px] leading-snug text-[var(--text-light)]">
                     {actionCopy.desc}
                   </div>
                 </div>
               </div>
+            );
+
+            if (disabled) {
+              return (
+                <div key={action.dictKey} className="block h-full min-w-0">
+                  {card}
+                </div>
+              );
+            }
+
+            return (
+            <Link
+              key={action.dictKey}
+              href={action.href}
+              scroll={false}
+              className="block h-full min-w-0 text-inherit no-underline"
+            >
+              {card}
             </Link>
             );
           })}
@@ -457,7 +497,7 @@ export function StudentDashboard({
             locale={locale}
             emptyLabel={d.noAnnouncements}
             titleLabel={d.announcements}
-            openTaskCount={openTaskCount}
+            openTaskCount={hasSchoolLinked ? openTaskCount : 0}
             oneTaskLabel={d.oneTaskToComplete}
             tasksLabel={d.tasksToComplete.replace("{count}", String(openTaskCount))}
             viewTasksLabel={d.viewTasks}

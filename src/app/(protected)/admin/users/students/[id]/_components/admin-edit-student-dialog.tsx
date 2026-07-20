@@ -10,8 +10,11 @@ import {
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import type { SchoolTeacherOption } from "@/lib/fetch-school-teacher-options";
 import { STUDENT_TEACHER_UNASSIGNED_FILTER } from "@/lib/student-teacher-assignment";
+import type { StudentFeatureAccess } from "@/lib/student-feature-access";
+import { defaultStudentFeatureAccess } from "@/lib/student-feature-access";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { StudentFeatureAccessFields } from "@/app/(protected)/admin/users/_components/student-feature-access-fields";
 
 export type AdminEditStudentDialogProps = {
   open: boolean;
@@ -23,8 +26,9 @@ export type AdminEditStudentDialogProps = {
     phone: string;
     grade: string;
     nationalityCountryCode: string;
-    schoolId: string;
+    schoolId: string | null;
     teacherId: string | null;
+    featureAccess?: StudentFeatureAccess;
   };
   onClose: () => void;
 };
@@ -47,6 +51,7 @@ export function AdminEditStudentDialog({
   const [teachers, setTeachers] = useState<SchoolTeacherOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const hasSchool = Boolean(defaults.schoolId);
 
   useEffect(() => {
     if (!open) return;
@@ -56,9 +61,13 @@ export function AdminEditStudentDialog({
     setError(null);
     setSuccess(false);
 
+    const teachersPromise = hasSchool && defaults.schoolId
+      ? fetchAdminStudentFormTeachers(defaults.schoolId, defaults.teacherId)
+      : Promise.resolve({ ok: true as const, teachers: [] as SchoolTeacherOption[] });
+
     void Promise.all([
       fetchAdminStudentFormCountries(),
-      fetchAdminStudentFormTeachers(defaults.schoolId, defaults.teacherId),
+      teachersPromise,
     ]).then(([countriesResult, teachersResult]) => {
       if (cancelled) return;
       if (!countriesResult.ok) {
@@ -79,7 +88,7 @@ export function AdminEditStudentDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, defaults.schoolId, defaults.teacherId]);
+  }, [open, defaults.schoolId, defaults.teacherId, hasSchool]);
 
   if (!open) return null;
 
@@ -226,25 +235,35 @@ export function AdminEditStudentDialog({
             </select>
           </div>
 
-          <div>
-            <label htmlFor="edit-student-teacher" className={labelClassName}>
-              Teacher
-            </label>
-            <select
-              id="edit-student-teacher"
-              name="teacherId"
-              disabled={isLoadingFormOptions || isSubmitting}
-              defaultValue={defaults.teacherId ?? STUDENT_TEACHER_UNASSIGNED_FILTER}
-              className={`${inputClassName} cursor-pointer disabled:opacity-60`}
-            >
-              <option value={STUDENT_TEACHER_UNASSIGNED_FILTER}>Unassigned</option>
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {hasSchool ? (
+            <div>
+              <label htmlFor="edit-student-teacher" className={labelClassName}>
+                Teacher
+              </label>
+              <select
+                id="edit-student-teacher"
+                name="teacherId"
+                disabled={isLoadingFormOptions || isSubmitting}
+                defaultValue={defaults.teacherId ?? STUDENT_TEACHER_UNASSIGNED_FILTER}
+                className={`${inputClassName} cursor-pointer disabled:opacity-60`}
+              >
+                <option value={STUDENT_TEACHER_UNASSIGNED_FILTER}>Unassigned</option>
+                {teachers.map((teacher) => (
+                  <option key={teacher.id} value={teacher.id}>
+                    {teacher.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <input type="hidden" name="teacherId" value={STUDENT_TEACHER_UNASSIGNED_FILTER} />
+          )}
+
+          <StudentFeatureAccessFields
+            key={`${studentId}-${open ? "open" : "closed"}`}
+            defaults={defaults.featureAccess ?? defaultStudentFeatureAccess(true)}
+            disabled={isSubmitting}
+          />
 
           {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
           {success ? (

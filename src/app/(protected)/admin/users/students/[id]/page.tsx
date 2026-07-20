@@ -269,9 +269,11 @@ export default async function AdminStudentDetailPage({
 
             nationalityCountryCode: student.nationalityCountryCode ?? "",
 
-            schoolId: schoolInfo.id,
+            schoolId: student.schoolId,
 
             teacherId: student.teacherId,
+
+            featureAccess: student.featureAccess,
 
           }}
 

@@ -69,6 +69,7 @@ async function fetchCountsBySchool(
 
   const counts = new Map<string, number>();
   for (const row of data ?? []) {
+    if (!row.school_id) continue;
     counts.set(row.school_id, (counts.get(row.school_id) ?? 0) + 1);
   }
 

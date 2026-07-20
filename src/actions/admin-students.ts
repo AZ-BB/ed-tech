@@ -1,11 +1,15 @@
 "use server";
 
 import { importStudentsFromRecords } from "@/lib/admin-student-import";
+import { isResendConfigured } from "@/lib/resend/config";
 import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
+import { sendStaffCredentialsEmailOrRollback } from "@/lib/staff-credentials-email";
 import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
 import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
 import { parseStudentTeacherAssignParam } from "@/lib/student-teacher-assignment";
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
+import { parseFeatureAccessFromFormData } from "@/lib/student-feature-access";
+import { provisionIndependentStudent } from "@/lib/provision-independent-student";
 import type { Database } from "@/database.types";
 import type { GeneralResponse } from "@/utils/response";
 import {
@@ -48,6 +52,68 @@ async function assertAdminAccess() {
   return { ok: true as const, userId: user.id };
 }
 
+/**
+ * Platform-provisioned student with no school. Creates auth user + profile
+ * immediately and emails login credentials.
+ */
+export async function createAdminIndependentStudent(
+  formData: FormData,
+): Promise<CreateAdminStudentResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const grade = String(formData.get("grade") ?? "").trim();
+  const nationalityCountryCode = String(
+    formData.get("nationalityCountryCode") ?? "",
+  ).trim();
+  const password = String(formData.get("password") ?? "");
+  const featureAccess = parseFeatureAccessFromFormData(formData);
+
+  if (!isResendConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL before creating students.",
+    };
+  }
+
+  const provisioned = await provisionIndependentStudent({
+    firstName,
+    lastName,
+    email,
+    grade,
+    nationalityCountryCode,
+    password,
+    featureAccess,
+  });
+
+  if (!provisioned.ok) {
+    return { ok: false, error: provisioned.error };
+  }
+
+  const service = await createSupabaseSecretClient();
+  const emailResult = await sendStaffCredentialsEmailOrRollback({
+    supabase: service,
+    userId: provisioned.studentId,
+    profileTable: "student_profiles",
+    to: provisioned.email,
+    firstName: provisioned.firstName,
+    email: provisioned.email,
+    password: provisioned.password,
+  });
+
+  if ("error" in emailResult) {
+    return { ok: false, error: emailResult.error };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/users/students");
+  return { ok: true };
+}
+
 export async function createAdminStudentInvite(
   formData: FormData,
 ): Promise<CreateAdminStudentResult> {
@@ -55,12 +121,14 @@ export async function createAdminStudentInvite(
   if (!access.ok) return access;
 
   const schoolId = String(formData.get("schoolId") ?? "").trim();
+
+  // Empty school → provision an independent student account directly.
+  if (!schoolId) {
+    return createAdminIndependentStudent(formData);
+  }
+
   const email = String(formData.get("email") ?? "").trim();
   const grade = String(formData.get("grade") ?? "").trim();
-
-  if (!schoolId) {
-    return { ok: false, error: "Select a school." };
-  }
 
   if (!email) {
     return { ok: false, error: "Enter a student email address." };
@@ -167,7 +235,7 @@ export async function updateAdminStudentCreditLimits(
     return { data: null, error: "Could not verify this student." };
   }
 
-  if (!studentProfile?.school_id) {
+  if (!studentProfile) {
     return { data: null, error: "That student was not found." };
   }
 
@@ -189,12 +257,18 @@ export async function updateAdminStudentCreditLimits(
       (studentProfile.ambassador_credit_limit ?? 0) + ambassadorToAdd;
   }
 
-  const { data: updated, error: updateError } = await secret
+  let updateQuery = secret
     .from("student_profiles")
     .update(updateRow)
-    .eq("id", id)
-    .eq("school_id", schoolId)
-    .select("id");
+    .eq("id", id);
+
+  if (schoolId) {
+    updateQuery = updateQuery.eq("school_id", schoolId);
+  } else {
+    updateQuery = updateQuery.is("school_id", null);
+  }
+
+  const { data: updated, error: updateError } = await updateQuery.select("id");
 
   if (updateError) {
     console.error("[updateAdminStudentCreditLimits]", updateError);
@@ -350,6 +424,13 @@ export async function updateAdminStudentProfile(
   }
 
   if (teacherParsed) {
+    if (!existing.school_id) {
+      return {
+        ok: false,
+        error: "Independent students cannot be assigned a teacher.",
+      };
+    }
+
     const { data: teacher, error: teacherErr } = await secret
       .from("school_admin_profiles")
       .select("id, school_id, is_active")
@@ -376,6 +457,7 @@ export async function updateAdminStudentProfile(
   }
 
   const now = new Date().toISOString();
+  const featureAccess = parseFeatureAccessFromFormData(formData);
   const { error: updateErr } = await secret
     .from("student_profiles")
     .update({
@@ -385,6 +467,7 @@ export async function updateAdminStudentProfile(
       grade,
       nationality_country_code: nationalityCountryCode,
       teacher_id: teacherParsed,
+      feature_access: featureAccess,
       updated_at: now,
     })
     .eq("id", id);

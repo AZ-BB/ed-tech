@@ -28,6 +28,13 @@ import {
   sidebarNavItems,
   type SidebarNavItem,
 } from "../_data/student-dashboard-data";
+import {
+  NAV_ID_TO_FEATURE,
+  defaultStudentFeatureAccess,
+  isStudentFeatureEnabled,
+  type StudentFeatureAccess,
+} from "@/lib/student-feature-access";
+import { StudentFeatureRouteGuard } from "./student-feature-route-guard";
 
 const NAV_ID_TO_KEY: Record<string, keyof Dictionary["student"]["nav"]> = {
   dashboard: "dashboard",
@@ -217,11 +224,12 @@ function shellHeaderWidthClass(pathname: string): string {
 function shellHeaderFromPathname(
   pathname: string,
   dict: Dictionary,
+  navItems: SidebarNavItem[] = sidebarNavItems,
 ): {
   label: string;
   navId: string;
 } {
-  for (const item of sidebarNavItems) {
+  for (const item of navItems) {
     if (item.type === "divider") continue;
     if (item.href === "#") continue;
     if (item.type === "link" && isSidebarNavLinkActive(pathname, item)) {
@@ -233,10 +241,14 @@ function shellHeaderFromPathname(
 
 function SidebarNav({
   dict,
+  navItems,
+  featureAccess,
   onNavigate,
   onRequestLogout,
 }: {
   dict: Dictionary;
+  navItems: SidebarNavItem[];
+  featureAccess: StudentFeatureAccess;
   onNavigate?: () => void;
   onRequestLogout: () => void;
 }) {
@@ -244,7 +256,7 @@ function SidebarNav({
 
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-3.5">
-      {sidebarNavItems.map((item, index) => {
+      {navItems.map((item, index) => {
         if (item.type === "divider") {
           return (
             <div
@@ -254,11 +266,17 @@ function SidebarNav({
           );
         }
 
-        const active = item.type === "link" ? isSidebarNavLinkActive(pathname, item) : false;
-        const rowClass = `group flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13.5px] font-medium transition-colors mb-0.5 cursor-pointer ${
-          active
-            ? "bg-[var(--green-bg)] font-semibold text-[var(--green-dark)]"
-            : "text-[var(--text-mid)] hover:bg-[var(--sand)] hover:text-[var(--text)]"
+        const featureKey = NAV_ID_TO_FEATURE[item.id];
+        const featureDisabled =
+          featureKey != null && !isStudentFeatureEnabled(featureAccess, featureKey);
+        const active =
+          !featureDisabled && isSidebarNavLinkActive(pathname, item);
+        const rowClass = `group flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13.5px] font-medium transition-colors mb-0.5 ${
+          featureDisabled
+            ? "cursor-not-allowed opacity-45 text-[var(--text-hint)]"
+            : active
+              ? "cursor-pointer bg-[var(--green-bg)] font-semibold text-[var(--green-dark)]"
+              : "cursor-pointer text-[var(--text-mid)] hover:bg-[var(--sand)] hover:text-[var(--text)]"
         }`;
 
         const inner = (
@@ -266,28 +284,27 @@ function SidebarNav({
             <StudentNavIcon
               navId={item.id}
               className={
-                active
-                  ? "h-[18px] w-[18px] shrink-0 text-[var(--green)]"
-                  : "h-[18px] w-[18px] shrink-0 text-[var(--text-hint)] transition-colors group-hover:text-[var(--text-mid)]"
+                featureDisabled
+                  ? "h-[18px] w-[18px] shrink-0 text-[var(--text-hint)]"
+                  : active
+                    ? "h-[18px] w-[18px] shrink-0 text-[var(--green)]"
+                    : "h-[18px] w-[18px] shrink-0 text-[var(--text-hint)] transition-colors group-hover:text-[var(--text-mid)]"
               }
             />
             {navLabel(dict, item.id)}
           </>
         );
 
-        if (item.href === "#") {
+        if (featureDisabled || item.href === "#") {
           return (
-            <a
+            <div
               key={item.id}
-              href="#"
-              className="block text-inherit no-underline"
-              onClick={(e) => {
-                e.preventDefault();
-                onNavigate?.();
-              }}
+              className={rowClass}
+              aria-disabled="true"
+              title="This feature is not available on your account"
             >
-              <div className={rowClass}>{inner}</div>
-            </a>
+              {inner}
+            </div>
           );
         }
 
@@ -380,9 +397,14 @@ function SidebarHeader({
 export function StudentLayoutShell({
   children,
   locale,
+  hasSchoolLinked = true,
+  featureAccess = defaultStudentFeatureAccess(true),
 }: {
   children: React.ReactNode;
   locale: Locale;
+  /** When false, My Applications nav is hidden (independent students). */
+  hasSchoolLinked?: boolean;
+  featureAccess?: StudentFeatureAccess;
 }) {
   /** Collapsible drawer from the right + dimmed overlay — same pattern as dashboard.html */
   const { dict } = useLocale();
@@ -390,9 +412,18 @@ export function StudentLayoutShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const pathname = usePathname();
+  const visibleNavItems = useMemo(
+    () =>
+      hasSchoolLinked
+        ? sidebarNavItems
+        : sidebarNavItems.filter(
+            (item) => item.type === "divider" || item.id !== "my-applications",
+          ),
+    [hasSchoolLinked],
+  );
   const shellHeader = useMemo(
-    () => shellHeaderFromPathname(pathname, dict),
-    [pathname, dict],
+    () => shellHeaderFromPathname(pathname, dict, visibleNavItems),
+    [pathname, dict, visibleNavItems],
   );
 
   const hideTopNav =
@@ -437,6 +468,7 @@ export function StudentLayoutShell({
       dir={portalDir}
       lang={locale}
     >
+      <StudentFeatureRouteGuard featureAccess={featureAccess} />
       <div className={`mx-auto w-full min-w-0 ${contentPaddingClass} pt-4 sm:pt-6 pb-12 sm:pb-16`}>
         {hideTopNav ? null : (
           <header
@@ -507,6 +539,8 @@ export function StudentLayoutShell({
         <SidebarHeader dict={dict} onClose={closeSidebar} />
         <SidebarNav
           dict={dict}
+          navItems={visibleNavItems}
+          featureAccess={featureAccess}
           onNavigate={closeSidebar}
           onRequestLogout={() => {
             setLogoutConfirmOpen(true);

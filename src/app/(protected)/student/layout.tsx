@@ -32,7 +32,13 @@ export default async function StudentLayout({
 
   return (
     <LocaleProvider locale={locale} dict={dict}>
-      <StudentLayoutShell locale={locale}>{children}</StudentLayoutShell>
+      <StudentLayoutShell
+        locale={locale}
+        hasSchoolLinked={auth.hasSchoolLinked}
+        featureAccess={auth.featureAccess}
+      >
+        {children}
+      </StudentLayoutShell>
     </LocaleProvider>
   );
 }

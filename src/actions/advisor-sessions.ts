@@ -211,32 +211,28 @@ export async function createAdvisorSessionBooking(
     return { ok: false, error: "Could not create booking." };
   }
 
-  if (!studentRow?.school_id) {
-    console.error("[student_credits_history] missing school_id on student_profiles:", studentErr);
-  } else {
-    const { error: creditDecErr } = await secret
-      .from("student_profiles")
-      .update({ advisor_credit_limit: advisorCreditsRemaining - 1 })
-      .eq("id", actor.studentId)
-      .gt("advisor_credit_limit", 0);
+  const { error: creditDecErr } = await secret
+    .from("student_profiles")
+    .update({ advisor_credit_limit: advisorCreditsRemaining - 1 })
+    .eq("id", actor.studentId)
+    .gt("advisor_credit_limit", 0);
 
-    if (creditDecErr) {
-      console.error("[student_profiles] advisor credit decrement:", creditDecErr);
-      return { ok: false, error: "Could not deduct advisor session credit. Please try again." };
-    }
+  if (creditDecErr) {
+    console.error("[student_profiles] advisor credit decrement:", creditDecErr);
+    return { ok: false, error: "Could not deduct advisor session credit. Please try again." };
+  }
 
-    const { error: creditHistErr } = await secret.from("student_credits_history").insert({
-      student_id: actor.studentId,
-      school_id: studentRow.school_id,
-      amount: 1,
-      type: "advisor",
-      advisor_session_id: sessionId,
-      ambassador_session_request_id: null,
-      status: "used",
-    });
-    if (creditHistErr) {
-      console.error("[student_credits_history] insert:", creditHistErr);
-    }
+  const { error: creditHistErr } = await secret.from("student_credits_history").insert({
+    student_id: actor.studentId,
+    school_id: studentRow?.school_id ?? null,
+    amount: 1,
+    type: "advisor",
+    advisor_session_id: sessionId,
+    ambassador_session_request_id: null,
+    status: "used",
+  });
+  if (creditHistErr) {
+    console.error("[student_credits_history] insert:", creditHistErr);
   }
 
   await appendAdvisorActivityLog(

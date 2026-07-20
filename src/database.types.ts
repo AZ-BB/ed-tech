@@ -3049,7 +3049,7 @@ export type Database = {
           assigned_by_school_admin_id: string | null
           created_at: string | null
           id: number
-          school_id: string
+          school_id: string | null
           status: Database["public"]["Enums"]["student_credits_status"] | null
           student_id: string
           type: Database["public"]["Enums"]["student_credits_type"]
@@ -3063,7 +3063,7 @@ export type Database = {
           assigned_by_school_admin_id?: string | null
           created_at?: string | null
           id?: number
-          school_id: string
+          school_id?: string | null
           status?: Database["public"]["Enums"]["student_credits_status"] | null
           student_id: string
           type: Database["public"]["Enums"]["student_credits_type"]
@@ -3077,7 +3077,7 @@ export type Database = {
           assigned_by_school_admin_id?: string | null
           created_at?: string | null
           id?: number
-          school_id?: string
+          school_id?: string | null
           status?: Database["public"]["Enums"]["student_credits_status"] | null
           student_id?: string
           type?: Database["public"]["Enums"]["student_credits_type"]
@@ -3482,7 +3482,9 @@ export type Database = {
           notification_news_platform: boolean
           phone: string | null
           platform_completion: Json | null
-          school_id: string
+          feature_access: Json | null
+          meta_data: Json | null
+          school_id: string | null
           signup_advisor_credit_limit: number | null
           signup_ambassador_credit_limit: number | null
           status: Database["public"]["Enums"]["student_status"] | null
@@ -3508,7 +3510,9 @@ export type Database = {
           notification_news_platform?: boolean
           phone?: string | null
           platform_completion?: Json | null
-          school_id: string
+          feature_access?: Json | null
+          meta_data?: Json | null
+          school_id?: string | null
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
@@ -3534,7 +3538,9 @@ export type Database = {
           notification_news_platform?: boolean
           phone?: string | null
           platform_completion?: Json | null
-          school_id?: string
+          feature_access?: Json | null
+          meta_data?: Json | null
+          school_id?: string | null
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null

@@ -213,32 +213,28 @@ export async function createAmbassadorSessionRequest(
 
   const requestId = inserted.id;
 
-  if (!studentRow?.school_id) {
-    console.error("[student_credits_history] missing school_id on student_profiles");
-  } else {
-    const { error: creditDecErr } = await secret
-      .from("student_profiles")
-      .update({ ambassador_credit_limit: ambassadorCreditsRemaining - 1 })
-      .eq("id", actor.studentId)
-      .gt("ambassador_credit_limit", 0);
+  const { error: creditDecErr } = await secret
+    .from("student_profiles")
+    .update({ ambassador_credit_limit: ambassadorCreditsRemaining - 1 })
+    .eq("id", actor.studentId)
+    .gt("ambassador_credit_limit", 0);
 
-    if (creditDecErr) {
-      console.error("[student_profiles] ambassador credit decrement:", creditDecErr);
-      return { ok: false, error: "Could not deduct ambassador session credit. Please try again." };
-    }
+  if (creditDecErr) {
+    console.error("[student_profiles] ambassador credit decrement:", creditDecErr);
+    return { ok: false, error: "Could not deduct ambassador session credit. Please try again." };
+  }
 
-    const { error: creditHistErr } = await secret.from("student_credits_history").insert({
-      student_id: actor.studentId,
-      school_id: studentRow.school_id,
-      amount: 1,
-      type: "ambassador",
-      advisor_session_id: null,
-      ambassador_session_request_id: requestId,
-      status: "used",
-    });
-    if (creditHistErr) {
-      console.error("[student_credits_history] ambassador insert:", creditHistErr);
-    }
+  const { error: creditHistErr } = await secret.from("student_credits_history").insert({
+    student_id: actor.studentId,
+    school_id: studentRow?.school_id ?? null,
+    amount: 1,
+    type: "ambassador",
+    advisor_session_id: null,
+    ambassador_session_request_id: requestId,
+    status: "used",
+  });
+  if (creditHistErr) {
+    console.error("[student_credits_history] ambassador insert:", creditHistErr);
   }
 
   await appendAmbassadorActivityLog(

@@ -35,6 +35,10 @@ export default async function MyApplicationsPage() {
     redirect("/login");
   }
 
+  if (!auth.hasSchoolLinked) {
+    redirect("/student");
+  }
+
   const secret = await createSupabaseSecretClient();
 
   const { data: profile, error: pErr } = await secret
@@ -45,6 +49,10 @@ export default async function MyApplicationsPage() {
   if (pErr || !profile) {
     console.error(pErr ?? "missing student_profiles row");
     notFound();
+  }
+
+  if (!profile.school_id) {
+    redirect("/student");
   }
 
   const { data: countries } = await secret.from("countries").select("id, name").order("name", { ascending: true });
