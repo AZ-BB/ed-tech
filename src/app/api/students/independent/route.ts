@@ -35,13 +35,11 @@ async function buildMagicLinkRedirectUrl(email: string): Promise<
   | { ok: false; error: string }
 > {
   const siteBase = await getPublicSiteBaseUrl();
-  const redirectTo = `${siteBase}/auth/confirm?next=${encodeURIComponent("/student")}`;
 
   const secret = await createSupabaseSecretClient();
   const { data, error } = await secret.auth.admin.generateLink({
     type: "magiclink",
     email,
-    options: { redirectTo },
   });
 
   if (error) {
@@ -52,22 +50,17 @@ async function buildMagicLinkRedirectUrl(email: string): Promise<
     };
   }
 
-  const actionLink = data?.properties?.action_link?.trim();
-  if (actionLink) {
-    return { ok: true, redirectUrl: actionLink };
-  }
-
   const hashedToken = data?.properties?.hashed_token?.trim();
-  if (hashedToken) {
+  if (!hashedToken) {
     return {
-      ok: true,
-      redirectUrl: `${siteBase}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=magiclink&next=${encodeURIComponent("/student")}`,
+      ok: false,
+      error: "Could not create auto sign-in link.",
     };
   }
 
   return {
-    ok: false,
-    error: "Could not create auto sign-in link.",
+    ok: true,
+    redirectUrl: `${siteBase}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=magiclink&next=${encodeURIComponent("/student")}`,
   };
 }
 
