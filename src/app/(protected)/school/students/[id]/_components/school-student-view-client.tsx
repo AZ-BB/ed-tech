@@ -74,6 +74,15 @@ const TAB_DEFS: { id: TabId; label: string }[] = [
   { id: "activity_logs", label: "Activity logs" },
 ];
 
+/** My Applications workspace tabs — hidden for independent (no-school) students. */
+const MY_APPLICATIONS_TAB_IDS = new Set<TabId>([
+  "shortlist",
+  "essays",
+  "recommendations",
+  "docs",
+  "tasks",
+]);
+
 type ApplicationProfileRow =
   Database["public"]["Tables"]["student_application_profile"]["Row"];
 
@@ -112,7 +121,7 @@ export type SchoolStudentViewClientProps = {
   creditAssignUsesSchoolPool?: boolean;
   /** When true, Tasks tab can open the new-task modal (e.g. platform admin on read-only student view). */
   canCreateTasks?: boolean;
-  schoolInfo?: AdminStudentSchoolInfo;
+  schoolInfo?: AdminStudentSchoolInfo | null;
   historyPanel?: SchoolStudentHistoryPanelProps;
   creditUsagePanel?: StudentCreditUsagePanelProps;
   activityLogsPanel?: StudentActivityLogsPanelProps;
@@ -949,9 +958,21 @@ export function SchoolStudentViewClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [tab, setTab] = useState<TabId>(initialTab);
+  const hasSchoolLinked = Boolean(student.schoolId);
+  const visibleTabs = useMemo(
+    () =>
+      hasSchoolLinked
+        ? TAB_DEFS
+        : TAB_DEFS.filter((t) => !MY_APPLICATIONS_TAB_IDS.has(t.id)),
+    [hasSchoolLinked],
+  );
+  const resolvedInitialTab =
+    !hasSchoolLinked && MY_APPLICATIONS_TAB_IDS.has(initialTab)
+      ? "snapshot"
+      : initialTab;
+  const [tab, setTab] = useState<TabId>(resolvedInitialTab);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
-  const allowTaskCreate = canCreateTasks ?? !readOnly;
+  const allowTaskCreate = (canCreateTasks ?? !readOnly) && hasSchoolLinked;
 
   useEffect(() => {
     if (tab !== "tasks") setNewTaskOpen(false);
@@ -1251,7 +1272,7 @@ export function SchoolStudentViewClient({
 
         <div className="sd-main flex min-w-0 max-w-full flex-col gap-[18px]">
           <div className="sd-tabs flex min-w-0 gap-0.5 overflow-x-auto rounded-[10px] border border-[var(--border-light)] bg-white p-1 [-webkit-overflow-scrolling:touch]">
-            {TAB_DEFS.map((t) => {
+            {visibleTabs.map((t) => {
               const active = tab === t.id;
               return (
                 <button

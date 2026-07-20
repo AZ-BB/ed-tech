@@ -2,6 +2,23 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/database.types";
 import { NextResponse, type NextRequest } from "next/server";
 
+type ConfirmOtpType =
+  | "recovery"
+  | "magiclink"
+  | "signup"
+  | "invite"
+  | "email"
+  | "email_change";
+
+const ALLOWED_OTP_TYPES = new Set<string>([
+  "recovery",
+  "magiclink",
+  "signup",
+  "invite",
+  "email",
+  "email_change",
+]);
+
 function safeNextPath(raw: string | null): string {
   const next = raw?.trim() ?? "";
   if (next.startsWith("/") && !next.startsWith("//") && !next.includes("://")) {
@@ -23,7 +40,7 @@ function redirectToLoginWithError(request: NextRequest) {
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set(
     "error",
-    "This reset link is invalid or has expired. Please request a new one.",
+    "This sign-in link is invalid or has expired. Please try again or contact support.",
   );
   return NextResponse.redirect(loginUrl);
 }
@@ -59,9 +76,9 @@ export async function GET(request: NextRequest) {
     },
   );
 
-  if (tokenHash && type) {
+  if (tokenHash && type && ALLOWED_OTP_TYPES.has(type)) {
     const { error } = await supabase.auth.verifyOtp({
-      type: type as "recovery",
+      type: type as ConfirmOtpType,
       token_hash: tokenHash,
     });
     if (!error) {

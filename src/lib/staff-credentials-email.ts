@@ -7,19 +7,19 @@ import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type SupabaseSecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
-type StaffProfileTable = "admins" | "school_admin_profiles";
+type CredentialsProfileTable = "admins" | "school_admin_profiles" | "student_profiles";
 
 export async function sendStaffCredentialsEmailOrRollback(opts: {
   supabase: SupabaseSecretClient;
   userId: string;
-  profileTable: StaffProfileTable;
+  profileTable: CredentialsProfileTable;
   to: string;
   firstName: string;
   email: string;
   password: string;
 }): Promise<{ ok: true } | { error: string }> {
   if (!isResendConfigured()) {
-    await rollbackStaffAccount(opts.supabase, opts.userId, opts.profileTable);
+    await rollbackCredentialsAccount(opts.supabase, opts.userId, opts.profileTable);
     return {
       error:
         "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
@@ -36,7 +36,7 @@ export async function sendStaffCredentialsEmailOrRollback(opts: {
   });
 
   if ("error" in result) {
-    await rollbackStaffAccount(opts.supabase, opts.userId, opts.profileTable);
+    await rollbackCredentialsAccount(opts.supabase, opts.userId, opts.profileTable);
     return {
       error: result.error || "Credentials email could not be sent.",
     };
@@ -45,10 +45,10 @@ export async function sendStaffCredentialsEmailOrRollback(opts: {
   return { ok: true };
 }
 
-async function rollbackStaffAccount(
+async function rollbackCredentialsAccount(
   supabase: SupabaseSecretClient,
   userId: string,
-  profileTable: StaffProfileTable,
+  profileTable: CredentialsProfileTable,
 ) {
   const { error: profileError } = await supabase
     .from(profileTable)

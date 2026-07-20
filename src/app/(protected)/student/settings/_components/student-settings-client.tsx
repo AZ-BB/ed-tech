@@ -96,11 +96,13 @@ export function StudentSettingsClient({
   lastSignInLabel,
   countries,
   initial,
+  hasSchoolLinked = true,
 }: {
   authEmail: string;
   lastSignInLabel: string;
   countries: { id: string; name: string }[];
   initial: StudentSettingsInitial;
+  hasSchoolLinked?: boolean;
 }) {
   const { dict } = useLocale();
   const s = dict.student.settings;
@@ -604,7 +606,8 @@ export function StudentSettingsClient({
         </div>
       </section>
 
-      {/* School — read only */}
+      {/* School — read only (school-linked students only) */}
+      {hasSchoolLinked ? (
       <section className="mb-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white shadow-[0_1px_4px_rgba(0,0,0,.02)] transition-shadow hover:shadow-[0_2px_10px_rgba(0,0,0,.04)]">
         <div className="flex items-center justify-between border-b border-[var(--border-light)] bg-gradient-to-b from-[#fafaf8] to-white px-6 py-[18px] sm:px-7">
           <div className="flex items-center gap-2 text-[15px] font-bold text-[var(--text)]">
@@ -639,6 +642,7 @@ export function StudentSettingsClient({
           </div>
         </div>
       </section>
+      ) : null}
 
       {/* Security */}
       <section className="mb-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white shadow-[0_1px_4px_rgba(0,0,0,.02)]">

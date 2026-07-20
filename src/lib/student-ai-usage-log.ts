@@ -1,5 +1,9 @@
 import type { Database, Json } from "@/database.types";
 import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
+import {
+  parseStudentFeatureAccess,
+  type StudentFeatureAccess,
+} from "@/lib/student-feature-access";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 type AiUsageType = Database["public"]["Enums"]["ai_usage_type"];
@@ -8,7 +12,12 @@ export const DEACTIVATED_LOGIN_MESSAGE =
   "Your account has been deactivated. Please contact support.";
 
 export type StudentSessionAuth =
-  | { ok: true; studentId: string }
+  | {
+      ok: true;
+      studentId: string;
+      hasSchoolLinked: boolean;
+      featureAccess: StudentFeatureAccess;
+    }
   | {
       ok: false;
       status: 401 | 403;
@@ -32,7 +41,7 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
   const secret = await createSupabaseSecretClient();
   const { data: profile } = await secret
     .from("student_profiles")
-    .select("id, is_active, school_id")
+    .select("id, is_active, school_id, feature_access")
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) {
@@ -59,7 +68,12 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
       };
     }
   }
-  return { ok: true, studentId: user.id };
+  return {
+    ok: true,
+    studentId: user.id,
+    hasSchoolLinked: Boolean(profile.school_id),
+    featureAccess: parseStudentFeatureAccess(profile.feature_access as Json | null),
+  };
 }
 
 export function extractOpenAiResponseUsage(result: unknown): {

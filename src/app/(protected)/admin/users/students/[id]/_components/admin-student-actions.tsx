@@ -10,6 +10,7 @@ import { useState, useTransition } from "react";
 
 import { AdminEditStudentDialog } from "./admin-edit-student-dialog";
 import { AdminControl } from "@/app/(protected)/admin/_components/admin-control";
+import type { StudentFeatureAccess } from "@/lib/student-feature-access";
 
 export type AdminStudentActionsProps = {
   studentId: string;
@@ -22,8 +23,9 @@ export type AdminStudentActionsProps = {
     phone: string;
     grade: string;
     nationalityCountryCode: string;
-    schoolId: string;
+    schoolId: string | null;
     teacherId: string | null;
+    featureAccess: StudentFeatureAccess;
   };
 };
 

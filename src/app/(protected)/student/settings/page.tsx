@@ -33,6 +33,7 @@ export default async function StudentSettingsPage() {
       nationality_country_code,
       notification_app_updates,
       notification_news_platform,
+      school_id,
       countries!student_profiles_nationality_country_code_fkey(name),
       schools(
         name,
@@ -81,6 +82,7 @@ export default async function StudentSettingsPage() {
       authEmail={user?.email?.trim() ?? ""}
       lastSignInLabel={lastSignInLabel}
       countries={countries ?? []}
+      hasSchoolLinked={auth.hasSchoolLinked}
       initial={{
         firstName: profile.first_name,
         lastName: profile.last_name,

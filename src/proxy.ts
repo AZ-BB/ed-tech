@@ -117,7 +117,13 @@ export async function proxy(request: NextRequest) {
     supabaseResponse.cookies.set(LOCALE_COOKIE, locale, { path: "/" });
   }
 
-  const publicOpenRoutes = ["/application-support", "/api/webhooks", "/recommendation", "/webinars"];
+  const publicOpenRoutes = [
+    "/application-support",
+    "/api/webhooks",
+    "/api/students/independent",
+    "/recommendation",
+    "/webinars",
+  ];
   const isPublicOpenRoute = publicOpenRoutes.some((route) => pathMatches(pathname, route));
 
   const publicGuestOnlyRoutes = [

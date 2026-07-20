@@ -26,7 +26,7 @@ import {
 import type { Database } from "@/database.types";
 
 async function requireStudentActor(): Promise<
-  { studentId: string; schoolId: string } | { error: string }
+  { studentId: string; schoolId: string | null } | { error: string }
 > {
   const authClient = await createSupabaseServerClient();
   const {

@@ -49,7 +49,7 @@ async function refundSessionCredit(
   secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
   input: {
     studentId: string;
-    schoolId: string;
+    schoolId: string | null;
     creditType: SessionCreditType;
     sessionId: number;
   },
@@ -610,13 +610,13 @@ export async function cancelAdminAdvisorSession(
     ? (existing.student_profiles[0] ?? null)
     : existing.student_profiles;
 
-  if (!studentProfile?.school_id) {
-    return { ok: false, error: "Could not verify student school for credit refund." };
+  if (!studentProfile) {
+    return { ok: false, error: "Could not verify student for credit refund." };
   }
 
   const refund = await refundSessionCredit(secret, {
     studentId: existing.student_id,
-    schoolId: studentProfile.school_id,
+    schoolId: studentProfile.school_id ?? null,
     creditType: "advisor",
     sessionId,
   });
@@ -695,13 +695,13 @@ export async function cancelAdminAmbassadorSession(
     ? (existing.student_profiles[0] ?? null)
     : existing.student_profiles;
 
-  if (!studentProfile?.school_id) {
-    return { ok: false, error: "Could not verify student school for credit refund." };
+  if (!studentProfile) {
+    return { ok: false, error: "Could not verify student for credit refund." };
   }
 
   const refund = await refundSessionCredit(secret, {
     studentId: existing.student_id,
-    schoolId: studentProfile.school_id,
+    schoolId: studentProfile.school_id ?? null,
     creditType: "ambassador",
     sessionId,
   });

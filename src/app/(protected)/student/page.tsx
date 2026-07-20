@@ -17,13 +17,14 @@ export default async function StudentPage() {
 
   const supabase = await createSupabaseServerClient();
   const secret = await createSupabaseSecretClient();
+  const hasSchoolLinked = auth.hasSchoolLinked;
 
   const [
     { data: recentActivities },
     { data: announcements },
     { data: newsItems },
     { data: studentProgress },
-    { count: openTaskCount },
+    taskCountResult,
     { count: essaysReviewedCount },
     { count: aiMatchesGeneratedCount },
   ] = await Promise.all([
@@ -47,11 +48,13 @@ export default async function StudentPage() {
       .select("first_name, last_name, platform_completion, total_logins")
       .eq("id", auth.studentId)
       .single(),
-    secret
-      .from("student_my_application_tasks")
-      .select("id", { count: "exact", head: true })
-      .eq("student_id", auth.studentId)
-      .eq("completed", false),
+    hasSchoolLinked
+      ? secret
+          .from("student_my_application_tasks")
+          .select("id", { count: "exact", head: true })
+          .eq("student_id", auth.studentId)
+          .eq("completed", false)
+      : Promise.resolve({ count: 0 }),
     secret
       .from("ai_usage")
       .select("id", { count: "exact", head: true })
@@ -63,6 +66,8 @@ export default async function StudentPage() {
       .eq("student_id", auth.studentId)
       .eq("type", "matching"),
   ]);
+
+  const openTaskCount = hasSchoolLinked ? (taskCountResult.count ?? 0) : 0;
 
   const platformStats = getPlatformCompletionStats(
     studentProgress?.platform_completion ?? null,
@@ -103,9 +108,11 @@ export default async function StudentPage() {
       announcementItems={announcementItems}
       newsItems={dashboardNewsItems}
       activityLogItems={activityLogItems}
-      openTaskCount={openTaskCount ?? 0}
+      openTaskCount={openTaskCount}
       essaysReviewedCount={essaysReviewedCount ?? 0}
       aiMatchesGeneratedCount={aiMatchesGeneratedCount ?? 0}
+      hasSchoolLinked={hasSchoolLinked}
+      featureAccess={auth.featureAccess}
     />
   );
 }
