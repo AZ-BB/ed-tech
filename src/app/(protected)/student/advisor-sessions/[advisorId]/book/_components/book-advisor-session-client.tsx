@@ -116,6 +116,7 @@ export function BookAdvisorSessionClient({
 
   useEffect(() => {
     if (step !== 3 || sessionId == null || calendlyBookingSaved) return;
+    const activeSessionId = sessionId;
 
     function onCalendlyMessage(event: MessageEvent) {
       if (event.origin !== "https://calendly.com") return;
@@ -128,7 +129,7 @@ export function BookAdvisorSessionClient({
       const startTime = payload.payload?.event?.start_time?.trim();
       if (!startTime) return;
 
-      void recordAdvisorSessionCalendlyBooking(sessionId, startTime).then((result) => {
+      void recordAdvisorSessionCalendlyBooking(activeSessionId, startTime).then((result) => {
         if (result.ok) {
           setCalendlyBookingSaved(true);
         }
