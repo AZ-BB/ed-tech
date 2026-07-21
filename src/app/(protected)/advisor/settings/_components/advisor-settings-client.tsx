@@ -225,6 +225,11 @@ export function AdvisorSettingsClient({
     } else if (status === "error") {
       setCalendlyError("Could not connect Calendly. Please try again.");
       router.replace("/advisor/settings", { scroll: false });
+    } else if (status === "webhook_error") {
+      setCalendlyError(
+        "Calendly connected, but booking notifications could not be registered. Use Repair booking webhook below or reconnect Calendly.",
+      );
+      router.replace("/advisor/settings", { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for OAuth redirect
   }, []);

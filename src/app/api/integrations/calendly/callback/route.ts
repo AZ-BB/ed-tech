@@ -99,20 +99,26 @@ export async function GET(request: Request) {
 
     await saveAdvisorCalendlyConnection(advisorId, connection);
 
-    if (!connection.webhookSubscriptionUri) {
+    let webhookReady = Boolean(connection.webhookSubscriptionUri);
+    if (!webhookReady) {
       logCalendlyWarn("callback", "Calendly connected without webhook — attempting repair", {
         advisorId,
       });
       const repair = await repairAdvisorCalendlyWebhookSubscription(advisorId);
+      webhookReady = repair.ok;
       if (!repair.ok) {
         logCalendlyError("callback", "Post-connect webhook repair failed", undefined, {
           advisorId,
           error: repair.error,
         });
+        return settingsRedirect("webhook_error", request);
       }
     }
 
-    logCalendly("callback", "OAuth connection completed successfully", { advisorId });
+    logCalendly("callback", "OAuth connection completed successfully", {
+      advisorId,
+      webhookReady,
+    });
     return settingsRedirect("connected", request);
   } catch (err) {
     logCalendlyError("callback", "OAuth completion failed", err, { advisorId });

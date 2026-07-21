@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 export const CALENDLY_OAUTH_SCOPES = [
   "users:read",
   "event_types:read",
+  "webhooks:read",
   "webhooks:write",
   "scheduled_events:read",
 ].join(" ");
