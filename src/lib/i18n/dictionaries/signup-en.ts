@@ -68,4 +68,12 @@ export const signupEn = {
   errTerms: "You must agree to the Terms & Conditions and Privacy Policy",
   errMissingData: "Missing required profile or country data.",
   errCreateAccount: "Could not create your account. Please try again.",
+  individualLeftTitle: "Join Univeera on your own",
+  individualLeftSub:
+    "Create your account in one step and get full access to personalized university guidance.",
+  individualFormTitle: "Create your account",
+  individualFormSub: "All fields are required unless noted otherwise",
+  individualSubmit: "Create account",
+  individualHasSchool: "Have a school access code?",
+  individualSchoolSignup: "Sign up with your school",
 } as const;
