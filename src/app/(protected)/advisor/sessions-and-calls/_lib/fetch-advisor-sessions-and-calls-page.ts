@@ -93,7 +93,8 @@ type SessionRowRaw = {
   id: number;
   status: string | null;
   lead_qualification: string | null;
-  booked_at: string;
+  booked_at: string | null;
+  created_at: string | null;
   destination_country_code: string | null;
   help_with: string | null;
   student_name: string | null;
@@ -133,12 +134,22 @@ function paginationRange(page: number, limit: number) {
   return { from, to: from + safeLimit - 1 };
 }
 
+function meetingSortTime(meetingAt: string): number | null {
+  const time = new Date(meetingAt).getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
 function sortRows(rows: AdvisorSessionsAndCallsRow[]): AdvisorSessionsAndCallsRow[] {
   return [...rows].sort((a, b) => {
     if (a.isOverdue !== b.isOverdue) {
       return a.isOverdue ? -1 : 1;
     }
-    return new Date(a.meetingAt).getTime() - new Date(b.meetingAt).getTime();
+    const aTime = meetingSortTime(a.meetingAt);
+    const bTime = meetingSortTime(b.meetingAt);
+    if (aTime == null && bTime == null) return 0;
+    if (aTime == null) return -1;
+    if (bTime == null) return 1;
+    return aTime - bTime;
   });
 }
 
@@ -161,6 +172,44 @@ function isMeetingInRange(
   const meeting = new Date(meetingAt);
   if (Number.isNaN(meeting.getTime())) return false;
   return meeting >= rangeStart && meeting < rangeEnd;
+}
+
+type AdvisorSessionsAndCallsDebugMeta = Record<string, unknown>;
+
+function formatAdvisorSessionsAndCallsDebugMeta(
+  meta?: AdvisorSessionsAndCallsDebugMeta,
+): string {
+  if (!meta || Object.keys(meta).length === 0) return "";
+  try {
+    return ` ${JSON.stringify(meta)}`;
+  } catch {
+    return "";
+  }
+}
+
+function logAdvisorSessionsAndCallsDebug(
+  scope: string,
+  message: string,
+  meta?: AdvisorSessionsAndCallsDebugMeta,
+): void {
+  console.log(
+    `[advisorSessionsAndCalls ${scope}] ${message}${formatAdvisorSessionsAndCallsDebugMeta(meta)}`,
+  );
+}
+
+function summarizeSessionsAndCallsRow(row: AdvisorSessionsAndCallsRow) {
+  return {
+    kind: row.kind,
+    id: row.id,
+    studentName: row.studentName,
+    studentEmail: row.studentEmail,
+    meetingAt: row.meetingAt || null,
+    statusLabel: row.statusLabel,
+    sessionStatus: row.sessionStatus,
+    isOverdue: row.isOverdue,
+    leadQualification: row.leadQualification,
+    awaitingBooking: row.kind === "advisor_session" && !row.meetingAt,
+  };
 }
 
 function matchesSearch(
@@ -287,7 +336,7 @@ function mapSessionRow(row: SessionRowRaw): AdvisorSessionsAndCallsRow {
     ? (getCountryNameByAlpha2(destinationCode) ?? destinationCode)
     : "—";
   const status = row.status?.trim() || "pending";
-  const meetingAt = row.booked_at;
+  const meetingAt = row.booked_at?.trim() || "";
   const helpWith = row.help_with?.trim();
 
   return {
@@ -480,6 +529,7 @@ async function fetchSessionRows(
       status,
       lead_qualification,
       booked_at,
+      created_at,
       destination_country_code,
       help_with,
       student_name,
@@ -493,9 +543,8 @@ async function fetchSessionRows(
     `,
     )
     .eq("advisor_id", advisorId)
-    .not("booked_at", "is", null)
     .not("status", "in", '("completed","cancelled")')
-    .order("booked_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (search) {
     const e = escapeIlike(search);
@@ -510,6 +559,31 @@ async function fetchSessionRows(
   }
 
   return (data ?? []).map((row) => mapSessionRow(row as SessionRowRaw));
+}
+
+async function debugLogAllAdvisorSessionsForAdvisor(
+  advisorId: string,
+): Promise<void> {
+  const secret = await createSupabaseSecretClient();
+
+  const { data, error } = await secret
+    .from("advisor_sessions")
+    .select(
+      "id, status, booked_at, student_name, student_email, lead_qualification, destination_country_code, help_with",
+    )
+    .eq("advisor_id", advisorId)
+    .order("booked_at", { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error("[fetchAdvisorSessionsAndCalls] debug all sessions", error);
+    return;
+  }
+
+  logAdvisorSessionsAndCallsDebug("page", "All advisor_sessions for advisor", {
+    advisorId,
+    count: data?.length ?? 0,
+    sessions: data ?? [],
+  });
 }
 
 async function fetchAllBookedSessionsAndCalls(): Promise<
@@ -570,6 +644,26 @@ export async function fetchAdvisorSessionsAndCallsPanel(options: {
     fetchSessionRows(advisorId, options.search),
   ]);
 
+  await debugLogAllAdvisorSessionsForAdvisor(advisorId);
+
+  logAdvisorSessionsAndCallsDebug("page", "Fetched sessions and calls sources", {
+    advisorId,
+    filters: {
+      page: options.page,
+      limit: options.limit,
+      search: options.search,
+      type: options.type,
+    },
+    counts: {
+      applicationLeads: leadRows.length,
+      postAdmissionLeads: postAdmissionRows.length,
+      advisorSessions: sessionRows.length,
+    },
+    applicationLeads: leadRows.map(summarizeSessionsAndCallsRow),
+    postAdmissionLeads: postAdmissionRows.map(summarizeSessionsAndCallsRow),
+    advisorSessions: sessionRows.map(summarizeSessionsAndCallsRow),
+  });
+
   const merged = sortRows([...leadRows, ...postAdmissionRows, ...sessionRows]);
   const searchFiltered = options.search
     ? merged.filter((row) => matchesSearch(row, options.search))
@@ -594,6 +688,17 @@ export async function fetchAdvisorSessionsAndCallsPanel(options: {
   const totalRows = filtered.length;
   const { from, to } = paginationRange(options.page, options.limit);
   const rows = filtered.slice(from, to + 1);
+
+  logAdvisorSessionsAndCallsDebug("page", "Panel rows after filters and pagination", {
+    advisorId,
+    totalRows,
+    page: options.page,
+    limit: options.limit,
+    type: options.type,
+    search: options.search,
+    typeCounts,
+    rows: rows.map(summarizeSessionsAndCallsRow),
+  });
 
   return {
     rows,

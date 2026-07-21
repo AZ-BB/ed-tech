@@ -48,6 +48,7 @@ export const localizedPublicPaths = [
   "/webinars",
   "/login",
   "/signup",
+  "/signup/individual",
   "/auth/reset-password",
 ] as const;
 

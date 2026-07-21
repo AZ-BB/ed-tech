@@ -2,6 +2,8 @@
 
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
+import { provisionIndependentStudent } from "@/lib/provision-independent-student";
+import { defaultStudentFeatureAccess } from "@/lib/student-feature-access";
 import { GeneralResponse } from "@/utils/response";
 import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
@@ -359,6 +361,93 @@ export async function studentSignUp(
 
     await supabaseClient.auth.signInWithPassword({
         email: emailNormalized,
+        password,
+    });
+
+    redirect("/");
+}
+
+function isPasswordStrongEnough(password: string): boolean {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    return strength >= 3;
+}
+
+export async function individualStudentSignUp(
+    formData: FormData,
+): Promise<GeneralResponse<boolean>> {
+    const firstName = String(formData.get("firstName") ?? "").trim();
+    const lastName = String(formData.get("lastName") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const nationalityCountryCode = String(formData.get("nationalityCountryCode") ?? "").trim();
+    const phoneNumber = String(formData.get("phoneNumber") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const grade = String(formData.get("grade") ?? "").trim();
+
+    if (
+        !firstName ||
+        !lastName ||
+        !email ||
+        !nationalityCountryCode ||
+        !phoneNumber ||
+        !password ||
+        !grade
+    ) {
+        return {
+            data: false,
+            error: "Missing required profile data.",
+        };
+    }
+
+    if (!GRADE_ALLOWED.has(grade)) {
+        return {
+            data: false,
+            error: "Please select a valid grade (Grade 9 through Grade 12).",
+        };
+    }
+
+    if (!isPasswordStrongEnough(password)) {
+        return {
+            data: false,
+            error:
+                "Password must be Good or stronger: at least 8 characters with uppercase, lowercase, and a number.",
+        };
+    }
+
+    const provisioned = await provisionIndependentStudent({
+        firstName,
+        lastName,
+        email,
+        grade,
+        nationalityCountryCode,
+        password,
+        featureAccess: defaultStudentFeatureAccess(true),
+        metaData: { source: "individual-signup" },
+    });
+
+    if (!provisioned.ok) {
+        return {
+            data: false,
+            error: provisioned.error,
+        };
+    }
+
+    const supabase = await createSupabaseSecretClient();
+    const { error: phoneError } = await supabase
+        .from("student_profiles")
+        .update({ phone: phoneNumber })
+        .eq("id", provisioned.studentId);
+
+    if (phoneError) {
+        console.error("[individualStudentSignUp] phone update", phoneError);
+    }
+
+    const supabaseClient = await createSupabaseServerClient();
+    await supabaseClient.auth.signInWithPassword({
+        email: provisioned.email,
         password,
     });
 

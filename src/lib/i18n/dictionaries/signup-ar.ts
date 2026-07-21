@@ -69,4 +69,12 @@ export const signupAr = {
   errTerms: "يجب الموافقة على الشروط والأحكام وسياسة الخصوصية",
   errMissingData: "بيانات الملف الشخصي أو البلد المطلوبة غير مكتملة.",
   errCreateAccount: "تعذر إنشاء حسابك. يرجى المحاولة مرة أخرى.",
+  individualLeftTitle: "انضم إلى يونيفيرا بشكل فردي",
+  individualLeftSub:
+    "أنشئ حسابك في خطوة واحدة واحصل على وصول كامل إلى الإرشاد الجامعي المخصص.",
+  individualFormTitle: "أنشئ حسابك",
+  individualFormSub: "جميع الحقول مطلوبة ما لم يُذكر خلاف ذلك",
+  individualSubmit: "إنشاء الحساب",
+  individualHasSchool: "هل لديك رمز وصول من مدرستك؟",
+  individualSchoolSignup: "التسجيل عبر مدرستك",
 } as const;

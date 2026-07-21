@@ -1,6 +1,6 @@
 "use client";
 
-import { disconnectCalendlyAction } from "@/actions/advisor-calendly";
+import { disconnectCalendlyAction, repairCalendlyWebhookAction } from "@/actions/advisor-calendly";
 import { updateAdvisorProfileAction } from "@/actions/advisor-settings";
 import type { AdvisorSettingsPagePayload } from "@/app/(protected)/advisor/settings/_lib/fetch-advisor-settings-page";
 import { CountryMultiSelectAutocomplete } from "@/app/(protected)/admin/users/_components/country-multi-select-autocomplete";
@@ -148,6 +148,7 @@ export function AdvisorSettingsClient({
   profileEmail,
   calendlyConnected,
   calendlyConnectedAt,
+  calendlyWebhookActive,
   defaults,
   countries,
 }: AdvisorSettingsClientProps) {
@@ -156,6 +157,7 @@ export function AdvisorSettingsClient({
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [calendlyDisconnecting, setCalendlyDisconnecting] = useState(false);
   const [calendlyConnecting, setCalendlyConnecting] = useState(false);
+  const [calendlyRepairing, setCalendlyRepairing] = useState(false);
   const [calendlyError, setCalendlyError] = useState<string | null>(null);
 
   const [specializationCountryCodes, setSpecializationCountryCodes] = useState(
@@ -288,6 +290,29 @@ export function AdvisorSettingsClient({
 
   function syncPwConfirmValue() {
     setPwConfirmValue(pwConfirmRef.current?.value ?? "");
+  }
+
+  async function handleCalendlyRepairWebhook() {
+    if (calendlyRepairing) return;
+
+    setCalendlyError(null);
+    setCalendlyRepairing(true);
+    try {
+      const result = await repairCalendlyWebhookAction();
+      if (result.error) {
+        setCalendlyError(
+          typeof result.error === "string"
+            ? result.error
+            : "Could not repair Calendly webhook. Please try again.",
+        );
+        return;
+      }
+      router.refresh();
+    } catch {
+      setCalendlyError("Could not repair Calendly webhook. Please try again.");
+    } finally {
+      setCalendlyRepairing(false);
+    }
   }
 
   async function handleCalendlyDisconnect() {
@@ -758,6 +783,16 @@ export function AdvisorSettingsClient({
                       day: "numeric",
                     })}`
                   : ""}
+                {calendlyWebhookActive ? (
+                  <span className="block mt-0.5 text-[var(--green-dark)]">
+                    Booking notifications are active.
+                  </span>
+                ) : (
+                  <span className="block mt-0.5 text-[#b45309]">
+                    Booking webhook is missing — student Calendly bookings will not sync until you
+                    repair it.
+                  </span>
+                )}
                 <span className="block mt-0.5">
                   You can disconnect to link a different Calendly account.
                 </span>
@@ -769,25 +804,48 @@ export function AdvisorSettingsClient({
             )}
           </div>
           {calendlyConnected ? (
-            <button
-              type="button"
-              className={btnSecondaryClass()}
-              disabled={calendlyDisconnecting}
-              onClick={handleCalendlyDisconnect}
-              aria-busy={calendlyDisconnecting}
-            >
-              {calendlyDisconnecting ? (
-                <>
-                  <span
-                    className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--green)]"
-                    aria-hidden
-                  />
-                  Disconnecting…
-                </>
-              ) : (
-                "Disconnect"
-              )}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {!calendlyWebhookActive ? (
+                <button
+                  type="button"
+                  className={btnPrimaryClass()}
+                  disabled={calendlyRepairing}
+                  onClick={() => void handleCalendlyRepairWebhook()}
+                  aria-busy={calendlyRepairing}
+                >
+                  {calendlyRepairing ? (
+                    <>
+                      <span
+                        className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                        aria-hidden
+                      />
+                      Repairing…
+                    </>
+                  ) : (
+                    "Repair booking webhook"
+                  )}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className={btnSecondaryClass()}
+                disabled={calendlyDisconnecting}
+                onClick={handleCalendlyDisconnect}
+                aria-busy={calendlyDisconnecting}
+              >
+                {calendlyDisconnecting ? (
+                  <>
+                    <span
+                      className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--green)]"
+                      aria-hidden
+                    />
+                    Disconnecting…
+                  </>
+                ) : (
+                  "Disconnect"
+                )}
+              </button>
+            </div>
           ) : (
             <button
               type="button"

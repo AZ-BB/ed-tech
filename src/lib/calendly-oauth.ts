@@ -401,8 +401,13 @@ export async function fetchFirstActiveEventType(
 }
 
 export async function buildCalendlyWebhookCallbackUrl(): Promise<string> {
+  const configured = process.env.CALENDLY_WEBHOOK_CALLBACK_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/$/, "");
+  }
+
   const base = await getPublicSiteBaseUrl();
-  return `${base}/api/webhooks/calendly`;
+  return `${base.replace(/\/$/, "")}/api/webhooks/calendly`;
 }
 
 type WebhookSubscriptionResource = {
@@ -509,8 +514,9 @@ export async function completeAdvisorCalendlyOAuth(opts: {
       existingSubscriptionUri: opts.existingWebhookSubscriptionUri,
     });
   } catch (err) {
-    logCalendlyError("oauth", "Webhook subscription step failed (connection continues)", err, {
+    logCalendlyError("oauth", "Webhook subscription step failed during connect", err, {
       advisorId: opts.advisorId,
+      callbackUrl: await buildCalendlyWebhookCallbackUrl(),
     });
   }
 
@@ -581,6 +587,177 @@ export async function advisorHasCalendlyConnection(advisorId: string): Promise<b
   }
 
   return Boolean(data?.calendly_refresh_token?.trim());
+}
+
+type AdvisorCalendlyRepairContext = {
+  accessToken: string;
+  refreshToken: string;
+  tokenExpiresAt: string;
+  userUri: string;
+  organizationUri: string;
+  webhookSubscriptionUri: string | null;
+};
+
+async function loadAdvisorCalendlyRepairContext(
+  advisorId: string,
+): Promise<AdvisorCalendlyRepairContext | null> {
+  const secret = await createSupabaseSecretClient();
+  const { data, error } = await secret
+    .from("advisors")
+    .select(
+      "calendly_access_token, calendly_refresh_token, calendly_token_expires_at, calendly_user_uri, calendly_organization_uri, calendly_webhook_subscription_uri",
+    )
+    .eq("id", advisorId)
+    .maybeSingle();
+
+  if (error) {
+    logCalendlyError("oauth", "Failed to load advisor Calendly repair context", error, {
+      advisorId,
+    });
+    return null;
+  }
+
+  if (!data?.calendly_refresh_token?.trim()) {
+    return null;
+  }
+
+  return {
+    accessToken: data.calendly_access_token?.trim() || "",
+    refreshToken: data.calendly_refresh_token.trim(),
+    tokenExpiresAt: data.calendly_token_expires_at?.trim() || "",
+    userUri: data.calendly_user_uri?.trim() || "",
+    organizationUri: data.calendly_organization_uri?.trim() || "",
+    webhookSubscriptionUri: data.calendly_webhook_subscription_uri?.trim() || null,
+  };
+}
+
+async function persistAdvisorCalendlyAccessTokens(
+  advisorId: string,
+  tokens: CalendlyTokenResponse,
+): Promise<void> {
+  const secret = await createSupabaseSecretClient();
+  const { error } = await secret
+    .from("advisors")
+    .update({
+      calendly_access_token: tokens.access_token,
+      calendly_refresh_token: tokens.refresh_token,
+      calendly_token_expires_at: tokenExpiresAtIso(tokens.expires_in ?? 7200),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", advisorId);
+
+  if (error) {
+    logCalendlyError("oauth", "Failed to persist refreshed Calendly tokens", error, {
+      advisorId,
+    });
+    throw new Error("Could not refresh Calendly access token.");
+  }
+}
+
+async function resolveAdvisorCalendlyAccessToken(
+  advisorId: string,
+  ctx: AdvisorCalendlyRepairContext,
+): Promise<string> {
+  const expiresAtMs = ctx.tokenExpiresAt ? Date.parse(ctx.tokenExpiresAt) : NaN;
+  const accessStillValid =
+    Boolean(ctx.accessToken) &&
+    Number.isFinite(expiresAtMs) &&
+    expiresAtMs > Date.now() + 60_000;
+
+  if (accessStillValid) {
+    return ctx.accessToken;
+  }
+
+  const tokens = await refreshCalendlyAccessToken(ctx.refreshToken);
+  await persistAdvisorCalendlyAccessTokens(advisorId, tokens);
+  return tokens.access_token;
+}
+
+export async function advisorHasCalendlyWebhookSubscription(
+  advisorId: string,
+): Promise<boolean> {
+  const uri = await getAdvisorWebhookSubscriptionUri(advisorId);
+  return Boolean(uri);
+}
+
+export async function repairAdvisorCalendlyWebhookSubscription(
+  advisorId: string,
+): Promise<{ ok: true; subscriptionUri: string } | { ok: false; error: string }> {
+  logCalendly("oauth", "Repairing advisor Calendly webhook subscription", { advisorId });
+
+  const ctx = await loadAdvisorCalendlyRepairContext(advisorId);
+  if (!ctx) {
+    return { ok: false, error: "Calendly is not connected for this advisor." };
+  }
+
+  if (!ctx.userUri || !ctx.organizationUri) {
+    return {
+      ok: false,
+      error: "Calendly connection is incomplete. Disconnect and reconnect Calendly.",
+    };
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await resolveAdvisorCalendlyAccessToken(advisorId, ctx);
+  } catch (err) {
+    logCalendlyError("oauth", "Could not refresh Calendly access token for webhook repair", err, {
+      advisorId,
+    });
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Could not refresh Calendly access token. Reconnect Calendly.",
+    };
+  }
+
+  let subscriptionUri: string;
+  try {
+    subscriptionUri = await ensureCalendlyWebhookSubscription({
+      accessToken,
+      organizationUri: ctx.organizationUri,
+      userUri: ctx.userUri,
+      existingSubscriptionUri: ctx.webhookSubscriptionUri,
+    });
+  } catch (err) {
+    logCalendlyError("oauth", "Webhook repair failed", err, {
+      advisorId,
+      callbackUrl: await buildCalendlyWebhookCallbackUrl(),
+    });
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Could not register Calendly webhook. Check server logs.",
+    };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { error } = await secret
+    .from("advisors")
+    .update({
+      calendly_webhook_subscription_uri: subscriptionUri,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", advisorId);
+
+  if (error) {
+    logCalendlyError("oauth", "Failed to save repaired webhook subscription uri", error, {
+      advisorId,
+      subscriptionUri,
+    });
+    return { ok: false, error: "Webhook was created but could not be saved." };
+  }
+
+  logCalendly("oauth", "Advisor Calendly webhook repaired", {
+    advisorId,
+    subscriptionUri,
+  });
+
+  return { ok: true, subscriptionUri };
 }
 
 export async function getAdvisorWebhookSubscriptionUri(

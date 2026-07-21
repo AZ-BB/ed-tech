@@ -1,13 +1,13 @@
 "use client";
 
-import { createAdvisorSessionBooking } from "@/actions/advisor-sessions";
+import { createAdvisorSessionBooking, recordAdvisorSessionCalendlyBooking } from "@/actions/advisor-sessions";
 import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
 import { COUNTRIES } from "@/lib/countries";
 import { advisorSessionUtmContent, buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
 import type { StudentFormDefaults } from "@/lib/load-student-form-defaults";
 import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowBackIcon, ArrowForwardIcon } from "../../../../_components/directional-icons";
 
 const STAGE_VALUES = [
@@ -65,6 +65,7 @@ export function BookAdvisorSessionClient({
   const [specificUnis, setSpecificUnis] = useState("");
   const [helpWith, setHelpWith] = useState("");
   const [sessionId, setSessionId] = useState<number | null>(null);
+  const [calendlyBookingSaved, setCalendlyBookingSaved] = useState(false);
 
   const displayName = `${advisor.firstName} ${advisor.lastName}`;
   const hasCalendly = Boolean(calendlySchedulingUrl?.trim());
@@ -112,6 +113,31 @@ export function BookAdvisorSessionClient({
     specificUnis,
     stage,
   ]);
+
+  useEffect(() => {
+    if (step !== 3 || sessionId == null || calendlyBookingSaved) return;
+
+    function onCalendlyMessage(event: MessageEvent) {
+      if (event.origin !== "https://calendly.com") return;
+      const payload = event.data as {
+        event?: string;
+        payload?: { event?: { start_time?: string } };
+      };
+      if (payload?.event !== "calendly.event_scheduled") return;
+
+      const startTime = payload.payload?.event?.start_time?.trim();
+      if (!startTime) return;
+
+      void recordAdvisorSessionCalendlyBooking(sessionId, startTime).then((result) => {
+        if (result.ok) {
+          setCalendlyBookingSaved(true);
+        }
+      });
+    }
+
+    window.addEventListener("message", onCalendlyMessage);
+    return () => window.removeEventListener("message", onCalendlyMessage);
+  }, [calendlyBookingSaved, sessionId, step]);
 
   const goConfirm = useCallback(() => {
     setError(null);
