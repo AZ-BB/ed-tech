@@ -11,7 +11,7 @@ import type { GeneralResponse } from "@/utils/response";
 import { revalidatePath } from "next/cache";
 
 export async function repairCalendlyWebhookAction(): Promise<
-  GeneralResponse<{ subscriptionUri: string }>
+  GeneralResponse<{ subscriptionUri: string } | null>
 > {
   const access = await assertAdvisorAccess();
   if (!access.ok) {
