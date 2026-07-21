@@ -255,6 +255,84 @@ export async function createAdvisorSessionBooking(
 
 type AdvisorSessionActionResult = { ok: true } | { ok: false; error: string };
 
+/** Client-side fallback when Calendly embed confirms a booking before/alongside the webhook. */
+export async function recordAdvisorSessionCalendlyBooking(
+  sessionIdRaw: number,
+  startTimeRaw: string,
+): Promise<AdvisorSessionActionResult> {
+  const actor = await requireStudentActor();
+  if ("error" in actor) {
+    return { ok: false, error: actor.error };
+  }
+
+  const sessionId = Number.parseInt(String(sessionIdRaw), 10);
+  if (!Number.isFinite(sessionId) || sessionId < 1) {
+    return { ok: false, error: "Invalid session." };
+  }
+
+  const startTime = startTimeRaw.trim();
+  if (!startTime) {
+    return { ok: false, error: "Missing meeting time." };
+  }
+
+  const bookedAt = new Date(startTime);
+  if (Number.isNaN(bookedAt.getTime())) {
+    return { ok: false, error: "Invalid meeting time." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: existing, error: fetchErr } = await secret
+    .from("advisor_sessions")
+    .select("id, student_id, advisor_id, status, booked_at")
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    return { ok: false, error: "Session not found." };
+  }
+
+  if (existing.student_id !== actor.studentId) {
+    return { ok: false, error: "You do not have access to this session." };
+  }
+
+  if (existing.booked_at != null) {
+    return { ok: true };
+  }
+
+  if (existing.status === "cancelled") {
+    return { ok: false, error: "This session was cancelled." };
+  }
+
+  const bookedAtIso = bookedAt.toISOString();
+  const { error: updateErr } = await secret
+    .from("advisor_sessions")
+    .update({
+      booked_at: bookedAtIso,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", sessionId);
+
+  if (updateErr) {
+    console.error("[recordAdvisorSessionCalendlyBooking]", updateErr);
+    return { ok: false, error: "Could not save your booking time." };
+  }
+
+  await appendAdvisorActivityLog(
+    secret,
+    existing.student_id,
+    "advisor",
+    existing.advisor_id,
+    "advisor_session_calendly_booked",
+    `Calendly slot booked for advisor session #${sessionId}.`,
+  );
+
+  revalidatePath("/student/advisor-sessions");
+  revalidatePath("/advisor/sessions-and-calls");
+  revalidatePath(`/advisor/sessions-and-calls/session/${sessionId}`);
+
+  return { ok: true };
+}
+
 const ADVISOR_PORTAL_SESSION_STATUSES = new Set<string>([
   "pending",
   "confirmed",

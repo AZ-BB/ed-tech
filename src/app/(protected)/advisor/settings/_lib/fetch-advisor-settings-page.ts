@@ -17,6 +17,7 @@ export type AdvisorSettingsPagePayload = {
   profileEmail: string;
   calendlyConnected: boolean;
   calendlyConnectedAt: string | null;
+  calendlyWebhookActive: boolean;
   defaults: {
     firstName: string;
     lastName: string;
@@ -62,7 +63,7 @@ export async function fetchAdvisorSettingsPage(): Promise<AdvisorSettingsPagePay
       .select(
         `id, email, first_name, last_name, phone, title, languages, experience_years,
         nationality_country_code, description, best_for, session_for, session_coverage,
-        about, questions, avatar_url, calendly_refresh_token, calendly_connected_at`,
+        about, questions, avatar_url, calendly_refresh_token, calendly_connected_at, calendly_webhook_subscription_uri`,
       )
       .eq("id", access.advisorId)
       .maybeSingle(),
@@ -109,6 +110,7 @@ export async function fetchAdvisorSettingsPage(): Promise<AdvisorSettingsPagePay
     profileEmail: advisor.email?.trim() || authEmail,
     calendlyConnected: Boolean(advisor.calendly_refresh_token?.trim()),
     calendlyConnectedAt: advisor.calendly_connected_at?.trim() || null,
+    calendlyWebhookActive: Boolean(advisor.calendly_webhook_subscription_uri?.trim()),
     defaults: {
       firstName: advisor.first_name ?? "",
       lastName: advisor.last_name ?? "",

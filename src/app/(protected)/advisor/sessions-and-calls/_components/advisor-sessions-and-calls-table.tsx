@@ -75,7 +75,7 @@ function emptyMessage(
     return "No scheduled post-admission lead calls right now.";
   }
   if (type === "advisor_session") {
-    return "No booked advisor sessions right now.";
+    return "No advisor sessions right now.";
   }
   return "No upcoming sessions or scheduled lead calls right now.";
 }
@@ -363,9 +363,15 @@ export function AdvisorSessionsAndCallsTable({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-[var(--text-light)]">
-                          {formatMeetingDateTime(row.meetingAt)}
-                        </span>
+                        {row.kind === "advisor_session" && !meetingTiming ? (
+                          <span className="text-[var(--text-hint)] italic">
+                            Awaiting booking
+                          </span>
+                        ) : (
+                          <span className="text-[var(--text-light)]">
+                            {formatMeetingDateTime(row.meetingAt)}
+                          </span>
+                        )}
                         {meetingTiming ? (
                           <span className={meetingTimingClass(meetingTiming)}>
                             {meetingTimingLabel(meetingTiming)}

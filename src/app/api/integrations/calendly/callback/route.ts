@@ -5,9 +5,10 @@ import {
   completeAdvisorCalendlyOAuth,
   getAdvisorWebhookSubscriptionUri,
   getCalendlyOAuthConfig,
+  repairAdvisorCalendlyWebhookSubscription,
   saveAdvisorCalendlyConnection,
 } from "@/lib/calendly-oauth";
-import { logCalendly, logCalendlyError } from "@/lib/calendly-log";
+import { logCalendly, logCalendlyError, logCalendlyWarn } from "@/lib/calendly-log";
 import { resolveCalendlyOAuthRedirectBase } from "@/lib/calendly-oauth-redirect";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -97,6 +98,19 @@ export async function GET(request: Request) {
     });
 
     await saveAdvisorCalendlyConnection(advisorId, connection);
+
+    if (!connection.webhookSubscriptionUri) {
+      logCalendlyWarn("callback", "Calendly connected without webhook — attempting repair", {
+        advisorId,
+      });
+      const repair = await repairAdvisorCalendlyWebhookSubscription(advisorId);
+      if (!repair.ok) {
+        logCalendlyError("callback", "Post-connect webhook repair failed", undefined, {
+          advisorId,
+          error: repair.error,
+        });
+      }
+    }
 
     logCalendly("callback", "OAuth connection completed successfully", { advisorId });
     return settingsRedirect("connected", request);
