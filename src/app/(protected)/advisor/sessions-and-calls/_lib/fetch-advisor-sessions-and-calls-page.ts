@@ -543,7 +543,7 @@ async function fetchSessionRows(
     `,
     )
     .eq("advisor_id", advisorId)
-    .not("status", "in", '("completed","cancelled")')
+    .neq("status", "cancelled")
     .order("created_at", { ascending: false });
 
   if (search) {
