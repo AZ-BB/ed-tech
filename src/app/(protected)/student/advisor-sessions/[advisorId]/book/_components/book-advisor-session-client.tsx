@@ -432,7 +432,7 @@ export function BookAdvisorSessionClient({
                     <CalendlyInlineEmbed
                       url={calendlyPageUrl}
                       title={bt.calendlyTitle.replace("{name}", displayName)}
-                      className="min-h-[520px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[620px] md:min-h-[720px]"
+                      className="min-h-[720px] w-full min-w-0 max-w-full rounded-none border-0 bg-white sm:min-h-[820px] md:min-h-[920px]"
                     />
                   </div>
                 ) : !hasCalendly ? (
@@ -451,14 +451,6 @@ export function BookAdvisorSessionClient({
                     </p>
                   </div>
                 ) : null}
-                <div className="mt-6 text-center sm:mt-8">
-                  <Link
-                    href="/student/advisor-sessions"
-                    className="mx-auto inline-flex w-full max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-6 py-3 text-sm font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white sm:px-8 sm:py-3.5"
-                  >
-                    {bt.backToAdvisors}
-                  </Link>
-                </div>
               </div>
             ) : null}
           </div>

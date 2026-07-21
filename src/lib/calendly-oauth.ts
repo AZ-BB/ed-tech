@@ -400,6 +400,118 @@ export async function fetchFirstActiveEventType(
   return eventType;
 }
 
+type WebhookSubscriptionResource = {
+  uri: string;
+  callback_url: string;
+  state: string;
+  events?: string[];
+};
+
+function getCalendlyWebhookSigningKey(): string {
+  const signingKey = process.env.CALENDLY_WEBHOOK_SIGNING_KEY?.trim();
+  if (!signingKey) {
+    throw new Error("CALENDLY_WEBHOOK_SIGNING_KEY is not configured.");
+  }
+  return signingKey;
+}
+
+function webhookSubscriptionMatchesCallback(
+  subscription: WebhookSubscriptionResource,
+  callbackUrl: string,
+): boolean {
+  if (subscription.state !== "active") return false;
+  if (subscription.callback_url !== callbackUrl) return false;
+  const events = subscription.events ?? [];
+  return events.length === 0 || events.includes("invitee.created");
+}
+
+async function listCalendlyUserWebhookSubscriptions(
+  accessToken: string,
+  organizationUri: string,
+  userUri: string,
+): Promise<WebhookSubscriptionResource[]> {
+  const params = new URLSearchParams({
+    organization: organizationUri,
+    scope: "user",
+    user: userUri,
+  });
+
+  try {
+    const data = await calendlyApiGet<{ collection?: WebhookSubscriptionResource[] }>(
+      accessToken,
+      `/webhook_subscriptions?${params.toString()}`,
+    );
+    return data.collection ?? [];
+  } catch (err) {
+    logCalendlyWarn("oauth", "Could not list Calendly webhook subscriptions", {
+      organizationUri,
+      userUri,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
+}
+
+async function findCalendlyWebhookSubscriptionForCallback(
+  accessToken: string,
+  organizationUri: string,
+  userUri: string,
+  callbackUrl: string,
+): Promise<string | null> {
+  const subscriptions = await listCalendlyUserWebhookSubscriptions(
+    accessToken,
+    organizationUri,
+    userUri,
+  );
+
+  const match = subscriptions.find((subscription) =>
+    webhookSubscriptionMatchesCallback(subscription, callbackUrl),
+  );
+
+  if (!match?.uri?.trim()) return null;
+
+  logCalendly("oauth", "Found existing Calendly webhook subscription for callback URL", {
+    subscriptionUri: match.uri,
+    callbackUrl,
+  });
+
+  return match.uri.trim();
+}
+
+async function createCalendlyWebhookSubscription(opts: {
+  accessToken: string;
+  organizationUri: string;
+  userUri: string;
+  callbackUrl: string;
+}): Promise<string> {
+  const signingKey = getCalendlyWebhookSigningKey();
+
+  const data = await calendlyApiPost<{ resource: WebhookSubscriptionResource }>(
+    opts.accessToken,
+    "/webhook_subscriptions",
+    {
+      url: opts.callbackUrl,
+      events: ["invitee.created"],
+      organization: opts.organizationUri,
+      user: opts.userUri,
+      scope: "user",
+      signing_key: signingKey,
+    },
+  );
+
+  if (!data.resource?.uri?.trim()) {
+    logCalendlyError("oauth", "Webhook subscription response missing uri");
+    throw new Error("Calendly webhook subscription response missing uri.");
+  }
+
+  logCalendly("oauth", "Created webhook subscription", {
+    subscriptionUri: data.resource.uri,
+    callbackUrl: opts.callbackUrl,
+  });
+
+  return data.resource.uri.trim();
+}
+
 export async function buildCalendlyWebhookCallbackUrl(): Promise<string> {
   const configured = process.env.CALENDLY_WEBHOOK_CALLBACK_URL?.trim();
   if (configured) {
@@ -409,12 +521,6 @@ export async function buildCalendlyWebhookCallbackUrl(): Promise<string> {
   const base = await getPublicSiteBaseUrl();
   return `${base.replace(/\/$/, "")}/api/webhooks/calendly`;
 }
-
-type WebhookSubscriptionResource = {
-  uri: string;
-  callback_url: string;
-  state: string;
-};
 
 export async function ensureCalendlyWebhookSubscription(opts: {
   accessToken: string;
@@ -439,49 +545,57 @@ export async function ensureCalendlyWebhookSubscription(opts: {
       );
       if (
         existing.resource?.state === "active" &&
-        existing.resource.callback_url === callbackUrl
+        webhookSubscriptionMatchesCallback(existing.resource, callbackUrl)
       ) {
-        logCalendly("oauth", "Reusing existing webhook subscription", {
+        logCalendly("oauth", "Reusing stored webhook subscription", {
           subscriptionUri: existing.resource.uri,
         });
-        return existing.resource.uri;
+        return existing.resource.uri.trim();
       }
-      logCalendlyWarn("oauth", "Existing webhook subscription not reusable — creating new one", {
+      logCalendlyWarn("oauth", "Stored webhook subscription not reusable — searching/creating", {
         existingState: existing.resource?.state ?? null,
         existingCallbackUrl: existing.resource?.callback_url ?? null,
         expectedCallbackUrl: callbackUrl,
       });
     } catch (err) {
-      logCalendlyWarn("oauth", "Could not load existing webhook subscription — creating new one", {
+      logCalendlyWarn("oauth", "Could not load stored webhook subscription — searching/creating", {
         existingSubscriptionUri: opts.existingSubscriptionUri,
         err: err instanceof Error ? err.message : String(err),
       });
     }
   }
 
-  const data = await calendlyApiPost<{ resource: WebhookSubscriptionResource }>(
+  const listed = await findCalendlyWebhookSubscriptionForCallback(
     opts.accessToken,
-    "/webhook_subscriptions",
-    {
-      url: callbackUrl,
-      events: ["invitee.created"],
-      organization: opts.organizationUri,
-      user: opts.userUri,
-      scope: "user",
-    },
-  );
-
-  if (!data.resource?.uri?.trim()) {
-    logCalendlyError("oauth", "Webhook subscription response missing uri");
-    throw new Error("Calendly webhook subscription response missing uri.");
-  }
-
-  logCalendly("oauth", "Created webhook subscription", {
-    subscriptionUri: data.resource.uri,
+    opts.organizationUri,
+    opts.userUri,
     callbackUrl,
-  });
+  );
+  if (listed) return listed;
 
-  return data.resource.uri;
+  try {
+    return await createCalendlyWebhookSubscription({
+      accessToken: opts.accessToken,
+      organizationUri: opts.organizationUri,
+      userUri: opts.userUri,
+      callbackUrl,
+    });
+  } catch (err) {
+    logCalendlyWarn("oauth", "Webhook create failed — rechecking existing subscriptions", {
+      err: err instanceof Error ? err.message : String(err),
+      callbackUrl,
+    });
+
+    const retryListed = await findCalendlyWebhookSubscriptionForCallback(
+      opts.accessToken,
+      opts.organizationUri,
+      opts.userUri,
+      callbackUrl,
+    );
+    if (retryListed) return retryListed;
+
+    throw err;
+  }
 }
 
 export async function completeAdvisorCalendlyOAuth(opts: {
