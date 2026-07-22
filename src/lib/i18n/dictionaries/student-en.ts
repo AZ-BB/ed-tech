@@ -1097,7 +1097,7 @@ export const studentEn = {
     },
   },
   subscription: {
-    subscribe: "Subscribe monthly",
+    subscribe: "Subscribe now",
     subscribing: "Redirecting…",
     maybeLater: "Maybe later",
     checkoutFailed: "Could not start checkout. Try again.",

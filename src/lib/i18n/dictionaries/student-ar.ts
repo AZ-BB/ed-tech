@@ -1110,7 +1110,7 @@ export const studentAr: {
     },
   },
   subscription: {
-    subscribe: "اشترك شهريًا",
+    subscribe: "اشترك الآن",
     subscribing: "جارٍ التحويل…",
     maybeLater: "لاحقًا",
     checkoutFailed: "تعذّر بدء الدفع. حاول مرة أخرى.",

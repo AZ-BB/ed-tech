@@ -42,7 +42,6 @@ export async function createFunnelSubscriptionCheckoutSession(
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      currency: "aed",
       customer: existingCustomerId,
       customer_email: existingCustomerId ? undefined : input.customerEmail,
       line_items: [{ price: priceId, quantity: 1 }],
@@ -71,6 +70,23 @@ export async function createFunnelSubscriptionCheckoutSession(
     };
   } catch (error) {
     console.error("[createFunnelSubscriptionCheckoutSession]", error);
-    return { ok: false, error: "Could not create subscription checkout session." };
+    const stripeMessage =
+      error instanceof Error &&
+      "message" in error &&
+      typeof error.message === "string" &&
+      error.message.trim().length > 0
+        ? error.message.trim()
+        : null;
+    if (stripeMessage?.includes("No such price")) {
+      return {
+        ok: false,
+        error:
+          "Stripe price not found for the configured API key. Use a test-mode price ID with your test secret key (same Stripe account), or update STRIPE_SECRET_KEY to match the account where the price was created.",
+      };
+    }
+    return {
+      ok: false,
+      error: stripeMessage ?? "Could not create subscription checkout session.",
+    };
   }
 }
