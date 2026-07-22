@@ -1,5 +1,6 @@
 "use client";
 
+import { preventNumberInputWheelScroll } from "@/lib/prevent-number-input-wheel";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 const fontSerif = '"DM Serif Display", Georgia, serif' as const;
@@ -182,6 +183,7 @@ export function AddManualPaymentDialog({
                   value={universitiesCount}
                   disabled={isSubmitting}
                   onChange={(event) => setUniversitiesCount(event.target.value)}
+                  onWheel={preventNumberInputWheelScroll}
                   className={inputClassName}
                   placeholder="e.g. 5"
                 />
@@ -204,6 +206,7 @@ export function AddManualPaymentDialog({
                 value={amount}
                 disabled={isSubmitting}
                 onChange={(event) => setAmount(event.target.value)}
+                onWheel={preventNumberInputWheelScroll}
                 className={inputClassName}
                 placeholder=""
               />

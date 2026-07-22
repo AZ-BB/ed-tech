@@ -8,6 +8,7 @@ import {
   defaultPaymentDueDateString,
   todayDateString,
 } from "@/lib/payment-request-utils";
+import { preventNumberInputWheelScroll } from "@/lib/prevent-number-input-wheel";
 import { useEffect, useMemo, useState } from "react";
 
 const fontSerif = '"DM Serif Display", Georgia, serif' as const;
@@ -379,6 +380,7 @@ export function SendPostAdmissionPaymentRequestDialog({
                         required
                         value={amount}
                         onChange={(event) => setAmount(event.target.value)}
+                        onWheel={preventNumberInputWheelScroll}
                         className={inputClassName}
                         disabled={isSubmitting}
                       />

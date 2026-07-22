@@ -1,5 +1,6 @@
 "use client";
 
+import { preventNumberInputWheelScroll } from "@/lib/prevent-number-input-wheel";
 import { useEffect, useState, type FormEvent } from "react";
 
 const fontSerif = '"DM Serif Display", Georgia, serif' as const;
@@ -108,6 +109,7 @@ export function ActivateLeadPackageDialog({
                 value={universitiesCount}
                 disabled={isSubmitting}
                 onChange={(event) => setUniversitiesCount(event.target.value)}
+                onWheel={preventNumberInputWheelScroll}
                 className={inputClassName}
                 placeholder=""
               />
@@ -125,6 +127,7 @@ export function ActivateLeadPackageDialog({
                 value={amount}
                 disabled={isSubmitting}
                 onChange={(event) => setAmount(event.target.value)}
+                onWheel={preventNumberInputWheelScroll}
                 className={inputClassName}
                 placeholder=""
               />
