@@ -25,6 +25,7 @@ export const studentAr: {
   nav: Localize<typeof studentEn.nav>;
   common: Localize<typeof studentEn.common>;
   dashboard: Localize<typeof studentEn.dashboard>;
+  subscription: Localize<typeof studentEn.subscription>;
   settings: Localize<typeof studentEn.settings>;
   logout: Localize<typeof studentEn.logout>;
   universities: Localize<typeof studentEn.universities>;
@@ -1107,6 +1108,28 @@ export const studentAr: {
           "بعد قبولك، احصل على دعم التأشيرة والسكن والتأمين والاستعداد للوصول.",
       },
     },
+  },
+  subscription: {
+    subscribe: "اشترك الآن",
+    subscribing: "جارٍ التحويل…",
+    maybeLater: "لاحقًا",
+    checkoutFailed: "تعذّر بدء الدفع. حاول مرة أخرى.",
+    dashboardTitle: "افتح الوصول الكامل إلى يونيفيرا",
+    dashboardDesc:
+      "اشترك في الخطة الشهرية لفتح جميع ميزات المنصة — اكتشاف البرامج، المستشارون، دعم التقديم، والمزيد.",
+    settingsTitle: "الاشتراك",
+    settingsDesc:
+      "أدر اشتراكك الشهري في يونيفيرا. يسري الإلغاء في نهاية فترة الفوترة الحالية.",
+    statusLabel: "الحالة",
+    renewalLabel: "تنتهي الفترة الحالية",
+    statusActive: "نشط",
+    statusInactive: "غير مشترك",
+    statusCancelScheduled: "نشط — سيلغى في نهاية الفترة",
+    cancel: "إلغاء الاشتراك",
+    canceling: "جارٍ الإلغاء…",
+    cancelConfirm:
+      "إلغاء الاشتراك؟ ستحتفظ بالوصول حتى نهاية فترة الفوترة الحالية.",
+    cancelScheduledToast: "سيتم إلغاء الاشتراك في نهاية الفترة الحالية.",
   },
   settings: {
     pageTitle: "إعدادات الحساب",

@@ -14,12 +14,14 @@ import {
 } from "@/lib/student-feature-access";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { StudentFunnelSubscribeButton } from "./student-funnel-subscribe-button";
 
 type StudentDisabledFeaturesModalProps = {
   open: boolean;
   onClose: () => void;
   featureAccess: StudentFeatureAccess;
   highlightedFeature?: StudentFeatureKey | null;
+  showFunnelSubscribeCta?: boolean;
 };
 
 function FeatureIcon({
@@ -58,9 +60,11 @@ export function StudentDisabledFeaturesModal({
   onClose,
   featureAccess,
   highlightedFeature,
+  showFunnelSubscribeCta = false,
 }: StudentDisabledFeaturesModalProps) {
   const { dict } = useLocale();
   const copy = dict.student.dashboard.disabledFeaturesModal;
+  const subscriptionCopy = dict.student.subscription;
   const disabledFeatures = useMemo(
     () => getDisabledStudentFeatures(featureAccess),
     [featureAccess],
@@ -195,13 +199,16 @@ export function StudentDisabledFeaturesModal({
         </div>
       </div>
 
-      <div className="mt-5 flex justify-end border-t border-[var(--border-light)] pt-4">
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-[var(--border-light)] pt-4">
+        {showFunnelSubscribeCta ? (
+          <StudentFunnelSubscribeButton />
+        ) : null}
         <button
           type="button"
           onClick={onClose}
           className="inline-flex cursor-pointer items-center justify-center rounded-full bg-[var(--green)] px-6 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[var(--green-dark)]"
         >
-          {copy.close}
+          {showFunnelSubscribeCta ? subscriptionCopy.maybeLater : copy.close}
         </button>
       </div>
     </ModalVeil>

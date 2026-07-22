@@ -1096,6 +1096,28 @@ export const studentEn = {
       },
     },
   },
+  subscription: {
+    subscribe: "Subscribe now",
+    subscribing: "Redirecting…",
+    maybeLater: "Maybe later",
+    checkoutFailed: "Could not start checkout. Try again.",
+    dashboardTitle: "Unlock full Univeera access",
+    dashboardDesc:
+      "Subscribe to a monthly plan to unlock all platform features — program discovery, advisors, application support, and more.",
+    settingsTitle: "Subscription",
+    settingsDesc:
+      "Manage your monthly Univeera subscription. Cancellation takes effect at the end of the current billing period.",
+    statusLabel: "Status",
+    renewalLabel: "Current period ends",
+    statusActive: "Active",
+    statusInactive: "Not subscribed",
+    statusCancelScheduled: "Active — cancels at period end",
+    cancel: "Cancel subscription",
+    canceling: "Canceling…",
+    cancelConfirm:
+      "Cancel your subscription? You will keep access until the end of the current billing period.",
+    cancelScheduledToast: "Subscription will cancel at the end of the current period.",
+  },
   settings: {
     pageTitle: "Account settings",
     pageSubtitle: "Manage your account details, security, and preferences",

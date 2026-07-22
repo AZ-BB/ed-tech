@@ -8,6 +8,7 @@ import {
   buildPaymentRequestEmailBody,
   PAYMENT_REQUEST_EMAIL_SUBJECT,
 } from "@/lib/payment-request-email-content";
+import { preventNumberInputWheelScroll } from "@/lib/prevent-number-input-wheel";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -382,6 +383,7 @@ export function LeadPaymentRequestDialog({
                     value={universitiesCount}
                     disabled={isSubmitting}
                     onChange={(event) => setUniversitiesCount(event.target.value)}
+                    onWheel={preventNumberInputWheelScroll}
                     className={inputClassName}
                   />
                 </div>
@@ -397,6 +399,7 @@ export function LeadPaymentRequestDialog({
                     value={amount}
                     disabled={isSubmitting}
                     onChange={(event) => setAmount(event.target.value)}
+                    onWheel={preventNumberInputWheelScroll}
                     className={inputClassName}
                   />
                 </div>
@@ -476,6 +479,7 @@ export function LeadPaymentRequestDialog({
                     setUniversitiesCount(event.target.value);
                     setEmailBodyCustomized(false);
                   }}
+                  onWheel={preventNumberInputWheelScroll}
                   className={inputClassName}
                 />
               </div>
@@ -494,6 +498,7 @@ export function LeadPaymentRequestDialog({
                     setAmount(event.target.value);
                     setEmailBodyCustomized(false);
                   }}
+                  onWheel={preventNumberInputWheelScroll}
                   className={inputClassName}
                 />
               </div>

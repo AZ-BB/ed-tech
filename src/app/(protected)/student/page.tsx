@@ -1,4 +1,8 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
+import {
+  canManageFunnelSubscription,
+  isStudentSubscriptionActive,
+} from "@/lib/student-subscription";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { redirect } from "next/navigation";
 import { getPlatformCompletionStats, hasPlatformCompletionFlag, QUICK_ACTIONS_TOUR_FLAG } from "@/lib/student-platform-completion";
@@ -118,6 +122,10 @@ export default async function StudentPage() {
       hasSchoolLinked={hasSchoolLinked}
       featureAccess={auth.featureAccess}
       hasSeenQuickActionsTour={hasSeenQuickActionsTour}
+      showFunnelSubscriptionCta={
+        canManageFunnelSubscription(auth) &&
+        !isStudentSubscriptionActive(auth.subscriptionStatus)
+      }
     />
   );
 }

@@ -3494,6 +3494,11 @@ export type Database = {
           signup_advisor_credit_limit: number | null
           signup_ambassador_credit_limit: number | null
           status: Database["public"]["Enums"]["student_status"] | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_cancel_at_period_end: boolean
+          subscription_current_period_end: string | null
+          subscription_status: Database["public"]["Enums"]["student_subscription_status"]
           student_type: Database["public"]["Enums"]["student_type"]
           teacher_id: string | null
           total_logins: number | null
@@ -3523,6 +3528,11 @@ export type Database = {
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_cancel_at_period_end?: boolean
+          subscription_current_period_end?: string | null
+          subscription_status?: Database["public"]["Enums"]["student_subscription_status"]
           student_type?: Database["public"]["Enums"]["student_type"]
           teacher_id?: string | null
           total_logins?: number | null
@@ -3552,6 +3562,11 @@ export type Database = {
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_cancel_at_period_end?: boolean
+          subscription_current_period_end?: string | null
+          subscription_status?: Database["public"]["Enums"]["student_subscription_status"]
           student_type?: Database["public"]["Enums"]["student_type"]
           teacher_id?: string | null
           total_logins?: number | null
@@ -4423,6 +4438,16 @@ export type Database = {
         | "base_credit"
         | "extra_credits"
       student_status: "high_priority" | "at_risk" | "missing_docs"
+      student_subscription_status:
+        | "none"
+        | "active"
+        | "trialing"
+        | "past_due"
+        | "canceled"
+        | "incomplete"
+        | "incomplete_expired"
+        | "unpaid"
+        | "paused"
       student_type: "school" | "individual" | "funnel"
       student_story_language: "en" | "ar" | "mixed"
       tuition_type: "full" | "partial"
@@ -4660,6 +4685,17 @@ export const Constants = {
         "extra_credits",
       ],
       student_status: ["high_priority", "at_risk", "missing_docs"],
+      student_subscription_status: [
+        "none",
+        "active",
+        "trialing",
+        "past_due",
+        "canceled",
+        "incomplete",
+        "incomplete_expired",
+        "unpaid",
+        "paused",
+      ],
       student_type: ["school", "individual", "funnel"],
       student_story_language: ["en", "ar", "mixed"],
       tuition_type: ["full", "partial"],

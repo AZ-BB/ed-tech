@@ -1,4 +1,8 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
+import {
+  canManageFunnelSubscription,
+  isStudentSubscriptionActive,
+} from "@/lib/student-subscription";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 import { format } from "date-fns";
 import { notFound, redirect } from "next/navigation";
@@ -83,6 +87,16 @@ export default async function StudentSettingsPage() {
       lastSignInLabel={lastSignInLabel}
       countries={countries ?? []}
       hasSchoolLinked={auth.hasSchoolLinked}
+      subscription={
+        canManageFunnelSubscription(auth)
+          ? {
+              status: auth.subscriptionStatus,
+              currentPeriodEnd: auth.subscriptionCurrentPeriodEnd,
+              cancelAtPeriodEnd: auth.subscriptionCancelAtPeriodEnd,
+              isActive: isStudentSubscriptionActive(auth.subscriptionStatus),
+            }
+          : null
+      }
       initial={{
         firstName: profile.first_name,
         lastName: profile.last_name,

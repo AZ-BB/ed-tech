@@ -23,6 +23,7 @@ import {
   type StudentFeatureAccess,
 } from "@/lib/student-feature-access";
 import { useStudentFeatureGate } from "./student-feature-gate-provider";
+import { StudentFunnelSubscribeButton } from "./student-funnel-subscribe-button";
 
 /** Student dashboard only: maps stored log copy to second-person. Does not change DB values. */
 function formatActivityLogMessageForStudent(message: string): string {
@@ -234,6 +235,7 @@ type StudentDashboardProps = {
   hasSchoolLinked?: boolean;
   featureAccess?: StudentFeatureAccess;
   hasSeenQuickActionsTour?: boolean;
+  showFunnelSubscriptionCta?: boolean;
 };
 
 export function StudentDashboard({
@@ -251,10 +253,12 @@ export function StudentDashboard({
   hasSchoolLinked = true,
   featureAccess = defaultStudentFeatureAccess(true),
   hasSeenQuickActionsTour = true,
+  showFunnelSubscriptionCta = false,
 }: StudentDashboardProps) {
   const { locale, dict } = useLocale();
   const { openDisabledFeaturesModal } = useStudentFeatureGate();
   const d = dict.student.dashboard;
+  const subscriptionCopy = dict.student.subscription;
   const [tourDismissed, setTourDismissed] = useState(false);
 
   const enabledQuickActionSteps = useMemo(() => {
@@ -369,6 +373,20 @@ export function StudentDashboard({
           />
         </div>
       </div>
+
+      {showFunnelSubscriptionCta ? (
+        <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-[#c8e6d0] bg-gradient-to-br from-[var(--green-pale)] to-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6">
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-[var(--text)]">
+              {subscriptionCopy.dashboardTitle}
+            </h2>
+            <p className="mt-1 max-w-xl text-[13px] leading-snug text-[var(--text-light)]">
+              {subscriptionCopy.dashboardDesc}
+            </p>
+          </div>
+          <StudentFunnelSubscribeButton className="shrink-0 self-start sm:self-center" />
+        </div>
+      ) : null}
 
       <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-hint)]">
         {d.quickActions}

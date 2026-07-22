@@ -2,6 +2,10 @@
 
 import { logout } from "@/actions/auth";
 import {
+  cancelFunnelSubscriptionAction,
+  createFunnelSubscriptionCheckoutAction,
+} from "@/actions/student-subscription";
+import {
   updateStudentNotificationPreferencesAction,
   updateStudentPersonalAction,
 } from "@/actions/student-settings";
@@ -12,6 +16,7 @@ import { StudentLanguageSwitcher } from "@/lib/i18n/student-language-switcher";
 import type { GeneralResponse } from "@/utils/response";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import {
   useActionState,
   useCallback,
@@ -91,21 +96,31 @@ function roValueClass() {
   return "text-[15px] font-medium tracking-tight text-[var(--text)]";
 }
 
+export type StudentSettingsSubscription = {
+  status: string;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  isActive: boolean;
+};
+
 export function StudentSettingsClient({
   authEmail,
   lastSignInLabel,
   countries,
   initial,
   hasSchoolLinked = true,
+  subscription = null,
 }: {
   authEmail: string;
   lastSignInLabel: string;
   countries: { id: string; name: string }[];
   initial: StudentSettingsInitial;
   hasSchoolLinked?: boolean;
+  subscription?: StudentSettingsSubscription | null;
 }) {
   const { dict } = useLocale();
   const s = dict.student.settings;
+  const subscriptionCopy = dict.student.subscription;
   const c = dict.student.common;
   const logoutCopy = dict.student.logout;
   const router = useRouter();
@@ -130,6 +145,46 @@ export function StudentSettingsClient({
   const pwConfirmRef = useRef<HTMLInputElement>(null);
 
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [subscriptionPending, startSubscriptionTransition] = useTransition();
+  const [subscriptionMessage, setSubscriptionMessage] = useState<string | null>(null);
+
+  const subscriptionStatusLabel =
+    subscription?.isActive
+      ? subscription.cancelAtPeriodEnd
+        ? subscriptionCopy.statusCancelScheduled
+        : subscriptionCopy.statusActive
+      : subscriptionCopy.statusInactive;
+
+  const renewalLabel =
+    subscription?.currentPeriodEnd != null
+      ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
+      : s.emptyValue;
+
+  function handleSubscribe() {
+    setSubscriptionMessage(null);
+    startSubscriptionTransition(async () => {
+      const result = await createFunnelSubscriptionCheckoutAction();
+      if (result.error || !result.data?.url) {
+        setSubscriptionMessage(result.error ?? subscriptionCopy.checkoutFailed);
+        return;
+      }
+      window.location.href = result.data.url;
+    });
+  }
+
+  function handleCancelSubscription() {
+    if (!window.confirm(subscriptionCopy.cancelConfirm)) return;
+    setSubscriptionMessage(null);
+    startSubscriptionTransition(async () => {
+      const result = await cancelFunnelSubscriptionAction();
+      if (result.error) {
+        setSubscriptionMessage(result.error);
+        return;
+      }
+      showToast(subscriptionCopy.cancelScheduledToast);
+      router.refresh();
+    });
+  }
 
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
@@ -642,6 +697,72 @@ export function StudentSettingsClient({
           </div>
         </div>
       </section>
+      ) : null}
+
+      {subscription ? (
+        <section className="mb-4 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white shadow-[0_1px_4px_rgba(0,0,0,.02)]">
+          <div className="border-b border-[var(--border-light)] bg-gradient-to-b from-[#fafaf8] to-white px-6 py-[18px] sm:px-7">
+            <div className="flex items-center gap-2 text-[15px] font-bold text-[var(--text)]">
+              <span className="text-[var(--green-light)] [&_svg]:block">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden
+                >
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <path d="M2 10h20" />
+                </svg>
+              </span>
+              {subscriptionCopy.settingsTitle}
+            </div>
+          </div>
+          <div className="px-6 py-5 sm:px-7 sm:py-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="px-[18px] py-4 sm:border-r sm:border-[var(--border-light)]">
+                <div className={roLabelClass()}>{subscriptionCopy.statusLabel}</div>
+                <div className={roValueClass()}>{subscriptionStatusLabel}</div>
+              </div>
+              <div className="px-[18px] py-4">
+                <div className={roLabelClass()}>{subscriptionCopy.renewalLabel}</div>
+                <div className={roValueClass()}>{renewalLabel}</div>
+              </div>
+            </div>
+            <p className="mt-2 px-[18px] text-xs text-[var(--text-hint)]">
+              {subscriptionCopy.settingsDesc}
+            </p>
+            {subscriptionMessage ? (
+              <p className="mt-3 px-[18px] text-sm font-medium text-[#E74C3C]">
+                {subscriptionMessage}
+              </p>
+            ) : null}
+            <div className="mt-4 flex flex-wrap gap-2 px-[18px]">
+              {!subscription.isActive ? (
+                <button
+                  type="button"
+                  className={btnSaveClass()}
+                  disabled={subscriptionPending}
+                  onClick={handleSubscribe}
+                >
+                  {subscriptionPending ? subscriptionCopy.subscribing : subscriptionCopy.subscribe}
+                </button>
+              ) : null}
+              {subscription.isActive && !subscription.cancelAtPeriodEnd ? (
+                <button
+                  type="button"
+                  className={btnOutlineClass()}
+                  disabled={subscriptionPending}
+                  onClick={handleCancelSubscription}
+                >
+                  {subscriptionPending ? subscriptionCopy.canceling : subscriptionCopy.cancel}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {/* Security */}
