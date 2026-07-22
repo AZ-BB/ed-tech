@@ -5,6 +5,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { formatRelativeTime } from "@/lib/i18n/format-relative-time";
 import { format } from "date-fns";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import {
   quickActions,
   type DashboardActivityLogItem,
@@ -14,6 +15,7 @@ import {
 import { ArrowForwardIcon } from "../_components/directional-icons";
 import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
+import { QuickActionsOnboardingTour } from "./quick-actions-onboarding-tour";
 import {
   QUICK_ACTION_TO_FEATURE,
   defaultStudentFeatureAccess,
@@ -230,6 +232,7 @@ type StudentDashboardProps = {
   aiMatchesGeneratedCount: number;
   hasSchoolLinked?: boolean;
   featureAccess?: StudentFeatureAccess;
+  hasSeenQuickActionsTour?: boolean;
 };
 
 export function StudentDashboard({
@@ -246,9 +249,35 @@ export function StudentDashboard({
   aiMatchesGeneratedCount,
   hasSchoolLinked = true,
   featureAccess = defaultStudentFeatureAccess(true),
+  hasSeenQuickActionsTour = true,
 }: StudentDashboardProps) {
   const { locale, dict } = useLocale();
   const d = dict.student.dashboard;
+  const [tourDismissed, setTourDismissed] = useState(false);
+
+  const enabledQuickActionSteps = useMemo(() => {
+    const tips = d.quickActionsOnboarding.tips;
+    return quickActions
+      .filter((action) => {
+        const featureKey = QUICK_ACTION_TO_FEATURE[action.dictKey];
+        return (
+          featureKey == null || isStudentFeatureEnabled(featureAccess, featureKey)
+        );
+      })
+      .map((action) => {
+        const actionCopy = d.quickActionsItems[action.dictKey];
+        return {
+          dictKey: action.dictKey,
+          title: actionCopy.name,
+          description: tips[action.dictKey],
+        };
+      });
+  }, [d, featureAccess]);
+
+  const showQuickActionsTour =
+    !hasSeenQuickActionsTour &&
+    !tourDismissed &&
+    enabledQuickActionSteps.length > 0;
 
   return (
     <div className="text-[var(--text)]">
@@ -392,7 +421,11 @@ export function StudentDashboard({
 
             if (disabled) {
               return (
-                <div key={action.dictKey} className="block h-full min-w-0">
+                <div
+                  key={action.dictKey}
+                  data-quick-action={action.dictKey}
+                  className="block h-full min-w-0"
+                >
                   {card}
                 </div>
               );
@@ -403,6 +436,7 @@ export function StudentDashboard({
               key={action.dictKey}
               href={action.href}
               scroll={false}
+              data-quick-action={action.dictKey}
               className="block h-full min-w-0 text-inherit no-underline"
             >
               {card}
@@ -411,6 +445,19 @@ export function StudentDashboard({
           })}
         </div>
       </div>
+
+      {showQuickActionsTour ? (
+        <QuickActionsOnboardingTour
+          steps={enabledQuickActionSteps}
+          labels={{
+            skip: d.quickActionsOnboarding.skip,
+            next: d.quickActionsOnboarding.next,
+            done: d.quickActionsOnboarding.done,
+            stepOf: d.quickActionsOnboarding.stepOf,
+          }}
+          onComplete={() => setTourDismissed(true)}
+        />
+      ) : null}
 
       <StudentDashboardActivityStats
         totalLogins={totalLogins}

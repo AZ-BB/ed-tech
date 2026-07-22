@@ -17,6 +17,9 @@ export const STUDENT_PLATFORM_COMPLETION_FLAGS = {
     completed_discovery_journey: "completed_discovery_journey",
 } as const;
 
+/** UI onboarding flag — stored in `platform_completion` but excluded from completion stats. */
+export const QUICK_ACTIONS_TOUR_FLAG = "has_seen_quick_actions_tour";
+
 export function hasPlatformCompletionFlag(pc: Json | null, flagKey: string): boolean {
     if (pc == null || typeof pc !== "object" || Array.isArray(pc)) return false;
     return (pc as Record<string, unknown>)[flagKey] === true;

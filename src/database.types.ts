@@ -3488,6 +3488,7 @@ export type Database = {
           signup_advisor_credit_limit: number | null
           signup_ambassador_credit_limit: number | null
           status: Database["public"]["Enums"]["student_status"] | null
+          student_type: Database["public"]["Enums"]["student_type"]
           teacher_id: string | null
           total_logins: number | null
           updated_at: string | null
@@ -3516,6 +3517,7 @@ export type Database = {
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
+          student_type?: Database["public"]["Enums"]["student_type"]
           teacher_id?: string | null
           total_logins?: number | null
           updated_at?: string | null
@@ -3544,6 +3546,7 @@ export type Database = {
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
           status?: Database["public"]["Enums"]["student_status"] | null
+          student_type?: Database["public"]["Enums"]["student_type"]
           teacher_id?: string | null
           total_logins?: number | null
           updated_at?: string | null
@@ -4414,6 +4417,7 @@ export type Database = {
         | "base_credit"
         | "extra_credits"
       student_status: "high_priority" | "at_risk" | "missing_docs"
+      student_type: "school" | "individual" | "funnel"
       student_story_language: "en" | "ar" | "mixed"
       tuition_type: "full" | "partial"
       university_difficulty: "easy" | "medium" | "hard"
@@ -4650,6 +4654,7 @@ export const Constants = {
         "extra_credits",
       ],
       student_status: ["high_priority", "at_risk", "missing_docs"],
+      student_type: ["school", "individual", "funnel"],
       student_story_language: ["en", "ar", "mixed"],
       tuition_type: ["full", "partial"],
       university_difficulty: ["easy", "medium", "hard"],

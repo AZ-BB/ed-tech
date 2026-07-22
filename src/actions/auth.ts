@@ -330,6 +330,7 @@ export async function studentSignUp(
             ambassador_credit_limit: school.default_ambasador_credit_limit ?? null,
             signup_advisor_credit_limit: school.default_advisor_credit_limit ?? null,
             signup_ambassador_credit_limit: school.default_ambasador_credit_limit ?? null,
+            student_type: "school",
         });
 
     if (studentProfileError) {
@@ -424,6 +425,7 @@ export async function individualStudentSignUp(
         grade,
         nationalityCountryCode,
         password,
+        studentType: "individual",
         featureAccess: defaultStudentFeatureAccess(true),
         metaData: { source: "individual-signup" },
     });

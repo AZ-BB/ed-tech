@@ -87,6 +87,7 @@ export async function createAdminIndependentStudent(
     grade,
     nationalityCountryCode,
     password,
+    studentType: "individual",
     featureAccess,
   });
 

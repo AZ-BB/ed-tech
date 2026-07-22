@@ -58,13 +58,15 @@ Content-Type: application/json
 | `email` | string | yes | Unique email used as the login identity |
 | `grade` | string | yes | Exactly one of: `Grade 9`, `Grade 10`, `Grade 11`, `Grade 12` |
 | `nationalityCountryCode` | string | yes | ISO 3166-1 alpha-2 country code (e.g. `EG`, `US`, `GB`) |
+| `password` | string | no | Account password (min 8 characters). If omitted, one is generated automatically and not returned. |
+| `studentType` | string | no | `individual` or `funnel`. Defaults to `funnel` for API-provisioned accounts. |
 | `featureAccess` | object | no | Which portal features the student can use (see below) |
 | `metaData` | object | no | Free-form JSON for your own IDs or tracking (returned nowhere; stored for Univeera ops) |
 
 **Notes**
 
-- A password is generated automatically. It is **not** returned and **no** credentials email is sent.
-- The only way to sign the student in after create is the `redirectUrl` in the response.
+- If `password` is omitted, a password is generated automatically. It is **not** returned and **no** credentials email is sent.
+- The primary sign-in path after create is the `redirectUrl` in the response; you may also sign in with email + password if you supplied or store one.
 - Emails are treated case-insensitively.
 
 ### `featureAccess`

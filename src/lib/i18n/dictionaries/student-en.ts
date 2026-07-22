@@ -1021,6 +1021,30 @@ export const studentEn = {
         desc: "Visa, housing, insurance and arrival guidance",
       },
     },
+    quickActionsOnboarding: {
+      skip: "Skip tour",
+      next: "Next",
+      done: "Got it",
+      stepOf: "{current} of {total}",
+      tips: {
+        personalityOverview:
+          "Start here to complete your Discovery Journey and learn how your personality shapes your study choices.",
+        programDiscovery:
+          "Browse and filter programs worldwide, then use AI matching to find options that fit your profile.",
+        discoverUniversities:
+          "Explore 500+ universities, save favorites, and build your shortlist in one place.",
+        scholarships:
+          "Find funding opportunities tailored to your background and destination countries.",
+        advisorSessions:
+          "Book a one-on-one session with an expert advisor whenever you need personalized guidance.",
+        ambassadors:
+          "Chat with students who already study at your target universities for real campus insights.",
+        applicationSupport:
+          "Get end-to-end help with your applications — documents, deadlines, and personal statements.",
+        postAdmission:
+          "After you receive an offer, get support with visas, housing, insurance, and arrival planning.",
+      },
+    },
   },
   settings: {
     pageTitle: "Account settings",
