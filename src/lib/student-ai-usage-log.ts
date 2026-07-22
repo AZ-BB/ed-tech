@@ -1,9 +1,14 @@
 import type { Database, Json } from "@/database.types";
 import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import {
-  parseStudentFeatureAccess,
   type StudentFeatureAccess,
 } from "@/lib/student-feature-access";
+import {
+  resolveStudentFeatureAccess,
+  type StudentSubscriptionSnapshot,
+  type StudentSubscriptionStatus,
+  type StudentType,
+} from "@/lib/student-subscription";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 type AiUsageType = Database["public"]["Enums"]["ai_usage_type"];
@@ -12,12 +17,14 @@ export const DEACTIVATED_LOGIN_MESSAGE =
   "Your account has been deactivated. Please contact support.";
 
 export type StudentSessionAuth =
-  | {
+  | ({
       ok: true;
       studentId: string;
       hasSchoolLinked: boolean;
       featureAccess: StudentFeatureAccess;
-    }
+    } & StudentSubscriptionSnapshot & {
+        stripeSubscriptionId: string | null;
+      })
   | {
       ok: false;
       status: 401 | 403;
@@ -41,7 +48,9 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
   const secret = await createSupabaseSecretClient();
   const { data: profile } = await secret
     .from("student_profiles")
-    .select("id, is_active, school_id, feature_access")
+    .select(
+      "id, is_active, school_id, feature_access, student_type, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, stripe_subscription_id",
+    )
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) {
@@ -68,11 +77,24 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
       };
     }
   }
+  const studentType = (profile.student_type ?? "individual") as StudentType;
+  const subscriptionStatus = (profile.subscription_status ??
+    "none") as StudentSubscriptionStatus;
+
   return {
     ok: true,
     studentId: user.id,
     hasSchoolLinked: Boolean(profile.school_id),
-    featureAccess: parseStudentFeatureAccess(profile.feature_access as Json | null),
+    studentType,
+    subscriptionStatus,
+    subscriptionCurrentPeriodEnd: profile.subscription_current_period_end,
+    subscriptionCancelAtPeriodEnd: profile.subscription_cancel_at_period_end ?? false,
+    stripeSubscriptionId: profile.stripe_subscription_id,
+    featureAccess: resolveStudentFeatureAccess({
+      studentType,
+      subscriptionStatus,
+      storedFeatureAccess: profile.feature_access as Json | null,
+    }),
   };
 }
 

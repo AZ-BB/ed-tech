@@ -25,9 +25,11 @@ const StudentFeatureGateContext =
 export function StudentFeatureGateProvider({
   children,
   featureAccess = defaultStudentFeatureAccess(true),
+  showFunnelSubscribeCta = false,
 }: {
   children: ReactNode;
   featureAccess?: StudentFeatureAccess;
+  showFunnelSubscribeCta?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [highlightedFeature, setHighlightedFeature] =
@@ -59,6 +61,7 @@ export function StudentFeatureGateProvider({
         onClose={closeModal}
         featureAccess={featureAccess}
         highlightedFeature={highlightedFeature}
+        showFunnelSubscribeCta={showFunnelSubscribeCta}
       />
     </StudentFeatureGateContext.Provider>
   );

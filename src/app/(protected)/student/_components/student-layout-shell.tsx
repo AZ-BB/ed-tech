@@ -418,12 +418,14 @@ export function StudentLayoutShell({
   locale,
   hasSchoolLinked = true,
   featureAccess = defaultStudentFeatureAccess(true),
+  showFunnelSubscribeCta = false,
 }: {
   children: React.ReactNode;
   locale: Locale;
   /** When false, My Applications nav is hidden (independent students). */
   hasSchoolLinked?: boolean;
   featureAccess?: StudentFeatureAccess;
+  showFunnelSubscribeCta?: boolean;
 }) {
   /** Collapsible drawer from the right + dimmed overlay — same pattern as dashboard.html */
   const { dict } = useLocale();
@@ -482,7 +484,10 @@ export function StudentLayoutShell({
   }, []);
 
   return (
-    <StudentFeatureGateProvider featureAccess={featureAccess}>
+    <StudentFeatureGateProvider
+      featureAccess={featureAccess}
+      showFunnelSubscribeCta={showFunnelSubscribeCta}
+    >
       <div
         className={`student-portal min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}
         dir={portalDir}

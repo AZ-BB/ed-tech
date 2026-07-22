@@ -16,6 +16,12 @@ export function getStripeWebhookSecret(): string | undefined {
   return secret || undefined;
 }
 
+/** Monthly funnel student subscription Price ID (`STRIPE_FUNNEL_SUBSCRIPTION_PRICE_ID`). */
+export function getFunnelSubscriptionPriceId(): string | undefined {
+  const priceId = process.env.STRIPE_FUNNEL_SUBSCRIPTION_PRICE_ID?.trim();
+  return priceId || undefined;
+}
+
 export function isStripeConfigured(): boolean {
   return Boolean(getStripeSecretKey());
 }
