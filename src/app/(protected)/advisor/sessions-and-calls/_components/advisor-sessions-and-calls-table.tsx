@@ -1,17 +1,21 @@
 "use client";
 
 import { updateAdvisorSessionLeadQualification } from "@/actions/advisor-session-lead-qualification";
-import { updateAdvisorSessionStatus } from "@/actions/advisor-sessions";
+import { updateAdvisorSessionsAndCallsRowStatus } from "@/actions/advisor-sessions";
 import {
-  ADMIN_ADVISOR_SESSION_STATUS_OPTIONS,
+  ADVISOR_PORTAL_SESSION_STATUS_OPTIONS,
   advisorSessionStatusSelectClass,
 } from "@/app/(protected)/admin/sessions/_lib/session-status-labels";
 import type {
+  AdvisorSessionsAndCallsOutcomeFilter,
   AdvisorSessionsAndCallsPanelProps,
   AdvisorSessionsAndCallsRowKind,
+  AdvisorSessionsAndCallsStatusFilter,
   AdvisorSessionsAndCallsTypeFilter,
 } from "@/app/(protected)/advisor/sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
 import {
+  ADVISOR_SESSIONS_AND_CALLS_OUTCOME_FILTER_OPTIONS,
+  ADVISOR_SESSIONS_AND_CALLS_STATUS_FILTER_OPTIONS,
   advisorSessionsAndCallsKindLabel,
   advisorSessionsAndCallsRowHref,
 } from "@/app/(protected)/advisor/sessions-and-calls/_lib/advisor-sessions-and-calls-shared";
@@ -45,6 +49,9 @@ const TYPE_OPTIONS: {
 const SELECT_CHEVRON =
   'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
 
+const filterSelectClass =
+  "min-w-[140px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat py-[7px] pl-[10px] pr-9 text-[12px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C]";
+
 function formatMeetingDateTime(iso: string): string {
   try {
     const d = new Date(iso);
@@ -64,9 +71,11 @@ function kindBadgeClass(kind: AdvisorSessionsAndCallsRowKind): string {
 function emptyMessage(
   search: string,
   type: AdvisorSessionsAndCallsTypeFilter,
+  status: AdvisorSessionsAndCallsStatusFilter,
+  outcome: AdvisorSessionsAndCallsOutcomeFilter,
 ): string {
-  if (search.trim()) {
-    return "No sessions or calls match your search.";
+  if (search.trim() || status || outcome) {
+    return "No sessions or calls match your filters.";
   }
   if (type === "application_lead") {
     return "No scheduled application lead calls right now.";
@@ -91,6 +100,8 @@ export function AdvisorSessionsAndCallsTable({
   limit,
   search,
   type,
+  status,
+  outcome,
   typeCounts,
 }: AdvisorSessionsAndCallsPanelProps) {
   const router = useRouter();
@@ -106,9 +117,7 @@ export function AdvisorSessionsAndCallsTable({
   );
   const [statusByRow, setStatusByRow] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      rows
-        .filter((row) => row.sessionStatus)
-        .map((row) => [rowKey(row.kind, row.id), row.sessionStatus!]),
+      rows.map((row) => [rowKey(row.kind, row.id), row.sessionStatus]),
     ),
   );
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
@@ -133,9 +142,7 @@ export function AdvisorSessionsAndCallsTable({
   useEffect(() => {
     setStatusByRow(
       Object.fromEntries(
-        rows
-          .filter((row) => row.sessionStatus)
-          .map((row) => [rowKey(row.kind, row.id), row.sessionStatus!]),
+        rows.map((row) => [rowKey(row.kind, row.id), row.sessionStatus]),
       ),
     );
   }, [rows]);
@@ -183,6 +190,22 @@ export function AdvisorSessionsAndCallsTable({
     [pathname, router, searchParams, type],
   );
 
+  const updateFilter = useCallback(
+    (param: "sessionsStatus" | "sessionsOutcome", value: string) => {
+      startTransition(() => {
+        const next = new URLSearchParams(searchParams.toString());
+        if (value) {
+          next.set(param, value);
+        } else {
+          next.delete(param);
+        }
+        next.set("sessionsPage", "1");
+        router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+      });
+    },
+    [pathname, router, searchParams],
+  );
+
   function openRow(kind: AdvisorSessionsAndCallsRowKind, id: string) {
     router.push(advisorSessionsAndCallsRowHref(kind, id));
   }
@@ -218,8 +241,12 @@ export function AdvisorSessionsAndCallsTable({
     });
   }
 
-  function handleStatusChange(id: string, nextValue: string) {
-    const key = rowKey("advisor_session", id);
+  function handleStatusChange(
+    kind: AdvisorSessionsAndCallsRowKind,
+    id: string,
+    nextValue: string,
+  ) {
+    const key = rowKey(kind, id);
     const previous = statusByRow[key] ?? "pending";
     setStatusByRow((current) => ({ ...current, [key]: nextValue }));
     setStatusErrors((current) => {
@@ -230,7 +257,11 @@ export function AdvisorSessionsAndCallsTable({
     setPendingStatusRowKey(key);
 
     startTransition(async () => {
-      const result = await updateAdvisorSessionStatus(id, nextValue);
+      const result = await updateAdvisorSessionsAndCallsRowStatus(
+        kind,
+        id,
+        nextValue,
+      );
       setPendingStatusRowKey(null);
       if (!result.ok) {
         setStatusByRow((current) => ({ ...current, [key]: previous }));
@@ -291,6 +322,36 @@ export function AdvisorSessionsAndCallsTable({
             className="w-[260px] max-w-full rounded-[8px] border-[1.5px] border-[var(--border)] bg-[#faf9f4] py-[7px] pl-8 pr-3 text-[12.5px] text-[var(--text)] outline-none transition-colors focus:border-[var(--green-light)] focus:bg-white"
           />
         </div>
+        <select
+          aria-label="Filter by status"
+          className={filterSelectClass}
+          style={{ backgroundImage: SELECT_CHEVRON }}
+          value={status}
+          onChange={(event) =>
+            updateFilter("sessionsStatus", event.target.value)
+          }
+        >
+          {ADVISOR_SESSIONS_AND_CALLS_STATUS_FILTER_OPTIONS.map((option) => (
+            <option key={option.value || "all"} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filter by outcome"
+          className={filterSelectClass}
+          style={{ backgroundImage: SELECT_CHEVRON }}
+          value={outcome}
+          onChange={(event) =>
+            updateFilter("sessionsOutcome", event.target.value)
+          }
+        >
+          {ADVISOR_SESSIONS_AND_CALLS_OUTCOME_FILTER_OPTIONS.map((option) => (
+            <option key={option.value || "all"} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="overflow-x-auto">
@@ -313,7 +374,7 @@ export function AdvisorSessionsAndCallsTable({
                   colSpan={7}
                   className="px-4 py-10 text-center text-[var(--text-light)]"
                 >
-                  {emptyMessage(search, type)}
+                  {emptyMessage(search, type, status, outcome)}
                 </td>
               </tr>
             ) : (
@@ -384,43 +445,37 @@ export function AdvisorSessionsAndCallsTable({
                       onClick={(event) => event.stopPropagation()}
                       onKeyDown={(event) => event.stopPropagation()}
                     >
-                      {row.kind === "advisor_session" ? (
-                        <>
-                          <label className="sr-only" htmlFor={`status-${key}`}>
-                            Session status for {row.studentName}
-                          </label>
-                          <select
-                            id={`status-${key}`}
-                            value={sessionStatus}
-                            disabled={
-                              pendingStatusRowKey === key || isPending
-                            }
-                            onChange={(event) =>
-                              handleStatusChange(row.id, event.target.value)
-                            }
-                            className={advisorSessionStatusSelectClass(sessionStatus)}
-                            style={{ backgroundImage: SELECT_CHEVRON }}
-                            aria-label={`Session status for ${row.studentName}`}
-                          >
-                            {ADMIN_ADVISOR_SESSION_STATUS_OPTIONS.map(
-                              (option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ),
-                            )}
-                          </select>
-                          {statusError ? (
-                            <div className="mt-1 max-w-[160px] text-[11px] text-[#b91c1c]">
-                              {statusError}
-                            </div>
-                          ) : null}
-                        </>
-                      ) : (
-                        <span className="text-[var(--text-mid)]">
-                          {row.statusLabel}
-                        </span>
-                      )}
+                      <>
+                        <label className="sr-only" htmlFor={`status-${key}`}>
+                          Session status for {row.studentName}
+                        </label>
+                        <select
+                          id={`status-${key}`}
+                          value={sessionStatus}
+                          disabled={pendingStatusRowKey === key || isPending}
+                          onChange={(event) =>
+                            handleStatusChange(
+                              row.kind,
+                              row.id,
+                              event.target.value,
+                            )
+                          }
+                          className={advisorSessionStatusSelectClass(sessionStatus)}
+                          style={{ backgroundImage: SELECT_CHEVRON }}
+                          aria-label={`Session status for ${row.studentName}`}
+                        >
+                          {ADVISOR_PORTAL_SESSION_STATUS_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        {statusError ? (
+                          <div className="mt-1 max-w-[160px] text-[11px] text-[#b91c1c]">
+                            {statusError}
+                          </div>
+                        ) : null}
+                      </>
                     </td>
                     <td
                       className="px-4 py-3"

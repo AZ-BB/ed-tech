@@ -1,4 +1,4 @@
-import { ADMIN_SESSION_STATUS_LABEL } from "@/app/(protected)/admin/sessions/_lib/session-status-labels";
+import { ADMIN_SESSION_STATUS_LABEL, normalizeAdvisorPortalSessionStatus } from "@/app/(protected)/admin/sessions/_lib/session-status-labels";
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import { resolveCurrentAdvisorId } from "@/lib/advisor-access";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
@@ -6,10 +6,6 @@ import {
   hydrateApplicationsPlansEmbeds,
 } from "@/lib/applications-plans";
 import { isMeetingOverdue } from "@/lib/meeting-overdue";
-import {
-  POST_ADMISSION_STATUS_LABEL,
-  type PostAdmissionStatus,
-} from "@/lib/post-admission-status-labels";
 import { formatPostAdmissionServiceLabel } from "@/lib/post-admission-services";
 import {
   parseLeadQualification,
@@ -22,9 +18,15 @@ import {
 } from "@/utils/supabase-server";
 
 import type {
+  AdvisorSessionsAndCallsOutcomeFilter,
   AdvisorSessionsAndCallsPanelProps,
   AdvisorSessionsAndCallsRow,
+  AdvisorSessionsAndCallsStatusFilter,
   AdvisorSessionsAndCallsTypeFilter,
+} from "./advisor-sessions-and-calls-shared";
+import {
+  matchesAdvisorSessionsAndCallsOutcomeFilter,
+  matchesAdvisorSessionsAndCallsStatusFilter,
 } from "./advisor-sessions-and-calls-shared";
 
 export type {
@@ -37,7 +39,11 @@ export type {
 export {
   advisorSessionsAndCallsKindLabel,
   advisorSessionsAndCallsRowHref,
+  matchesAdvisorSessionsAndCallsOutcomeFilter,
+  matchesAdvisorSessionsAndCallsStatusFilter,
+  parseAdvisorSessionsAndCallsOutcome,
   parseAdvisorSessionsAndCallsSearch,
+  parseAdvisorSessionsAndCallsStatus,
   parseAdvisorSessionsAndCallsType,
 } from "./advisor-sessions-and-calls-shared";
 
@@ -52,6 +58,7 @@ type LeadRowRaw = {
   student_email: string | null;
   school_name: string | null;
   scheduled_at: string;
+  scheduled_session_status: string | null;
   applications_plans:
     | { name: string }
     | { name: string }[]
@@ -73,6 +80,7 @@ type PostAdmissionLeadRowRaw = {
   status: string | null;
   lead_qualification: string | null;
   scheduled_at: string | null;
+  scheduled_session_status: string | null;
   schools: { name: string } | { name: string }[] | null;
   student_profiles:
     | { first_name: string; last_name: string; email?: string | null }
@@ -235,6 +243,17 @@ function resolveLeadQualification(
   return "none";
 }
 
+function portalSessionFields(rawStatus: string | null | undefined): {
+  sessionStatus: string;
+  statusLabel: string;
+} {
+  const sessionStatus = normalizeAdvisorPortalSessionStatus(rawStatus);
+  return {
+    sessionStatus,
+    statusLabel: ADMIN_SESSION_STATUS_LABEL[sessionStatus] ?? sessionStatus,
+  };
+}
+
 function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
   const profile = firstEmbed(row.student_profiles);
   const profileName = profile
@@ -248,6 +267,7 @@ function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
   const plan = firstEmbed(row.applications_plans);
   const meetingAt = row.scheduled_at;
   const status = row.status?.trim() || "intake_draft";
+  const portalStatus = portalSessionFields(row.scheduled_session_status);
 
   return {
     kind: "application_lead",
@@ -257,17 +277,11 @@ function mapLeadRow(row: LeadRowRaw): AdvisorSessionsAndCallsRow {
     schoolName,
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
-    statusLabel: status === "intake_draft" ? "Awaiting qualification" : "Lead",
-    sessionStatus: null,
+    statusLabel: portalStatus.statusLabel,
+    sessionStatus: portalStatus.sessionStatus,
     subtitle: plan?.name?.trim() || "Application support",
     leadQualification: resolveLeadQualification(row.lead_qualification, status),
   };
-}
-
-function postAdmissionStatusLabel(status: string | null | undefined): string {
-  const normalized = (status?.trim() || "intake_draft") as PostAdmissionStatus;
-  if (normalized === "intake_draft") return "Awaiting qualification";
-  return POST_ADMISSION_STATUS_LABEL[normalized] ?? normalized;
 }
 
 function callDateToMeetingAt(callDate: string): string {
@@ -294,6 +308,7 @@ function mapPostAdmissionLeadRow(
     row.service_other_detail,
   );
   const status = row.status?.trim() || "intake_draft";
+  const portalStatus = portalSessionFields(row.scheduled_session_status);
 
   return {
     kind: "post_admission_lead",
@@ -303,8 +318,8 @@ function mapPostAdmissionLeadRow(
     schoolName,
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
-    statusLabel: postAdmissionStatusLabel(status),
-    sessionStatus: null,
+    statusLabel: portalStatus.statusLabel,
+    sessionStatus: portalStatus.sessionStatus,
     subtitle: serviceLabel === "—" ? "Post-admission support" : serviceLabel,
     leadQualification: resolveLeadQualification(row.lead_qualification, status),
   };
@@ -338,6 +353,7 @@ function mapSessionRow(row: SessionRowRaw): AdvisorSessionsAndCallsRow {
   const status = row.status?.trim() || "pending";
   const meetingAt = row.booked_at?.trim() || "";
   const helpWith = row.help_with?.trim();
+  const portalStatus = portalSessionFields(status);
 
   return {
     kind: "advisor_session",
@@ -347,8 +363,8 @@ function mapSessionRow(row: SessionRowRaw): AdvisorSessionsAndCallsRow {
     schoolName,
     meetingAt,
     isOverdue: isMeetingOverdue(meetingAt),
-    statusLabel: ADMIN_SESSION_STATUS_LABEL[status] ?? status,
-    sessionStatus: status,
+    statusLabel: portalStatus.statusLabel,
+    sessionStatus: portalStatus.sessionStatus,
     subtitle: helpWith ? `${destinationLabel} · ${helpWith}` : destinationLabel,
     leadQualification: parseLeadQualification(row.lead_qualification),
   };
@@ -372,6 +388,7 @@ async function fetchLeadRows(
       student_email,
       school_name,
       scheduled_at,
+      scheduled_session_status,
       applications_plans!applications_plan_id_fkey ( name ),
       schools ( name ),
       student_profiles ( first_name, last_name, email )
@@ -420,6 +437,7 @@ async function fetchPostAdmissionLeadRows(
       status,
       lead_qualification,
       scheduled_at,
+      scheduled_session_status,
       schools ( name ),
       student_profiles ( first_name, last_name, email )
     `,
@@ -468,6 +486,7 @@ async function fetchPostAdmissionScheduledCallRows(
         status,
         lead_qualification,
         scheduled_at,
+        scheduled_session_status,
         assigned_to,
         schools ( name ),
         student_profiles ( first_name, last_name, email )
@@ -579,11 +598,6 @@ async function debugLogAllAdvisorSessionsForAdvisor(
     return;
   }
 
-  logAdvisorSessionsAndCallsDebug("page", "All advisor_sessions for advisor", {
-    advisorId,
-    count: data?.length ?? 0,
-    sessions: data ?? [],
-  });
 }
 
 async function fetchAllBookedSessionsAndCalls(): Promise<
@@ -633,6 +647,8 @@ export async function fetchAdvisorSessionsAndCallsPanel(options: {
   limit: number;
   search: string;
   type: AdvisorSessionsAndCallsTypeFilter;
+  status: AdvisorSessionsAndCallsStatusFilter;
+  outcome: AdvisorSessionsAndCallsOutcomeFilter;
 }): Promise<AdvisorSessionsAndCallsPanelProps | null> {
   const supabase = await createSupabaseServerClient();
   const advisorId = await resolveCurrentAdvisorId(supabase);
@@ -646,59 +662,39 @@ export async function fetchAdvisorSessionsAndCallsPanel(options: {
 
   await debugLogAllAdvisorSessionsForAdvisor(advisorId);
 
-  logAdvisorSessionsAndCallsDebug("page", "Fetched sessions and calls sources", {
-    advisorId,
-    filters: {
-      page: options.page,
-      limit: options.limit,
-      search: options.search,
-      type: options.type,
-    },
-    counts: {
-      applicationLeads: leadRows.length,
-      postAdmissionLeads: postAdmissionRows.length,
-      advisorSessions: sessionRows.length,
-    },
-    applicationLeads: leadRows.map(summarizeSessionsAndCallsRow),
-    postAdmissionLeads: postAdmissionRows.map(summarizeSessionsAndCallsRow),
-    advisorSessions: sessionRows.map(summarizeSessionsAndCallsRow),
-  });
 
   const merged = sortRows([...leadRows, ...postAdmissionRows, ...sessionRows]);
   const searchFiltered = options.search
     ? merged.filter((row) => matchesSearch(row, options.search))
     : merged;
 
+  const statusOutcomeFiltered = searchFiltered.filter(
+    (row) =>
+      matchesAdvisorSessionsAndCallsStatusFilter(row, options.status) &&
+      matchesAdvisorSessionsAndCallsOutcomeFilter(row, options.outcome),
+  );
+
   const typeCounts: Record<AdvisorSessionsAndCallsTypeFilter, number> = {
-    all: searchFiltered.length,
-    application_lead: searchFiltered.filter((row) => row.kind === "application_lead")
-      .length,
-    post_admission_lead: searchFiltered.filter(
+    all: statusOutcomeFiltered.length,
+    application_lead: statusOutcomeFiltered.filter(
+      (row) => row.kind === "application_lead",
+    ).length,
+    post_admission_lead: statusOutcomeFiltered.filter(
       (row) => row.kind === "post_admission_lead",
     ).length,
-    advisor_session: searchFiltered.filter((row) => row.kind === "advisor_session")
-      .length,
+    advisor_session: statusOutcomeFiltered.filter(
+      (row) => row.kind === "advisor_session",
+    ).length,
   };
 
   const filtered =
     options.type === "all"
-      ? searchFiltered
-      : searchFiltered.filter((row) => row.kind === options.type);
+      ? statusOutcomeFiltered
+      : statusOutcomeFiltered.filter((row) => row.kind === options.type);
 
   const totalRows = filtered.length;
   const { from, to } = paginationRange(options.page, options.limit);
   const rows = filtered.slice(from, to + 1);
-
-  logAdvisorSessionsAndCallsDebug("page", "Panel rows after filters and pagination", {
-    advisorId,
-    totalRows,
-    page: options.page,
-    limit: options.limit,
-    type: options.type,
-    search: options.search,
-    typeCounts,
-    rows: rows.map(summarizeSessionsAndCallsRow),
-  });
 
   return {
     rows,
@@ -707,6 +703,8 @@ export async function fetchAdvisorSessionsAndCallsPanel(options: {
     limit: options.limit,
     search: options.search,
     type: options.type,
+    status: options.status,
+    outcome: options.outcome,
     typeCounts,
   };
 }

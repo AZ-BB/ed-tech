@@ -1021,6 +1021,56 @@ export const studentEn = {
         desc: "Visa, housing, insurance and arrival guidance",
       },
     },
+    disabledFeaturesModal: {
+      title: "Unlock more on Univeera",
+      subtitle:
+        "These powerful tools are not included on your account yet. Here is what you could be using to move your university journey forward.",
+      previous: "Previous",
+      next: "Next",
+      close: "Got it",
+      items: {
+        personalityOverview: {
+          title: "Personality Overview",
+          description:
+            "Discover how you learn, decide, and thrive through a guided Discovery Journey built around you. Your Personality Overview turns self-awareness into a clear profile you can use when comparing programs, countries, and career paths. It helps you make confident study choices instead of guessing what might fit.",
+        },
+        programDiscovery: {
+          title: "Program Discovery",
+          description:
+            "Search and filter thousands of programs worldwide — from business and engineering to medicine and the arts. Use smart filters and AI matching to surface degrees aligned with your grades, interests, and ambitions. Save promising options and move from browsing to a focused shortlist faster.",
+        },
+        discoverUniversities: {
+          title: "Discover Universities",
+          description:
+            "Explore 500+ universities locally and globally with rich profiles, requirements, and comparison tools in one place. Build a smart shortlist, track favorites, and see how each option fits your profile before you apply. It is the fastest way to go from “where should I apply?” to a clear target list.",
+        },
+        scholarships: {
+          title: "Scholarships",
+          description:
+            "Find funding opportunities matched to your background, nationality, and destination countries — before deadlines pass you by. Filter by eligibility, award type, and field so you spend time on scholarships you can actually win. Turn financial stress into a structured search with real options.",
+        },
+        advisorSessions: {
+          title: "1:1 Advisor",
+          description:
+            "Book expert guidance on demand whenever you need a second opinion or a clear plan. Advisors help with shortlisting, essays, strategy, and tough decisions at every stage of your journey. Get personalized support from people who have guided hundreds of students through competitive applications.",
+        },
+        ambassadors: {
+          title: "Ambassadors",
+          description:
+            "Talk to students who are already on campus at your target universities and hear honest, first-hand insight about student life. Ask about classes, housing, culture, and what it really feels like to study there. It is like a campus visit from wherever you are — before you commit to an application.",
+        },
+        applicationSupport: {
+          title: "Application Support",
+          description:
+            "Get end-to-end help with documents, deadlines, personal statements, and the full application process so nothing falls through the cracks. Our team works with you step by step from first draft to final submission. Stay organized, meet every deadline, and present your strongest possible application.",
+        },
+        postAdmission: {
+          title: "Post Admission",
+          description:
+            "After your offer arrives, get step-by-step support for visas, housing, insurance, flights, and arrival planning. We help you navigate the logistics that come after acceptance so your transition abroad is smooth and stress-free. From paperwork to landing — you are not doing it alone.",
+        },
+      },
+    },
     quickActionsOnboarding: {
       skip: "Skip tour",
       next: "Next",

@@ -3,10 +3,12 @@
 import { updateAdvisorSessionStatus } from "@/actions/advisor-sessions";
 import { SchoolStudentPanel } from "@/app/(protected)/school/students/[id]/_components/school-student-panel";
 import {
-  ADMIN_ADVISOR_SESSION_STATUS_OPTIONS,
   ADMIN_SESSION_STATUS_LABEL,
+  ADVISOR_PORTAL_SESSION_STATUS_OPTIONS,
   adminSessionStatusPillClass,
   advisorSessionStatusSelectClass,
+  normalizeAdvisorPortalSessionStatus,
+  type AdvisorPortalSessionStatus,
 } from "@/app/(protected)/admin/sessions/_lib/session-status-labels";
 import {
   getMeetingTiming,
@@ -56,19 +58,21 @@ export type AdvisorSessionViewClientProps = {
 
 export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientProps) {
   const router = useRouter();
-  const [status, setStatus] = useState(payload.status);
+  const [status, setStatus] = useState<AdvisorPortalSessionStatus>(() =>
+    normalizeAdvisorPortalSessionStatus(payload.status),
+  );
   const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const { student, school } = payload;
   const meetingTiming = getMeetingTiming(payload.bookedAt);
-  const statusLabel = ADMIN_SESSION_STATUS_LABEL[status] ?? status.replace(/_/g, " ");
+  const statusLabel = ADMIN_SESSION_STATUS_LABEL[status] ?? status;
 
   useEffect(() => {
-    setStatus(payload.status);
+    setStatus(normalizeAdvisorPortalSessionStatus(payload.status));
   }, [payload.status]);
 
-  function handleStatusChange(nextStatus: string) {
+  function handleStatusChange(nextStatus: AdvisorPortalSessionStatus) {
     setActionError(null);
     const previous = status;
     setStatus(nextStatus);
@@ -105,12 +109,14 @@ export function AdvisorSessionViewClient({ payload }: AdvisorSessionViewClientPr
             id="advisor-session-status"
             value={status}
             disabled={isPending}
-            onChange={(event) => handleStatusChange(event.target.value)}
+            onChange={(event) =>
+              handleStatusChange(event.target.value as AdvisorPortalSessionStatus)
+            }
             className={advisorSessionStatusSelectClass(status, "header")}
             style={{ backgroundImage: SELECT_CHEVRON }}
             aria-label="Session status"
           >
-            {ADMIN_ADVISOR_SESSION_STATUS_OPTIONS.map((option) => (
+            {ADVISOR_PORTAL_SESSION_STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

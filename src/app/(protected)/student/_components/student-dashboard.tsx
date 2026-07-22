@@ -22,6 +22,7 @@ import {
   isStudentFeatureEnabled,
   type StudentFeatureAccess,
 } from "@/lib/student-feature-access";
+import { useStudentFeatureGate } from "./student-feature-gate-provider";
 
 /** Student dashboard only: maps stored log copy to second-person. Does not change DB values. */
 function formatActivityLogMessageForStudent(message: string): string {
@@ -252,6 +253,7 @@ export function StudentDashboard({
   hasSeenQuickActionsTour = true,
 }: StudentDashboardProps) {
   const { locale, dict } = useLocale();
+  const { openDisabledFeaturesModal } = useStudentFeatureGate();
   const d = dict.student.dashboard;
   const [tourDismissed, setTourDismissed] = useState(false);
 
@@ -383,15 +385,10 @@ export function StudentDashboard({
               <div
                 className={`flex h-full min-h-[88px] min-w-0 items-start gap-3.5 rounded-2xl border border-[var(--border-light)] bg-white p-5 transition-all ${
                   disabled
-                    ? "cursor-not-allowed opacity-45"
+                    ? "cursor-pointer opacity-45 hover:border-[var(--border)] hover:opacity-55"
                     : "cursor-pointer hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
                 }`}
                 aria-disabled={disabled || undefined}
-                title={
-                  disabled
-                    ? "This feature is not available on your account"
-                    : undefined
-                }
               >
                 <div
                   className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl ${action.iconWrap}`}
@@ -419,15 +416,18 @@ export function StudentDashboard({
               </div>
             );
 
-            if (disabled) {
+            if (disabled && featureKey != null) {
               return (
-                <div
+                <button
                   key={action.dictKey}
+                  type="button"
                   data-quick-action={action.dictKey}
-                  className="block h-full min-w-0"
+                  className="block h-full min-w-0 w-full text-start"
+                  onClick={() => openDisabledFeaturesModal(featureKey)}
+                  aria-label={`${actionCopy.name} — not available on your account`}
                 >
                   {card}
-                </div>
+                </button>
               );
             }
 

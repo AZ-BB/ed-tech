@@ -245,6 +245,10 @@ export const quickActions: QuickAction[] = [
   },
 ];
 
+export const quickActionByDictKey = Object.fromEntries(
+  quickActions.map((action) => [action.dictKey, action]),
+) as Record<QuickActionDictKey, QuickAction>;
+
 export const savedTabLabels = [
   "Universities",
   "Scholarships",

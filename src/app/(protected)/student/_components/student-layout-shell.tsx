@@ -35,6 +35,10 @@ import {
   type StudentFeatureAccess,
 } from "@/lib/student-feature-access";
 import { StudentFeatureRouteGuard } from "./student-feature-route-guard";
+import {
+  StudentFeatureGateProvider,
+  useStudentFeatureGate,
+} from "./student-feature-gate-provider";
 
 const NAV_ID_TO_KEY: Record<string, keyof Dictionary["student"]["nav"]> = {
   dashboard: "dashboard",
@@ -253,6 +257,7 @@ function SidebarNav({
   onRequestLogout: () => void;
 }) {
   const pathname = usePathname();
+  const { openDisabledFeaturesModal } = useStudentFeatureGate();
 
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-3.5">
@@ -273,7 +278,7 @@ function SidebarNav({
           !featureDisabled && isSidebarNavLinkActive(pathname, item);
         const rowClass = `group flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13.5px] font-medium transition-colors mb-0.5 ${
           featureDisabled
-            ? "cursor-not-allowed opacity-45 text-[var(--text-hint)]"
+            ? "cursor-pointer opacity-45 text-[var(--text-hint)] hover:bg-[var(--sand)] hover:opacity-60"
             : active
               ? "cursor-pointer bg-[var(--green-bg)] font-semibold text-[var(--green-dark)]"
               : "cursor-pointer text-[var(--text-mid)] hover:bg-[var(--sand)] hover:text-[var(--text)]"
@@ -295,13 +300,27 @@ function SidebarNav({
           </>
         );
 
-        if (featureDisabled || item.href === "#") {
+        if (featureDisabled && featureKey != null) {
+          const label = navLabel(dict, item.id);
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`${rowClass} w-full text-start`}
+              onClick={() => openDisabledFeaturesModal(featureKey)}
+              aria-label={`${label} — not available on your account`}
+            >
+              {inner}
+            </button>
+          );
+        }
+
+        if (item.href === "#") {
           return (
             <div
               key={item.id}
               className={rowClass}
               aria-disabled="true"
-              title="This feature is not available on your account"
             >
               {inner}
             </div>
@@ -463,11 +482,12 @@ export function StudentLayoutShell({
   }, []);
 
   return (
-    <div
-      className={`student-portal min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}
-      dir={portalDir}
-      lang={locale}
-    >
+    <StudentFeatureGateProvider featureAccess={featureAccess}>
+      <div
+        className={`student-portal min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}
+        dir={portalDir}
+        lang={locale}
+      >
       <StudentFeatureRouteGuard featureAccess={featureAccess} />
       <div className={`mx-auto w-full min-w-0 ${contentPaddingClass} pt-4 sm:pt-6 pb-12 sm:pb-16`}>
         {hideTopNav ? null : (
@@ -554,6 +574,7 @@ export function StudentLayoutShell({
         onClose={() => setLogoutConfirmOpen(false)}
         variant="student"
       />
-    </div>
+      </div>
+    </StudentFeatureGateProvider>
   );
 }

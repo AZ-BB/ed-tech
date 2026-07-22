@@ -1370,6 +1370,7 @@ export type Database = {
           preferred_uni_or_countries: string
           sat: number | null
           scheduled_at: string | null
+          scheduled_session_status: Database["public"]["Enums"]["advisor_session_status"]
           school_id: string | null
           school_name: string | null
           status: Database["public"]["Enums"]["application_status"] | null
@@ -1414,6 +1415,7 @@ export type Database = {
           preferred_uni_or_countries: string
           sat?: number | null
           scheduled_at?: string | null
+          scheduled_session_status?: Database["public"]["Enums"]["advisor_session_status"]
           school_id?: string | null
           school_name?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
@@ -1458,6 +1460,7 @@ export type Database = {
           preferred_uni_or_countries?: string
           sat?: number | null
           scheduled_at?: string | null
+          scheduled_session_status?: Database["public"]["Enums"]["advisor_session_status"]
           school_id?: string | null
           school_name?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
@@ -1944,6 +1947,7 @@ export type Database = {
           payment_completed_at: string | null
           payment_in_progress_at: string | null
           scheduled_at: string | null
+          scheduled_session_status: Database["public"]["Enums"]["advisor_session_status"]
           school_id: string | null
           school_name: string | null
           selected_service: string | null
@@ -1966,6 +1970,7 @@ export type Database = {
           payment_completed_at?: string | null
           payment_in_progress_at?: string | null
           scheduled_at?: string | null
+          scheduled_session_status?: Database["public"]["Enums"]["advisor_session_status"]
           school_id?: string | null
           school_name?: string | null
           selected_service?: string | null
@@ -1988,6 +1993,7 @@ export type Database = {
           payment_completed_at?: string | null
           payment_in_progress_at?: string | null
           scheduled_at?: string | null
+          scheduled_session_status?: Database["public"]["Enums"]["advisor_session_status"]
           school_id?: string | null
           school_name?: string | null
           selected_service?: string | null

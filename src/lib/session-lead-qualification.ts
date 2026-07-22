@@ -59,6 +59,8 @@ export function leadQualificationToStored(
 export const SESSION_CALL_APPLICATION_STATUSES = [
   "intake_draft",
   "lead",
+  "payment_requested",
+  "active_package",
 ] as const satisfies ReadonlyArray<
   Database["public"]["Enums"]["application_status"]
 >;
