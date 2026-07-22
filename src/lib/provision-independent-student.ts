@@ -11,6 +11,9 @@ import { randomBytes } from "crypto";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
+export const STUDENT_TYPE_VALUES = ["school", "individual", "funnel"] as const;
+export type StudentType = (typeof STUDENT_TYPE_VALUES)[number];
+
 export type ProvisionIndependentStudentInput = {
   firstName: string;
   lastName: string;
@@ -19,6 +22,8 @@ export type ProvisionIndependentStudentInput = {
   nationalityCountryCode: string;
   /** If omitted, a random password is generated. */
   password?: string;
+  /** Defaults to individual when omitted. */
+  studentType?: StudentType;
   featureAccess?: StudentFeatureAccess | Json | null;
   metaData?: Json | null;
 };
@@ -54,6 +59,7 @@ export async function provisionIndependentStudent(
     input.password != null && input.password.length > 0
       ? input.password
       : generatePassword();
+  const studentType = input.studentType ?? "individual";
   const featureAccess = parseStudentFeatureAccess(input.featureAccess ?? null);
   const metaData =
     input.metaData === undefined ? null : (input.metaData as Json | null);
@@ -88,6 +94,14 @@ export async function provisionIndependentStudent(
       ok: false,
       status: 400,
       error: "Password must be at least 8 characters.",
+    };
+  }
+
+  if (studentType === "school") {
+    return {
+      ok: false,
+      status: 400,
+      error: "Independent provisioning cannot create school-type students.",
     };
   }
 
@@ -162,6 +176,7 @@ export async function provisionIndependentStudent(
     signup_ambassador_credit_limit: 1,
     feature_access: featureAccess,
     meta_data: metaData,
+    student_type: studentType,
   });
 
   if (profileError) {

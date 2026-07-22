@@ -1,7 +1,7 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { redirect } from "next/navigation";
-import { getPlatformCompletionStats } from "@/lib/student-platform-completion";
+import { getPlatformCompletionStats, hasPlatformCompletionFlag, QUICK_ACTIONS_TOUR_FLAG } from "@/lib/student-platform-completion";
 import type {
   DashboardActivityLogItem,
   DashboardAnnouncementItem,
@@ -72,6 +72,10 @@ export default async function StudentPage() {
   const platformStats = getPlatformCompletionStats(
     studentProgress?.platform_completion ?? null,
   );
+  const hasSeenQuickActionsTour = hasPlatformCompletionFlag(
+    studentProgress?.platform_completion ?? null,
+    QUICK_ACTIONS_TOUR_FLAG,
+  );
   const welcomeFirstName = studentProgress?.first_name?.trim() ?? "";
 
   const announcementItems: DashboardAnnouncementItem[] = (announcements ?? [])
@@ -113,6 +117,7 @@ export default async function StudentPage() {
       aiMatchesGeneratedCount={aiMatchesGeneratedCount ?? 0}
       hasSchoolLinked={hasSchoolLinked}
       featureAccess={auth.featureAccess}
+      hasSeenQuickActionsTour={hasSeenQuickActionsTour}
     />
   );
 }

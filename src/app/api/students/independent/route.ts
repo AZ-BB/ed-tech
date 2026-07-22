@@ -1,5 +1,9 @@
 import type { Json } from "@/database.types";
-import { provisionIndependentStudent } from "@/lib/provision-independent-student";
+import {
+  provisionIndependentStudent,
+  STUDENT_TYPE_VALUES,
+  type StudentType,
+} from "@/lib/provision-independent-student";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
 import { parseStudentFeatureAccess } from "@/lib/student-feature-access";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
@@ -95,6 +99,28 @@ export async function POST(request: Request) {
   const email = String(body.email ?? "").trim();
   const grade = String(body.grade ?? "").trim();
   const nationalityCountryCode = String(body.nationalityCountryCode ?? "").trim();
+  const password =
+    body.password === undefined || body.password === null
+      ? undefined
+      : String(body.password);
+
+  let studentType: StudentType = "funnel";
+  if (body.studentType !== undefined && body.studentType !== null) {
+    const rawStudentType = String(body.studentType).trim();
+    if (
+      !STUDENT_TYPE_VALUES.includes(rawStudentType as StudentType) ||
+      rawStudentType === "school"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "studentType must be one of: individual, funnel.",
+        },
+        { status: 400 },
+      );
+    }
+    studentType = rawStudentType as StudentType;
+  }
 
   let featureAccessRaw: Json | null = null;
   if (body.featureAccess !== undefined && body.featureAccess !== null) {
@@ -124,6 +150,8 @@ export async function POST(request: Request) {
     email,
     grade,
     nationalityCountryCode,
+    password,
+    studentType,
     featureAccess: parseStudentFeatureAccess(featureAccessRaw),
     metaData,
   });
