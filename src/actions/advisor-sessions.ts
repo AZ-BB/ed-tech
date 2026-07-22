@@ -2,6 +2,7 @@
 
 import { assertAdvisorAccess } from "@/lib/advisor-access";
 import type { Database } from "@/database.types";
+import type { SessionLeadQualificationSource } from "@/lib/session-lead-qualification";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { isValidAlpha2Code } from "@/lib/countries";
 import {
@@ -335,7 +336,6 @@ export async function recordAdvisorSessionCalendlyBooking(
 
 const ADVISOR_PORTAL_SESSION_STATUSES = new Set<string>([
   "pending",
-  "confirmed",
   "completed",
 ]);
 
@@ -399,5 +399,113 @@ export async function updateAdvisorSessionStatus(
   revalidatePath("/advisor/sessions-and-calls");
   revalidatePath(`/advisor/sessions-and-calls/session/${sessionId}`);
 
+  return { ok: true };
+}
+
+type SessionsAndCallsStatusKind = SessionLeadQualificationSource;
+
+function parseSessionsAndCallsRowId(raw: string): number | null {
+  const id = Number.parseInt(raw.trim(), 10);
+  if (!Number.isFinite(id) || id < 1) return null;
+  return id;
+}
+
+function parsePortalSessionStatus(
+  statusRaw: string,
+): Database["public"]["Enums"]["advisor_session_status"] | null {
+  const status = statusRaw.trim();
+  if (status === "pending" || status === "completed") {
+    return status;
+  }
+  return null;
+}
+
+export async function updateAdvisorSessionsAndCallsRowStatus(
+  kind: SessionsAndCallsStatusKind,
+  idRaw: string,
+  statusRaw: string,
+): Promise<AdvisorSessionActionResult> {
+  const access = await assertAdvisorAccess();
+  if (!access.ok) return access;
+
+  const rowId = parseSessionsAndCallsRowId(idRaw);
+  if (rowId == null) {
+    return { ok: false, error: "Invalid record." };
+  }
+
+  const status = parsePortalSessionStatus(statusRaw);
+  if (!status) {
+    return { ok: false, error: "Select a valid status." };
+  }
+
+  if (kind === "advisor_session") {
+    return updateAdvisorSessionStatus(idRaw, status);
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const now = new Date().toISOString();
+
+  if (kind === "application_lead") {
+    const { data: existing, error: fetchErr } = await secret
+      .from("applications")
+      .select("id, assigned_to, scheduled_session_status")
+      .eq("id", rowId)
+      .maybeSingle();
+
+    if (fetchErr || !existing) {
+      return { ok: false, error: "Application not found." };
+    }
+    if (existing.assigned_to !== access.advisorId) {
+      return { ok: false, error: "You do not have access to this application." };
+    }
+    if (existing.scheduled_session_status === status) {
+      return { ok: true };
+    }
+
+    const { error: updateErr } = await secret
+      .from("applications")
+      .update({ scheduled_session_status: status, updated_at: now })
+      .eq("id", rowId)
+      .eq("assigned_to", access.advisorId);
+
+    if (updateErr) {
+      console.error("[updateAdvisorSessionsAndCallsRowStatus] application", updateErr);
+      return { ok: false, error: "Could not update session status." };
+    }
+
+    revalidatePath("/advisor/sessions-and-calls");
+    revalidatePath(`/advisor/applications/${rowId}`);
+    return { ok: true };
+  }
+
+  const { data: existing, error: fetchErr } = await secret
+    .from("post_admission_cases")
+    .select("id, assigned_to, scheduled_session_status")
+    .eq("id", rowId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    return { ok: false, error: "Post-admission case not found." };
+  }
+  if (existing.assigned_to !== access.advisorId) {
+    return { ok: false, error: "You do not have access to this case." };
+  }
+  if (existing.scheduled_session_status === status) {
+    return { ok: true };
+  }
+
+  const { error: updateErr } = await secret
+    .from("post_admission_cases")
+    .update({ scheduled_session_status: status, updated_at: now })
+    .eq("id", rowId)
+    .eq("assigned_to", access.advisorId);
+
+  if (updateErr) {
+    console.error("[updateAdvisorSessionsAndCallsRowStatus] post-admission", updateErr);
+    return { ok: false, error: "Could not update session status." };
+  }
+
+  revalidatePath("/advisor/sessions-and-calls");
+  revalidatePath(`/advisor/post-admission/${rowId}`);
   return { ok: true };
 }

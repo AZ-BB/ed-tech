@@ -51,6 +51,23 @@ export const QUICK_ACTION_TO_FEATURE: Record<string, StudentFeatureKey> = {
   postAdmission: "post_admission",
 };
 
+export type QuickActionDictKey = keyof typeof QUICK_ACTION_TO_FEATURE;
+
+/** Feature key → dashboard i18n `quickActionsItems` / modal item key. */
+export const FEATURE_TO_QUICK_ACTION_DICT_KEY: Record<
+  StudentFeatureKey,
+  QuickActionDictKey
+> = {
+  personality_overview: "personalityOverview",
+  program_discovery: "programDiscovery",
+  universities: "discoverUniversities",
+  scholarships: "scholarships",
+  advisor_sessions: "advisorSessions",
+  ambassadors: "ambassadors",
+  application_support: "applicationSupport",
+  post_admission: "postAdmission",
+};
+
 /** Route prefixes gated by feature access. */
 export const FEATURE_ROUTE_PREFIXES: { prefix: string; feature: StudentFeatureKey }[] = [
   { prefix: "/student/discovery-journey", feature: "personality_overview" },
@@ -102,6 +119,12 @@ export function isStudentFeatureEnabled(
   feature: StudentFeatureKey,
 ): boolean {
   return access[feature] !== false;
+}
+
+export function getDisabledStudentFeatures(
+  access: StudentFeatureAccess,
+): StudentFeatureKey[] {
+  return STUDENT_FEATURE_KEYS.filter((key) => !isStudentFeatureEnabled(access, key));
 }
 
 export function featureForStudentPath(

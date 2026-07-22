@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { AdvisorSessionsAndCallsTable } from "./_components/advisor-sessions-and-calls-table";
 import {
   fetchAdvisorSessionsAndCallsPanel,
+  parseAdvisorSessionsAndCallsOutcome,
   parseAdvisorSessionsAndCallsSearch,
+  parseAdvisorSessionsAndCallsStatus,
   parseAdvisorSessionsAndCallsType,
 } from "./_lib/fetch-advisor-sessions-and-calls-page";
 
@@ -30,12 +32,16 @@ export default async function AdvisorSessionsAndCallsPage({
   );
   const search = parseAdvisorSessionsAndCallsSearch(sp.search);
   const type = parseAdvisorSessionsAndCallsType(sp.sessionsType);
+  const status = parseAdvisorSessionsAndCallsStatus(sp.sessionsStatus);
+  const outcome = parseAdvisorSessionsAndCallsOutcome(sp.sessionsOutcome);
 
   const panel = await fetchAdvisorSessionsAndCallsPanel({
     page: sessionsPage,
     limit: sessionsLimit,
     search,
     type,
+    status,
+    outcome,
   });
 
   if (!panel) {

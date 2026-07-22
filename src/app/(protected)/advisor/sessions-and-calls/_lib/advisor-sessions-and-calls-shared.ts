@@ -1,4 +1,5 @@
 import type { LeadQualification } from "@/lib/session-lead-qualification";
+import { LEAD_QUALIFICATION_OPTIONS } from "@/lib/session-lead-qualification";
 
 export type AdvisorSessionsAndCallsRowKind =
   | "application_lead"
@@ -14,8 +15,8 @@ export type AdvisorSessionsAndCallsRow = {
   meetingAt: string;
   isOverdue: boolean;
   statusLabel: string;
-  /** Raw advisor session status (advisor_session rows only). */
-  sessionStatus: string | null;
+  /** Pending/completed session status for all row kinds. */
+  sessionStatus: string;
   subtitle: string;
   /** Advisor lead-outcome dropdown value (None / Good lead / Not suitable). */
   leadQualification: LeadQualification;
@@ -27,6 +28,27 @@ export type AdvisorSessionsAndCallsTypeFilter =
   | "post_admission_lead"
   | "advisor_session";
 
+export type AdvisorSessionsAndCallsStatusFilter = "" | "pending" | "completed";
+
+export type AdvisorSessionsAndCallsOutcomeFilter = "" | LeadQualification;
+
+export const ADVISOR_SESSIONS_AND_CALLS_STATUS_FILTER_OPTIONS: readonly {
+  value: AdvisorSessionsAndCallsStatusFilter;
+  label: string;
+}[] = [
+  { value: "", label: "All statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "completed", label: "Completed" },
+];
+
+export const ADVISOR_SESSIONS_AND_CALLS_OUTCOME_FILTER_OPTIONS: readonly {
+  value: AdvisorSessionsAndCallsOutcomeFilter;
+  label: string;
+}[] = [
+  { value: "", label: "All outcomes" },
+  ...LEAD_QUALIFICATION_OPTIONS,
+];
+
 export type AdvisorSessionsAndCallsPanelProps = {
   rows: AdvisorSessionsAndCallsRow[];
   totalRows: number;
@@ -34,6 +56,8 @@ export type AdvisorSessionsAndCallsPanelProps = {
   limit: number;
   search: string;
   type: AdvisorSessionsAndCallsTypeFilter;
+  status: AdvisorSessionsAndCallsStatusFilter;
+  outcome: AdvisorSessionsAndCallsOutcomeFilter;
   typeCounts: Record<AdvisorSessionsAndCallsTypeFilter, number>;
 };
 
@@ -75,4 +99,46 @@ export function parseAdvisorSessionsAndCallsType(
     return value;
   }
   return "all";
+}
+
+const SESSIONS_STATUS_FILTERS = new Set<string>(
+  ADVISOR_SESSIONS_AND_CALLS_STATUS_FILTER_OPTIONS.map((option) => option.value),
+);
+
+const SESSIONS_OUTCOME_FILTERS = new Set<string>(
+  ADVISOR_SESSIONS_AND_CALLS_OUTCOME_FILTER_OPTIONS.map((option) => option.value),
+);
+
+export function parseAdvisorSessionsAndCallsStatus(
+  raw: string | string[] | undefined,
+): AdvisorSessionsAndCallsStatusFilter {
+  const value =
+    typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
+  if (!value || !SESSIONS_STATUS_FILTERS.has(value)) return "";
+  return value as AdvisorSessionsAndCallsStatusFilter;
+}
+
+export function parseAdvisorSessionsAndCallsOutcome(
+  raw: string | string[] | undefined,
+): AdvisorSessionsAndCallsOutcomeFilter {
+  const value =
+    typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
+  if (!value || !SESSIONS_OUTCOME_FILTERS.has(value)) return "";
+  return value as AdvisorSessionsAndCallsOutcomeFilter;
+}
+
+export function matchesAdvisorSessionsAndCallsStatusFilter(
+  row: AdvisorSessionsAndCallsRow,
+  filter: AdvisorSessionsAndCallsStatusFilter,
+): boolean {
+  if (!filter) return true;
+  return row.sessionStatus === filter;
+}
+
+export function matchesAdvisorSessionsAndCallsOutcomeFilter(
+  row: AdvisorSessionsAndCallsRow,
+  filter: AdvisorSessionsAndCallsOutcomeFilter,
+): boolean {
+  if (!filter) return true;
+  return row.leadQualification === filter;
 }

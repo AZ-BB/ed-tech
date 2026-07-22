@@ -102,6 +102,22 @@ export const ADMIN_AMBASSADOR_SESSION_STATUS_OPTIONS =
     (o) => o.value !== "" && o.value !== "cancelled",
   );
 
+/** Advisor portal: pending and completed only. */
+export const ADVISOR_PORTAL_SESSION_STATUS_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "completed", label: "Completed" },
+] as const;
+
+export type AdvisorPortalSessionStatus =
+  (typeof ADVISOR_PORTAL_SESSION_STATUS_OPTIONS)[number]["value"];
+
+/** Map stored statuses to the advisor portal pending/completed model. */
+export function normalizeAdvisorPortalSessionStatus(
+  status: string | null | undefined,
+): AdvisorPortalSessionStatus {
+  return status?.trim() === "completed" ? "completed" : "pending";
+}
+
 const SESSION_STATUS_SELECT_BASE_CLASS =
   "cursor-pointer appearance-none rounded-[8px] border bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat text-[12px] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 

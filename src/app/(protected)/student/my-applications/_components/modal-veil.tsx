@@ -6,10 +6,12 @@ export function ModalVeil({
   title,
   children,
   onClose,
+  panelClassName,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  panelClassName?: string;
 }) {
   return (
     <div
@@ -18,7 +20,9 @@ export function ModalVeil({
       aria-modal
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="max-h-[90vh] w-full max-w-[480px] overflow-y-auto rounded-[14px] bg-white shadow-xl">
+      <div
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-[14px] bg-white shadow-xl ${panelClassName ?? "max-w-[480px]"}`}
+      >
         <div className="flex items-center justify-between border-b border-[var(--border-light)] px-[22px] py-4">
           <h2 className="font-[family-name:var(--font-dm-serif)] text-xl tracking-tight">{title}</h2>
           <button
