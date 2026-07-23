@@ -5,7 +5,6 @@ import {
   type StudentType,
 } from "@/lib/provision-independent-student";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
-import { parseStudentFeatureAccess } from "@/lib/student-feature-access";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import { NextResponse } from "next/server";
 
@@ -152,7 +151,7 @@ export async function POST(request: Request) {
     nationalityCountryCode,
     password,
     studentType,
-    featureAccess: parseStudentFeatureAccess(featureAccessRaw),
+    featureAccess: featureAccessRaw,
     metaData,
   });
 

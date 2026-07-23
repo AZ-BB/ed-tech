@@ -5,6 +5,7 @@ import {
   isPlatformFeatureEnabled,
   PLATFORM_FEATURE_LABELS,
 } from "@/lib/platform-settings";
+import { requiresFunnelSubscription } from "@/lib/student-subscription";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -32,6 +33,10 @@ export default async function BookAmbassadorSessionPage({ params }: PageProps) {
   const auth = await requireStudentSession();
   if (!auth.ok) {
     redirect("/login");
+  }
+
+  if (requiresFunnelSubscription(auth)) {
+    redirect("/student/ambassadors?subscribe=1");
   }
 
   const { ambassadorId } = await params;

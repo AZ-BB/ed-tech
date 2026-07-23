@@ -71,7 +71,7 @@ Content-Type: application/json
 
 ### `featureAccess`
 
-Optional object of booleans. Any key you omit defaults to **enabled** (`true`).
+Optional object of booleans. Any key you omit defaults to **enabled** (`true`), except for **funnel** students where `internships` and `essay_review` default to **disabled** (`false`) unless you set them explicitly.
 
 | Key | Feature |
 |-----|---------|
@@ -79,6 +79,8 @@ Optional object of booleans. Any key you omit defaults to **enabled** (`true`).
 | `program_discovery` | Program Discovery |
 | `universities` | Discover Universities |
 | `scholarships` | Scholarships |
+| `internships` | Internships |
+| `essay_review` | Essay Review |
 | `advisor_sessions` | 1:1 Advisor sessions |
 | `ambassadors` | Ambassadors |
 | `application_support` | Application Support |
@@ -102,6 +104,8 @@ New accounts receive **1 advisor** and **1 ambassador** session credit by defaul
     "program_discovery": true,
     "universities": true,
     "scholarships": false,
+    "internships": false,
+    "essay_review": false,
     "advisor_sessions": true,
     "ambassadors": false,
     "application_support": true,

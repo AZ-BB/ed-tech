@@ -16,9 +16,13 @@ function btnPrimaryClass() {
 export function StudentFunnelSubscribeButton({
   className,
   onError,
+  label,
+  buttonClassName,
 }: {
   className?: string;
   onError?: (message: string) => void;
+  label?: string;
+  buttonClassName?: string;
 }) {
   const { dict } = useLocale();
   const copy = dict.student.subscription;
@@ -43,11 +47,24 @@ export function StudentFunnelSubscribeButton({
     <div className={className}>
       <button
         type="button"
-        className={btnPrimaryClass()}
+        className={buttonClassName ?? btnPrimaryClass()}
         disabled={pending}
         onClick={handleSubscribe}
       >
-        {pending ? copy.subscribing : copy.subscribe}
+        {pending ? copy.subscribing : (label ?? copy.subscribe)}
+        {!pending && label ? (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            aria-hidden
+          >
+            <path d="M5 12h14M13 5l7 7-7 7" />
+          </svg>
+        ) : null}
       </button>
       {localError ? (
         <p className="mt-2 text-xs font-medium text-[#E74C3C]">{localError}</p>

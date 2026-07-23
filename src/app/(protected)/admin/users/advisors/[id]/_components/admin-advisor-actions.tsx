@@ -42,6 +42,7 @@ export type AdminAdvisorActionsProps = {
     payoutPercentage: string;
     receivesApplicationSupport: boolean;
     receivesPostAdmissionSupport: boolean;
+    receivesFreeFunnelApplicationSupport: boolean;
   };
 };
 

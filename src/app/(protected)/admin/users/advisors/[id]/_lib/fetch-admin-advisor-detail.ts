@@ -43,6 +43,7 @@ export type AdminAdvisorDetailPayload = {
     payoutPercentage: number;
     receivesApplicationSupport: boolean;
     receivesPostAdmissionSupport: boolean;
+    receivesFreeFunnelApplicationSupport: boolean;
     calendlyConnected: boolean;
     calendlyConnectedLabel: string;
     loginCredentialsSent: boolean;
@@ -167,6 +168,7 @@ export async function fetchAdminAdvisorDetail(
       payout_percentage,
       receives_application_support,
       receives_post_admission_support,
+      receives_free_funnel_application_support,
       calendly_refresh_token,
       calendly_connected_at,
       created_at,
@@ -252,6 +254,8 @@ export async function fetchAdminAdvisorDetail(
       payoutPercentage: row.payout_percentage ?? 0,
       receivesApplicationSupport: row.receives_application_support ?? false,
       receivesPostAdmissionSupport: row.receives_post_admission_support ?? false,
+      receivesFreeFunnelApplicationSupport:
+        row.receives_free_funnel_application_support ?? false,
       calendlyConnected,
       calendlyConnectedLabel,
       loginCredentialsSent,

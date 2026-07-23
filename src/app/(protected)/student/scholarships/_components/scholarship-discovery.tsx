@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { useLocale } from "@/lib/i18n/locale-context";
+import { useStudentFeatureGate } from "@/app/(protected)/student/_components/student-feature-gate-provider";
 import {
   addScholarshipToShortlist,
   removeScholarshipFromShortlist,
@@ -54,6 +55,7 @@ export function ScholarshipDiscovery({
 }) {
   const { dict } = useLocale();
   const t = dict.student.scholarships;
+  const { guardFunnelSubscriptionAction } = useStudentFeatureGate();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -533,6 +535,7 @@ export function ScholarshipDiscovery({
         onSaveScholarship={handleDetailSave}
         onShortlistScholarship={handleDetailShortlist}
         onApplyNow={() => {
+          if (!guardFunnelSubscriptionAction("scholarships")) return;
           if (pageData.detailId) setApplySourceId(pageData.detailId);
           setApplyOpen(true);
         }}

@@ -304,6 +304,9 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
   const receivesPostAdmissionSupport = parseCheckbox(
     formData.get("receivesPostAdmissionSupport"),
   );
+  const receivesFreeFunnelApplicationSupport = parseCheckbox(
+    formData.get("receivesFreeFunnelApplicationSupport"),
+  );
 
   const password = String(formData.get("password") ?? "");
   if (password.length < MIN_PASSWORD_LENGTH) {
@@ -435,6 +438,7 @@ export async function createAdvisor(formData: FormData): Promise<CreateAdvisorRe
     await applyAdvisorReceivingFlags(service, advisorId, {
       receivesApplicationSupport,
       receivesPostAdmissionSupport,
+      receivesFreeFunnelApplicationSupport,
     });
   } catch (error) {
     console.error("[createAdvisor] post-create", error);
@@ -603,6 +607,9 @@ export async function updateAdminAdvisorProfile(
   const receivesPostAdmissionSupport = parseCheckbox(
     formData.get("receivesPostAdmissionSupport"),
   );
+  const receivesFreeFunnelApplicationSupport = parseCheckbox(
+    formData.get("receivesFreeFunnelApplicationSupport"),
+  );
 
   const specializationCountryCodes = formData
     .getAll("specializationCountryCodes")
@@ -723,6 +730,7 @@ export async function updateAdminAdvisorProfile(
     await applyAdvisorReceivingFlags(service, id, {
       receivesApplicationSupport,
       receivesPostAdmissionSupport,
+      receivesFreeFunnelApplicationSupport,
     });
   } catch (error) {
     console.error("[updateAdminAdvisorProfile] post-update", error);

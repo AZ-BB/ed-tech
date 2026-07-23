@@ -444,6 +444,14 @@ export function UsersAddAdvisorDialog({ open, onClose }: UsersAddAdvisorDialogPr
                 />
                 Post-admission receiving advisor
               </label>
+              <label className="flex items-center gap-2 text-[13px] text-[#4a4a4a]">
+                <input
+                  type="checkbox"
+                  name="receivesFreeFunnelApplicationSupport"
+                  className="h-4 w-4 rounded border-[#e0deda]"
+                />
+                Free-funnel application support receiving advisor
+              </label>
             </div>
 
             {error ? <p className="text-[13px] text-red-600">{error}</p> : null}

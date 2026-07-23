@@ -60,7 +60,9 @@ export async function provisionIndependentStudent(
       ? input.password
       : generatePassword();
   const studentType = input.studentType ?? "individual";
-  const featureAccess = parseStudentFeatureAccess(input.featureAccess ?? null);
+  const featureAccess = parseStudentFeatureAccess(input.featureAccess ?? null, {
+    studentType,
+  });
   const metaData =
     input.metaData === undefined ? null : (input.metaData as Json | null);
 

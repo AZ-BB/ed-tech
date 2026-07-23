@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { useEffect, useTransition } from "react";
+import { useStudentFeatureGate } from "@/app/(protected)/student/_components/student-feature-gate-provider";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { Internship } from "./types";
 
@@ -45,6 +46,8 @@ export function InternshipDetailOverlay({
 }: Props) {
   const { dict } = useLocale();
   const t = dict.student.internships;
+  const { requiresFunnelSubscription, openSubscriptionModal } =
+    useStudentFeatureGate();
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -271,33 +274,62 @@ export function InternshipDetailOverlay({
               </div>
               <div className="side-divider" />
               {hasLink ? (
-                <a
-                  href={it.officialUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="act-btn-link"
-                >
-                  <div className="act-btn primary">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden
-                    >
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-                      <path d="M15 3h6v6" />
-                      <path d="M10 14L21 3" />
-                    </svg>
-                    <span>
-                      {isDirectory
-                        ? t.searchThisDirectory
-                        : t.officialApplicationPage}
-                    </span>
-                  </div>
-                </a>
+                requiresFunnelSubscription ? (
+                  <button
+                    type="button"
+                    className="act-btn-link"
+                    onClick={() => openSubscriptionModal("internships")}
+                  >
+                    <div className="act-btn primary">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                        <path d="M15 3h6v6" />
+                        <path d="M10 14L21 3" />
+                      </svg>
+                      <span>
+                        {isDirectory
+                          ? t.searchThisDirectory
+                          : t.officialApplicationPage}
+                      </span>
+                    </div>
+                  </button>
+                ) : (
+                  <a
+                    href={it.officialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="act-btn-link"
+                  >
+                    <div className="act-btn primary">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                        <path d="M15 3h6v6" />
+                        <path d="M10 14L21 3" />
+                      </svg>
+                      <span>
+                        {isDirectory
+                          ? t.searchThisDirectory
+                          : t.officialApplicationPage}
+                      </span>
+                    </div>
+                  </a>
+                )
               ) : null}
               <button
                 type="button"

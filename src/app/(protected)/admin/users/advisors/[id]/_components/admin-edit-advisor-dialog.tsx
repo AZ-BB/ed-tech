@@ -36,6 +36,7 @@ export type AdminEditAdvisorDialogProps = {
     payoutPercentage: string;
     receivesApplicationSupport: boolean;
     receivesPostAdmissionSupport: boolean;
+    receivesFreeFunnelApplicationSupport: boolean;
   };
   onClose: () => void;
 };
@@ -439,6 +440,15 @@ export function AdminEditAdvisorDialog({
                 className="h-4 w-4 rounded border-[#e0deda]"
               />
               Post-admission receiving advisor
+            </label>
+            <label className="flex items-center gap-2 text-[13px] text-[#4a4a4a]">
+              <input
+                type="checkbox"
+                name="receivesFreeFunnelApplicationSupport"
+                defaultChecked={defaults.receivesFreeFunnelApplicationSupport}
+                className="h-4 w-4 rounded border-[#e0deda]"
+              />
+              Free-funnel application support receiving advisor
             </label>
           </div>
 

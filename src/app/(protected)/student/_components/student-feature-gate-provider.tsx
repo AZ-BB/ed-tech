@@ -14,9 +14,18 @@ import {
   type ReactNode,
 } from "react";
 import { StudentDisabledFeaturesModal } from "./student-disabled-features-modal";
+import { StudentSubscriptionModal } from "./student-subscription-modal";
 
 type StudentFeatureGateContextValue = {
   openDisabledFeaturesModal: (featureKey?: StudentFeatureKey) => void;
+  /** True for unpaid funnel students who must subscribe for apply/book actions. */
+  requiresFunnelSubscription: boolean;
+  openSubscriptionModal: (featureKey?: StudentFeatureKey) => void;
+  /**
+   * If the student needs a funnel subscription, opens the modal and returns false.
+   * Otherwise returns true so the caller can proceed.
+   */
+  guardFunnelSubscriptionAction: (featureKey?: StudentFeatureKey) => boolean;
 };
 
 const StudentFeatureGateContext =
@@ -31,38 +40,78 @@ export function StudentFeatureGateProvider({
   featureAccess?: StudentFeatureAccess;
   showFunnelSubscribeCta?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [disabledOpen, setDisabledOpen] = useState(false);
   const [highlightedFeature, setHighlightedFeature] =
+    useState<StudentFeatureKey | null>(null);
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+  const [subscriptionFeature, setSubscriptionFeature] =
     useState<StudentFeatureKey | null>(null);
 
   const openDisabledFeaturesModal = useCallback(
     (featureKey?: StudentFeatureKey) => {
       setHighlightedFeature(featureKey ?? null);
-      setOpen(true);
+      setDisabledOpen(true);
     },
     [],
   );
 
-  const closeModal = useCallback(() => {
-    setOpen(false);
+  const closeDisabledModal = useCallback(() => {
+    setDisabledOpen(false);
     setHighlightedFeature(null);
   }, []);
 
+  const openSubscriptionModal = useCallback((featureKey?: StudentFeatureKey) => {
+    setSubscriptionFeature(featureKey ?? null);
+    setSubscriptionOpen(true);
+  }, []);
+
+  const closeSubscriptionModal = useCallback(() => {
+    setSubscriptionOpen(false);
+    setSubscriptionFeature(null);
+  }, []);
+
+  const guardFunnelSubscriptionAction = useCallback(
+    (featureKey?: StudentFeatureKey) => {
+      if (!showFunnelSubscribeCta) return true;
+      setSubscriptionFeature(featureKey ?? null);
+      setSubscriptionOpen(true);
+      return false;
+    },
+    [showFunnelSubscribeCta],
+  );
+
   const value = useMemo(
-    () => ({ openDisabledFeaturesModal }),
-    [openDisabledFeaturesModal],
+    () => ({
+      openDisabledFeaturesModal,
+      requiresFunnelSubscription: showFunnelSubscribeCta,
+      openSubscriptionModal,
+      guardFunnelSubscriptionAction,
+    }),
+    [
+      openDisabledFeaturesModal,
+      showFunnelSubscribeCta,
+      openSubscriptionModal,
+      guardFunnelSubscriptionAction,
+    ],
   );
 
   return (
     <StudentFeatureGateContext.Provider value={value}>
       {children}
       <StudentDisabledFeaturesModal
-        open={open}
-        onClose={closeModal}
+        open={disabledOpen}
+        onClose={closeDisabledModal}
         featureAccess={featureAccess}
         highlightedFeature={highlightedFeature}
         showFunnelSubscribeCta={showFunnelSubscribeCta}
       />
+      {showFunnelSubscribeCta ? (
+        <StudentSubscriptionModal
+          open={subscriptionOpen}
+          onClose={closeSubscriptionModal}
+          featureKey={subscriptionFeature}
+        />
+      ) : null}
     </StudentFeatureGateContext.Provider>
   );
 }

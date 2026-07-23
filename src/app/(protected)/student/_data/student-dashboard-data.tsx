@@ -131,11 +131,13 @@ export type QuickActionDictKey =
   | "personalityOverview"
   | "programDiscovery"
   | "discoverUniversities"
+  | "essayReview"
   | "scholarships"
   | "advisorSessions"
   | "ambassadors"
   | "applicationSupport"
-  | "postAdmission";
+  | "postAdmission"
+  | "internships";
 
 export type QuickAction = {
   dictKey: QuickActionDictKey;
@@ -143,6 +145,33 @@ export type QuickAction = {
   iconWrap: string;
   iconStroke: string;
   icon: ReactNode;
+};
+
+const essayReviewQuickAction: QuickAction = {
+  dictKey: "essayReview",
+  href: "/student/essay-review",
+  iconWrap: "bg-[#EEF0F4]",
+  iconStroke: "#3D4A5C",
+  icon: (
+    <>
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M16 13H8M16 17H8M10 9H8" />
+    </>
+  ),
+};
+
+const internshipsQuickAction: QuickAction = {
+  dictKey: "internships",
+  href: "/student/internships",
+  iconWrap: "bg-[#E0F2FE]",
+  iconStroke: "#0369A1",
+  icon: (
+    <>
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+    </>
+  ),
 };
 
 export const quickActions: QuickAction[] = [
@@ -245,9 +274,23 @@ export const quickActions: QuickAction[] = [
   },
 ];
 
-export const quickActionByDictKey = Object.fromEntries(
-  quickActions.map((action) => [action.dictKey, action]),
-) as Record<QuickActionDictKey, QuickAction>;
+/** Free funnel: Essay Review replaces Uni discovery; Internships replaces Post Admission. */
+export function getDashboardQuickActions(options?: {
+  freeFunnel?: boolean;
+}): QuickAction[] {
+  if (!options?.freeFunnel) return quickActions;
+  return quickActions.map((action) => {
+    if (action.dictKey === "discoverUniversities") return essayReviewQuickAction;
+    if (action.dictKey === "postAdmission") return internshipsQuickAction;
+    return action;
+  });
+}
+
+export const quickActionByDictKey = {
+  ...Object.fromEntries(quickActions.map((action) => [action.dictKey, action])),
+  essayReview: essayReviewQuickAction,
+  internships: internshipsQuickAction,
+} as Record<QuickActionDictKey, QuickAction>;
 
 export const savedTabLabels = [
   "Universities",

@@ -13,6 +13,12 @@ type PostAdmissionCalendlyModalProps = {
   prefill: CalendlyPrefill;
   title: string;
   scheduledAt?: string | null;
+  copy?: {
+    closeAria: string;
+    loading: string;
+    alreadyScheduledMessage: string;
+    alreadyScheduledClose: string;
+  };
 };
 
 function formatScheduledMeetingDate(iso: string): string {
@@ -32,9 +38,11 @@ export function PostAdmissionCalendlyModal({
   prefill,
   title,
   scheduledAt,
+  copy,
 }: PostAdmissionCalendlyModalProps) {
   const { dict } = useLocale();
   const t = dict.student.postAdmission;
+  const modalCopy = copy ?? t.modal;
 
   useEffect(() => {
     if (!open) return;
@@ -56,7 +64,7 @@ export function PostAdmissionCalendlyModal({
   if (!open) return null;
 
   const alreadyScheduledMessage = scheduledAt
-    ? t.modal.alreadyScheduledMessage.replace(
+    ? modalCopy.alreadyScheduledMessage.replace(
         "{date}",
         formatScheduledMeetingDate(scheduledAt),
       )
@@ -83,7 +91,7 @@ export function PostAdmissionCalendlyModal({
             type="button"
             onClick={onClose}
             className="pas-calendly-modal-close"
-            aria-label={t.modal.closeAria}
+            aria-label={modalCopy.closeAria}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -102,7 +110,7 @@ export function PostAdmissionCalendlyModal({
                 onClick={onClose}
                 className="pas-calendly-modal-already-booked-cta"
               >
-                {t.modal.alreadyScheduledClose}
+                {modalCopy.alreadyScheduledClose}
               </button>
             </div>
           ) : url ? (
@@ -114,7 +122,7 @@ export function PostAdmissionCalendlyModal({
             />
           ) : (
             <div className="pas-calendly-modal-loading">
-              <p className="text-sm text-(--text-hint)">{t.modal.loading}</p>
+              <p className="text-sm text-(--text-hint)">{modalCopy.loading}</p>
             </div>
           )}
         </div>

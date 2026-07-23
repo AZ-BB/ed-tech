@@ -37,12 +37,27 @@ export function canManageFunnelSubscription(
   return snapshot.studentType === "funnel";
 }
 
+/** Free funnel student: can browse gated surfaces but must subscribe for apply/book actions. */
+export function requiresFunnelSubscription(
+  snapshot: Pick<
+    StudentSubscriptionSnapshot,
+    "studentType" | "subscriptionStatus"
+  >,
+): boolean {
+  return (
+    canManageFunnelSubscription(snapshot) &&
+    !isStudentSubscriptionActive(snapshot.subscriptionStatus)
+  );
+}
+
 export function resolveStudentFeatureAccess(input: {
   studentType: StudentType;
   subscriptionStatus: StudentSubscriptionStatus;
   storedFeatureAccess: Json | null | undefined;
 }): StudentFeatureAccess {
-  const stored = parseStudentFeatureAccess(input.storedFeatureAccess);
+  const stored = parseStudentFeatureAccess(input.storedFeatureAccess, {
+    studentType: input.studentType,
+  });
   if (
     input.studentType === "funnel" &&
     isStudentSubscriptionActive(input.subscriptionStatus)

@@ -5,9 +5,14 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { formatRelativeTime } from "@/lib/i18n/format-relative-time";
 import { format } from "date-fns";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { startFreeFunnelApplicationSupport } from "@/actions/free-funnel-application-support";
+import type { ApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags";
+import type { StudentFormDefaults } from "@/lib/load-student-form-defaults";
+import { PostAdmissionCalendlyModal } from "../post-admission-support/_components/post-admission-calendly-modal";
+import "../post-admission-support/post-admission-support.css";
 import {
-  quickActions,
+  getDashboardQuickActions,
   type DashboardActivityLogItem,
   type DashboardAnnouncementItem,
   type DashboardNewsItem,
@@ -16,6 +21,11 @@ import { ArrowForwardIcon } from "../_components/directional-icons";
 import { StudentDashboardActivityStats } from "./student-dashboard-activity-stats";
 import { StudentDashboardCollections } from "./student-dashboard-collections";
 import { QuickActionsOnboardingTour } from "./quick-actions-onboarding-tour";
+import {
+  DashboardLockedSection,
+  QuickActionFreeBadge,
+  QuickActionLockBadge,
+} from "./dashboard-lock-ui";
 import {
   QUICK_ACTION_TO_FEATURE,
   defaultStudentFeatureAccess,
@@ -236,6 +246,8 @@ type StudentDashboardProps = {
   featureAccess?: StudentFeatureAccess;
   hasSeenQuickActionsTour?: boolean;
   showFunnelSubscriptionCta?: boolean;
+  freeFunnelApplicationSupportAdvisor?: ApplicationReceivingAdvisor | null;
+  profileDefaults?: StudentFormDefaults | null;
 };
 
 export function StudentDashboard({
@@ -254,16 +266,40 @@ export function StudentDashboard({
   featureAccess = defaultStudentFeatureAccess(true),
   hasSeenQuickActionsTour = true,
   showFunnelSubscriptionCta = false,
+  freeFunnelApplicationSupportAdvisor = null,
+  profileDefaults = null,
 }: StudentDashboardProps) {
   const { locale, dict } = useLocale();
-  const { openDisabledFeaturesModal } = useStudentFeatureGate();
+  const { openDisabledFeaturesModal, openSubscriptionModal } =
+    useStudentFeatureGate();
   const d = dict.student.dashboard;
+  const funnelAppSupportCopy = d.freeFunnelApplicationSupport;
   const subscriptionCopy = dict.student.subscription;
   const [tourDismissed, setTourDismissed] = useState(false);
+  const [calendlyModalOpen, setCalendlyModalOpen] = useState(false);
+  const [calendlyUrl, setCalendlyUrl] = useState("");
+  const [scheduledAt, setScheduledAt] = useState<string | null>(null);
+  const [appSupportError, setAppSupportError] = useState<string | null>(null);
+  const [isStartingAppSupport, startAppSupportTransition] = useTransition();
+  const canBookFreeFunnelAppSupport = Boolean(
+    freeFunnelApplicationSupportAdvisor?.calendlySchedulingUrl?.trim(),
+  );
+  const appSupportPrefill = useMemo(
+    () => ({
+      name: profileDefaults?.fullName?.trim() ?? "",
+      email: profileDefaults?.email?.trim() ?? "",
+    }),
+    [profileDefaults?.email, profileDefaults?.fullName],
+  );
+  const dashboardQuickActions = useMemo(
+    () => getDashboardQuickActions({ freeFunnel: showFunnelSubscriptionCta }),
+    [showFunnelSubscriptionCta],
+  );
+  const lockBottomSections = showFunnelSubscriptionCta;
 
   const enabledQuickActionSteps = useMemo(() => {
     const tips = d.quickActionsOnboarding.tips;
-    return quickActions
+    return dashboardQuickActions
       .filter((action) => {
         const featureKey = QUICK_ACTION_TO_FEATURE[action.dictKey];
         return (
@@ -278,7 +314,7 @@ export function StudentDashboard({
           description: tips[action.dictKey],
         };
       });
-  }, [d, featureAccess]);
+  }, [d, featureAccess, dashboardQuickActions]);
 
   const showQuickActionsTour =
     !hasSeenQuickActionsTour &&
@@ -393,23 +429,35 @@ export function StudentDashboard({
       </div>
       <div className="mb-5 w-full min-w-0">
         <div className="grid w-full min-w-0 grid-cols-4 auto-rows-fr gap-3 max-[800px]:grid-cols-1 max-[800px]:auto-rows-auto sm:max-[800px]:grid-cols-2">
-          {quickActions.map((action) => {
+          {dashboardQuickActions.map((action) => {
             const actionCopy = d.quickActionsItems[action.dictKey];
             const featureKey = QUICK_ACTION_TO_FEATURE[action.dictKey];
             const disabled =
               featureKey != null &&
               !isStudentFeatureEnabled(featureAccess, featureKey);
+            const showCampaignLock = showFunnelSubscriptionCta && disabled;
+            const showCampaignFree = showFunnelSubscriptionCta && !disabled;
             const card = (
               <div
-                className={`flex h-full min-h-[88px] min-w-0 items-start gap-3.5 rounded-2xl border border-[var(--border-light)] bg-white p-5 transition-all ${
-                  disabled
-                    ? "cursor-pointer opacity-45 hover:border-[var(--border)] hover:opacity-55"
-                    : "cursor-pointer hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
+                className={`group relative flex h-full min-h-[88px] min-w-0 items-start gap-3.5 rounded-2xl border p-5 transition-all ${
+                  showCampaignLock
+                    ? "cursor-pointer border-[var(--border-light)] bg-[#faf9f6] hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)]"
+                    : showCampaignFree
+                      ? "cursor-pointer border-[#b9d8c7] bg-white shadow-[0_0_0_3px_rgba(45,106,79,0.055),0_1px_3px_rgba(15,30,20,0.04)] hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_0_0_3px_rgba(45,106,79,0.08),0_6px_18px_rgba(15,30,20,0.07)]"
+                      : disabled
+                        ? "cursor-pointer border-[var(--border-light)] bg-white opacity-45 hover:border-[var(--border)] hover:opacity-55"
+                        : "cursor-pointer border-[var(--border-light)] bg-white hover:-translate-y-0.5 hover:border-[var(--border)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
                 }`}
                 aria-disabled={disabled || undefined}
               >
+                {showCampaignLock ? <QuickActionLockBadge /> : null}
+                {showCampaignFree ? (
+                  <QuickActionFreeBadge label={d.freeBadge} />
+                ) : null}
                 <div
-                  className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl ${action.iconWrap}`}
+                  className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl ${action.iconWrap} ${
+                    showCampaignLock ? "opacity-[0.72] saturate-[0.3]" : ""
+                  }`}
                 >
                   <svg
                     width="20"
@@ -423,11 +471,25 @@ export function StudentDashboard({
                     {action.icon}
                   </svg>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-[13.5px] font-semibold text-[var(--text)]">
+                <div
+                  className={`min-w-0 ${showCampaignLock ? "opacity-[0.85]" : ""}`}
+                >
+                  <div
+                    className={`text-[13.5px] font-semibold ${
+                      showCampaignLock
+                        ? "text-[var(--text-mid)]"
+                        : "text-[var(--text)]"
+                    }`}
+                  >
                     {actionCopy.name}
                   </div>
-                  <div className="mt-0.5 text-[12px] leading-snug text-[var(--text-light)]">
+                  <div
+                    className={`mt-0.5 text-[12px] leading-snug ${
+                      showCampaignLock
+                        ? "text-[var(--text-hint)]"
+                        : "text-[var(--text-light)]"
+                    }`}
+                  >
                     {actionCopy.desc}
                   </div>
                 </div>
@@ -441,7 +503,13 @@ export function StudentDashboard({
                   type="button"
                   data-quick-action={action.dictKey}
                   className="block h-full min-w-0 w-full text-start"
-                  onClick={() => openDisabledFeaturesModal(featureKey)}
+                  onClick={() => {
+                    if (showFunnelSubscriptionCta) {
+                      openSubscriptionModal(featureKey);
+                      return;
+                    }
+                    openDisabledFeaturesModal(featureKey);
+                  }}
                   aria-label={`${actionCopy.name} — not available on your account`}
                 >
                   {card}
@@ -450,15 +518,15 @@ export function StudentDashboard({
             }
 
             return (
-            <Link
-              key={action.dictKey}
-              href={action.href}
-              scroll={false}
-              data-quick-action={action.dictKey}
-              className="block h-full min-w-0 text-inherit no-underline"
-            >
-              {card}
-            </Link>
+              <Link
+                key={action.dictKey}
+                href={action.href}
+                scroll={false}
+                data-quick-action={action.dictKey}
+                className="block h-full min-w-0 text-inherit no-underline"
+              >
+                {card}
+              </Link>
             );
           })}
         </div>
@@ -477,13 +545,22 @@ export function StudentDashboard({
         />
       ) : null}
 
-      <StudentDashboardActivityStats
-        totalLogins={totalLogins}
-        essaysReviewedCount={essaysReviewedCount}
-        aiMatchesGeneratedCount={aiMatchesGeneratedCount}
-      />
+      <DashboardLockedSection
+        locked={lockBottomSections}
+        title={d.sectionLock.title}
+        subtitle={d.sectionLock.activitySubtitle}
+        ariaLabel={d.sectionLock.ariaLabel}
+        onUnlock={openSubscriptionModal}
+        className="mb-5"
+      >
+        <StudentDashboardActivityStats
+          totalLogins={totalLogins}
+          essaysReviewedCount={essaysReviewedCount}
+          aiMatchesGeneratedCount={aiMatchesGeneratedCount}
+        />
 
-      <StudentDashboardCollections />
+        <StudentDashboardCollections />
+      </DashboardLockedSection>
 
       <div className="relative mb-5 overflow-hidden rounded-[20px] bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#40916C] px-9 py-8 text-white after:pointer-events-none after:absolute after:-right-[60px] after:-top-[60px] after:h-[200px] after:w-[200px] after:rounded-full after:bg-white/[0.04] max-[800px]:px-8">
         <h2 className="relative z-[1] font-[family-name:var(--font-dm-serif)] text-[22px]">
@@ -492,15 +569,89 @@ export function StudentDashboard({
         <p className="relative z-[1] mt-2 max-w-[480px] text-[13px] leading-relaxed text-white/70">
           {d.applicationSupportBannerDesc}
         </p>
-        <Link
-          href="/student/application-support"
-          className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[#40916C] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
-        >
-          {d.startApplicationSupport}
-          <ArrowForwardIcon size={14} />
-        </Link>
+        {showFunnelSubscriptionCta ? (
+          <>
+            <button
+              type="button"
+              disabled={isStartingAppSupport}
+              onClick={() => {
+                setAppSupportError(null);
+                if (!canBookFreeFunnelAppSupport) {
+                  setAppSupportError(funnelAppSupportCopy.schedulingUnavailable);
+                  return;
+                }
+                startAppSupportTransition(async () => {
+                  const result = await startFreeFunnelApplicationSupport();
+                  if (!result.ok) {
+                    setAppSupportError(result.error);
+                    return;
+                  }
+                  if ("kind" in result && result.kind === "already_scheduled") {
+                    setScheduledAt(result.scheduledAt);
+                    setCalendlyUrl("");
+                    setCalendlyModalOpen(true);
+                    return;
+                  }
+                  if ("calendlyUrl" in result) {
+                    setScheduledAt(null);
+                    setCalendlyUrl(result.calendlyUrl);
+                    setCalendlyModalOpen(true);
+                  }
+                });
+              }}
+              className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[#40916C] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isStartingAppSupport ? funnelAppSupportCopy.starting : d.startApplicationSupport}
+              <ArrowForwardIcon size={14} />
+            </button>
+            {appSupportError ? (
+              <p className="relative z-[1] mt-3 max-w-[480px] text-[12px] text-white/90" role="alert">
+                {appSupportError}
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <Link
+            href="/student/application-support"
+            className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[#40916C] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
+          >
+            {d.startApplicationSupport}
+            <ArrowForwardIcon size={14} />
+          </Link>
+        )}
       </div>
 
+      {showFunnelSubscriptionCta ? (
+        <PostAdmissionCalendlyModal
+          open={calendlyModalOpen}
+          onClose={() => {
+            setCalendlyModalOpen(false);
+            setScheduledAt(null);
+          }}
+          url={calendlyUrl}
+          prefill={appSupportPrefill}
+          title={
+            scheduledAt
+              ? funnelAppSupportCopy.modalAlreadyScheduledTitle
+              : funnelAppSupportCopy.modalTitle
+          }
+          scheduledAt={scheduledAt}
+          copy={{
+            closeAria: funnelAppSupportCopy.modalCloseAria,
+            loading: funnelAppSupportCopy.modalLoading,
+            alreadyScheduledMessage: funnelAppSupportCopy.modalAlreadyScheduledMessage,
+            alreadyScheduledClose: funnelAppSupportCopy.modalAlreadyScheduledClose,
+          }}
+        />
+      ) : null}
+
+      <DashboardLockedSection
+        locked={lockBottomSections}
+        title={d.sectionLock.title}
+        subtitle={d.sectionLock.feedSubtitle}
+        ariaLabel={d.sectionLock.ariaLabel}
+        onUnlock={openSubscriptionModal}
+      >
       <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-2">
         <div className="rounded-2xl border border-[var(--border-light)] bg-white px-[22px] py-5 max-[800px]:px-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0 [&>svg]:opacity-40">
@@ -667,6 +818,7 @@ export function StudentDashboard({
           </button>
         </div>
       </div>
+      </DashboardLockedSection>
     </div>
   );
 }
