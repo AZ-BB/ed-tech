@@ -6,6 +6,8 @@ export const STUDENT_FEATURE_KEYS = [
   "program_discovery",
   "universities",
   "scholarships",
+  "internships",
+  "essay_review",
   "advisor_sessions",
   "ambassadors",
   "application_support",
@@ -16,11 +18,19 @@ export type StudentFeatureKey = (typeof STUDENT_FEATURE_KEYS)[number];
 
 export type StudentFeatureAccess = Record<StudentFeatureKey, boolean>;
 
+/** Omitted in funnel provision / stored JSON → these stay off unless explicitly enabled. */
+export const FUNNEL_DEFAULT_DISABLED_FEATURES = [
+  "internships",
+  "essay_review",
+] as const satisfies readonly StudentFeatureKey[];
+
 export const STUDENT_FEATURE_LABELS: Record<StudentFeatureKey, string> = {
   personality_overview: "Personality Overview",
   program_discovery: "Program Discovery",
   universities: "Discover Universities",
   scholarships: "Scholarships",
+  internships: "Internships",
+  essay_review: "Essay Review",
   advisor_sessions: "1:1 Advisor",
   ambassadors: "Ambassadors",
   application_support: "Application Support",
@@ -33,6 +43,7 @@ export const NAV_ID_TO_FEATURE: Partial<Record<string, StudentFeatureKey>> = {
   "program-discovery": "program_discovery",
   "university-search": "universities",
   scholarships: "scholarships",
+  internships: "internships",
   "advisor-sessions": "advisor_sessions",
   ambassadors: "ambassadors",
   "application-support": "application_support",
@@ -44,7 +55,9 @@ export const QUICK_ACTION_TO_FEATURE: Record<string, StudentFeatureKey> = {
   personalityOverview: "personality_overview",
   programDiscovery: "program_discovery",
   discoverUniversities: "universities",
+  essayReview: "essay_review",
   scholarships: "scholarships",
+  internships: "internships",
   advisorSessions: "advisor_sessions",
   ambassadors: "ambassadors",
   applicationSupport: "application_support",
@@ -62,6 +75,8 @@ export const FEATURE_TO_QUICK_ACTION_DICT_KEY: Record<
   program_discovery: "programDiscovery",
   universities: "discoverUniversities",
   scholarships: "scholarships",
+  internships: "internships",
+  essay_review: "essayReview",
   advisor_sessions: "advisorSessions",
   ambassadors: "ambassadors",
   application_support: "applicationSupport",
@@ -69,13 +84,18 @@ export const FEATURE_TO_QUICK_ACTION_DICT_KEY: Record<
 };
 
 /** Route prefixes gated by feature access. */
-export const FEATURE_ROUTE_PREFIXES: { prefix: string; feature: StudentFeatureKey }[] = [
+export const FEATURE_ROUTE_PREFIXES: {
+  prefix: string;
+  feature: StudentFeatureKey;
+}[] = [
   { prefix: "/student/discovery-journey", feature: "personality_overview" },
   { prefix: "/student/programs", feature: "program_discovery" },
   { prefix: "/student/program-fit-test", feature: "program_discovery" },
   { prefix: "/student/universities", feature: "universities" },
   { prefix: "/student/ai-matching", feature: "universities" },
   { prefix: "/student/scholarships", feature: "scholarships" },
+  { prefix: "/student/internships", feature: "internships" },
+  { prefix: "/student/essay-review", feature: "essay_review" },
   { prefix: "/student/advisor-sessions", feature: "advisor_sessions" },
   { prefix: "/student/ambassadors", feature: "ambassadors" },
   { prefix: "/student/application-support", feature: "application_support" },
@@ -84,23 +104,35 @@ export const FEATURE_ROUTE_PREFIXES: { prefix: string; feature: StudentFeatureKe
 
 export function defaultStudentFeatureAccess(
   enabled = true,
+  options?: { studentType?: "school" | "individual" | "funnel" },
 ): StudentFeatureAccess {
-  return {
+  const access: StudentFeatureAccess = {
     personality_overview: enabled,
     program_discovery: enabled,
     universities: enabled,
     scholarships: enabled,
+    internships: enabled,
+    essay_review: enabled,
     advisor_sessions: enabled,
     ambassadors: enabled,
     application_support: enabled,
     post_admission: enabled,
   };
+
+  if (enabled && options?.studentType === "funnel") {
+    for (const key of FUNNEL_DEFAULT_DISABLED_FEATURES) {
+      access[key] = false;
+    }
+  }
+
+  return access;
 }
 
 export function parseStudentFeatureAccess(
   raw: Json | null | undefined,
+  options?: { studentType?: "school" | "individual" | "funnel" },
 ): StudentFeatureAccess {
-  const defaults = defaultStudentFeatureAccess(true);
+  const defaults = defaultStudentFeatureAccess(true, options);
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
     return defaults;
   }

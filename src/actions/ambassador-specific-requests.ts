@@ -9,6 +9,7 @@ import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
+import { requiresFunnelSubscription } from "@/lib/student-subscription";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 async function requireStudentActor(): Promise<{ studentId: string } | { error: string }> {
@@ -86,6 +87,30 @@ export async function createAmbassadorSpecificRequest(
     return { ok: false, error: actor.error };
   }
 
+  const secret = await createSupabaseSecretClient();
+  const { data: studentRow, error: studentErr } = await secret
+    .from("student_profiles")
+    .select("student_type, subscription_status")
+    .eq("id", actor.studentId)
+    .maybeSingle();
+
+  if (studentErr) {
+    console.error("[ambassador_specific_requests] student profile:", studentErr);
+    return { ok: false, error: "Could not verify your account. Please try again." };
+  }
+
+  if (
+    requiresFunnelSubscription({
+      studentType: studentRow?.student_type ?? "school",
+      subscriptionStatus: studentRow?.subscription_status ?? "none",
+    })
+  ) {
+    return {
+      ok: false,
+      error: "A subscription is required to request a specific ambassador.",
+    };
+  }
+
   if (!isResendConfigured()) {
     return {
       ok: false,
@@ -94,7 +119,6 @@ export async function createAmbassadorSpecificRequest(
     };
   }
 
-  const secret = await createSupabaseSecretClient();
   const { data: inserted, error: insertErr } = await secret
     .from("ambassador_specific_requests")
     .insert({

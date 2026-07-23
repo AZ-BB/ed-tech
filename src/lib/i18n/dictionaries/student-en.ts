@@ -936,11 +936,30 @@ export const studentEn = {
     tasksToComplete: "{count} tasks to complete",
     viewTasks: "View",
     quickActions: "Quick actions",
+    freeBadge: "Free",
+    sectionLock: {
+      title: "Locked",
+      ariaLabel: "Locked — requires full Univeera access",
+      activitySubtitle: "Upgrade to unlock your activity & saved items",
+      feedSubtitle: "Upgrade to unlock news & your activity feed",
+    },
     yourActivity: "Your activity",
     applicationSupportBannerTitle: "Let us handle your applications",
     applicationSupportBannerDesc:
       "Apply to multiple universities with full expert support — document checks, deadline management, personal statement refinement, and direct access to application specialists.",
     startApplicationSupport: "Start application support",
+    freeFunnelApplicationSupport: {
+      starting: "Starting...",
+      schedulingUnavailable:
+        "Scheduling is temporarily unavailable. Please try again later.",
+      modalTitle: "Book application support",
+      modalAlreadyScheduledTitle: "Session already booked",
+      modalAlreadyScheduledMessage:
+        "You already have an application support session scheduled for {date}.",
+      modalAlreadyScheduledClose: "Got it",
+      modalCloseAria: "Close booking modal",
+      modalLoading: "Loading calendar...",
+    },
     topNews: "Top news & updates",
     noNews: "No news yet.",
     newsTagVisa: "Visa",
@@ -1000,6 +1019,10 @@ export const studentEn = {
         name: "Discover Universities",
         desc: "Search and filter 500+ universities locally and globally",
       },
+      essayReview: {
+        name: "Essay Review",
+        desc: "Get AI feedback to strengthen your application essays",
+      },
       scholarships: {
         name: "Scholarships",
         desc: "Discover localized funding opportunities",
@@ -1019,6 +1042,10 @@ export const studentEn = {
       postAdmission: {
         name: "Post Admission",
         desc: "Visa, housing, insurance and arrival guidance",
+      },
+      internships: {
+        name: "Internships",
+        desc: "Browse vetted internship opportunities",
       },
     },
     disabledFeaturesModal: {
@@ -1069,6 +1096,16 @@ export const studentEn = {
           description:
             "After your offer arrives, get step-by-step support for visas, housing, insurance, flights, and arrival planning. We help you navigate the logistics that come after acceptance so your transition abroad is smooth and stress-free. From paperwork to landing — you are not doing it alone.",
         },
+        essayReview: {
+          title: "Essay Review",
+          description:
+            "Upload your application essays and get structured AI feedback on clarity, structure, and impact. Iterate faster with concrete suggestions so every draft is stronger than the last. Turn a rough personal statement into a compelling story admissions teams remember.",
+        },
+        internships: {
+          title: "Internships",
+          description:
+            "Browse vetted internship opportunities matched to your interests, format, and location preferences. Save promising roles and request support when you need help finding the right fit. Build experience that strengthens your applications and future career path.",
+        },
       },
     },
     quickActionsOnboarding: {
@@ -1083,6 +1120,8 @@ export const studentEn = {
           "Browse and filter programs worldwide, then use AI matching to find options that fit your profile.",
         discoverUniversities:
           "Explore 500+ universities, save favorites, and build your shortlist in one place.",
+        essayReview:
+          "Upload your essays and get structured AI feedback to improve clarity, structure, and impact.",
         scholarships:
           "Find funding opportunities tailored to your background and destination countries.",
         advisorSessions:
@@ -1093,6 +1132,8 @@ export const studentEn = {
           "Get end-to-end help with your applications — documents, deadlines, and personal statements.",
         postAdmission:
           "After you receive an offer, get support with visas, housing, insurance, and arrival planning.",
+        internships:
+          "Explore vetted internship opportunities and request support to find the right fit.",
       },
     },
   },
@@ -1104,6 +1145,23 @@ export const studentEn = {
     dashboardTitle: "Unlock full Univeera access",
     dashboardDesc:
       "Subscribe to a monthly plan to unlock all platform features — program discovery, advisors, application support, and more.",
+    modalEyebrow: "Univeera Full Access",
+    modalTitle: "Unlock your complete university journey",
+    modalTitleForFeature: "Unlock {feature}",
+    modalBody:
+      "Upgrade to unlock every Univeera tool and receive support throughout your university journey.",
+    modalBenefits: [
+      "Find universities and programs matched to your goals.",
+      "Connect with expert advisors and university ambassadors.",
+      "Get support with essays, applications, and next steps.",
+    ],
+    modalVideoHeading: "See everything included with Univeera",
+    modalVideoText:
+      "Watch how Univeera helps you move from university discovery to application and admission.",
+    modalVideoAria: "Video: how Univeera supports your university journey",
+    modalCta: "Continue to payment",
+    modalReassure: "Instant access to all Univeera platform features.",
+    closeAria: "Close dialog",
     settingsTitle: "Subscription",
     settingsDesc:
       "Manage your monthly Univeera subscription. Cancellation takes effect at the end of the current billing period.",

@@ -1,8 +1,7 @@
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
-import {
-  canManageFunnelSubscription,
-  isStudentSubscriptionActive,
-} from "@/lib/student-subscription";
+import { fetchFreeFunnelApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags";
+import { loadStudentFormDefaults } from "@/lib/load-student-form-defaults";
+import { requiresFunnelSubscription } from "@/lib/student-subscription";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { redirect } from "next/navigation";
 import { getPlatformCompletionStats, hasPlatformCompletionFlag, QUICK_ACTIONS_TOUR_FLAG } from "@/lib/student-platform-completion";
@@ -106,6 +105,22 @@ export default async function StudentPage() {
     createdAt: row.created_at ?? null,
   }));
 
+  const showFunnelSubscriptionCta = requiresFunnelSubscription(auth);
+
+  const [freeFunnelApplicationSupportAdvisor, profileDefaults] =
+    showFunnelSubscriptionCta
+      ? await Promise.all([
+          fetchFreeFunnelApplicationReceivingAdvisor(),
+          (async () => {
+            const supabaseAuth = await createSupabaseServerClient();
+            const {
+              data: { user },
+            } = await supabaseAuth.auth.getUser();
+            return loadStudentFormDefaults(auth.studentId, user?.email);
+          })(),
+        ])
+      : [null, null];
+
   return (
     <StudentDashboard
       welcomeFirstName={welcomeFirstName}
@@ -122,10 +137,9 @@ export default async function StudentPage() {
       hasSchoolLinked={hasSchoolLinked}
       featureAccess={auth.featureAccess}
       hasSeenQuickActionsTour={hasSeenQuickActionsTour}
-      showFunnelSubscriptionCta={
-        canManageFunnelSubscription(auth) &&
-        !isStudentSubscriptionActive(auth.subscriptionStatus)
-      }
+      showFunnelSubscriptionCta={showFunnelSubscriptionCta}
+      freeFunnelApplicationSupportAdvisor={freeFunnelApplicationSupportAdvisor}
+      profileDefaults={profileDefaults}
     />
   );
 }

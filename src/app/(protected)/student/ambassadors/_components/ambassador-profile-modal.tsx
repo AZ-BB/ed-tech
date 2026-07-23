@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
+import { useStudentFeatureGate } from "@/app/(protected)/student/_components/student-feature-gate-provider";
 import { CountryFlag } from "@/components/country-flag";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -74,6 +75,8 @@ type Props = {
 export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
   const { dict } = useLocale();
   const am = dict.student.ambassadors;
+  const { requiresFunnelSubscription, openSubscriptionModal } =
+    useStudentFeatureGate();
   const pal = paletteForId(ambassador.id);
   const ini = initials(ambassador.firstName, ambassador.lastName);
   const destName =
@@ -286,14 +289,28 @@ export function AmbassadorProfileModal({ ambassador, onClose }: Props) {
         </div>
 
         <div className="px-7 pb-7 pt-1 text-center">
-          <Link
-            href={`/student/ambassadors/${ambassador.id}/book`}
-            className="inline-flex w-full max-w-[320px] items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3.5 text-[14px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white sm:w-auto"
-            onClick={onClose}
-          >
-            {am.bookCall}
-            <ArrowForwardIcon size={16} strokeWidth={2} />
-          </Link>
+          {requiresFunnelSubscription ? (
+            <button
+              type="button"
+              className="inline-flex w-full max-w-[320px] items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3.5 text-[14px] font-semibold text-white shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] sm:w-auto"
+              onClick={() => {
+                onClose();
+                openSubscriptionModal("ambassadors");
+              }}
+            >
+              {am.bookCall}
+              <ArrowForwardIcon size={16} strokeWidth={2} />
+            </button>
+          ) : (
+            <Link
+              href={`/student/ambassadors/${ambassador.id}/book`}
+              className="inline-flex w-full max-w-[320px] items-center justify-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3.5 text-[14px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white sm:w-auto"
+              onClick={onClose}
+            >
+              {am.bookCall}
+              <ArrowForwardIcon size={16} strokeWidth={2} />
+            </Link>
+          )}
           <p className="mx-auto mt-3 max-w-[340px] text-[11px] leading-relaxed text-[var(--text-hint)]">
             {am.modalFooterNote}
           </p>

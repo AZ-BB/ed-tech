@@ -9,6 +9,7 @@ import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
+import { requiresFunnelSubscription } from "@/lib/student-subscription";
 
 function uuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -166,13 +167,25 @@ export async function createAmbassadorSessionRequest(
 
   const { data: studentRow, error: studentErr } = await secret
     .from("student_profiles")
-    .select("school_id, ambassador_credit_limit")
+    .select("school_id, ambassador_credit_limit, student_type, subscription_status")
     .eq("id", actor.studentId)
     .maybeSingle();
 
   if (studentErr) {
     console.error("[ambassador_session_requests] student profile:", studentErr);
     return { ok: false, error: "Could not verify your booking limit. Please try again." };
+  }
+
+  if (
+    requiresFunnelSubscription({
+      studentType: studentRow?.student_type ?? "school",
+      subscriptionStatus: studentRow?.subscription_status ?? "none",
+    })
+  ) {
+    return {
+      ok: false,
+      error: "A subscription is required to book ambassador sessions.",
+    };
   }
 
   const ambassadorCreditsRemaining = studentRow?.ambassador_credit_limit;

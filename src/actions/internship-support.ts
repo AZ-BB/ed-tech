@@ -1,6 +1,10 @@
 "use server";
 
-import { createSupabaseServerClient } from "@/utils/supabase-server";
+import { requiresFunnelSubscription } from "@/lib/student-subscription";
+import {
+  createSupabaseSecretClient,
+  createSupabaseServerClient,
+} from "@/utils/supabase-server";
 
 export type InternshipSupportSubmitResult =
   | { ok: true }
@@ -33,6 +37,36 @@ export async function submitInternshipSupportRequest(
   } = await supabase.auth.getUser();
   if (!user?.id) {
     return { ok: false, error: "You must be signed in." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: studentRow, error: studentErr } = await secret
+    .from("student_profiles")
+    .select("student_type, subscription_status")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (studentErr) {
+    console.error(
+      "[submitInternshipSupportRequest] student profile:",
+      studentErr,
+    );
+    return {
+      ok: false,
+      error: "Could not verify your account. Please try again.",
+    };
+  }
+
+  if (
+    requiresFunnelSubscription({
+      studentType: studentRow?.student_type ?? "school",
+      subscriptionStatus: studentRow?.subscription_status ?? "none",
+    })
+  ) {
+    return {
+      ok: false,
+      error: "A subscription is required to request internship support.",
+    };
   }
 
   const fullName = trimRequired(fields.fullName, "fullName");

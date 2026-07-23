@@ -110,6 +110,10 @@ export function AdminAdvisorViewClient({
       lab: "Post-admission receiving",
       val: advisor.receivesPostAdmissionSupport ? "Yes" : "No",
     },
+    {
+      lab: "Free-funnel app support receiving",
+      val: advisor.receivesFreeFunnelApplicationSupport ? "Yes" : "No",
+    },
     { lab: "Calendly", val: advisor.calendlyConnectedLabel },
     { lab: "Joined", val: advisor.joinedLabel },
     { lab: "Last logged in", val: advisor.lastLoggedInLabel },
@@ -231,6 +235,8 @@ export function AdminAdvisorViewClient({
                 payoutPercentage: String(advisor.payoutPercentage),
                 receivesApplicationSupport: advisor.receivesApplicationSupport,
                 receivesPostAdmissionSupport: advisor.receivesPostAdmissionSupport,
+                receivesFreeFunnelApplicationSupport:
+                  advisor.receivesFreeFunnelApplicationSupport,
               }}
             />
           </div>

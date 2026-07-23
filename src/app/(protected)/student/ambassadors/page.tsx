@@ -35,6 +35,18 @@ function parseOpenAmbassadorId(
   return id;
 }
 
+function parseSubscribePrompt(
+  sp: Record<string, string | string[] | undefined>,
+): boolean {
+  const raw =
+    typeof sp.subscribe === "string"
+      ? sp.subscribe
+      : Array.isArray(sp.subscribe)
+        ? sp.subscribe[0]
+        : undefined;
+  return raw === "1";
+}
+
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -42,6 +54,7 @@ type PageProps = {
 export default async function AmbassadorsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const openAmbassadorId = parseOpenAmbassadorId(sp);
+  const openSubscribeModal = parseSubscribePrompt(sp);
   const { features } = await fetchPlatformSettings();
   if (!isPlatformFeatureEnabled(features, "ambassador_booking")) {
     return <StudentFeatureUnavailable featureLabel={PLATFORM_FEATURE_LABELS.ambassador_booking} />;
@@ -114,6 +127,7 @@ export default async function AmbassadorsPage({ searchParams }: PageProps) {
       catalogCountries={catalogCountries}
       studentDefaults={studentDefaults}
       openAmbassadorId={openAmbassadorId}
+      openSubscribeModal={openSubscribeModal}
     />
   );
 }

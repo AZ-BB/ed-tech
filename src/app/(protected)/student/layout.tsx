@@ -3,10 +3,7 @@ import { defaultLocale, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
-import {
-  canManageFunnelSubscription,
-  isStudentSubscriptionActive,
-} from "@/lib/student-subscription";
+import { requiresFunnelSubscription } from "@/lib/student-subscription";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -34,9 +31,7 @@ export default async function StudentLayout({
   const locale = rawLocale && isLocale(rawLocale) ? rawLocale : defaultLocale;
   const dict = await getDictionary(locale);
 
-  const showFunnelSubscribeCta =
-    canManageFunnelSubscription(auth) &&
-    !isStudentSubscriptionActive(auth.subscriptionStatus);
+  const showFunnelSubscribeCta = requiresFunnelSubscription(auth);
 
   return (
     <LocaleProvider locale={locale} dict={dict}>

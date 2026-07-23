@@ -14,6 +14,7 @@ import {
   saveInternship,
   unsaveInternship,
 } from "@/actions/internship-activities";
+import { useStudentFeatureGate } from "@/app/(protected)/student/_components/student-feature-gate-provider";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { InternshipDiscoveryPageData } from "../_lib/get-internship-discovery-programs";
 import type {
@@ -136,6 +137,7 @@ export function InternshipDiscovery({
 }) {
   const { dict } = useLocale();
   const t = dict.student.internships;
+  const { guardFunnelSubscriptionAction } = useStudentFeatureGate();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -278,7 +280,12 @@ export function InternshipDiscovery({
         onClearFilters={onClearFilters}
       />
 
-      <InternshipRequestCta onRequest={() => setRequestOpen(true)} />
+      <InternshipRequestCta
+        onRequest={() => {
+          if (!guardFunnelSubscriptionAction("internships")) return;
+          setRequestOpen(true);
+        }}
+      />
 
       <div className="relative">
         {isPending ? (

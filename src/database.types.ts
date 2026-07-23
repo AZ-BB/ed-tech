@@ -494,6 +494,7 @@ export type Database = {
           phone: string | null
           questions: Json | null
           receives_application_support: boolean
+          receives_free_funnel_application_support: boolean
           receives_post_admission_support: boolean
           session_coverage: Json | null
           session_for: string | null
@@ -527,6 +528,7 @@ export type Database = {
           phone?: string | null
           questions?: Json | null
           receives_application_support?: boolean
+          receives_free_funnel_application_support?: boolean
           receives_post_admission_support?: boolean
           session_coverage?: Json | null
           session_for?: string | null
@@ -560,6 +562,7 @@ export type Database = {
           phone?: string | null
           questions?: Json | null
           receives_application_support?: boolean
+          receives_free_funnel_application_support?: boolean
           receives_post_admission_support?: boolean
           session_coverage?: Json | null
           session_for?: string | null

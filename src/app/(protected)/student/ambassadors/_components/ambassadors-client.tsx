@@ -2,6 +2,7 @@
 
 import { logAmbassadorsCatalogView } from "@/actions/ambassador-sessions";
 import type { AmbassadorCatalogEntry } from "../_lib/ambassador-catalog";
+import { useStudentFeatureGate } from "@/app/(protected)/student/_components/student-feature-gate-provider";
 import { CountryFlag } from "@/components/country-flag";
 import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
@@ -104,6 +105,7 @@ type Props = {
   catalogCountries: { id: string; name: string }[];
   studentDefaults?: StudentContactDefaults;
   openAmbassadorId?: string;
+  openSubscribeModal?: boolean;
 };
 
 export function AmbassadorsClient({
@@ -111,10 +113,13 @@ export function AmbassadorsClient({
   catalogCountries,
   studentDefaults,
   openAmbassadorId,
+  openSubscribeModal = false,
 }: Props) {
   const { dict } = useLocale();
   const am = dict.student.ambassadors;
   const router = useRouter();
+  const { guardFunnelSubscriptionAction, openSubscriptionModal, requiresFunnelSubscription } =
+    useStudentFeatureGate();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dest, setDest] = useState("");
@@ -125,6 +130,7 @@ export function AmbassadorsClient({
   const [requestOpen, setRequestOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const deepLinkHandled = useRef(false);
+  const subscribePromptHandled = useRef(false);
 
   useEffect(() => {
     if (!openAmbassadorId || deepLinkHandled.current) return;
@@ -137,7 +143,14 @@ export function AmbassadorsClient({
       setToast(am.toastUnavailable);
     }
     router.replace("/student/ambassadors");
-  }, [openAmbassadorId, initialAmbassadors, router]);
+  }, [openAmbassadorId, initialAmbassadors, router, am.toastUnavailable]);
+
+  useEffect(() => {
+    if (!openSubscribeModal || subscribePromptHandled.current) return;
+    subscribePromptHandled.current = true;
+    openSubscriptionModal("ambassadors");
+    router.replace("/student/ambassadors");
+  }, [openSubscribeModal, openSubscriptionModal, router]);
 
   useEffect(() => {
     if (!toast) return;
@@ -336,7 +349,12 @@ export function AmbassadorsClient({
         </div>
       </div>
 
-      <RequestSpecificAmbassadorCta onOpen={() => setRequestOpen(true)} />
+      <RequestSpecificAmbassadorCta
+        onOpen={() => {
+          if (!guardFunnelSubscriptionAction("ambassadors")) return;
+          setRequestOpen(true);
+        }}
+      />
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         {filtered.map((a) => {
@@ -405,13 +423,26 @@ export function AmbassadorsClient({
                   >
                     {statusPillLabel(a, am)}
                   </span>
-                  <Link
-                    href={`/student/ambassadors/${a.id}/book`}
-                    className="inline-flex items-center rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {am.bookCall}
-                  </Link>
+                  {requiresFunnelSubscription ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[var(--green-dark)]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openSubscriptionModal("ambassadors");
+                      }}
+                    >
+                      {am.bookCall}
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/student/ambassadors/${a.id}/book`}
+                      className="inline-flex items-center rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {am.bookCall}
+                    </Link>
+                  )}
                 </div>
                 <p className="mt-2 text-center text-[10px] leading-snug text-[var(--text-hint)]">
                   {am.cardFooterNote}
