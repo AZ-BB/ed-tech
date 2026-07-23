@@ -5,6 +5,10 @@ export {
 } from "@/lib/resend/config";
 export { getResendClient } from "@/lib/resend/client";
 export {
+  wrapEmailHtml,
+  type WrapEmailHtmlInput,
+} from "@/lib/resend/email-layout";
+export {
   sendResendEmail,
   type SendResendEmailInput,
   type SendResendEmailResult,
