@@ -18,7 +18,11 @@ export type StudentFeatureKey = (typeof STUDENT_FEATURE_KEYS)[number];
 
 export type StudentFeatureAccess = Record<StudentFeatureKey, boolean>;
 
-/** Omitted in funnel provision / stored JSON → these stay off unless explicitly enabled. */
+/**
+ * When `featureAccess` is omitted entirely (null) for funnel students,
+ * these stay off. Keys missing from a provided object always default to false
+ * (see `parseStudentFeatureAccess`).
+ */
 export const FUNNEL_DEFAULT_DISABLED_FEATURES = [
   "internships",
   "essay_review",
@@ -132,18 +136,21 @@ export function parseStudentFeatureAccess(
   raw: Json | null | undefined,
   options?: { studentType?: "school" | "individual" | "funnel" },
 ): StudentFeatureAccess {
-  const defaults = defaultStudentFeatureAccess(true, options);
+  // No stored/provided list → use type defaults (legacy null = full access).
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
-    return defaults;
+    return defaultStudentFeatureAccess(true, options);
   }
+
+  // Provided list → opt-in only; any missing key is disabled.
+  const access = defaultStudentFeatureAccess(false);
   const obj = raw as Record<string, unknown>;
   for (const key of STUDENT_FEATURE_KEYS) {
     const value = obj[key];
     if (typeof value === "boolean") {
-      defaults[key] = value;
+      access[key] = value;
     }
   }
-  return defaults;
+  return access;
 }
 
 export function isStudentFeatureEnabled(
