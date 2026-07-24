@@ -11,8 +11,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { ApplicationSupportClient } from "./_components/application-support-client";
+import { ApplicationSupportStatusView } from "./_components/application-support-status-view";
 import { StudentApplicationSupportDashboard } from "./_components/student-application-support-dashboard";
-import { fetchStudentApplicationSupportDashboard } from "./_lib/fetch-student-application-support-dashboard";
+import { fetchStudentApplicationSupportView } from "./_lib/fetch-student-application-support-view";
 import { StudentFeatureUnavailable } from "../_components/student-feature-unavailable";
 
 export const dynamic = "force-dynamic";
@@ -31,17 +32,22 @@ export default async function StudentApplicationSupportPage() {
   }
 
   const secret = await createSupabaseSecretClient();
-  const dashboard = await fetchStudentApplicationSupportDashboard(
-    secret,
-    auth.studentId,
-  );
+  const view = await fetchStudentApplicationSupportView(secret, auth.studentId);
 
-  if (dashboard) {
+  if (view.kind === "dashboard") {
     return (
       <Suspense fallback={null}>
-        <StudentApplicationSupportDashboard initial={dashboard} />
+        <StudentApplicationSupportDashboard initial={view.payload} />
       </Suspense>
     );
+  }
+
+  if (
+    view.kind === "scheduled" ||
+    view.kind === "payment_pending" ||
+    view.kind === "awaiting_review"
+  ) {
+    return <ApplicationSupportStatusView {...view} />;
   }
 
   const supabase = await createSupabaseServerClient();

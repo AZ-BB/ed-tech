@@ -795,6 +795,25 @@ export const studentAr: {
       majorExists: "هذا التخصص موجود بالفعل في قائمتك",
       somethingWrong: "حدث خطأ. يرجى المحاولة مرة أخرى.",
     },
+    statusViews: {
+      scheduledEyebrow: "جلسة التعارف",
+      scheduledTitle: "تم حجز جلستك",
+      scheduledMessage: "جلسة التعارف لدعم التقديم مجدولة في {date}. نراك حينها.",
+      paymentEyebrow: "الدفع مطلوب",
+      paymentTitle: "في انتظار الدفع",
+      paymentMessage:
+        "أرسل مستشارك طلب دفع لباقة دعم التقديم. أكمل الدفع لتفعيل باقتك.",
+      paymentPlan: "الباقة: {plan}",
+      paymentAmount: "المبلغ المستحق: {amount} درهم",
+      paymentDue: "الاستحقاق بحلول {date}",
+      paymentCta: "ادفع الآن",
+      paymentNoLink:
+        "يتم تجهيز رابط الدفع. راجع بريدك أو تواصل مع مستشارك إذا احتجت مساعدة.",
+      awaitingEyebrow: "قيد المراجعة",
+      awaitingTitle: "مستشارك يراجع ملفك",
+      awaitingMessage:
+        "استلمنا بياناتك. سيتابع مستشارك معك بعد جلسة التعارف بالخطوات التالية.",
+    },
     dashboard: {
       workspaceLabel: "دعم التقديم",
       pageTitle: "باقة تقديمك",
