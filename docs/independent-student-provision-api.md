@@ -71,7 +71,7 @@ Content-Type: application/json
 
 ### `featureAccess`
 
-Optional object of booleans. Any key you omit defaults to **enabled** (`true`), except for **funnel** students where `internships` and `essay_review` default to **disabled** (`false`) unless you set them explicitly.
+Optional object of booleans. When you send `featureAccess`, any key you omit (or leave non-boolean) defaults to **disabled** (`false`) — features are opt-in. If you omit `featureAccess` entirely, defaults apply: all features **enabled** (`true`), except for **funnel** students where `internships` and `essay_review` default to **disabled** (`false`).
 
 | Key | Feature |
 |-----|---------|
@@ -189,6 +189,8 @@ curl -X POST "https://univeera.me/api/students/independent" \
       "program_discovery": true,
       "universities": true,
       "scholarships": false,
+      "internships": false,
+      "essay_review": false,
       "advisor_sessions": true,
       "ambassadors": false,
       "application_support": true,
@@ -221,6 +223,8 @@ const res = await fetch("https://univeera.me/api/students/independent", {
       program_discovery: true,
       universities: true,
       scholarships: false,
+      internships: false,
+      essay_review: false,
       advisor_sessions: true,
       ambassadors: false,
       application_support: true,
