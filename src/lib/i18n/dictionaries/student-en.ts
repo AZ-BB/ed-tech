@@ -780,6 +780,26 @@ export const studentEn = {
       majorExists: "This major is already in your list",
       somethingWrong: "Something went wrong. Please try again.",
     },
+    statusViews: {
+      scheduledEyebrow: "Onboarding session",
+      scheduledTitle: "Your session is booked",
+      scheduledMessage:
+        "Your application support onboarding session is scheduled for {date}. We'll see you then.",
+      paymentEyebrow: "Payment required",
+      paymentTitle: "Waiting for payment",
+      paymentMessage:
+        "Your advisor has sent a payment request for your application support package. Complete payment to activate your package.",
+      paymentPlan: "Package: {plan}",
+      paymentAmount: "Amount due: AED {amount}",
+      paymentDue: "Due by {date}",
+      paymentCta: "Pay now",
+      paymentNoLink:
+        "Your payment link is being prepared. Check your email or contact your advisor if you need help.",
+      awaitingEyebrow: "Under review",
+      awaitingTitle: "Your advisor is reviewing your profile",
+      awaitingMessage:
+        "We've received your details. Your advisor will follow up after your onboarding session with next steps.",
+    },
     dashboard: {
       workspaceLabel: "Application support",
       pageTitle: "Your application package",

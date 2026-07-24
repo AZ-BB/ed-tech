@@ -1,6 +1,8 @@
 import "server-only";
 
-import { ACTIVE_APPLICATION_STATUSES } from "@/lib/application-support-intake";
+import {
+  ACTIVE_APPLICATION_STATUSES,
+} from "@/lib/application-support-intake";
 import {
   parseApplicationPackageData,
   resolveApplicationUniversitiesTotal,
@@ -42,6 +44,7 @@ const STUDENT_APPLICATION_SELECT = `
   awards,
   additional_notes,
   status,
+  scheduled_at,
   package_data,
   plan_id,
   updated_at,
@@ -84,6 +87,7 @@ type ApplicationRowRaw = {
   awards: string | null;
   additional_notes: string | null;
   status: string | null;
+  scheduled_at: string | null;
   package_data: unknown;
   plan_id: number;
   updated_at: string | null;
@@ -141,7 +145,7 @@ function mapPlan(row: ApplicationRowRaw): StudentApplicationSupportPlan | null {
   };
 }
 
-export async function fetchLatestActiveStudentApplication(
+export async function fetchLatestStudentApplication(
   secret: SecretClient,
   studentId: string,
 ): Promise<ApplicationRowRaw | null> {
@@ -156,19 +160,35 @@ export async function fetchLatestActiveStudentApplication(
     .maybeSingle();
 
   if (error) {
-    console.error("[fetchLatestActiveStudentApplication]", error);
+    console.error("[fetchLatestStudentApplication]", error);
     return null;
   }
 
   return (data as ApplicationRowRaw | null) ?? null;
 }
 
+/** @deprecated Use fetchLatestStudentApplication */
+export async function fetchLatestActiveStudentApplication(
+  secret: SecretClient,
+  studentId: string,
+): Promise<ApplicationRowRaw | null> {
+  const row = await fetchLatestStudentApplication(secret, studentId);
+  if (!row) return null;
+  const status = row.status?.trim() || "lead";
+  if (
+    !(ACTIVE_APPLICATION_STATUSES as readonly string[]).includes(status)
+  ) {
+    return null;
+  }
+  return row;
+}
+
 export async function fetchStudentApplicationSupportDashboard(
   secret: SecretClient,
   studentId: string,
 ): Promise<StudentApplicationSupportDashboardPayload | null> {
-  const row = await fetchLatestActiveStudentApplication(secret, studentId);
-  if (!row) return null;
+  const row = await fetchLatestStudentApplication(secret, studentId);
+  if (!row || row.status?.trim() !== "active_package") return null;
 
   const packageData = parseApplicationPackageData(row.package_data);
   const plan = mapPlan(row);
