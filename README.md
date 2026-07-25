@@ -91,6 +91,26 @@ NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL=https://calendly.com/admin-univeera
 
 Advisor bookings pass `utm_content=advisor_session:<id>` in the embed URL so the webhook can match the row. Application-support Calendly flows without that prefix are ignored.
 
+## Arabic content translation (Agrid API)
+
+Admin users can auto-translate university catalog fields (description, tuition, SAT policy, etc.) from English to Arabic. Translations are stored in Supabase (`universities.content_ar`) and shown on the student portal when the locale cookie is `ar`.
+
+### Environment
+
+```bash
+# Required — server-only; never expose to the client
+AGRID_API_KEY=your_agrid_bearer_token
+
+# Optional — defaults to https://agrid-api.arabic.ai
+AGRID_API_BASE_URL=https://agrid-api.arabic.ai
+```
+
+Generate or rotate the API key in the Agrid / Arabic.ai dashboard. If a key was shared in chat or committed by mistake, rotate it immediately.
+
+After adding env vars locally, apply the database migrations (`20260725120000_university_content_ar.sql`, `20260725140000_translation_responses.sql`) before using **Translate to Arabic** on an admin university detail page.
+
+Each API call is logged in the `translation_responses` table with the full request/response payloads, HTTP status, workflow IDs, and optional entity context (`entity_type`, `entity_id`, `field_key`).
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

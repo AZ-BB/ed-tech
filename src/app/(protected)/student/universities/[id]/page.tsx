@@ -1,9 +1,11 @@
 import type { Json } from "@/database.types";
-import {
-    livingCostLabel,
-    tuitionDetailLabel,
-    tuitionSentenceLabel,
-} from "@/lib/university-cost-display";
+import { applyUniversityLocalization } from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
+import { studentDiscoveryAr } from "@/lib/i18n/dictionaries/student-discovery-ar";
+import { studentDiscoveryEn } from "@/lib/i18n/dictionaries/student-discovery-en";
+import type { Locale } from "@/lib/i18n/config";
+import { pickCatalogName } from "@/lib/translation/translate-major-program-catalog";
+import { SCHOLARSHIP_NOTE_EN } from "@/lib/university-translatable-fields";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -48,12 +50,18 @@ function formatApplicationFee(n: number | null): string {
     return tuitionFormatter.format(n);
 }
 
-function formatDeadline(iso: string | null, isPriority: boolean): string {
+function formatDeadline(
+    iso: string | null,
+    isPriority: boolean,
+    locale: string,
+    prioritySuffix: string,
+): string {
     if (!iso) return "—";
     const d = new Date(iso + (iso.includes("T") ? "" : "T12:00:00"));
     if (Number.isNaN(d.getTime())) return "—";
-    const base = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    return isPriority ? `${base} (priority)` : base;
+    const dateLocale = locale === "ar" ? "ar" : "en-US";
+    const base = d.toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" });
+    return isPriority ? `${base} ${prioritySuffix}` : base;
 }
 
 function formatAcceptance(rate: number | null): string {
@@ -90,11 +98,11 @@ function formatIntlStudents(n: number | null): string | null {
 }
 
 type UnivMajorProgramRow = {
-    programs: { name: string } | null;
+    programs: { name: string; name_ar: string | null } | null;
 };
 
 type UnivMajorRow = {
-    majors: { name: string } | null;
+    majors: { name: string; name_ar: string | null } | null;
     university_major_programs: UnivMajorProgramRow[] | null;
 };
 
@@ -128,20 +136,33 @@ type UniversityRow = {
     is_scholarship_available: boolean;
     toefl_min_score: number | null;
     documents: Json | null;
+    content_ar: Json | null;
     countries: { name: string } | null;
     university_majors: UnivMajorRow[] | null;
 };
 
-function buildMajorBlocks(rows: UnivMajorRow[] | null): MajorProgramBlock[] {
+function buildMajorBlocks(rows: UnivMajorRow[] | null, locale: Locale): MajorProgramBlock[] {
     if (!rows?.length) return [];
     return rows.map((row) => {
-        const majorName = row.majors?.name?.trim() || "Program area";
+        const majorName = pickCatalogName(locale, row.majors?.name, row.majors?.name_ar);
         const programs =
             row.university_major_programs
-                ?.map((p) => p.programs?.name?.trim())
+                ?.map((p) =>
+                    pickCatalogName(locale, p.programs?.name, p.programs?.name_ar, ""),
+                )
                 .filter((n): n is string => Boolean(n)) ?? [];
         return { majorName, programs };
     });
+}
+
+function hasArabicCatalog(rows: UnivMajorRow[] | null): boolean {
+    for (const row of rows ?? []) {
+        if (row.majors?.name_ar?.trim()) return true;
+        for (const link of row.university_major_programs ?? []) {
+            if (link.programs?.name_ar?.trim()) return true;
+        }
+    }
+    return false;
 }
 
 function topMajorNamesFromBlocks(blocks: MajorProgramBlock[], limit: number): string[] {
@@ -166,6 +187,7 @@ export async function generateMetadata(props: { params: Promise<PageParams> }): 
 
 export default async function StudentUniversityDetailPage(props: { params: Promise<PageParams> }) {
     const { id } = await props.params;
+    const locale = await getServerLocale();
     const supabase = await createSupabaseServerClient();
 
     const { data: raw, error } = await supabase
@@ -175,9 +197,9 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
             *,
             countries ( name ),
             university_majors (
-                majors ( name ),
+                majors ( name, name_ar ),
                 university_major_programs (
-                    programs ( name )
+                    programs ( name, name_ar )
                 )
             )
             `,
@@ -193,8 +215,7 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
     }
 
     const row = raw as unknown as UniversityRow & { difficulty?: string | null };
-    const countryName = row.countries?.name ?? row.country_code;
-    const majorBlocks = buildMajorBlocks(row.university_majors);
+    const majorBlocks = buildMajorBlocks(row.university_majors, locale);
     const totalPrograms = majorBlocks.reduce((acc, b) => acc + b.programs.length, 0);
     const topNames = topMajorNamesFromBlocks(majorBlocks, 8);
 
@@ -236,38 +257,63 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
             ? difficultyRaw
             : null;
 
-    const scholarshipNote = row.is_scholarship_available
-        ? "Scholarships may be available to qualified students. Check the university website for the latest details."
-        : null;
+    const scholarshipNoteEn = row.is_scholarship_available ? SCHOLARSHIP_NOTE_EN : null;
+    const enDocuments = documentListFromJson(row.documents);
+
+    const localized = applyUniversityLocalization(
+        locale,
+        {
+            name: row.name,
+            city: row.city,
+            country_code: row.country_code,
+            description: row.description,
+            tuition_display: row.tuition_display,
+            tuition_per_year: row.tuition_per_year,
+            living_display: row.living_display,
+            estimated_living_cost_per_year: row.estimated_living_cost_per_year,
+            sat_policy: row.sat_policy,
+            method: row.method,
+            intakes: row.intakes,
+            documents: row.documents,
+            is_scholarship_available: row.is_scholarship_available,
+        },
+        row.content_ar,
+        enDocuments,
+        scholarshipNoteEn,
+    );
 
     const model = {
         id: row.id,
-        name: row.name,
-        city: row.city,
+        name: localized.name,
+        city: localized.city ?? row.city,
         state: row.state,
-        countryName,
+        countryName: localized.countryName ?? row.countries?.name ?? row.country_code,
         countryCode: row.country_code,
         isPublic: row.is_public,
         logoUrl: row.logo_url,
         coverImageUrl: row.cover_image_url?.trim() || null,
-        description: row.description,
+        description: localized.description,
         topMajorNames: topNames,
-        tuitionDisplay: tuitionDetailLabel(row.tuition_display, row.tuition_per_year),
-        tuitionSentence: tuitionSentenceLabel(row.tuition_display, row.tuition_per_year),
-        deadlineFormatted: formatDeadline(row.deadline_date, row.is_priority),
+        tuitionDisplay: localized.tuitionDisplay,
+        tuitionSentence: localized.tuitionSentence,
+        deadlineFormatted: formatDeadline(
+            row.deadline_date,
+            row.is_priority,
+            locale,
+            locale === "ar"
+                ? studentDiscoveryAr.universities.prioritySuffix
+                : studentDiscoveryEn.universities.prioritySuffix,
+        ),
         ieltsFormatted: formatIelts(row.ielts_min_score),
-        satPolicy: row.sat_policy,
+        satPolicy: localized.satPolicy,
         satBadge: satBadgeFromPolicy(row.sat_policy),
         toeflFormatted: formatToefl(row.toefl_min_score),
-        methodFormatted: row.method?.trim() || "—",
+        methodFormatted: localized.methodFormatted,
         feeFormatted: formatApplicationFee(row.application_fee),
-        intakesFormatted: row.intakes?.trim() || "—",
-        livingFormatted: livingCostLabel(
-            row.living_display,
-            row.estimated_living_cost_per_year,
-        ),
+        intakesFormatted: localized.intakesFormatted,
+        livingFormatted: localized.livingFormatted,
         scholarshipsAvailable: row.is_scholarship_available,
-        scholarshipNote,
+        scholarshipNote: localized.scholarshipNote,
         acceptanceFormatted: formatAcceptance(row.acceptance_rate),
         rankingFormatted: formatRanking(row.ranking),
         intlStudentsFormatted: formatIntlStudents(row.intl_students),
@@ -275,11 +321,12 @@ export default async function StudentUniversityDetailPage(props: { params: Promi
         websiteUrl: row.website_url,
         admissionUrl: row.admission_page_url,
         email: row.email,
-        documents: documentListFromJson(row.documents),
+        documents: localized.documents,
         majorBlocks,
         totalPrograms,
         is_shortlisted,
         is_favourite,
+        useRtlContent: localized.useRtlContent || (locale === "ar" && hasArabicCatalog(row.university_majors)),
     };
 
     return <UniversityDetailView uni={model} />;

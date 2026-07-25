@@ -1,5 +1,14 @@
 import { Pagination } from "@/components/pagination";
-import type { Database } from "@/database.types";
+import type { Database, Json } from "@/database.types";
+import {
+  hasArabicUniversityContent,
+  localizedTuitionCardLabel,
+  pickLocalizedField,
+} from "@/lib/content-localization";
+import { getLocalizedCountryName } from "@/lib/countries";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
+import { pickCatalogName } from "@/lib/translation/translate-major-program-catalog";
+import { parseUniversityContentAr } from "@/lib/university-translatable-fields";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { Suspense } from "react";
 import { UniversitiesFilter } from "./_components/universities-filter";
@@ -101,9 +110,13 @@ type StudentActivityRow = {
 };
 
 /** Row shape for list query; explicit because dynamic `.select()` breaks Supabase `ParserError` inference. */
-type UniversitiesListQueryRow = Omit<UniversityCardUniversity, "country_name" | "is_shortlisted" | "is_favourite"> & {
-    countries: { name: string } | null;
-    student_activities: StudentActivityRow[] | null;
+type UniversitiesListQueryRow = Omit<
+  UniversityCardUniversity,
+  "country_name" | "is_shortlisted" | "is_favourite" | "use_rtl_content"
+> & {
+  content_ar: Json | null;
+  countries: { name: string } | null;
+  student_activities: StudentActivityRow[] | null;
 };
 
 function isUniversityShortlistedFromActivities(activities: StudentActivityRow[] | null | undefined): boolean {
@@ -147,8 +160,9 @@ type UniversitiesPageSearchParams = {
 async function resolveUniversitiesFilterState(
     sp: UniversitiesPageSearchParams,
     supabase: SecretSupabaseClient,
-    majors: { id: number; name: string }[] | null | undefined,
+    majors: { id: number; name: string; name_ar: string | null }[] | null | undefined,
     countries: { id: string; name: string }[] | null | undefined,
+    locale: import("@/lib/i18n/config").Locale,
 ) {
     const majorIdRaw = sp.major_id?.trim();
     const programIdRaw = sp.program_id?.trim();
@@ -157,8 +171,17 @@ async function resolveUniversitiesFilterState(
     const uniType = normalizeUniType(sp.uni_type);
     const difficulty = normalizeDifficulty(sp.difficulty);
 
-    const majorsList = majors ?? [];
-    const countriesList = countries ?? [];
+    const majorsList = (majors ?? []).map((major) => ({
+        id: major.id,
+        name: pickCatalogName(locale, major.name, major.name_ar),
+    }));
+    const countriesList = (countries ?? []).map((country) => ({
+        id: country.id,
+        name:
+            locale === "ar"
+                ? getLocalizedCountryName(country.id, "ar")
+                : country.name.trim(),
+    }));
     const majorId =
         majorIdRaw && majorsList.some((m) => String(m.id) === majorIdRaw)
             ? majorIdRaw
@@ -173,12 +196,15 @@ async function resolveUniversitiesFilterState(
     if (majorId) {
         const { data: programsData, error: programsError } = await supabase
             .from("programs")
-            .select("id, name")
+            .select("id, name, name_ar")
             .eq("major_id", parseInt(majorId, 10));
         if (programsError) {
             console.error(programsError);
         }
-        programs = programsData ?? [];
+        programs = (programsData ?? []).map((program) => ({
+            id: program.id,
+            name: pickCatalogName(locale, program.name, program.name_ar),
+        }));
     }
 
     const programId =
@@ -208,11 +234,12 @@ export default async function StudentUniversitiesPage({
 }) {
     const sp = await searchParams;
 
+    const locale = await getServerLocale();
     const supabase = await createSupabaseServerClient();
 
     const { data: majors, error: majorsError } = await supabase
         .from("majors")
-        .select("id, name");
+        .select("id, name, name_ar");
     if (majorsError) {
         console.error(majorsError);
     }
@@ -234,7 +261,7 @@ export default async function StudentUniversitiesPage({
         countryCode,
         programId,
         programs,
-    } = await resolveUniversitiesFilterState(sp, supabase, majors, countries);
+    } = await resolveUniversitiesFilterState(sp, supabase, majors, countries, locale);
 
     const { page: pageParam, limit: limitParam } = parseUniversitiesPagination(sp);
     const searchTrimmed = search?.trim() || undefined;
@@ -269,6 +296,7 @@ export default async function StudentUniversitiesPage({
             country_code,
             is_public,
             description,
+            content_ar,
             logo_url,
             tuition_per_year,
             tuition_display,
@@ -331,25 +359,37 @@ export default async function StudentUniversitiesPage({
     const universities =
         rows?.map((row) => {
             const country = row.countries;
+            const contentAr = parseUniversityContentAr(row.content_ar);
+            const enCountryName = country?.name ?? row.country_code;
+            const arCountryName =
+                contentAr.country_name ?? getLocalizedCountryName(row.country_code, "ar");
+            const tuitionDisplay = localizedTuitionCardLabel(
+                locale,
+                row.content_ar,
+                row.tuition_display,
+                row.tuition_per_year,
+            );
+
             return {
                 id: row.id,
-                name: row.name,
-                city: row.city,
+                name: pickLocalizedField(locale, row.name, contentAr.name),
+                city: pickLocalizedField(locale, row.city, contentAr.city) || row.city,
                 state: row.state,
                 country_code: row.country_code,
-                country_name: country?.name ?? row.country_code,
+                country_name: pickLocalizedField(locale, enCountryName, arCountryName),
                 is_public: row.is_public,
-                description: row.description,
+                description: pickLocalizedField(locale, row.description, contentAr.description) || null,
                 logo_url: row.logo_url,
                 tuition_per_year: row.tuition_per_year,
-                tuition_display: row.tuition_display,
+                tuition_display: tuitionDisplay,
                 deadline_date: row.deadline_date,
                 is_priority: row.is_priority,
                 ielts_min_score: row.ielts_min_score,
-                sat_policy: row.sat_policy,
+                sat_policy: pickLocalizedField(locale, row.sat_policy, contentAr.sat_policy) || null,
                 acceptance_rate: row.acceptance_rate,
                 is_shortlisted: isUniversityShortlistedFromActivities(row.student_activities),
                 is_favourite: isUniversityFavouriteFromActivities(row.student_activities),
+                use_rtl_content: locale === "ar" && hasArabicUniversityContent(contentAr),
             } satisfies UniversityCardUniversity;
         }) ?? [];
 

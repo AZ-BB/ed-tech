@@ -1,7 +1,16 @@
 import type { Json } from "@/database.types";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { livingCostLabel, tuitionCardLabel } from "@/lib/university-cost-display";
+import {
+  getUniversityTranslationStatus,
+  parseUniversityContentAr,
+  parseUniversityContentArMeta,
+  type UniversityContentAr,
+  type UniversityTranslationStatus,
+} from "@/lib/university-translatable-fields";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
+
+export type { UniversityTranslationStatus };
 
 export type AdminUniversityDetailUniversity = {
   id: string;
@@ -43,6 +52,9 @@ export type AdminUniversityDetailUniversity = {
   typeLabel: string;
   tuitionLabel: string;
   livingCostLabel: string;
+  contentAr: UniversityContentAr;
+  contentArTranslatedAt: string | null;
+  translationStatus: UniversityTranslationStatus;
 };
 
 export type AdminUniversityDetailPayload = {
@@ -177,6 +189,28 @@ export async function fetchAdminUniversityDetail(
     livingCostLabel: livingCostLabel(
       university.living_display,
       university.estimated_living_cost_per_year,
+    ),
+    contentAr: parseUniversityContentAr(university.content_ar),
+    contentArTranslatedAt:
+      parseUniversityContentArMeta(university.content_ar_meta)?.translated_at ?? null,
+    translationStatus: getUniversityTranslationStatus(
+      {
+        name: university.name,
+        city: university.city,
+        country_code: university.country_code,
+        description: university.description,
+        tuition_display: university.tuition_display,
+        tuition_per_year: university.tuition_per_year,
+        living_display: university.living_display,
+        estimated_living_cost_per_year: university.estimated_living_cost_per_year,
+        sat_policy: university.sat_policy,
+        method: university.method,
+        intakes: university.intakes,
+        documents: university.documents,
+        is_scholarship_available: university.is_scholarship_available,
+      },
+      parseUniversityContentAr(university.content_ar),
+      parseUniversityContentArMeta(university.content_ar_meta),
     ),
   };
 
