@@ -54,6 +54,7 @@ export type UniversityDetailModel = {
     totalPrograms: number;
     is_shortlisted: boolean;
     is_favourite: boolean;
+    useRtlContent: boolean;
 };
 
 function CrestSvg({ className }: { className?: string }) {
@@ -75,11 +76,52 @@ function CrestSvg({ className }: { className?: string }) {
     );
 }
 
-function SectionTitle({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+function SectionTitle({
+    icon,
+    children,
+    isRtlLayout = false,
+}: {
+    icon: ReactNode;
+    children: ReactNode;
+    isRtlLayout?: boolean;
+}) {
     return (
-        <div className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-[#1a1a1a]">
+        <div
+            className={`mb-3 flex items-center gap-2 text-[15px] font-semibold text-[#1a1a1a]${isRtlLayout ? " flex-row-reverse justify-end text-right" : ""}`}
+        >
             <span className="text-[#4a4a4a] [&_svg]:opacity-50">{icon}</span>
             {children}
+        </div>
+    );
+}
+
+function ApplicationInfoCard({
+    label,
+    children,
+    isRtlLayout,
+    valueDir,
+}: {
+    label: string;
+    children: ReactNode;
+    isRtlLayout: boolean;
+    valueDir: "ltr" | "rtl";
+}) {
+    const valueClass =
+        valueDir === "ltr" && isRtlLayout ? "bidi-ltr" : !isRtlLayout ? "bidi-ltr" : "";
+
+    return (
+        <div
+            className={`rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3${isRtlLayout ? " text-right" : ""}`}
+            dir={isRtlLayout ? "rtl" : "ltr"}
+        >
+            <div
+                className={`mb-0.5 text-[11px] font-medium text-[#a0a0a0]${isRtlLayout ? "" : " uppercase tracking-[0.5px]"}`}
+            >
+                {label}
+            </div>
+            <div className={`${valueClass} text-[15px] font-semibold break-words`} dir={valueDir}>
+                {children}
+            </div>
         </div>
     );
 }
@@ -117,8 +159,11 @@ const bannerPatternSvg =
     "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
 
 export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
-    const { dict } = useLocale();
+    const { dict, locale } = useLocale();
     const t = dict.student.universities;
+    const isArLocale = locale === "ar";
+    const textDir = uni.useRtlContent ? "rtl" : "ltr";
+    const bidiClass = uni.useRtlContent ? "" : "bidi-ltr";
     const desc =
         uni.description?.trim() ||
         t.noDescription;
@@ -163,7 +208,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             <CrestSvg className="h-[18px] w-[18px]" />
                         )}
                     </div>
-                    <span className="bidi-ltr min-w-0 truncate text-sm font-semibold text-[#1a1a1a] sm:text-base" dir="ltr">{uni.name}</span>
+                    <span className={`${bidiClass} min-w-0 truncate text-sm font-semibold text-[#1a1a1a] sm:text-base`} dir={textDir}>{uni.name}</span>
                 </div>
                 <div className="flex gap-2">
                     <DetailHeaderFavouriteButton />
@@ -231,10 +276,10 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         </div>
 
                         <div className="px-4 pb-4 pt-10 sm:px-6 sm:pt-12">
-                            <h1 className="serif bidi-ltr mb-0.5 text-[19px] font-bold leading-tight text-[#1a1a1a] break-words sm:text-[22px]" dir="ltr">
+                            <h1 className={`serif ${bidiClass} mb-0.5 text-[19px] font-bold leading-tight text-[#1a1a1a] break-words sm:text-[22px]`} dir={textDir}>
                                 {uni.name}
                             </h1>
-                            <p className="bidi-ltr mb-2.5 text-sm text-[#7a7a7a]" dir="ltr">
+                            <p className={`${bidiClass} mb-2.5 text-sm text-[#7a7a7a]`} dir={textDir}>
                                 <UniversityLocation
                                     city={uni.city}
                                     state={uni.state}
@@ -264,7 +309,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             >
                                 {t.overview}
                             </SectionTitle>
-                            <p className="bidi-ltr mb-4 text-[13.5px] leading-[1.65] text-[#4a4a4a]" dir="ltr">{desc}</p>
+                            <p className={`${bidiClass} mb-4 text-[13.5px] leading-[1.65] text-[#4a4a4a]`} dir={textDir}>{desc}</p>
 
                             <div className="mb-2 text-[13px] font-semibold text-[#1a1a1a]">
                                 {t.admissionProfile}
@@ -302,7 +347,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                     <line x1="12" y1="1" x2="12" y2="23" />
                                     <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
                                 </svg>
-                                <span>{t.tuitionLabel}: <span className="bidi-ltr break-words" dir="ltr">{uni.tuitionSentence}</span></span>
+                                <span>{t.tuitionLabel}: <span className={`${bidiClass} break-words`} dir={textDir}>{uni.tuitionSentence}</span></span>
                             </div>
                         </section>
 
@@ -328,7 +373,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             </div>
                             <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2 text-[13.5px] sm:flex-row sm:items-center sm:gap-2.5">
                                 <span className="shrink-0 font-medium text-[#7a7a7a] sm:w-[100px] sm:min-w-[100px]">{t.satAct}</span>
-                                <span className="bidi-ltr min-w-0 font-semibold text-[#1a1a1a] break-words" dir="ltr">{satMiddle}</span>
+                                <span className={`${bidiClass} min-w-0 font-semibold text-[#1a1a1a] break-words`} dir={uni.satBadge === "neutral" && uni.useRtlContent ? textDir : "ltr"}>{satMiddle}</span>
                             </div>
                             <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2 text-[13.5px] sm:flex-row sm:items-center sm:gap-2.5">
                                 <span className="shrink-0 font-medium text-[#7a7a7a] sm:w-[100px] sm:min-w-[100px]">{t.ielts}</span>
@@ -347,7 +392,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 {uni.documents.map((doc) => (
                                     <li key={doc} className="flex items-start gap-2 text-[13px] text-[#4a4a4a]">
                                         <DocDot />
-                                        <span className="bidi-ltr" dir="ltr">{doc}</span>
+                                        <span className={bidiClass} dir={textDir}>{doc}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -356,8 +401,10 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         <section
                             id="d-application"
                             className="scroll-mt-28 border-b border-[#ece9e4] px-4 py-4 sm:px-6 sm:py-5"
+                            dir={isArLocale ? "rtl" : undefined}
                         >
                             <SectionTitle
+                                isRtlLayout={isArLocale}
                                 icon={
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                         <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -368,30 +415,34 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 {t.applicationInfo}
                             </SectionTitle>
                             <div className="grid grid-cols-1 gap-2.5 min-[460px]:grid-cols-2">
-                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
-                                        {t.deadline}
-                                    </div>
-                                    <div className="bidi-ltr text-[15px] font-semibold" dir="ltr">{uni.deadlineFormatted}</div>
-                                </div>
-                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
-                                        {t.method}
-                                    </div>
-                                    <div className="bidi-ltr text-[15px] font-semibold" dir="ltr">{uni.methodFormatted}</div>
-                                </div>
-                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
-                                        {t.applicationFee}
-                                    </div>
-                                    <div className="bidi-ltr text-[15px] font-semibold" dir="ltr">{uni.feeFormatted}</div>
-                                </div>
-                                <div className="rounded-[8px] border border-[#ece9e4] bg-[#f4f3f0] px-3.5 py-3">
-                                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-[0.5px] text-[#a0a0a0]">
-                                        {t.intakes}
-                                    </div>
-                                    <div className="bidi-ltr text-[15px] font-semibold" dir="ltr">{uni.intakesFormatted}</div>
-                                </div>
+                                <ApplicationInfoCard
+                                    label={t.deadline}
+                                    isRtlLayout={isArLocale}
+                                    valueDir={isArLocale ? "rtl" : "ltr"}
+                                >
+                                    {uni.deadlineFormatted}
+                                </ApplicationInfoCard>
+                                <ApplicationInfoCard
+                                    label={t.method}
+                                    isRtlLayout={isArLocale}
+                                    valueDir={textDir}
+                                >
+                                    {uni.methodFormatted}
+                                </ApplicationInfoCard>
+                                <ApplicationInfoCard
+                                    label={t.applicationFee}
+                                    isRtlLayout={isArLocale}
+                                    valueDir="ltr"
+                                >
+                                    {uni.feeFormatted}
+                                </ApplicationInfoCard>
+                                <ApplicationInfoCard
+                                    label={t.intakes}
+                                    isRtlLayout={isArLocale}
+                                    valueDir={textDir}
+                                >
+                                    {uni.intakesFormatted}
+                                </ApplicationInfoCard>
                             </div>
                         </section>
 
@@ -411,11 +462,11 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                             </SectionTitle>
                             <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <span className="text-[#7a7a7a]">{t.tuitionPerYear}</span>
-                                <span className="bidi-ltr font-semibold break-words" dir="ltr">{uni.tuitionDisplay}</span>
+                                <span className={`${bidiClass} font-semibold break-words`} dir={textDir}>{uni.tuitionDisplay}</span>
                             </div>
                             <div className="flex flex-col gap-1 border-b border-[#ece9e4] py-2.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <span className="text-[#7a7a7a]">{t.estimatedLiving}</span>
-                                <span className="bidi-ltr font-semibold break-words" dir="ltr">{uni.livingFormatted}</span>
+                                <span className={`${bidiClass} font-semibold break-words`} dir={textDir}>{uni.livingFormatted}</span>
                             </div>
                             <div className="flex flex-col gap-2 py-2.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <span className="text-[#7a7a7a]">{t.scholarshipsAvailable}</span>
@@ -431,7 +482,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                 )}
                             </div>
                             {uni.scholarshipNote ? (
-                                <p className="bidi-ltr mt-2.5 rounded-[8px] border border-[#ece9e4] border-l-[3px] border-l-[#40916C] bg-[#f4f3f0] px-3.5 py-2.5 text-[12.5px] leading-normal text-[#7a7a7a]" dir="ltr">
+                                <p className={`${bidiClass} mt-2.5 rounded-[8px] border border-[#ece9e4] border-l-[3px] border-l-[#40916C] bg-[#f4f3f0] px-3.5 py-2.5 text-[12.5px] leading-normal text-[#7a7a7a]`} dir={textDir}>
                                     {uni.scholarshipNote}
                                 </p>
                             ) : null}
@@ -474,7 +525,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
                                                         </svg>
                                                     </span>
-                                                    <span className="bidi-ltr truncate" dir="ltr">{block.majorName}</span>
+                                                    <span className={`${bidiClass} truncate`} dir={textDir}>{block.majorName}</span>
                                                 </span>
                                                 <span className="flex shrink-0 items-center gap-2">
                                                     <span className="rounded-[10px] bg-[#f4f3f0] px-2 py-0.5 text-[11px] text-[#a0a0a0]">
@@ -492,7 +543,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                                                         className="flex items-start gap-2 text-[12.5px] text-[#4a4a4a]"
                                                     >
                                                         <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#e0deda]" />
-                                                        <span className="bidi-ltr" dir="ltr">{p}</span>
+                                                        <span className={bidiClass} dir={textDir}>{p}</span>
                                                     </div>
                                                 ))}
                                             </div>

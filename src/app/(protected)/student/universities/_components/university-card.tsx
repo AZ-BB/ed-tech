@@ -2,7 +2,6 @@
 
 import { addUniversityToFavourites, addUniversityToShortlist, removeUniversityFromFavourites, removeUniversityFromShortlist } from "@/actions/universities";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { tuitionCardLabel } from "@/lib/university-cost-display";
 import Link from "next/link";
 import { UniversityLocation } from "./university-location";
 import { useRouter } from "next/navigation";
@@ -31,6 +30,8 @@ export type UniversityCardUniversity = {
     is_shortlisted: boolean;
     /** True when the student has a `student_activities` row with type `save` (favourite) for this university. */
     is_favourite: boolean;
+    /** True when Arabic catalog content is shown (card uses RTL layout). */
+    use_rtl_content?: boolean;
 };
 
 function formatDeadline(
@@ -38,11 +39,12 @@ function formatDeadline(
     isPriority: boolean,
     emDash: string,
     prioritySuffix: string,
+    locale: string,
 ): string {
     if (!iso) return emDash;
     const d = new Date(iso + (iso.includes("T") ? "" : "T12:00:00"));
     if (Number.isNaN(d.getTime())) return emDash;
-    const base = d.toLocaleDateString("en-US", {
+    const base = d.toLocaleDateString(locale === "ar" ? "ar" : "en-US", {
         month: "short",
         day: "numeric",
     });
@@ -230,7 +232,7 @@ function Stat({
 }
 
 export function UniversityCard({ university: u }: { university: UniversityCardUniversity }) {
-    const { dict } = useLocale();
+    const { dict, locale } = useLocale();
     const t = dict.student.universities;
     const desc = u.description?.trim() || "";
     const router = useRouter();
@@ -304,11 +306,13 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
     };
 
     const detailHref = `/student/universities/${u.id}`;
+    const cardDir = u.use_rtl_content ? "rtl" : "ltr";
+    const cardTextAlign = u.use_rtl_content ? "text-right" : "text-left";
 
     return (
         <article
-            dir="ltr"
-            className="university-card-ltr relative flex h-full flex-col rounded-[16px] border border-[#ece9e4] bg-white p-4 text-left transition-all hover:-translate-y-[3px] hover:border-[#e0deda] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] sm:p-6"
+            dir={cardDir}
+            className={`university-card-ltr relative flex h-full flex-col rounded-[16px] border border-[#ece9e4] bg-white p-4 ${cardTextAlign} transition-all hover:-translate-y-[3px] hover:border-[#e0deda] hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] sm:p-6`}
         >
             <Link
                 href={detailHref}
@@ -350,12 +354,12 @@ export function UniversityCard({ university: u }: { university: UniversityCardUn
                 <Stat
                     label={t.tuition}
                     icon={<IconTuition />}
-                    value={tuitionCardLabel(u.tuition_display, u.tuition_per_year)}
+                    value={u.tuition_display ?? "—"}
                 />
                 <Stat
                     label={t.deadline}
                     icon={<IconCalendar />}
-                    value={formatDeadline(u.deadline_date, u.is_priority, t.emDash, t.prioritySuffix)}
+                    value={formatDeadline(u.deadline_date, u.is_priority, t.emDash, t.prioritySuffix, locale)}
                 />
                 <Stat
                     label={t.acceptance}

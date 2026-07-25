@@ -1,9 +1,10 @@
 import { getName, getNames, isValid, registerLocale } from "i18n-iso-countries";
+import arLocale from "i18n-iso-countries/langs/ar.json";
 import enLocale from "i18n-iso-countries/langs/en.json";
+import type { Locale } from "@/lib/i18n/config";
 
 registerLocale(enLocale);
-
-const LOCALE = "en" as const;
+registerLocale(arLocale);
 
 export type Country = {
   /** ISO 3166-1 alpha-2 (uppercase, e.g. `AE`, `US`) */
@@ -12,7 +13,9 @@ export type Country = {
   readonly name: string;
 };
 
-const names = getNames(LOCALE, { select: "official" });
+const EN_LOCALE = "en" as const;
+
+const names = getNames(EN_LOCALE, { select: "official" });
 
 /**
  * All countries with ISO alpha-2 codes, sorted by English name.
@@ -31,7 +34,14 @@ export function isValidAlpha2Code(code: string): boolean {
 
 export function getCountryNameByAlpha2(
   alpha2: string,
-  lang: string = LOCALE,
+  lang: string = EN_LOCALE,
 ): string | undefined {
   return getName(alpha2, lang, { select: "official" });
+}
+
+/** Manual locale-aware country name (English or Arabic via i18n-iso-countries). */
+export function getLocalizedCountryName(alpha2: string, locale: Locale): string {
+  const code = alpha2.trim().toUpperCase();
+  const lang = locale === "ar" ? "ar" : EN_LOCALE;
+  return getName(code, lang, { select: "official" }) ?? code;
 }

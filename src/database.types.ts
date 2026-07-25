@@ -1696,18 +1696,21 @@ export type Database = {
           created_at: string | null
           id: number
           name: string
+          name_ar: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           id?: number
           name: string
+          name_ar?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           id?: number
           name?: string
+          name_ar?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -2265,6 +2268,7 @@ export type Database = {
           id: number
           major_id: number
           name: string
+          name_ar: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2272,6 +2276,7 @@ export type Database = {
           id?: number
           major_id: number
           name: string
+          name_ar?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2279,6 +2284,7 @@ export type Database = {
           id?: number
           major_id?: number
           name?: string
+          name_ar?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -3799,6 +3805,69 @@ export type Database = {
         }
         Relationships: []
       }
+      translation_responses: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          field_key: string | null
+          http_status: number | null
+          id: string
+          request_body: Json
+          requested_by: string | null
+          response_body: Json | null
+          source_lang: string
+          source_text: string
+          target_lang: string
+          task_id: string | null
+          total_tokens: number | null
+          translated_text: string | null
+          workflow_run_id: string | null
+          workflow_status: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          field_key?: string | null
+          http_status?: number | null
+          id?: string
+          request_body: Json
+          requested_by?: string | null
+          response_body?: Json | null
+          source_lang?: string
+          source_text: string
+          target_lang?: string
+          task_id?: string | null
+          total_tokens?: number | null
+          translated_text?: string | null
+          workflow_run_id?: string | null
+          workflow_status?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          field_key?: string | null
+          http_status?: number | null
+          id?: string
+          request_body?: Json
+          requested_by?: string | null
+          response_body?: Json | null
+          source_lang?: string
+          source_text?: string
+          target_lang?: string
+          task_id?: string | null
+          total_tokens?: number | null
+          translated_text?: string | null
+          workflow_run_id?: string | null
+          workflow_status?: string | null
+        }
+        Relationships: []
+      }
       universities: {
         Row: {
           acceptance_rate: number | null
@@ -3806,6 +3875,8 @@ export type Database = {
           admission_page_url: string | null
           application_fee: number | null
           city: string
+          content_ar: Json | null
+          content_ar_meta: Json | null
           country_code: string
           cover_image_url: string | null
           created_at: string | null
@@ -3847,6 +3918,8 @@ export type Database = {
           admission_page_url?: string | null
           application_fee?: number | null
           city: string
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           country_code: string
           cover_image_url?: string | null
           created_at?: string | null
@@ -3888,6 +3961,8 @@ export type Database = {
           admission_page_url?: string | null
           application_fee?: number | null
           city?: string
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           country_code?: string
           cover_image_url?: string | null
           created_at?: string | null

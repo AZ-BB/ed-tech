@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import type { AdminUniversityDetailPayload } from "../_lib/fetch-admin-university-detail";
 import { AdminEditUniversityDialog } from "./admin-edit-university-dialog";
+import { AdminUniversityTranslatePanel } from "./admin-university-translate-panel";
 
 function SnapItem({ label, value }: { label: string; value: string }) {
   return (
@@ -99,6 +100,8 @@ export function AdminUniversityOverviewTab({ payload }: AdminUniversityOverviewT
           </p>
         </div>
       ) : null}
+
+      <AdminUniversityTranslatePanel university={university} />
 
       <AdminEditUniversityDialog
         open={editOpen}
