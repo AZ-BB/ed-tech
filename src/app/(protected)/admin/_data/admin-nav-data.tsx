@@ -174,6 +174,21 @@ export const adminNavSections: readonly AdminNavSection[] = [
           />
         ),
       },
+      {
+        href: `${ADMIN_HOME}/lessons`,
+        label: "Lessons",
+        icon: (
+          <NavSvg
+            paths={
+              <>
+                <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+                <path d="M8 7h8M8 11h6" />
+              </>
+            }
+          />
+        ),
+      },
     ],
   },
   {
@@ -268,6 +283,7 @@ export const ADMIN_PAGE_TITLE_BY_PATH: Record<string, string> = {
   [`${ADMIN_HOME}/post-admission`]: "Post-admission",
   [`${ADMIN_HOME}/paid-applicants`]: "Paid Applicant",
   [`${ADMIN_HOME}/documents`]: "Documents",
+  [`${ADMIN_HOME}/lessons`]: "Lessons",
   [`${ADMIN_HOME}/reports`]: "Reports",
   [`${ADMIN_HOME}/activity-log`]: "Activity Log",
   [`${ADMIN_HOME}/communications`]: "Communications",
