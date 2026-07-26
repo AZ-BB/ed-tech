@@ -67,6 +67,7 @@ const PAGE_TITLE_BY_PATH: Record<string, string> = {
   "/school/tasks": "Tasks",
   "/school/reports": "Reports",
   "/school/webinars": "Webinars",
+  "/school/lessons": "Lessons",
   "/school/settings": "Settings",
 };
 
@@ -216,6 +217,21 @@ const navSections: {
               <>
                 <polygon points="23 7 16 12 23 17 23 7" />
                 <rect x="1" y="5" width="15" height="14" rx="2" />
+              </>
+            }
+          />
+        ),
+      },
+      {
+        href: `${SCHOOL_HOME}/lessons`,
+        label: "Lessons",
+        icon: (
+          <NavSvg
+            paths={
+              <>
+                <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+                <path d="M8 7h8M8 11h6" />
               </>
             }
           />
