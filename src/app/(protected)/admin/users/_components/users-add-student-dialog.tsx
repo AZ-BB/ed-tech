@@ -3,10 +3,13 @@
 import { runAdminFormSubmit } from "@/app/(protected)/admin/users/_lib/run-admin-form-submit";
 import {
   createAdminStudentInvite,
+  fetchAdminIndependentStudentPaymentOptions,
   fetchAdminStudentFormCountries,
   type AdminCountryOption,
+  type AdminIndependentStudentPaymentAdvisorOption,
 } from "@/actions/admin-students";
 import { fetchAdminSchoolsForStudentImport } from "@/actions/admin-users";
+import { preventNumberInputWheelScroll } from "@/lib/prevent-number-input-wheel";
 import { GRADE_FILTER_OPTIONS } from "@/lib/school-portal-destination-options";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -48,8 +51,31 @@ export function UsersAddStudentDialog({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [successIndependent, setSuccessIndependent] = useState(false);
+  const [successWithPayment, setSuccessWithPayment] = useState(false);
+  const [showPaymentSection, setShowPaymentSection] = useState(false);
+  const [isLoadingPaymentOptions, setIsLoadingPaymentOptions] = useState(false);
+  const [paymentAdvisors, setPaymentAdvisors] = useState<
+    AdminIndependentStudentPaymentAdvisorOption[]
+  >([]);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentUniversitiesCount, setPaymentUniversitiesCount] = useState("");
+  const [paymentAdvisorId, setPaymentAdvisorId] = useState("");
 
   const isIndependent = !fixedSchoolId && schoolChoice === INDEPENDENT_SCHOOL_VALUE;
+
+  const parsedPaymentAmount = Number.parseFloat(paymentAmount.trim());
+  const paymentAmountValid =
+    Number.isFinite(parsedPaymentAmount) && parsedPaymentAmount > 0;
+  const parsedPaymentUniversitiesCount = Number.parseInt(
+    paymentUniversitiesCount.trim(),
+    10,
+  );
+  const paymentUniversitiesCountValid =
+    Number.isFinite(parsedPaymentUniversitiesCount) && parsedPaymentUniversitiesCount >= 1;
+  const paymentAdvisorValid = paymentAdvisorId.trim().length > 0;
+  const paymentFieldsValid =
+    !showPaymentSection ||
+    (paymentAmountValid && paymentUniversitiesCountValid && paymentAdvisorValid);
 
   useEffect(() => {
     if (!open || fixedSchoolId) return;
@@ -97,6 +123,53 @@ export function UsersAddStudentDialog({
     };
   }, [open, isIndependent]);
 
+  useEffect(() => {
+    if (!open || !isIndependent) return;
+
+    let cancelled = false;
+    setIsLoadingPaymentOptions(true);
+
+    void fetchAdminIndependentStudentPaymentOptions().then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setError((prev) => prev ?? result.error);
+        setPaymentAdvisors([]);
+        setPaymentAdvisorId("");
+      } else {
+        setPaymentAdvisors(result.advisors);
+        setPaymentAdvisorId(result.defaultAdvisorId ?? "");
+      }
+      setIsLoadingPaymentOptions(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isIndependent]);
+
+  function resetPaymentSection() {
+    setShowPaymentSection(false);
+    setPaymentAmount("");
+    setPaymentUniversitiesCount("");
+    setPaymentAdvisorId("");
+  }
+
+  function togglePaymentSection() {
+    if (showPaymentSection) {
+      resetPaymentSection();
+      return;
+    }
+    setShowPaymentSection(true);
+    if (!paymentAdvisorId && paymentAdvisors.length > 0) {
+      const defaultAdvisor =
+        paymentAdvisors.find((advisor) => advisor.receivesFreeFunnelApplicationSupport) ??
+        null;
+      if (defaultAdvisor) {
+        setPaymentAdvisorId(defaultAdvisor.id);
+      }
+    }
+  }
+
   if (!open) return null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -110,6 +183,7 @@ export function UsersAddStudentDialog({
     }
 
     const createdIndependent = isIndependent;
+    const createdWithPayment = isIndependent && showPaymentSection;
 
     await runAdminFormSubmit(
       {
@@ -118,14 +192,17 @@ export function UsersAddStudentDialog({
         onBeforeSubmit: () => {
           setSuccess(false);
           setSuccessIndependent(false);
+          setSuccessWithPayment(false);
         },
       },
       () => createAdminStudentInvite(formData),
       () => {
         setSuccess(true);
         setSuccessIndependent(createdIndependent);
+        setSuccessWithPayment(createdWithPayment);
         form.reset();
         setSchoolChoice("");
+        resetPaymentSection();
         router.refresh();
       },
     );
@@ -135,7 +212,9 @@ export function UsersAddStudentDialog({
     setError(null);
     setSuccess(false);
     setSuccessIndependent(false);
+    setSuccessWithPayment(false);
     setSchoolChoice("");
+    resetPaymentSection();
     onClose();
   }
 
@@ -302,15 +381,104 @@ export function UsersAddStudentDialog({
                 </p>
               </div>
               <StudentFeatureAccessFields />
+
+              <div>
+                <button
+                  type="button"
+                  onClick={togglePaymentSection}
+                  disabled={isSubmitting}
+                  className="rounded-[8px] border border-dashed border-[#c8c4bc] bg-[#faf9f7] px-3 py-2 text-[12px] font-semibold text-[#4a4a4a] transition-colors hover:border-[#40916C] hover:text-[#2D6A4F] disabled:opacity-60"
+                >
+                  {showPaymentSection ? "Remove payment" : "Add payment"}
+                </button>
+              </div>
+
+              {showPaymentSection ? (
+                <div className="space-y-4 rounded-[8px] border border-[#ece9e4] bg-[#faf9f7] p-4">
+                  <input type="hidden" name="addPayment" value="1" />
+
+                  <div>
+                    <label htmlFor="add-student-payment-amount" className={labelClassName}>
+                      Paid amount (AED)
+                    </label>
+                    <input
+                      id="add-student-payment-amount"
+                      name="paymentAmountAed"
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      required
+                      value={paymentAmount}
+                      disabled={isSubmitting}
+                      onChange={(event) => setPaymentAmount(event.target.value)}
+                      onWheel={preventNumberInputWheelScroll}
+                      className={inputClassName}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="add-student-payment-unis" className={labelClassName}>
+                      Number of universities
+                    </label>
+                    <input
+                      id="add-student-payment-unis"
+                      name="paymentUniversitiesCount"
+                      type="number"
+                      min={1}
+                      step={1}
+                      required
+                      value={paymentUniversitiesCount}
+                      disabled={isSubmitting}
+                      onChange={(event) => setPaymentUniversitiesCount(event.target.value)}
+                      onWheel={preventNumberInputWheelScroll}
+                      className={inputClassName}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="add-student-payment-advisor" className={labelClassName}>
+                      Advisor
+                    </label>
+                    <select
+                      id="add-student-payment-advisor"
+                      name="paymentAdvisorId"
+                      required
+                      value={paymentAdvisorId}
+                      disabled={isSubmitting || isLoadingPaymentOptions}
+                      onChange={(event) => setPaymentAdvisorId(event.target.value)}
+                      className={`${inputClassName} cursor-pointer disabled:opacity-60`}
+                    >
+                      <option value="">
+                        {isLoadingPaymentOptions ? "Loading advisors…" : "Select advisor"}
+                      </option>
+                      {paymentAdvisors.map((advisor) => (
+                        <option key={advisor.id} value={advisor.id}>
+                          {advisor.label}
+                          {advisor.receivesFreeFunnelApplicationSupport
+                            ? " (Free-funnel app supp)"
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <p className="text-[11px] text-[#888]">
+                    Creates an active application support package with an offline paid payment
+                    assigned to the selected advisor.
+                  </p>
+                </div>
+              ) : null}
             </>
           ) : null}
 
           {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
           {success ? (
             <p className="text-[13px] text-[#2D6A4F]">
-              {successIndependent
-                ? "Independent student account created successfully."
-                : "Student invite created successfully."}
+              {successWithPayment
+                ? "Independent student created with an active application support package."
+                : successIndependent
+                  ? "Independent student account created successfully."
+                  : "Student invite created successfully."}
             </p>
           ) : null}
 
@@ -327,7 +495,9 @@ export function UsersAddStudentDialog({
               disabled={
                 isSubmitting ||
                 (!fixedSchoolId && isLoadingSchools) ||
-                (isIndependent && isLoadingCountries)
+                (isIndependent && isLoadingCountries) ||
+                (isIndependent && showPaymentSection && isLoadingPaymentOptions) ||
+                !paymentFieldsValid
               }
               className="rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
             >

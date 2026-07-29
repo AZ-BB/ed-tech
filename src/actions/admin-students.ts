@@ -8,6 +8,8 @@ import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
 import { recordStudentCreditAssignments } from "@/lib/student-credit-assignment-log";
 import { parseStudentTeacherAssignParam } from "@/lib/student-teacher-assignment";
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
+import { createActiveApplicationPackageForStudent } from "@/lib/create-active-application-package-for-student";
+import { fetchSmallestActivePlan } from "@/lib/application-support-intake";
 import { parseFeatureAccessFromFormData } from "@/lib/student-feature-access";
 import { provisionIndependentStudent } from "@/lib/provision-independent-student";
 import type { Database } from "@/database.types";
@@ -36,7 +38,7 @@ async function assertAdminAccess() {
   const service = await createSupabaseSecretClient();
   const { data: admin, error: adminError } = await service
     .from("admins")
-    .select("id")
+    .select("id, first_name, last_name")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -49,7 +51,70 @@ async function assertAdminAccess() {
     return { ok: false as const, error: "You do not have permission to manage students." };
   }
 
-  return { ok: true as const, userId: user.id };
+  return {
+    ok: true as const,
+    userId: user.id,
+    actorName:
+      [admin.first_name, admin.last_name].filter(Boolean).join(" ").trim() || "Admin",
+  };
+}
+
+function parseAddPaymentFlag(formData: FormData): boolean {
+  const raw = formData.get("addPayment");
+  return raw === "1" || raw === "on" || raw === "true";
+}
+
+function parsePaymentAmountAed(formData: FormData): number | null {
+  const raw = String(formData.get("paymentAmountAed") ?? "").trim();
+  const amount = Number.parseFloat(raw);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return Math.round(amount * 100) / 100;
+}
+
+function parsePaymentUniversitiesCount(formData: FormData): number | null {
+  const raw = String(formData.get("paymentUniversitiesCount") ?? "").trim();
+  const count = Number.parseInt(raw, 10);
+  if (!Number.isFinite(count) || count < 1) return null;
+  return Math.floor(count);
+}
+
+async function resolveActivePlanForUniversitiesCount(
+  secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
+  universitiesCount: number,
+): Promise<{ id: number } | null> {
+  const { data: exactPlan, error: exactErr } = await secret
+    .from("applications_plans")
+    .select("id")
+    .eq("universities_count", universitiesCount)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (exactErr) {
+    console.error("[resolveActivePlanForUniversitiesCount] exact", exactErr);
+    return null;
+  }
+
+  if (exactPlan) return exactPlan;
+
+  const fallback = await fetchSmallestActivePlan(secret);
+  return fallback ? { id: fallback.id } : null;
+}
+
+function parsePaymentAdvisorId(formData: FormData): string | null {
+  const raw = String(formData.get("paymentAdvisorId") ?? "").trim();
+  if (!raw || !UUID_RE.test(raw)) return null;
+  return raw;
+}
+
+function revalidateIndependentStudentPackagePaths(applicationId: number) {
+  revalidatePath("/admin/applications");
+  revalidatePath("/admin/applications/paid");
+  revalidatePath("/admin/paid-applicants");
+  revalidatePath(`/admin/applications/${applicationId}`);
+  revalidatePath("/advisor/applications");
+  revalidatePath(`/advisor/applications/${applicationId}`);
+  revalidatePath("/advisor/packages");
+  revalidatePath("/advisor/payments");
 }
 
 /**
@@ -71,6 +136,28 @@ export async function createAdminIndependentStudent(
   ).trim();
   const password = String(formData.get("password") ?? "");
   const featureAccess = parseFeatureAccessFromFormData(formData);
+  const addPayment = parseAddPaymentFlag(formData);
+
+  let paymentAmountAed: number | null = null;
+  let paymentUniversitiesCount: number | null = null;
+  let paymentAdvisorId: string | null = null;
+
+  if (addPayment) {
+    paymentAmountAed = parsePaymentAmountAed(formData);
+    if (paymentAmountAed == null) {
+      return { ok: false, error: "Enter a valid paid amount." };
+    }
+
+    paymentUniversitiesCount = parsePaymentUniversitiesCount(formData);
+    if (paymentUniversitiesCount == null) {
+      return { ok: false, error: "Enter the number of universities." };
+    }
+
+    paymentAdvisorId = parsePaymentAdvisorId(formData);
+    if (paymentAdvisorId == null) {
+      return { ok: false, error: "Select an advisor." };
+    }
+  }
 
   if (!isResendConfigured()) {
     return {
@@ -96,6 +183,49 @@ export async function createAdminIndependentStudent(
   }
 
   const service = await createSupabaseSecretClient();
+
+  if (
+    addPayment &&
+    paymentAmountAed != null &&
+    paymentUniversitiesCount != null &&
+    paymentAdvisorId != null
+  ) {
+    const plan = await resolveActivePlanForUniversitiesCount(
+      service,
+      paymentUniversitiesCount,
+    );
+
+    if (!plan) {
+      return {
+        ok: false,
+        error:
+          "Student account was created, but no active application plan is configured. Add the package manually from Applications.",
+      };
+    }
+
+    const studentName = [firstName, lastName].filter(Boolean).join(" ").trim() || email;
+    const packageResult = await createActiveApplicationPackageForStudent({
+      studentId: provisioned.studentId,
+      studentName,
+      studentEmail: provisioned.email,
+      advisorId: paymentAdvisorId,
+      amountAed: paymentAmountAed,
+      planId: plan.id,
+      universitiesCount: paymentUniversitiesCount,
+      actorAdminId: access.userId,
+      actorAdminName: access.actorName,
+    });
+
+    if (!packageResult.ok) {
+      return {
+        ok: false,
+        error: `Student account was created, but the application support package could not be activated: ${packageResult.error}`,
+      };
+    }
+
+    revalidateIndependentStudentPackagePaths(packageResult.applicationId);
+  }
+
   const emailResult = await sendStaffCredentialsEmailOrRollback({
     supabase: service,
     userId: provisioned.studentId,
@@ -300,6 +430,58 @@ export async function updateAdminStudentCreditLimits(
 }
 
 export type AdminCountryOption = { id: string; name: string };
+
+export type AdminIndependentStudentPaymentAdvisorOption = {
+  id: string;
+  label: string;
+  receivesFreeFunnelApplicationSupport: boolean;
+};
+
+export async function fetchAdminIndependentStudentPaymentOptions(): Promise<
+  | {
+      ok: true;
+      advisors: AdminIndependentStudentPaymentAdvisorOption[];
+      defaultAdvisorId: string | null;
+    }
+  | { ok: false; error: string }
+> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const secret = await createSupabaseSecretClient();
+
+  const { data, error } = await secret
+    .from("advisors")
+    .select("id, first_name, last_name, email, receives_free_funnel_application_support")
+    .eq("is_active", true)
+    .order("last_name", { ascending: true })
+    .order("first_name", { ascending: true });
+
+  if (error) {
+    console.error("[fetchAdminIndependentStudentPaymentOptions] advisors", error);
+    return { ok: false, error: "Could not load advisors." };
+  }
+
+  const advisors = (data ?? []).map((row) => {
+    const name = [row.first_name?.trim(), row.last_name?.trim()].filter(Boolean).join(" ");
+    const label = name || row.email?.trim() || "Advisor";
+    return {
+      id: row.id,
+      label,
+      receivesFreeFunnelApplicationSupport:
+        row.receives_free_funnel_application_support ?? false,
+    };
+  });
+
+  const defaultAdvisor =
+    advisors.find((advisor) => advisor.receivesFreeFunnelApplicationSupport) ?? null;
+
+  return {
+    ok: true,
+    advisors,
+    defaultAdvisorId: defaultAdvisor?.id ?? null,
+  };
+}
 
 export async function fetchAdminStudentFormCountries(): Promise<
   { ok: true; countries: AdminCountryOption[] } | { ok: false; error: string }

@@ -146,6 +146,20 @@ export const adminNavSections: readonly AdminNavSection[] = [
         ),
       },
       {
+        href: `${ADMIN_HOME}/payments`,
+        label: "Payments",
+        icon: (
+          <NavSvg
+            paths={
+              <>
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+              </>
+            }
+          />
+        ),
+      },
+      {
         href: `${ADMIN_HOME}/paid-applicants`,
         label: "Paid Applicant",
         icon: (
@@ -281,6 +295,7 @@ export const ADMIN_PAGE_TITLE_BY_PATH: Record<string, string> = {
   [`${ADMIN_HOME}/sessions`]: "Sessions",
   [`${ADMIN_HOME}/applications`]: "Applications",
   [`${ADMIN_HOME}/post-admission`]: "Post-admission",
+  [`${ADMIN_HOME}/payments`]: "Payments",
   [`${ADMIN_HOME}/paid-applicants`]: "Paid Applicant",
   [`${ADMIN_HOME}/documents`]: "Documents",
   [`${ADMIN_HOME}/lessons`]: "Lessons",
