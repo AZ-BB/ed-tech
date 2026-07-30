@@ -42,7 +42,7 @@ export const signupEn = {
   schoolYesTitle: "Yes — my school is registered",
   schoolYesSub: "I have an access code from my school",
   schoolNoTitle: "No — I'm joining on my own",
-  schoolNoSub: "Temporarily unavailable — please use your school access code",
+  schoolNoSub: "Create your own account with full access to personalized guidance",
   schoolNoTooltip: "This option is not available right now",
   schoolAccessCode: "School access code",
   schoolAccessCodePlaceholder: "Your school access code",
