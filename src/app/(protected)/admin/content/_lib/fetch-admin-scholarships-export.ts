@@ -1,5 +1,6 @@
 import type { Json } from "@/database.types";
 import { resolveScholarshipApplicationUrl } from "@/lib/scholarship-application-url";
+import { fetchSupabaseAllRows } from "@/lib/supabase-fetch-all";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type AdminScholarshipExportRow = {
@@ -152,13 +153,7 @@ function mapScholarshipToExportRow(row: ScholarshipExportQueryRow): AdminScholar
   };
 }
 
-export async function fetchAdminScholarshipsExport(): Promise<AdminScholarshipExportRow[]> {
-  const supabase = await createSupabaseSecretClient();
-
-  const { data, error } = await supabase
-    .from("scholarships")
-    .select(
-      `
+const SCHOLARSHIP_EXPORT_SELECT = `
       name,
       nationality_country_code,
       type,
@@ -193,16 +188,23 @@ export async function fetchAdminScholarshipsExport(): Promise<AdminScholarshipEx
       discovery_slug,
       discovery_payload,
       scholarship_destinations ( country_code )
-      `,
-    )
-    .order("name", { ascending: true });
+      `;
+
+export async function fetchAdminScholarshipsExport(): Promise<AdminScholarshipExportRow[]> {
+  const supabase = await createSupabaseSecretClient();
+
+  const { data, error } = await fetchSupabaseAllRows<ScholarshipExportQueryRow>(async (from, to) =>
+    supabase
+      .from("scholarships")
+      .select(SCHOLARSHIP_EXPORT_SELECT)
+      .order("name", { ascending: true })
+      .range(from, to),
+  );
 
   if (error) {
     console.error("[admin-scholarships-export]", error);
     throw new Error("Could not load scholarships for export.");
   }
 
-  return (data ?? []).map((row) =>
-    mapScholarshipToExportRow(row as unknown as ScholarshipExportQueryRow),
-  );
+  return data.map((row) => mapScholarshipToExportRow(row));
 }
