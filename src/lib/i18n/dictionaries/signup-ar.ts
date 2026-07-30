@@ -42,7 +42,7 @@ export const signupAr = {
   schoolYesTitle: "نعم — مدرستي مسجلة",
   schoolYesSub: "لدي رمز وصول من مدرستي",
   schoolNoTitle: "لا — أنضم بشكل فردي",
-  schoolNoSub: "هذا الخيار غير متاح مؤقتاً. يرجى استخدام رمز وصول المدرسة",
+  schoolNoSub: "أنشئ حسابك الخاص مع وصول كامل إلى الإرشاد الجامعي المخصص",
   schoolNoTooltip: "هذا الخيار غير متاح حالياً",
   schoolAccessCode: "رمز وصول المدرسة",
   schoolAccessCodePlaceholder: "رمز وصول مدرستك",

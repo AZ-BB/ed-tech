@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
-import { studentSignUp } from "@/actions/auth";
+import { individualStudentSignUp, studentSignUp } from "@/actions/auth";
 import { CountryCombobox } from "@/components/auth/country-combobox";
 import { LocalizedLink } from "@/lib/i18n/localized-link";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -216,7 +216,7 @@ export function SignupWizard() {
   const [showPw, setShowPw] = useState(false);
   const [showCpw, setShowCpw] = useState(false);
 
-  const [schoolChoice, setSchoolChoice] = useState<"" | "yes">("");
+  const [schoolChoice, setSchoolChoice] = useState<"" | "yes" | "no">("");
   const [schoolCode, setSchoolCode] = useState("");
 
   const [legal, setLegal] = useState<"terms" | "privacy" | null>(null);
@@ -293,7 +293,31 @@ export function SignupWizard() {
       };
     }
     return studentSignUp(fd);
-  }, [buildSignUpFormData]);
+  }, [buildSignUpFormData, s.errMissingData]);
+
+  const buildIndividualSignUpFormData = useCallback((): FormData | null => {
+    if (!nationality) return null;
+    const fd = new FormData();
+    fd.append("firstName", firstName.trim());
+    fd.append("lastName", lastName.trim());
+    fd.append("grade", grade);
+    fd.append("email", email.trim());
+    fd.append("nationalityCountryCode", nationality.alpha2);
+    fd.append("phoneNumber", phone.trim());
+    fd.append("password", password);
+    return fd;
+  }, [firstName, lastName, grade, email, nationality, phone, password]);
+
+  const submitIndividualSignUp = useCallback(async (): Promise<GeneralResponse<boolean>> => {
+    const fd = buildIndividualSignUpFormData();
+    if (!fd) {
+      return {
+        data: false,
+        error: s.errMissingData,
+      };
+    }
+    return individualStudentSignUp(fd);
+  }, [buildIndividualSignUpFormData, s.errMissingData]);
 
   function validateAccount() {
     const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -312,14 +336,17 @@ export function SignupWizard() {
   }
 
   async function handleSchoolNext() {
-    if (schoolChoice !== "yes") return;
-    const code = schoolCode.trim().toUpperCase();
-    if (code.length < MIN_SCHOOL_CODE_LENGTH) return;
+    if (schoolChoice === "") return;
+    if (schoolChoice === "yes") {
+      const code = schoolCode.trim().toUpperCase();
+      if (code.length < MIN_SCHOOL_CODE_LENGTH) return;
+    }
 
     setSe({ c: "" });
     setIsSubmitting(true);
     try {
-      const result = await submitSignUp();
+      const result =
+        schoolChoice === "yes" ? await submitSignUp() : await submitIndividualSignUp();
       if (result.error) {
         setSe({ c: result.error });
         return;
@@ -691,19 +718,35 @@ export function SignupWizard() {
             </button>
             <button
               type="button"
-              disabled
-              className="m-0 flex w-full cursor-not-allowed items-center gap-4 rounded-xl border-[1.5px] border-[var(--border-light)] bg-[#f7f6f3] p-4 text-left opacity-60"
-              title={s.schoolNoTooltip}
+              onClick={() => {
+                setSchoolChoice("no");
+                setSchoolCode("");
+                setSe({ c: "" });
+              }}
+              className={clsx(
+                "flex cursor-pointer items-center gap-4 rounded-xl border-[1.5px] p-4 text-left transition",
+                schoolChoice === "no"
+                  ? "border-[var(--green)] bg-[#f0f7f2]"
+                  : "border-[var(--border)] hover:border-[#c8c4bc]",
+              )}
             >
               <div
-                className="flex size-[22px] shrink-0 items-center justify-center rounded-full border-2 border-[var(--border)]"
+                className={clsx(
+                  "flex size-[22px] shrink-0 items-center justify-center rounded-full border-2",
+                  schoolChoice === "no" ? "border-[var(--green)]" : "border-[var(--border)]",
+                )}
                 aria-hidden
               >
-                <div className="size-2.5 rounded-full bg-[var(--green)] opacity-0" />
+                <div
+                  className={clsx(
+                    "size-2.5 rounded-full bg-[var(--green)]",
+                    schoolChoice === "no" ? "opacity-100" : "opacity-0",
+                  )}
+                />
               </div>
-              <div className="text-left">
+              <div>
                 <div className="mb-0.5 text-[15px] font-semibold text-[var(--text)]">{s.schoolNoTitle}</div>
-                <div className="text-[13px] text-[var(--text-hint)]">{s.schoolNoSub}</div>
+                <div className="text-[13px] text-[var(--text-light)]">{s.schoolNoSub}</div>
               </div>
             </button>
           </div>
@@ -725,10 +768,10 @@ export function SignupWizard() {
                   se.c ? fieldErr : schoolCodeLongEnough ? fieldOk : fieldNormal,
                 )}
               />
-              {se.c ? <p className="mt-1 text-[11px] text-red-600">{se.c}</p> : null}
               <p className="mt-2 text-[12px] leading-snug text-[var(--text-light)]">{s.schoolEmailHint}</p>
             </div>
           ) : null}
+          {se.c ? <p className="mt-4 text-[11px] text-red-600">{se.c}</p> : null}
           <div className="mt-6 flex items-center justify-between">
             <button type="button" className={btnBack} onClick={() => setStep("account")}>
               {s.back}
