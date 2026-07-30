@@ -1,3 +1,4 @@
+import { fetchSupabaseAllRows } from "@/lib/supabase-fetch-all";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type AdminInternshipExportRow = {
@@ -33,15 +34,32 @@ function pipeArray(values: string[] | null | undefined): string {
     .join("|");
 }
 
-export async function fetchAdminInternshipsExport(): Promise<
-  AdminInternshipExportRow[]
-> {
-  const supabase = await createSupabaseSecretClient();
+type InternshipExportQueryRow = {
+  slug: string | null;
+  name: string;
+  provider: string;
+  section: string;
+  country_code: string;
+  location_label: string;
+  format: string;
+  field: string;
+  pay_tier: string;
+  pay_label: string;
+  duration: string;
+  phone: string | null;
+  nationals_only: boolean;
+  official_url: string;
+  url_status: string;
+  needs_review: boolean;
+  is_active: boolean;
+  summary: string;
+  what_youll_do: string[] | null;
+  what_youll_gain: string[] | null;
+  eligibility: string;
+  how_to_apply: string;
+};
 
-  const { data, error } = await supabase
-    .from("internships")
-    .select(
-      `
+const INTERNSHIP_EXPORT_SELECT = `
       slug,
       name,
       provider,
@@ -64,16 +82,27 @@ export async function fetchAdminInternshipsExport(): Promise<
       what_youll_gain,
       eligibility,
       how_to_apply
-      `,
-    )
-    .order("name", { ascending: true });
+      `;
+
+export async function fetchAdminInternshipsExport(): Promise<
+  AdminInternshipExportRow[]
+> {
+  const supabase = await createSupabaseSecretClient();
+
+  const { data, error } = await fetchSupabaseAllRows<InternshipExportQueryRow>(async (from, to) =>
+    supabase
+      .from("internships")
+      .select(INTERNSHIP_EXPORT_SELECT)
+      .order("name", { ascending: true })
+      .range(from, to),
+  );
 
   if (error) {
     console.error("[admin-internships-export]", error);
     throw new Error("Could not load internships for export.");
   }
 
-  return (data ?? []).map((row) => ({
+  return data.map((row) => ({
     slug: row.slug?.trim() ?? "",
     name: row.name,
     provider: row.provider,

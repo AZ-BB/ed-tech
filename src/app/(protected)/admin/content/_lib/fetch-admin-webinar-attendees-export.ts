@@ -1,3 +1,4 @@
+import { fetchSupabaseAllRows } from "@/lib/supabase-fetch-all";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import type { AdminWebinarEnrollmentRow } from "./fetch-admin-webinar-detail";
@@ -33,15 +34,42 @@ function mapEnrollmentToExportRow(row: AdminWebinarEnrollmentRow): AdminWebinarA
   };
 }
 
+type WebinarAttendeeQueryRow = {
+  id: number;
+  registration_type: "platform" | "non_platform";
+  student_id: string | null;
+  guest_name: string | null;
+  guest_email: string | null;
+  guest_phone: string | null;
+  registered_at: string | null;
+  reminder_sent_at: string | null;
+  meeting_link_sent_at: string | null;
+  student_profiles:
+    | {
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+        schools: { name: string } | { name: string }[] | null;
+      }
+    | {
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+        schools: { name: string } | { name: string }[] | null;
+      }[]
+    | null;
+};
+
 export async function fetchAdminWebinarAttendeesExport(
   webinarId: number,
 ): Promise<AdminWebinarAttendeeExportRow[]> {
   const supabase = await createSupabaseSecretClient();
 
-  const { data, error } = await supabase
-    .from("webinar_registrations")
-    .select(
-      `
+  const { data, error } = await fetchSupabaseAllRows<WebinarAttendeeQueryRow>(async (from, to) =>
+    supabase
+      .from("webinar_registrations")
+      .select(
+        `
       id,
       registration_type,
       student_id,
@@ -58,17 +86,19 @@ export async function fetchAdminWebinarAttendeesExport(
         schools ( name )
       )
     `,
-    )
-    .eq("webinar_id", webinarId)
-    .order("registered_at", { ascending: false });
+      )
+      .eq("webinar_id", webinarId)
+      .order("registered_at", { ascending: false })
+      .range(from, to),
+  );
 
   if (error) {
     console.error("[fetchAdminWebinarAttendeesExport]", error);
     throw new Error("Could not load webinar attendees for export.");
   }
 
-  const rows: AdminWebinarEnrollmentRow[] = (data ?? []).map((row) => {
-    const registrationType = row.registration_type as "platform" | "non_platform";
+  const rows: AdminWebinarEnrollmentRow[] = data.map((row) => {
+    const registrationType = row.registration_type;
 
     if (registrationType === "non_platform") {
       return {

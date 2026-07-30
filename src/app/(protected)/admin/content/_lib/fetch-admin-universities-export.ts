@@ -1,4 +1,5 @@
 import type { Json } from "@/database.types";
+import { fetchSupabaseAllRows } from "@/lib/supabase-fetch-all";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type AdminUniversityExportRow = {
@@ -208,13 +209,7 @@ function mapUniversityToExportRow(row: UniversityExportQueryRow): AdminUniversit
   };
 }
 
-export async function fetchAdminUniversitiesExport(): Promise<AdminUniversityExportRow[]> {
-  const supabase = await createSupabaseSecretClient();
-
-  const { data, error } = await supabase
-    .from("universities")
-    .select(
-      `
+const UNIVERSITY_EXPORT_SELECT = `
       name,
       city,
       state,
@@ -253,16 +248,23 @@ export async function fetchAdminUniversitiesExport(): Promise<AdminUniversityExp
           programs ( name )
         )
       )
-      `,
-    )
-    .order("name", { ascending: true });
+      `;
+
+export async function fetchAdminUniversitiesExport(): Promise<AdminUniversityExportRow[]> {
+  const supabase = await createSupabaseSecretClient();
+
+  const { data, error } = await fetchSupabaseAllRows<UniversityExportQueryRow>(async (from, to) =>
+    supabase
+      .from("universities")
+      .select(UNIVERSITY_EXPORT_SELECT)
+      .order("name", { ascending: true })
+      .range(from, to),
+  );
 
   if (error) {
     console.error("[admin-universities-export]", error);
     throw new Error("Could not load universities for export.");
   }
 
-  return (data ?? []).map((row) =>
-    mapUniversityToExportRow(row as unknown as UniversityExportQueryRow),
-  );
+  return data.map((row) => mapUniversityToExportRow(row));
 }

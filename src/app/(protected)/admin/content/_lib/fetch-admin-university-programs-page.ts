@@ -1,3 +1,4 @@
+import { fetchSupabaseAllRows } from "@/lib/supabase-fetch-all";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import type { UniversityProgramExportRow } from "@/lib/university-programs-types";
@@ -208,10 +209,11 @@ export async function fetchAdminUniversityProgramsExport(): Promise<
   UniversityProgramExportRow[]
 > {
   const supabase = await createSupabaseSecretClient();
-  const { data, error } = await supabase
-    .from("university_programs")
-    .select(
-      `
+  const { data, error } = await fetchSupabaseAllRows<UniversityProgramListRow>(async (from, to) =>
+    supabase
+      .from("university_programs")
+      .select(
+        `
       ranking_note,
       tuition_note,
       short_description,
@@ -220,15 +222,17 @@ export async function fetchAdminUniversityProgramsExport(): Promise<
       universities ( name ),
       programs_discovery ( slug )
     `,
-    )
-    .order("updated_at", { ascending: false });
+      )
+      .order("updated_at", { ascending: false })
+      .range(from, to),
+  );
 
   if (error) {
     console.error("[admin-university-programs] export", error);
     return [];
   }
 
-  return ((data ?? []) as UniversityProgramListRow[]).map((row) => ({
+  return data.map((row) => ({
     program_id: relationProgram(row.programs_discovery).slug,
     university_name: relationName(row.universities),
     ranking_note: row.ranking_note ?? "",

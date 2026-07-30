@@ -1,3 +1,4 @@
+import { fetchSupabaseAllRows } from "@/lib/supabase-fetch-all";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import { mapProgramDiscoveryRowToExport } from "./admin-programs-discovery-excel";
@@ -41,16 +42,19 @@ export async function fetchAdminProgramsDiscoveryExport(): Promise<
   AdminProgramDiscoveryExportRow[]
 > {
   const supabase = await createSupabaseSecretClient();
-  const { data, error } = await supabase
-    .from("programs_discovery")
-    .select("*")
-    .order("category")
-    .order("title");
+  const { data, error } = await fetchSupabaseAllRows<ProgramsDiscoveryRow>(async (from, to) =>
+    supabase
+      .from("programs_discovery")
+      .select("*")
+      .order("category")
+      .order("title")
+      .range(from, to),
+  );
 
   if (error) {
     console.error("[admin-programs-discovery] export", error);
     return [];
   }
 
-  return ((data ?? []) as ProgramsDiscoveryRow[]).map(mapProgramDiscoveryRowToExport);
+  return data.map(mapProgramDiscoveryRowToExport);
 }
