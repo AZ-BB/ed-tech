@@ -27,6 +27,7 @@ export const studentAr: {
   dashboard: Localize<typeof studentEn.dashboard>;
   aiDailyLimit: Localize<typeof studentEn.aiDailyLimit>;
   subscription: Localize<typeof studentEn.subscription>;
+  signupPayment: Localize<typeof studentEn.signupPayment>;
   settings: Localize<typeof studentEn.settings>;
   logout: Localize<typeof studentEn.logout>;
   universities: Localize<typeof studentEn.universities>;
@@ -1296,6 +1297,26 @@ export const studentAr: {
     cancelConfirm:
       "إلغاء الاشتراك؟ ستحتفظ بالوصول حتى نهاية فترة الفوترة الحالية.",
     cancelScheduledToast: "سيتم إلغاء الاشتراك في نهاية الفترة الحالية.",
+  },
+  signupPayment: {
+    eyebrow: "الوصول إلى يونيفيرا",
+    title: "أكمل التسجيل للبدء",
+    body:
+      "يلزم دفع لمرة واحدة لتفعيل حسابك في يونيفيرا وفتح بوابة الطالب بالكامل.",
+    benefits: [
+      "الوصول إلى اكتشاف البرامج والبحث عن الجامعات وأدوات المطابقة بالذكاء الاصطناعي.",
+      "حجز جلسات مع المستشارين والتواصل مع سفراء الجامعات.",
+      "الحصول على دعم التقديم والمقالات والمنح والمزيد.",
+    ],
+    cta: "ادفع الآن",
+    paying: "جارٍ التحويل…",
+    checkoutFailed: "تعذّر بدء الدفع. حاول مرة أخرى.",
+    canceledMessage: "تم إلغاء الدفع. يمكنك المحاولة مرة أخرى عندما تكون جاهزًا.",
+    confirming: "جارٍ تأكيد الدفع…",
+    confirmFailed: "تعذّر تأكيد الدفع. حاول مرة أخرى أو تواصل مع الدعم.",
+    logOut: "تسجيل الخروج",
+    loggingOut: "جارٍ تسجيل الخروج…",
+    reassure: "دفع لمرة واحدة. دفع آمن عبر Stripe.",
   },
   settings: {
     pageTitle: "إعدادات الحساب",

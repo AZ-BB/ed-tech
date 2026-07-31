@@ -219,12 +219,12 @@ export type Database = {
           advisor_id: string
           amount: number
           application_id: number | null
-          post_admission_case_id: number | null
           created_at: string
           id: number
           paid_at: string | null
           payment_id: number
           percentage: number
+          post_admission_case_id: number | null
           status: Database["public"]["Enums"]["payout_status"]
           updated_at: string
         }
@@ -232,12 +232,12 @@ export type Database = {
           advisor_id: string
           amount: number
           application_id?: number | null
-          post_admission_case_id?: number | null
           created_at?: string
           id?: number
           paid_at?: string | null
           payment_id: number
           percentage: number
+          post_admission_case_id?: number | null
           status?: Database["public"]["Enums"]["payout_status"]
           updated_at?: string
         }
@@ -245,12 +245,12 @@ export type Database = {
           advisor_id?: string
           amount?: number
           application_id?: number | null
-          post_admission_case_id?: number | null
           created_at?: string
           id?: number
           paid_at?: string | null
           payment_id?: number
           percentage?: number
+          post_admission_case_id?: number | null
           status?: Database["public"]["Enums"]["payout_status"]
           updated_at?: string
         }
@@ -270,17 +270,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "advisor_payouts_post_admission_case_id_fkey"
-            columns: ["post_admission_case_id"]
-            isOneToOne: false
-            referencedRelation: "post_admission_cases"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "advisor_payouts_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: true
             referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_payouts_post_admission_case_id_fkey"
+            columns: ["post_admission_case_id"]
+            isOneToOne: false
+            referencedRelation: "post_admission_cases"
             referencedColumns: ["id"]
           },
         ]
@@ -349,6 +349,13 @@ export type Database = {
             columns: ["advisor_id"]
             isOneToOne: false
             referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_sessions_created_lead_application_id_fkey"
+            columns: ["created_lead_application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
             referencedColumns: ["id"]
           },
           {
@@ -1691,30 +1698,6 @@ export type Database = {
           },
         ]
       }
-      majors: {
-        Row: {
-          created_at: string | null
-          id: number
-          name: string
-          name_ar: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          name: string
-          name_ar?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          name?: string
-          name_ar?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       internship_support_requests: {
         Row: {
           created_at: string
@@ -1899,6 +1882,30 @@ export type Database = {
         }
         Relationships: []
       }
+      majors: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+          name_ar: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+          name_ar?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+          name_ar?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       news_items: {
         Row: {
           created_at: string | null
@@ -1922,6 +1929,102 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          application_id: number | null
+          created_at: string | null
+          custom_universities_count: number | null
+          due_date: string | null
+          id: number
+          paid_at: string | null
+          payment_request_sent_at: string | null
+          payment_request_token: string | null
+          post_admission_case_id: number | null
+          requested_by_advisor_id: string | null
+          requested_by_type: string | null
+          requested_plan_id: number | null
+          status: Database["public"]["Enums"]["payment_status"] | null
+          stripe_checkout_session_id: string | null
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          application_id?: number | null
+          created_at?: string | null
+          custom_universities_count?: number | null
+          due_date?: string | null
+          id?: number
+          paid_at?: string | null
+          payment_request_sent_at?: string | null
+          payment_request_token?: string | null
+          post_admission_case_id?: number | null
+          requested_by_advisor_id?: string | null
+          requested_by_type?: string | null
+          requested_plan_id?: number | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          stripe_checkout_session_id?: string | null
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          application_id?: number | null
+          created_at?: string | null
+          custom_universities_count?: number | null
+          due_date?: string | null
+          id?: number
+          paid_at?: string | null
+          payment_request_sent_at?: string | null
+          payment_request_token?: string | null
+          post_admission_case_id?: number | null
+          requested_by_advisor_id?: string | null
+          requested_by_type?: string | null
+          requested_plan_id?: number | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          stripe_checkout_session_id?: string | null
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_post_admission_case_id_fkey"
+            columns: ["post_admission_case_id"]
+            isOneToOne: false
+            referencedRelation: "post_admission_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_requested_by_advisor_id_fkey"
+            columns: ["requested_by_advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_requested_plan_id_fkey"
+            columns: ["requested_plan_id"]
+            isOneToOne: false
+            referencedRelation: "applications_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_admission_calls: {
         Row: {
@@ -2124,98 +2227,37 @@ export type Database = {
           },
         ]
       }
-      payments: {
+      programs: {
         Row: {
-          amount: number
-          application_id: number | null
-          post_admission_case_id: number | null
           created_at: string | null
-          custom_universities_count: number | null
-          due_date: string | null
           id: number
-          paid_at: string | null
-          payment_request_sent_at: string | null
-          payment_request_token: string | null
-          requested_by_advisor_id: string | null
-          requested_by_type: string | null
-          requested_plan_id: number | null
-          status: Database["public"]["Enums"]["payment_status"] | null
-          stripe_checkout_session_id: string | null
-          student_id: string
+          major_id: number
+          name: string
+          name_ar: string | null
           updated_at: string | null
         }
         Insert: {
-          amount: number
-          application_id?: number | null
-          post_admission_case_id?: number | null
           created_at?: string | null
-          custom_universities_count?: number | null
-          due_date?: string | null
           id?: number
-          paid_at?: string | null
-          payment_request_sent_at?: string | null
-          payment_request_token?: string | null
-          requested_by_advisor_id?: string | null
-          requested_by_type?: string | null
-          requested_plan_id?: number | null
-          status?: Database["public"]["Enums"]["payment_status"] | null
-          stripe_checkout_session_id?: string | null
-          student_id: string
+          major_id: number
+          name: string
+          name_ar?: string | null
           updated_at?: string | null
         }
         Update: {
-          amount?: number
-          application_id?: number | null
-          post_admission_case_id?: number | null
           created_at?: string | null
-          custom_universities_count?: number | null
-          due_date?: string | null
           id?: number
-          paid_at?: string | null
-          payment_request_sent_at?: string | null
-          payment_request_token?: string | null
-          requested_by_advisor_id?: string | null
-          requested_by_type?: string | null
-          requested_plan_id?: number | null
-          status?: Database["public"]["Enums"]["payment_status"] | null
-          stripe_checkout_session_id?: string | null
-          student_id?: string
+          major_id?: number
+          name?: string
+          name_ar?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "payments_application_id_fkey"
-            columns: ["application_id"]
+            foreignKeyName: "programs_major_id_fkey"
+            columns: ["major_id"]
             isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_post_admission_case_id_fkey"
-            columns: ["post_admission_case_id"]
-            isOneToOne: false
-            referencedRelation: "post_admission_cases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_requested_by_advisor_id_fkey"
-            columns: ["requested_by_advisor_id"]
-            isOneToOne: false
-            referencedRelation: "advisors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_requested_plan_id_fkey"
-            columns: ["requested_plan_id"]
-            isOneToOne: false
-            referencedRelation: "applications_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student_profiles"
+            referencedRelation: "majors"
             referencedColumns: ["id"]
           },
         ]
@@ -2300,41 +2342,6 @@ export type Database = {
           videos?: Json | null
         }
         Relationships: []
-      }
-      programs: {
-        Row: {
-          created_at: string | null
-          id: number
-          major_id: number
-          name: string
-          name_ar: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          major_id: number
-          name: string
-          name_ar?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          major_id?: number
-          name?: string
-          name_ar?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "programs_major_id_fkey"
-            columns: ["major_id"]
-            isOneToOne: false
-            referencedRelation: "majors"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       scholarship_destinations: {
         Row: {
@@ -2784,86 +2791,6 @@ export type Database = {
           },
         ]
       }
-      student_discovery_attempts: {
-        Row: {
-          answers_json: Json
-          completed_at: string
-          config_version: number
-          id: string
-          module_id: string
-          result_json: Json
-          student_id: string
-          updated_at: string
-        }
-        Insert: {
-          answers_json: Json
-          completed_at?: string
-          config_version: number
-          id?: string
-          module_id: string
-          result_json: Json
-          student_id: string
-          updated_at?: string
-        }
-        Update: {
-          answers_json?: Json
-          completed_at?: string
-          config_version?: number
-          id?: string
-          module_id?: string
-          result_json?: Json
-          student_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_discovery_attempts_module_id_fkey"
-            columns: ["module_id"]
-            isOneToOne: false
-            referencedRelation: "discovery_modules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_discovery_attempts_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      student_discovery_profiles: {
-        Row: {
-          combined_profile_json: Json
-          completed_modules: string[]
-          config_version: number
-          student_id: string
-          updated_at: string
-        }
-        Insert: {
-          combined_profile_json?: Json
-          completed_modules?: string[]
-          config_version?: number
-          student_id: string
-          updated_at?: string
-        }
-        Update: {
-          combined_profile_json?: Json
-          completed_modules?: string[]
-          config_version?: number
-          student_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_discovery_profiles_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: true
-            referencedRelation: "student_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       student_activities: {
         Row: {
           advisor_id: string | null
@@ -3187,6 +3114,86 @@ export type Database = {
             foreignKeyName: "student_credits_history_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_discovery_attempts: {
+        Row: {
+          answers_json: Json
+          completed_at: string
+          config_version: number
+          id: string
+          module_id: string
+          result_json: Json
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          answers_json: Json
+          completed_at?: string
+          config_version: number
+          id?: string
+          module_id: string
+          result_json: Json
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          answers_json?: Json
+          completed_at?: string
+          config_version?: number
+          id?: string
+          module_id?: string
+          result_json?: Json
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_discovery_attempts_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "discovery_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_discovery_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_discovery_profiles: {
+        Row: {
+          combined_profile_json: Json
+          completed_modules: string[]
+          config_version: number
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          combined_profile_json?: Json
+          completed_modules?: string[]
+          config_version?: number
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          combined_profile_json?: Json
+          completed_modules?: string[]
+          config_version?: number
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_discovery_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
             referencedRelation: "student_profiles"
             referencedColumns: ["id"]
           },
@@ -3534,30 +3541,32 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           email: string
+          feature_access: Json | null
           first_name: string
           flagged: boolean
           flagged_by: string | null
           grade: string
+          has_paid_signup_fee: boolean
           id: string
           is_active: boolean
           last_name: string
+          meta_data: Json | null
           nationality_country_code: string
           notification_app_updates: boolean
           notification_news_platform: boolean
           phone: string | null
           platform_completion: Json | null
-          feature_access: Json | null
-          meta_data: Json | null
           school_id: string | null
           signup_advisor_credit_limit: number | null
           signup_ambassador_credit_limit: number | null
+          signup_fee_paid_at: string | null
           status: Database["public"]["Enums"]["student_status"] | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          student_type: Database["public"]["Enums"]["student_type"]
           subscription_cancel_at_period_end: boolean
           subscription_current_period_end: string | null
           subscription_status: Database["public"]["Enums"]["student_subscription_status"]
-          student_type: Database["public"]["Enums"]["student_type"]
           teacher_id: string | null
           total_logins: number | null
           updated_at: string | null
@@ -3568,30 +3577,32 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           email: string
+          feature_access?: Json | null
           first_name: string
           flagged?: boolean
           flagged_by?: string | null
           grade: string
+          has_paid_signup_fee?: boolean
           id: string
           is_active?: boolean
           last_name: string
+          meta_data?: Json | null
           nationality_country_code: string
           notification_app_updates?: boolean
           notification_news_platform?: boolean
           phone?: string | null
           platform_completion?: Json | null
-          feature_access?: Json | null
-          meta_data?: Json | null
           school_id?: string | null
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
+          signup_fee_paid_at?: string | null
           status?: Database["public"]["Enums"]["student_status"] | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          student_type?: Database["public"]["Enums"]["student_type"]
           subscription_cancel_at_period_end?: boolean
           subscription_current_period_end?: string | null
           subscription_status?: Database["public"]["Enums"]["student_subscription_status"]
-          student_type?: Database["public"]["Enums"]["student_type"]
           teacher_id?: string | null
           total_logins?: number | null
           updated_at?: string | null
@@ -3602,30 +3613,32 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           email?: string
+          feature_access?: Json | null
           first_name?: string
           flagged?: boolean
           flagged_by?: string | null
           grade?: string
+          has_paid_signup_fee?: boolean
           id?: string
           is_active?: boolean
           last_name?: string
+          meta_data?: Json | null
           nationality_country_code?: string
           notification_app_updates?: boolean
           notification_news_platform?: boolean
           phone?: string | null
           platform_completion?: Json | null
-          feature_access?: Json | null
-          meta_data?: Json | null
           school_id?: string | null
           signup_advisor_credit_limit?: number | null
           signup_ambassador_credit_limit?: number | null
+          signup_fee_paid_at?: string | null
           status?: Database["public"]["Enums"]["student_status"] | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          student_type?: Database["public"]["Enums"]["student_type"]
           subscription_cancel_at_period_end?: boolean
           subscription_current_period_end?: string | null
           subscription_status?: Database["public"]["Enums"]["student_subscription_status"]
-          student_type?: Database["public"]["Enums"]["student_type"]
           teacher_id?: string | null
           total_logins?: number | null
           updated_at?: string | null
@@ -4057,60 +4070,6 @@ export type Database = {
           },
         ]
       }
-      university_programs: {
-        Row: {
-          created_at: string
-          featured: boolean
-          id: string
-          program_id: string
-          program_school_note: string | null
-          ranking_note: string | null
-          short_description: string | null
-          tuition_note: string | null
-          university_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          featured?: boolean
-          id?: string
-          program_id: string
-          program_school_note?: string | null
-          ranking_note?: string | null
-          short_description?: string | null
-          tuition_note?: string | null
-          university_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          featured?: boolean
-          id?: string
-          program_id?: string
-          program_school_note?: string | null
-          ranking_note?: string | null
-          short_description?: string | null
-          tuition_note?: string | null
-          university_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "university_programs_program_id_fkey"
-            columns: ["program_id"]
-            isOneToOne: false
-            referencedRelation: "programs_discovery"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "university_programs_university_id_fkey"
-            columns: ["university_id"]
-            isOneToOne: false
-            referencedRelation: "universities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       university_events: {
         Row: {
           city: string | null
@@ -4318,6 +4277,60 @@ export type Database = {
           },
         ]
       }
+      university_programs: {
+        Row: {
+          created_at: string
+          featured: boolean
+          id: string
+          program_id: string
+          program_school_note: string | null
+          ranking_note: string | null
+          short_description: string | null
+          tuition_note: string | null
+          university_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          featured?: boolean
+          id?: string
+          program_id: string
+          program_school_note?: string | null
+          ranking_note?: string | null
+          short_description?: string | null
+          tuition_note?: string | null
+          university_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          featured?: boolean
+          id?: string
+          program_id?: string
+          program_school_note?: string | null
+          ranking_note?: string | null
+          short_description?: string | null
+          tuition_note?: string | null
+          university_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_programs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs_discovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "university_programs_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webinar_registrations: {
         Row: {
           guest_email: string | null
@@ -4468,12 +4481,12 @@ export type Database = {
         Args: { p_limit?: number; p_school_id?: string }
         Returns: Json
       }
-      rpc_internships_discovery: {
-        Args: { p_loc?: string; p_pay?: string }
-        Returns: Json
-      }
       advisor_can_read_application: {
         Args: { p_application_id: number }
+        Returns: boolean
+      }
+      advisor_can_read_post_admission_case: {
+        Args: { p_case_id: number }
         Returns: boolean
       }
       advisor_can_read_school: {
@@ -4543,6 +4556,10 @@ export type Database = {
         Args: { p_school_id: string }
         Returns: undefined
       }
+      rpc_internships_discovery: {
+        Args: { p_loc?: string; p_pay?: string }
+        Returns: Json
+      }
       rpc_scholarships_discovery_page: {
         Args: {
           p_bucket?: string
@@ -4558,6 +4575,10 @@ export type Database = {
         Returns: Json
       }
       run_school_subscription_expiry: { Args: never; Returns: number }
+      scholarship_destination_resolve_alpha2: {
+        Args: { p_token: string }
+        Returns: string
+      }
       scholarship_discovery_dest_match: {
         Args: { p_dest: Json; p_user: string }
         Returns: boolean
@@ -4644,11 +4665,11 @@ export type Database = {
         | "award"
         | "portfolio"
       application_status:
-        | "intake_draft"
         | "lead"
         | "not_suitable"
         | "payment_requested"
         | "active_package"
+        | "intake_draft"
       contact_submission_status: "new" | "read" | "archived"
       gender: "male" | "female"
       internship_format: "in_person" | "remote" | "hybrid" | "directory"
@@ -4661,15 +4682,15 @@ export type Database = {
         | "directory"
         | "homepage"
       news_tag: "visa" | "deadline" | "update"
+      payment_status: "pending" | "paid" | "failed"
+      payout_status: "pending" | "paid" | "canceled"
       post_admission_status:
-        | "intake_draft"
         | "lead"
         | "not_suitable"
         | "payment_requested"
         | "active"
         | "completed"
-      payment_status: "pending" | "paid" | "failed"
-      payout_status: "pending" | "paid" | "canceled"
+        | "intake_draft"
       scholarship_competition_type: "low" | "medium" | "high" | "very_high"
       scholarship_type:
         | "government"
@@ -4695,6 +4716,7 @@ export type Database = {
         | "base_credit"
         | "extra_credits"
       student_status: "high_priority" | "at_risk" | "missing_docs"
+      student_story_language: "en" | "ar" | "mixed"
       student_subscription_status:
         | "none"
         | "active"
@@ -4706,7 +4728,6 @@ export type Database = {
         | "unpaid"
         | "paused"
       student_type: "school" | "individual" | "funnel"
-      student_story_language: "en" | "ar" | "mixed"
       tuition_type: "full" | "partial"
       university_difficulty: "easy" | "medium" | "hard"
       university_doc_requirement_status:
@@ -4894,11 +4915,11 @@ export const Constants = {
         "portfolio",
       ],
       application_status: [
-        "intake_draft",
         "lead",
         "not_suitable",
         "payment_requested",
         "active_package",
+        "intake_draft",
       ],
       contact_submission_status: ["new", "read", "archived"],
       gender: ["male", "female"],
@@ -4915,6 +4936,14 @@ export const Constants = {
       news_tag: ["visa", "deadline", "update"],
       payment_status: ["pending", "paid", "failed"],
       payout_status: ["pending", "paid", "canceled"],
+      post_admission_status: [
+        "lead",
+        "not_suitable",
+        "payment_requested",
+        "active",
+        "completed",
+        "intake_draft",
+      ],
       scholarship_competition_type: ["low", "medium", "high", "very_high"],
       scholarship_type: [
         "government",
@@ -4943,6 +4972,7 @@ export const Constants = {
         "extra_credits",
       ],
       student_status: ["high_priority", "at_risk", "missing_docs"],
+      student_story_language: ["en", "ar", "mixed"],
       student_subscription_status: [
         "none",
         "active",
@@ -4955,7 +4985,6 @@ export const Constants = {
         "paused",
       ],
       student_type: ["school", "individual", "funnel"],
-      student_story_language: ["en", "ar", "mixed"],
       tuition_type: ["full", "partial"],
       university_difficulty: ["easy", "medium", "hard"],
       university_doc_requirement_status: [

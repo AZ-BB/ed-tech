@@ -1284,6 +1284,26 @@ export const studentEn = {
       "Cancel your subscription? You will keep access until the end of the current billing period.",
     cancelScheduledToast: "Subscription will cancel at the end of the current period.",
   },
+  signupPayment: {
+    eyebrow: "Univeera Access",
+    title: "Complete your signup to get started",
+    body:
+      "A one-time payment is required to activate your Univeera account and unlock the full student portal.",
+    benefits: [
+      "Access program discovery, university search, and AI matching tools.",
+      "Book advisor sessions and connect with university ambassadors.",
+      "Get support with applications, essays, scholarships, and more.",
+    ],
+    cta: "Pay now",
+    paying: "Redirecting…",
+    checkoutFailed: "Could not start checkout. Try again.",
+    canceledMessage: "Payment was canceled. You can try again when ready.",
+    confirming: "Confirming your payment…",
+    confirmFailed: "Could not confirm your payment. Please try again or contact support.",
+    logOut: "Log out",
+    loggingOut: "Logging out…",
+    reassure: "One-time payment. Secure checkout powered by Stripe.",
+  },
   settings: {
     pageTitle: "Account settings",
     pageSubtitle: "Manage your account details, security, and preferences",

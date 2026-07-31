@@ -22,6 +22,12 @@ export function getFunnelSubscriptionPriceId(): string | undefined {
   return priceId || undefined;
 }
 
+/** One-time individual student signup Price ID (`STRIPE_INDIVIDUAL_SIGNUP_PRICE_ID`). */
+export function getIndividualSignupPriceId(): string | undefined {
+  const priceId = process.env.STRIPE_INDIVIDUAL_SIGNUP_PRICE_ID?.trim();
+  return priceId || undefined;
+}
+
 export function isStripeConfigured(): boolean {
   return Boolean(getStripeSecretKey());
 }

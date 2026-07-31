@@ -21,6 +21,7 @@ export type StudentSessionAuth =
       ok: true;
       studentId: string;
       hasSchoolLinked: boolean;
+      hasPaidSignupFee: boolean;
       featureAccess: StudentFeatureAccess;
     } & StudentSubscriptionSnapshot & {
         stripeSubscriptionId: string | null;
@@ -49,7 +50,7 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
   const { data: profile } = await secret
     .from("student_profiles")
     .select(
-      "id, is_active, school_id, feature_access, student_type, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, stripe_subscription_id",
+      "id, is_active, school_id, feature_access, student_type, subscription_status, subscription_current_period_end, subscription_cancel_at_period_end, stripe_subscription_id, has_paid_signup_fee",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -90,6 +91,7 @@ export async function requireStudentSession(): Promise<StudentSessionAuth> {
     subscriptionCurrentPeriodEnd: profile.subscription_current_period_end,
     subscriptionCancelAtPeriodEnd: profile.subscription_cancel_at_period_end ?? false,
     stripeSubscriptionId: profile.stripe_subscription_id,
+    hasPaidSignupFee: profile.has_paid_signup_fee ?? false,
     featureAccess: resolveStudentFeatureAccess({
       studentType,
       subscriptionStatus,
