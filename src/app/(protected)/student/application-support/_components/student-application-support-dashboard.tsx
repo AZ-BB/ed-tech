@@ -81,13 +81,6 @@ function SnapItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatCurriculum(value: string | null): string {
-  if (!value) return "—";
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
 
 function formatDate(iso: string | null | undefined, locale?: string) {
   if (!iso) return "";
@@ -394,7 +387,7 @@ export function StudentApplicationSupportDashboard({
     });
   };
 
-  const { application, plan } = initial;
+  const { application } = initial;
 
   return (
     <div className="mx-auto min-w-0 max-w-full overflow-x-clip pb-10 text-[var(--text)] sm:pb-14">
@@ -414,19 +407,13 @@ export function StudentApplicationSupportDashboard({
         <div className="pointer-events-none absolute -end-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
         <div className="relative z-[1] min-w-0 flex-1">
           <div className="font-[family-name:var(--font-dm-serif)] text-base leading-snug sm:text-lg">
-            {plan?.name ?? d.fallbackPlanName}
+            {d.fallbackPlanName}
           </div>
           <div className="mt-1 text-[12px] text-white/70 sm:text-[12.5px]">
             {d.statusLine.replace(
               "{status}",
               applicationStatusLabel(application.status),
             )}
-            {plan
-              ? d.universitiesIncludedLine.replace(
-                  "{count}",
-                  String(plan.universitiesCount),
-                )
-              : null}
           </div>
         </div>
         <div className="relative z-[1] text-[12px] text-white/80 sm:text-[12.5px] md:text-end">
@@ -515,146 +502,51 @@ export function StudentApplicationSupportDashboard({
                   value={application.schoolName ?? emptyValue}
                 />
                 <SnapItem
-                  label={d.labels.intendedFields}
-                  value={application.intendedFields}
-                />
-                <SnapItem
-                  label={d.labels.openToRelatedFields}
-                  value={application.openToRelatedFields ? d.yes : d.no}
-                />
-                <SnapItem
-                  label={d.labels.preferredUniOrCountries}
-                  value={application.preferredUniOrCountries}
-                />
-                <SnapItem
-                  label={d.labels.curriculum}
-                  value={formatCurriculum(application.curriculum)}
-                />
-                <SnapItem
-                  label={d.labels.finalGrade}
+                  label={d.labels.grade}
                   value={application.finalGrade}
                 />
                 <SnapItem
-                  label={d.labels.expectedGraduationYear}
-                  value={
-                    application.expectedGraduationYear != null
-                      ? String(application.expectedGraduationYear)
-                      : emptyValue
-                  }
-                />
-                <SnapItem
-                  label={d.labels.gpa}
-                  value={
-                    application.gpa != null ? String(application.gpa) : emptyValue
-                  }
-                />
-                <SnapItem
-                  label={d.labels.sat}
-                  value={
-                    application.sat != null ? String(application.sat) : emptyValue
-                  }
-                />
-                <SnapItem
-                  label={d.labels.act}
-                  value={
-                    application.act != null ? String(application.act) : emptyValue
-                  }
-                />
-                <SnapItem
-                  label={d.labels.ielts}
-                  value={
-                    application.ielts != null
-                      ? String(application.ielts)
-                      : emptyValue
-                  }
-                />
-                <SnapItem
-                  label={d.labels.toefl}
-                  value={
-                    application.toefl != null
-                      ? String(application.toefl)
-                      : emptyValue
-                  }
-                />
-                <SnapItem
-                  label={d.labels.extracurricularActivities}
-                  value={application.extracurricularActivities}
-                />
-                <SnapItem
-                  label={d.labels.awards}
-                  value={application.awards ?? emptyValue}
+                  label={d.labels.targetDestination}
+                  value={application.preferredUniOrCountries}
                 />
               </div>
-
-              {application.universities.length > 0 ? (
-                <div className="mt-4">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-light)]">
-                    {d.labels.targetUniversities}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {application.universities.map((name) => (
-                      <span
-                        key={name}
-                        className="rounded-full bg-[var(--green-pale)] px-2.5 py-1 text-[12px] font-medium text-[var(--green-dark)]"
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {application.preferencesUniversitiesNotes ? (
-                <div className="mt-4 grid grid-cols-1 gap-3">
-                  <SnapItem
-                    label={d.labels.universityNotes}
-                    value={application.preferencesUniversitiesNotes}
-                  />
-                </div>
-              ) : null}
-
-              {application.additionalNotes ? (
-                <div className="mt-4 grid grid-cols-1 gap-3">
-                  <SnapItem
-                    label={d.labels.additionalNotes}
-                    value={application.additionalNotes}
-                  />
-                </div>
-              ) : null}
             </div>
           </div>
 
-          {plan ? (
-            <div className={PANEL_CLASS}>
-              <div className={PANEL_HEAD_CLASS}>
-                <div className="min-w-0">
-                  <div className="text-[15px] font-semibold tracking-tight">
-                    {d.packageTitle}
-                  </div>
-                  <div className="mt-0.5 text-xs text-[var(--text-light)]">
-                    {d.packageSub}
-                  </div>
+          <div className={PANEL_CLASS}>
+            <div className={PANEL_HEAD_CLASS}>
+              <div className="min-w-0">
+                <div className="text-[15px] font-semibold tracking-tight">
+                  {d.packageTitle}
                 </div>
-              </div>
-              <div className={PANEL_BODY_CLASS}>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <SnapItem label={d.labels.planName} value={plan.name} />
-                  <SnapItem
-                    label={d.labels.universitiesIncluded}
-                    value={String(plan.universitiesCount)}
-                  />
-                  <SnapItem
-                    label={d.labels.priceAed}
-                    value={plan.price.toLocaleString(locale === "ar" ? "ar" : undefined)}
-                  />
-                  <SnapItem
-                    label={d.labels.description}
-                    value={plan.description ?? emptyValue}
-                  />
+                <div className="mt-0.5 text-xs text-[var(--text-light)]">
+                  {d.packageSub}
                 </div>
               </div>
             </div>
-          ) : null}
+            <div className={PANEL_BODY_CLASS}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <SnapItem
+                  label={d.labels.universitiesIncluded}
+                  value={
+                    initial.universitiesTotal > 0
+                      ? String(initial.universitiesTotal)
+                      : emptyValue
+                  }
+                />
+                <SnapItem
+                  label={d.labels.amountPaidAed}
+                  value={
+                    initial.totalPaidAed > 0
+                      ? initial.totalPaidAed.toLocaleString(
+                          locale === "ar" ? "ar" : undefined,
+                        )
+                      : emptyValue
+                  }
+                />
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
 

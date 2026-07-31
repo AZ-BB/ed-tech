@@ -15,7 +15,6 @@ import type { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type {
   StudentApplicationSupportDashboardPayload,
   StudentApplicationSupportIntake,
-  StudentApplicationSupportPlan,
 } from "./student-application-support-dashboard-types";
 
 type SecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
@@ -46,21 +45,13 @@ const STUDENT_APPLICATION_SELECT = `
   status,
   scheduled_at,
   package_data,
-  plan_id,
   updated_at,
-  applications_plans!applications_plan_id_fkey (
-    name,
-    description,
-    price,
-    universities_count
-  )
+  payments ( amount, status )
 `;
 
-type PlanEmbed = {
-  name: string;
-  description: string | null;
-  price: number;
-  universities_count: number;
+type PaymentEmbed = {
+  amount: number;
+  status: string | null;
 };
 
 type ApplicationRowRaw = {
@@ -89,15 +80,10 @@ type ApplicationRowRaw = {
   status: string | null;
   scheduled_at: string | null;
   package_data: unknown;
-  plan_id: number;
   updated_at: string | null;
-  applications_plans: PlanEmbed | PlanEmbed[] | null;
+  payments: PaymentEmbed | PaymentEmbed[] | null;
 };
 
-function firstEmbed<T>(embed: T | T[] | null | undefined): T | null {
-  if (!embed) return null;
-  return Array.isArray(embed) ? (embed[0] ?? null) : embed;
-}
 
 function parseUniversities(json: unknown): string[] {
   if (!json || !Array.isArray(json)) return [];
@@ -134,15 +120,14 @@ function mapIntake(row: ApplicationRowRaw): StudentApplicationSupportIntake {
   };
 }
 
-function mapPlan(row: ApplicationRowRaw): StudentApplicationSupportPlan | null {
-  const plan = firstEmbed(row.applications_plans);
-  if (!plan) return null;
-  return {
-    name: plan.name,
-    description: plan.description,
-    price: plan.price,
-    universitiesCount: plan.universities_count,
-  };
+function sumPaidPayments(
+  embed: PaymentEmbed | PaymentEmbed[] | null | undefined,
+): number {
+  if (!embed) return 0;
+  const payments = Array.isArray(embed) ? embed : [embed];
+  return payments
+    .filter((payment) => payment.status === "paid")
+    .reduce((sum, payment) => sum + payment.amount, 0);
 }
 
 export async function fetchLatestStudentApplication(
@@ -191,11 +176,8 @@ export async function fetchStudentApplicationSupportDashboard(
   if (!row || row.status?.trim() !== "active_package") return null;
 
   const packageData = parseApplicationPackageData(row.package_data);
-  const plan = mapPlan(row);
-  const universitiesTotal = resolveApplicationUniversitiesTotal(
-    packageData,
-    plan?.universitiesCount ?? 0,
-  );
+  const universitiesTotal = resolveApplicationUniversitiesTotal(packageData, 0);
+  const totalPaidAed = sumPaidPayments(row.payments);
 
   const [universityTargets, tasks, documents] = await Promise.all([
     fetchApplicationUniversityTargets(secret, row.id),
@@ -206,7 +188,7 @@ export async function fetchStudentApplicationSupportDashboard(
   return {
     studentId,
     application: mapIntake(row),
-    plan,
+    totalPaidAed,
     universitiesTotal,
     universityTargets,
     documents,

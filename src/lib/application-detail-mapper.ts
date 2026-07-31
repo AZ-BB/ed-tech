@@ -337,6 +337,7 @@ export function mapApplicationDetailPayload(
   universityTargets: ApplicationUniversityTargetRow[] = [],
 ): ApplicationDetailPayload {
   const plan = firstEmbed(data.applications_plans);
+  const planCatalogUniversitiesCount = plan?.universities_count ?? 0;
   const advisorEmbed = firstEmbed(data.advisors);
   const adminEmbed = firstEmbed(data.admins);
   const schoolEmbed = firstEmbed(data.schools);
@@ -354,10 +355,9 @@ export function mapApplicationDetailPayload(
   const nationalityCode = studentEmbed?.nationality_country_code ?? null;
 
   const packageData = parseApplicationPackageData(data.package_data);
-  const planUniversitiesCount = plan?.universities_count ?? 0;
   const effectiveUniversitiesCount = resolveApplicationUniversitiesTotal(
     packageData,
-    planUniversitiesCount,
+    0,
   );
   const totalPaidAed = payments
     .filter((payment) => payment.status === "paid")
@@ -430,7 +430,7 @@ export function mapApplicationDetailPayload(
           description: plan.description?.trim() || null,
           price: plan.price,
           universitiesCount: effectiveUniversitiesCount,
-          defaultUniversitiesCount: planUniversitiesCount,
+          defaultUniversitiesCount: planCatalogUniversitiesCount,
         }
       : null,
     advisor: advisorEmbed?.id

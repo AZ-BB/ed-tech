@@ -23,7 +23,13 @@ import {
 } from "react";
 
 import { useLocale } from "@/lib/i18n/locale-context";
+import {
+  dailyLimitStatusFromApiPayload,
+  isAiDailyLimitExceededResponse,
+  type StudentAiDailyLimitStatus,
+} from "@/lib/student-ai-daily-limit";
 
+import { useStudentFeatureGate } from "../../_components/student-feature-gate-provider";
 import type { AiMatchingProfileDefaults } from "../_lib/load-ai-matching-profile-defaults";
 
 const TOTAL_PROGRESS = 7;
@@ -1074,11 +1080,14 @@ function formToPayload(form: FormState, locale: "en" | "ar"): MatchingPayload {
 
 export function AiUniversityMatching({
   profileDefaults,
+  dailyLimitStatus,
 }: {
   profileDefaults?: AiMatchingProfileDefaults | null;
+  dailyLimitStatus: StudentAiDailyLimitStatus;
 }) {
   const { dict, locale } = useLocale();
   const t = dict.student.aiMatching;
+  const { guardAiDailyLimitAction, openAiDailyLimitModal } = useStudentFeatureGate();
   const o = t.options;
   const scoreMsgs = useMemo(
     () => ({
@@ -1267,6 +1276,9 @@ export function AiUniversityMatching({
       setStepError(err);
       return;
     }
+    if (!guardAiDailyLimitAction("ai_university_matching", dailyLimitStatus)) {
+      return;
+    }
     setStepError(null);
     setSubmitError(null);
     setLoading(true);
@@ -1279,8 +1291,18 @@ export function AiUniversityMatching({
       });
       const data = (await response.json()) as MatchResponse & {
         error?: string;
+        code?: string;
+        limit?: number | null;
+        used?: number;
       };
       if (!response.ok) {
+        if (response.status === 429 && isAiDailyLimitExceededResponse(data)) {
+          openAiDailyLimitModal({
+            featureKey: "ai_university_matching",
+            status: dailyLimitStatusFromApiPayload(data),
+          });
+          return;
+        }
         throw new Error(data.error ?? t.unableToGenerate);
       }
       setResult(data);

@@ -1,9 +1,9 @@
 export const webinarsEn = {
   calendar: "Calendar",
-  upcomingTitle: "Upcoming webinars",
+  upcomingTitle: "All webinars",
   upcomingSub:
-    "Explore our upcoming live sessions designed to help students make better decisions about university, majors and careers.",
-  empty: "No upcoming webinars right now. Check back soon.",
+    "Browse live and past sessions designed to help students make better decisions about university, majors and careers.",
+  empty: "No webinars available right now. Check back soon.",
   notFound: "Webinar not found",
   metadataTitle: "Live Webinars & Expert Sessions",
   metadataDescription:
@@ -110,6 +110,7 @@ export const webinarsEn = {
   featuredSectionTitle: "Featured upcoming webinar",
   featuredSectionDescription: "Our next live session — register early as seats are limited.",
   nextSessionBadge: "Next session",
+  completedBadge: "Completed",
   agendaLabel: "What will be covered",
   allWebinars: "All webinars",
   viewSessionDetails: "View session details",

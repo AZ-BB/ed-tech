@@ -2877,6 +2877,7 @@ export type Database = {
           student_id: string
           type: Database["public"]["Enums"]["student_activity_type"] | null
           uni_id: string | null
+          university_event_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2891,6 +2892,7 @@ export type Database = {
           student_id: string
           type?: Database["public"]["Enums"]["student_activity_type"] | null
           uni_id?: string | null
+          university_event_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2905,6 +2907,7 @@ export type Database = {
           student_id?: string
           type?: Database["public"]["Enums"]["student_activity_type"] | null
           uni_id?: string | null
+          university_event_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -2955,6 +2958,13 @@ export type Database = {
             columns: ["uni_id"]
             isOneToOne: false
             referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_activities_university_event_id_fkey"
+            columns: ["university_event_id"]
+            isOneToOne: false
+            referencedRelation: "university_events"
             referencedColumns: ["id"]
           },
         ]
@@ -4101,6 +4111,135 @@ export type Database = {
           },
         ]
       }
+      university_events: {
+        Row: {
+          city: string | null
+          cost: string | null
+          country: string | null
+          created_at: string
+          date_end: string | null
+          date_start: string | null
+          date_verified: string | null
+          end_time: string | null
+          event_id: string
+          event_name: string
+          event_type: string
+          featured: boolean
+          full_overview: string | null
+          id: string
+          internal_notes: string | null
+          language: string | null
+          mode: string | null
+          month: string | null
+          organizer: string | null
+          organizer_type: string | null
+          prep_steps: string | null
+          recommended_tag: string | null
+          record_status: string
+          region_focus: string | null
+          registration_required: string | null
+          registration_status: string | null
+          registration_url: string | null
+          short_description: string | null
+          source_name: string | null
+          source_url: string | null
+          start_time: string | null
+          target_audience: string | null
+          timezone: string | null
+          topics_covered: string | null
+          universities_attending: string | null
+          university_count: number | null
+          updated_at: string
+          venue: string | null
+          why_attend: string | null
+          year: number | null
+        }
+        Insert: {
+          city?: string | null
+          cost?: string | null
+          country?: string | null
+          created_at?: string
+          date_end?: string | null
+          date_start?: string | null
+          date_verified?: string | null
+          end_time?: string | null
+          event_id: string
+          event_name: string
+          event_type?: string
+          featured?: boolean
+          full_overview?: string | null
+          id?: string
+          internal_notes?: string | null
+          language?: string | null
+          mode?: string | null
+          month?: string | null
+          organizer?: string | null
+          organizer_type?: string | null
+          prep_steps?: string | null
+          recommended_tag?: string | null
+          record_status?: string
+          region_focus?: string | null
+          registration_required?: string | null
+          registration_status?: string | null
+          registration_url?: string | null
+          short_description?: string | null
+          source_name?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          target_audience?: string | null
+          timezone?: string | null
+          topics_covered?: string | null
+          universities_attending?: string | null
+          university_count?: number | null
+          updated_at?: string
+          venue?: string | null
+          why_attend?: string | null
+          year?: number | null
+        }
+        Update: {
+          city?: string | null
+          cost?: string | null
+          country?: string | null
+          created_at?: string
+          date_end?: string | null
+          date_start?: string | null
+          date_verified?: string | null
+          end_time?: string | null
+          event_id?: string
+          event_name?: string
+          event_type?: string
+          featured?: boolean
+          full_overview?: string | null
+          id?: string
+          internal_notes?: string | null
+          language?: string | null
+          mode?: string | null
+          month?: string | null
+          organizer?: string | null
+          organizer_type?: string | null
+          prep_steps?: string | null
+          recommended_tag?: string | null
+          record_status?: string
+          region_focus?: string | null
+          registration_required?: string | null
+          registration_status?: string | null
+          registration_url?: string | null
+          short_description?: string | null
+          source_name?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          target_audience?: string | null
+          timezone?: string | null
+          topics_covered?: string | null
+          universities_attending?: string | null
+          university_count?: number | null
+          updated_at?: string
+          venue?: string | null
+          why_attend?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       university_major_programs: {
         Row: {
           created_at: string | null
@@ -4547,6 +4686,7 @@ export type Database = {
         | "ambassador"
         | "internship"
         | "program"
+        | "event"
       student_activity_type: "save" | "shortlist" | "block" | "viewed"
       student_credits_status: "used" | "refunded" | "added"
       student_credits_type:
@@ -4792,6 +4932,7 @@ export const Constants = {
         "ambassador",
         "internship",
         "program",
+        "event",
       ],
       student_activity_type: ["save", "shortlist", "block", "viewed"],
       student_credits_status: ["used", "refunded", "added"],

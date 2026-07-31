@@ -1,8 +1,10 @@
 import { escapeIlike } from "@/app/(protected)/school/_lib/student-search";
 import {
   expireOverduePendingPayments,
+  resolvePaymentChannel,
   resolvePaymentDisplayStatus,
   todayDateString,
+  type PaymentChannel,
 } from "@/lib/payment-request-utils";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -18,6 +20,7 @@ export type AdminPaymentTableRow = {
   referenceLabel: string;
   referenceHref: string;
   amount: number;
+  paymentChannel: PaymentChannel;
   status: string;
   dueDate: string | null;
   requestedByLabel: string;
@@ -40,6 +43,8 @@ type PaymentRowRaw = {
   paid_at: string | null;
   updated_at: string | null;
   payment_request_sent_at: string | null;
+  payment_request_token: string | null;
+  stripe_checkout_session_id: string | null;
   application_id: number | null;
   post_admission_case_id: number | null;
   student_id: string;
@@ -144,6 +149,11 @@ function mapPaymentRow(row: PaymentRowRaw): AdminPaymentTableRow | null {
     referenceLabel,
     referenceHref,
     amount: row.amount ?? 0,
+    paymentChannel: resolvePaymentChannel({
+      payment_request_sent_at: row.payment_request_sent_at,
+      payment_request_token: row.payment_request_token,
+      stripe_checkout_session_id: row.stripe_checkout_session_id,
+    }),
     status: resolvePaymentDisplayStatus({
       status: row.status,
       due_date: row.due_date,
@@ -202,6 +212,8 @@ export async function fetchAdminPaymentsPage(filters: AdminPaymentsPageFilters):
       paid_at,
       updated_at,
       payment_request_sent_at,
+      payment_request_token,
+      stripe_checkout_session_id,
       application_id,
       post_admission_case_id,
       student_id,

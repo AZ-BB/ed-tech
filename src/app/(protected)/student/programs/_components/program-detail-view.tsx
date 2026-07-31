@@ -6,6 +6,7 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import { useLocale } from "@/lib/i18n/locale-context";
 import { ArrowBackIcon } from "../../_components/directional-icons";
+import { ProgramFitTestLink } from "../../_components/program-fit-test-link";
 import type { ProgramCareerPath } from "@/lib/programs-discovery-types";
 import { initialsFromName, skillLevelToPercent } from "../_lib/program-discovery-metrics";
 import {
@@ -21,6 +22,7 @@ import detailStyles from "./program-detail.module.css";
 import { ProgramDetailStickyCta } from "./program-detail-sticky-cta";
 import { ProgramFitCheck } from "./program-fit-check";
 import { ProgramSaveButton } from "./program-save-button";
+import { ProgramVideosSection } from "./program-videos-section";
 
 const DAY_PERIOD_KEYS = ["dayMorning", "dayAfternoon", "dayEvening"] as const;
 
@@ -669,46 +671,12 @@ export function ProgramDetailView({
         </div>
       </section>
 
-      {program.videos.length > 0 ? (
-        <section className={detailStyles.section}>
-          <div className={detailStyles.sectionEyebrow}>{t.videosEyebrow}</div>
-          <h2 className={detailStyles.sectionTitle}>{t.videosTitleDetail}</h2>
-          <p className={detailStyles.sectionSub}>{t.videosSubtitleDetail}</p>
-          <div className={detailStyles.videosGrid}>
-            {program.videos.map((video) => (
-              <a
-                key={video.youtube_id}
-                href={`https://www.youtube.com/watch?v=${video.youtube_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={detailStyles.videoCard}
-              >
-                <div
-                  className={detailStyles.videoThumb}
-                  style={{
-                    backgroundImage: `url(https://i.ytimg.com/vi/${video.youtube_id}/hqdefault.jpg)`,
-                  }}
-                >
-                  <div className={detailStyles.videoPlay}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="6 4 20 12 6 20 6 4" />
-                    </svg>
-                  </div>
-                </div>
-                <div className={detailStyles.videoMeta}>
-                  {video.category ? (
-                    <div className={detailStyles.videoCat}>{video.category}</div>
-                  ) : null}
-                  <div className={detailStyles.videoTitle}>{video.title}</div>
-                  {video.channel ? (
-                    <div className={detailStyles.videoChannel}>{video.channel}</div>
-                  ) : null}
-                </div>
-              </a>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <ProgramVideosSection
+        videos={program.videos}
+        eyebrow={t.videosEyebrow}
+        title={t.videosTitleDetail}
+        subtitle={t.videosSubtitleDetail}
+      />
 
       <ProgramUniversitiesSection
         programTitle={program.title}
@@ -820,7 +788,7 @@ export function ProgramDetailView({
                 <div className={detailStyles.pnsSub}>{t.pnsApplicationDesc}</div>
               </div>
             </Link>
-            <Link href="/student/program-fit-test" className={detailStyles.pnsCard}>
+            <ProgramFitTestLink className={detailStyles.pnsCard}>
               <div className={detailStyles.pnsIcon} aria-hidden>
                 <svg
                   width="20"
@@ -839,7 +807,7 @@ export function ProgramDetailView({
                 <div className={detailStyles.pnsTitle}>{t.pnsAiFit}</div>
                 <div className={detailStyles.pnsSub}>{t.pnsAiFitDesc}</div>
               </div>
-            </Link>
+            </ProgramFitTestLink>
           </div>
         </div>
       </section>

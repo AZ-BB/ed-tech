@@ -28,8 +28,15 @@ export function WebinarsClient({ initialWebinars, mode = "student" }: WebinarsCl
     setWebinars(initialWebinars);
   }, [initialWebinars]);
 
-  const featured = webinars[0] ?? null;
-  const rest = webinars.slice(1);
+  const sortedWebinars = [...webinars].sort(
+    (a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
+  );
+  const featured =
+    [...webinars]
+      .filter((webinar) => !webinar.isPast)
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0] ??
+    null;
+  const rest = sortedWebinars.filter((webinar) => webinar.id !== featured?.id);
 
   const { openRegistration, registrationModal } = useWebinarRegistration({
     mode,

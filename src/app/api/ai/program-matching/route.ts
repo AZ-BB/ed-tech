@@ -5,6 +5,7 @@ import {
   fetchProgramsForEnrichment,
 } from "@/lib/fetch-program-catalog-for-ai";
 import type { ProgramCareerPath } from "@/lib/programs-discovery-types";
+import { buildProgramFitMatchingPrompt } from "@/lib/program-fit-matching-prompt";
 import {
   PROGRAM_FIT_TEST_QUESTION_IDS,
   type ProgramFitTestAnswers,
@@ -22,10 +23,13 @@ import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
-import { getProgramUniversityOfferings } from "@/app/(protected)/student/programs/_lib/get-program-university-offerings";
+import {
+  buildAiDailyLimitExceededPayload,
+  checkStudentAiDailyLimit,
+} from "@/lib/student-ai-daily-limit";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
-const fallbackModel = "gpt-4.1-mini";
+const fallbackModel = "gpt-5.6-luna";
 const MAX_OUTPUT_TOKENS = 16_384;
 
 type LlmRecommendation = {
@@ -47,12 +51,6 @@ export type ProgramFitCareerRow = {
   signal: "high-demand" | "growing" | "high-salary" | null;
 };
 
-export type ProgramFitUniversityRow = {
-  name: string;
-  context: string;
-  href: string;
-};
-
 export type ProgramFitRecommendation = {
   slug: string;
   rank: 1 | 2 | 3;
@@ -65,7 +63,6 @@ export type ProgramFitRecommendation = {
   description: string;
   whyItFits: string[];
   careers: ProgramFitCareerRow[];
-  universities: ProgramFitUniversityRow[];
 };
 
 export type ProgramFitMatchResponse = {
@@ -164,21 +161,6 @@ function validateAnswers(answers: ProgramFitTestAnswers): string[] {
   return missing;
 }
 
-function responseLanguageInstructions(locale: "en" | "ar" | undefined): string {
-  if (locale === "ar") {
-    return `
-Language (required):
-- Write profileSummary, each profileTags item, hook, description, and every whyItFits bullet in Modern Standard Arabic.
-- Keep slug values exactly as provided in the catalog (Latin slug strings, unchanged).
-- rank must remain exactly 1, 2, or 3.
-`;
-  }
-  return `
-Language:
-- Write profileSummary, profileTags, hook, description, and whyItFits in clear English.
-`;
-}
-
 function extractOutputText(response: unknown): string | undefined {
   if (!response || typeof response !== "object") return undefined;
   const direct = (response as { output_text?: unknown }).output_text;
@@ -262,13 +244,6 @@ async function enrichRecommendations(
       return { error: `Program not found: ${rec.slug}` };
     }
 
-    const offerings = await getProgramUniversityOfferings(rec.slug);
-    const universities: ProgramFitUniversityRow[] = offerings.slice(0, 4).map((o) => ({
-      name: o.name,
-      context: o.rankingNote !== "—" ? o.rankingNote : o.countryName,
-      href: o.detailHref,
-    }));
-
     recommendations.push({
       slug: rec.slug,
       rank: rec.rank,
@@ -281,7 +256,6 @@ async function enrichRecommendations(
       description: rec.description,
       whyItFits: asStringArray(rec.whyItFits).slice(0, 5),
       careers: mapCareers(program.career_paths),
-      universities,
     });
   }
 
@@ -303,6 +277,11 @@ export async function POST(request: Request) {
   const featureEnabled = await isPlatformFeatureEnabledByKey("ai_program_matching");
   if (!featureEnabled) {
     return NextResponse.json({ error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE }, { status: 403 });
+  }
+
+  const limitCheck = await checkStudentAiDailyLimit(auth.studentId, "program_matching");
+  if (!limitCheck.allowed) {
+    return NextResponse.json(buildAiDailyLimitExceededPayload(limitCheck), { status: 429 });
   }
 
   const { studentId } = auth;
@@ -354,33 +333,12 @@ export async function POST(request: Request) {
 
   const catalogSlugs = new Set(catalog.map((p) => p.slug));
 
-  const prompt = `
-You are Univeera's program fit advisor. Recommend exactly 3 university programs from the provided catalog only.
-${responseLanguageInstructions(locale)}
-
-Student questionnaire answers (human-readable labels where available):
-${JSON.stringify(labeledAnswers, null, 2)}
-
-Raw answer codes:
-${JSON.stringify(answers, null, 2)}
-
-Available programs catalog (you MUST pick slugs from this list only):
-${JSON.stringify(catalog, null, 2)}
-
-Return valid JSON with:
-- profileSummary: 2-3 sentences about the student's profile, referencing their actual answers. You may use <strong> tags for emphasis.
-- profileTags: 3-7 short trait tags
-- recommendations: exactly 3 items with distinct slugs from the catalog, ranks 1 (best), 2, and 3
-  - hook: one emotional opener sentence (italic tone)
-  - description: outcome-focused paragraph about what they will study/do
-  - whyItFits: 4-5 bullets that directly quote or reference the student's specific answer choices
-
-Rules:
-- slug must be an exact match from the catalog
-- Do not invent programs, universities, or careers
-- Do not include markdown outside JSON
-- Each whyItFits bullet should feel personalized — reference what the student actually picked
-`;
+  const prompt = buildProgramFitMatchingPrompt({
+    answers,
+    labeledAnswers,
+    catalog,
+    locale,
+  });
 
   try {
     const upstream = await fetch("https://api.openai.com/v1/responses", {

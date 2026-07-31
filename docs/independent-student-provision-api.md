@@ -71,15 +71,16 @@ Content-Type: application/json
 
 ### `featureAccess`
 
-Optional object of booleans. When you send `featureAccess`, any key you omit (or leave non-boolean) defaults to **disabled** (`false`) — features are opt-in. If you omit `featureAccess` entirely, defaults apply: all features **enabled** (`true`), except for **funnel** students where `internships` and `essay_review` default to **disabled** (`false`).
+Optional object of booleans. When you send `featureAccess`, any key you omit (or leave non-boolean) defaults to **disabled** (`false`) — features are opt-in. If you omit `featureAccess` entirely, defaults apply: all features **enabled** (`true`), except for **funnel** students where `internships`, `events`, `essay_review`, and `application_support` default to **disabled** (`false`). For funnel students, **University Discovery** (`universities`) stays **enabled** by default.
 
 | Key | Feature |
 |-----|---------|
 | `personality_overview` | Personality Overview |
 | `program_discovery` | Program Discovery |
-| `universities` | Discover Universities |
+| `universities` | University Discovery |
 | `scholarships` | Scholarships |
 | `internships` | Internships |
+| `events` | Events |
 | `essay_review` | Essay Review |
 | `advisor_sessions` | 1:1 Advisor sessions |
 | `ambassadors` | Ambassadors |
@@ -105,10 +106,11 @@ New accounts receive **1 advisor** and **1 ambassador** session credit by defaul
     "universities": true,
     "scholarships": false,
     "internships": false,
+    "events": false,
     "essay_review": false,
     "advisor_sessions": true,
     "ambassadors": false,
-    "application_support": true,
+    "application_support": false,
     "post_admission": false
   },
   "metaData": {
@@ -190,10 +192,11 @@ curl -X POST "https://univeera.me/api/students/independent" \
       "universities": true,
       "scholarships": false,
       "internships": false,
+      "events": false,
       "essay_review": false,
       "advisor_sessions": true,
       "ambassadors": false,
-      "application_support": true,
+      "application_support": false,
       "post_admission": false
     },
     "metaData": {
@@ -224,10 +227,11 @@ const res = await fetch("https://univeera.me/api/students/independent", {
       universities: true,
       scholarships: false,
       internships: false,
+      events: false,
       essay_review: false,
       advisor_sessions: true,
       ambassadors: false,
-      application_support: true,
+      application_support: false,
       post_admission: false,
     },
     metaData: { externalId: "crm-123", source: "partner-name" },

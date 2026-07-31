@@ -7,6 +7,7 @@ import {
   programRowToDiscoveryProgram,
   type DiscoveryProgram,
 } from "./program-row-to-program";
+import { withValidProgramVideos } from "./with-valid-program-videos";
 import {
   parseProgramDiscoverySearchParams,
   PROGRAM_DISCOVERY_PAGE_SIZE,
@@ -133,7 +134,9 @@ export async function getProgramDiscoveryPage(
     },
     categoryOptions,
     detailProgram: detailResult.data
-      ? programRowToDiscoveryProgram(detailResult.data as ProgramsDiscoveryRow)
+      ? await withValidProgramVideos(
+          programRowToDiscoveryProgram(detailResult.data as ProgramsDiscoveryRow),
+        )
       : null,
   };
 }

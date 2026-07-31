@@ -19,6 +19,26 @@ export type PaymentDueDateFields = {
   dueDate?: string | null;
 };
 
+export type PaymentChannel = "manual" | "stripe";
+
+export type PaymentChannelFields = {
+  payment_request_sent_at?: string | null;
+  payment_request_token?: string | null;
+  stripe_checkout_session_id?: string | null;
+};
+
+/** Offline/manual payments are inserted without Stripe checkout or payment-request tokens. */
+export function resolvePaymentChannel(payment: PaymentChannelFields): PaymentChannel {
+  if (
+    payment.stripe_checkout_session_id?.trim() ||
+    payment.payment_request_token?.trim() ||
+    payment.payment_request_sent_at?.trim()
+  ) {
+    return "stripe";
+  }
+  return "manual";
+}
+
 export function isPaymentRequestSent(payment: PaymentRequestSentFields): boolean {
   if ("payment_request_sent_at" in payment || "payment_request_token" in payment) {
     return Boolean(

@@ -14,6 +14,7 @@ import {
   Package,
   ScanSearch,
   Briefcase,
+  Calendar,
   Send,
   Settings,
   Star,
@@ -48,6 +49,7 @@ const NAV_ID_TO_KEY: Record<string, keyof Dictionary["student"]["nav"]> = {
   "university-search": "universitySearch",
   scholarships: "scholarships",
   internships: "internships",
+  events: "events",
   "advisor-sessions": "advisorSessions",
   ambassadors: "ambassadors",
   "application-support": "applicationSupport",
@@ -90,6 +92,8 @@ function StudentNavIcon({
       return <Star {...common} />;
     case "internships":
       return <Briefcase {...common} />;
+    case "events":
+      return <Calendar {...common} />;
     case "advisor-sessions":
       return <UserRound {...common} />;
     case "ambassadors":
@@ -136,6 +140,9 @@ function isSidebarNavLinkActive(
     return true;
   }
   if (item.id === "webinars" && h === "/student/webinars" && n.startsWith(`${h}/`)) {
+    return true;
+  }
+  if (item.id === "events" && h === "/student/events" && n.startsWith(`${h}/`)) {
     return true;
   }
   return false;

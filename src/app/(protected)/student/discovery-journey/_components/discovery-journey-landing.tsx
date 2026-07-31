@@ -12,6 +12,7 @@ import {
   type DiscoveryModulesResponse,
 } from "../_lib/discovery-journey-api";
 import { getModuleTheme } from "../_lib/discovery-journey-theme";
+import { StudentSpinner } from "../../_components/student-spinner";
 import { DiscoveryTopBar } from "./discovery-top-bar";
 import { ModuleIcon } from "./module-icon";
 import styles from "./discovery-journey.module.css";
@@ -176,7 +177,10 @@ export function DiscoveryJourneyLanding() {
     return (
       <div className={styles.page}>
         {topBar}
-        <div className={styles.loadingState}>{t.loading}</div>
+        <div className={styles.loadingState} role="status">
+          <StudentSpinner />
+          <span className="sr-only">{t.loading}</span>
+        </div>
       </div>
     );
   }

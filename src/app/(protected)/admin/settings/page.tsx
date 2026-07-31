@@ -7,7 +7,6 @@ export default async function AdminSettingsPage() {
   return (
     <AdminSettingsClient
       settings={data.settings}
-      plans={data.plans}
       admins={data.admins}
       rolePermissions={data.rolePermissions}
     />

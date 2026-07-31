@@ -4,7 +4,8 @@ export type ImportProgressPhase =
   | "university_programs"
   | "scholarships"
   | "destinations"
-  | "internships";
+  | "internships"
+  | "events";
 
 export type ImportProgressPayload = {
   current: number;
@@ -20,6 +21,7 @@ const PHASE_LABELS: Record<ImportProgressPhase, string> = {
   scholarships: "Saving scholarships",
   destinations: "Syncing destinations",
   internships: "Saving internships",
+  events: "Saving events",
 };
 
 /** Progress is per Excel data row (not multiplied by internal import phases). */

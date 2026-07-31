@@ -6,6 +6,8 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { format } from "date-fns";
 import { useEffect } from "react";
 
+import { StudentSpinner } from "../../_components/student-spinner";
+
 type PostAdmissionCalendlyModalProps = {
   open: boolean;
   onClose: () => void;
@@ -121,8 +123,12 @@ export function PostAdmissionCalendlyModal({
               className="pas-calendly-modal-embed"
             />
           ) : (
-            <div className="pas-calendly-modal-loading">
-              <p className="text-sm text-(--text-hint)">{modalCopy.loading}</p>
+            <div
+              className="pas-calendly-modal-loading"
+              role="status"
+            >
+              <StudentSpinner size="sm" />
+              <span className="sr-only">{modalCopy.loading}</span>
             </div>
           )}
         </div>

@@ -14,6 +14,14 @@ import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
+import {
+  buildAiDailyLimitExceededPayload,
+  checkStudentAiDailyLimit,
+} from "@/lib/student-ai-daily-limit";
+import {
+  buildFunnelOverallLimitExceededPayload,
+  checkFunnelOverallEssayReviewLimit,
+} from "@/lib/student-ai-funnel-overall-limit";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 const fallbackModel = "gpt-4.1-mini";
@@ -169,6 +177,18 @@ export async function POST(request: Request) {
   const featureEnabled = await isPlatformFeatureEnabledByKey("essay_review");
   if (!featureEnabled) {
     return NextResponse.json({ error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE }, { status: 403 });
+  }
+
+  const limitCheck = await checkStudentAiDailyLimit(auth.studentId, "essay_review");
+  if (!limitCheck.allowed) {
+    return NextResponse.json(buildAiDailyLimitExceededPayload(limitCheck), { status: 429 });
+  }
+
+  const funnelOverallCheck = await checkFunnelOverallEssayReviewLimit(auth.studentId, auth);
+  if (!funnelOverallCheck.allowed) {
+    return NextResponse.json(buildFunnelOverallLimitExceededPayload(funnelOverallCheck), {
+      status: 429,
+    });
   }
 
   const { studentId } = auth;

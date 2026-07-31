@@ -7,6 +7,7 @@ export const STUDENT_FEATURE_KEYS = [
   "universities",
   "scholarships",
   "internships",
+  "events",
   "essay_review",
   "advisor_sessions",
   "ambassadors",
@@ -25,7 +26,9 @@ export type StudentFeatureAccess = Record<StudentFeatureKey, boolean>;
  */
 export const FUNNEL_DEFAULT_DISABLED_FEATURES = [
   "internships",
+  "events",
   "essay_review",
+  "application_support",
 ] as const satisfies readonly StudentFeatureKey[];
 
 export const STUDENT_FEATURE_LABELS: Record<StudentFeatureKey, string> = {
@@ -34,6 +37,7 @@ export const STUDENT_FEATURE_LABELS: Record<StudentFeatureKey, string> = {
   universities: "Discover Universities",
   scholarships: "Scholarships",
   internships: "Internships",
+  events: "Events",
   essay_review: "Essay Review",
   advisor_sessions: "1:1 Advisor",
   ambassadors: "Ambassadors",
@@ -48,6 +52,7 @@ export const NAV_ID_TO_FEATURE: Partial<Record<string, StudentFeatureKey>> = {
   "university-search": "universities",
   scholarships: "scholarships",
   internships: "internships",
+  events: "events",
   "advisor-sessions": "advisor_sessions",
   ambassadors: "ambassadors",
   "application-support": "application_support",
@@ -62,6 +67,7 @@ export const QUICK_ACTION_TO_FEATURE: Record<string, StudentFeatureKey> = {
   essayReview: "essay_review",
   scholarships: "scholarships",
   internships: "internships",
+  events: "events",
   advisorSessions: "advisor_sessions",
   ambassadors: "ambassadors",
   applicationSupport: "application_support",
@@ -80,6 +86,7 @@ export const FEATURE_TO_QUICK_ACTION_DICT_KEY: Record<
   universities: "discoverUniversities",
   scholarships: "scholarships",
   internships: "internships",
+  events: "events",
   essay_review: "essayReview",
   advisor_sessions: "advisorSessions",
   ambassadors: "ambassadors",
@@ -99,6 +106,7 @@ export const FEATURE_ROUTE_PREFIXES: {
   { prefix: "/student/ai-matching", feature: "universities" },
   { prefix: "/student/scholarships", feature: "scholarships" },
   { prefix: "/student/internships", feature: "internships" },
+  { prefix: "/student/events", feature: "events" },
   { prefix: "/student/essay-review", feature: "essay_review" },
   { prefix: "/student/advisor-sessions", feature: "advisor_sessions" },
   { prefix: "/student/ambassadors", feature: "ambassadors" },
@@ -116,6 +124,7 @@ export function defaultStudentFeatureAccess(
     universities: enabled,
     scholarships: enabled,
     internships: enabled,
+    events: enabled,
     essay_review: enabled,
     advisor_sessions: enabled,
     ambassadors: enabled,
@@ -165,6 +174,16 @@ export function getDisabledStudentFeatures(
 ): StudentFeatureKey[] {
   return STUDENT_FEATURE_KEYS.filter((key) => !isStudentFeatureEnabled(access, key));
 }
+
+export function countEnabledStudentFeatures(
+  access: StudentFeatureAccess,
+): number {
+  return STUDENT_FEATURE_KEYS.filter((key) =>
+    isStudentFeatureEnabled(access, key),
+  ).length;
+}
+
+export const STUDENT_FEATURE_COUNT = STUDENT_FEATURE_KEYS.length;
 
 export function featureForStudentPath(
   pathname: string,

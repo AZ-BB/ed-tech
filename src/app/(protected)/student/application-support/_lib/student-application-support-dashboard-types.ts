@@ -27,17 +27,10 @@ export type StudentApplicationSupportIntake = {
   universities: string[];
 };
 
-export type StudentApplicationSupportPlan = {
-  name: string;
-  description: string | null;
-  price: number;
-  universitiesCount: number;
-};
-
 export type StudentApplicationSupportDashboardPayload = {
   studentId: string;
   application: StudentApplicationSupportIntake;
-  plan: StudentApplicationSupportPlan | null;
+  totalPaidAed: number;
   universitiesTotal: number;
   universityTargets: ApplicationUniversityTargetRow[];
   documents: DocRow[];

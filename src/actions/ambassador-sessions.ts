@@ -9,6 +9,9 @@ import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
+import { validateAmbassadorBookingIso } from "@/lib/ambassador-booking-time";
+import { isResendConfigured } from "@/lib/resend/config";
+import { sendAmbassadorSessionRequestStudentEmail } from "@/lib/resend/ambassador-session-request-student-email";
 import { requiresFunnelSubscription } from "@/lib/student-subscription";
 
 function uuidLike(value: string): boolean {
@@ -106,12 +109,6 @@ function parseRequiredIso(label: string, value: string): { ok: true; iso: string
   return { ok: true, iso: d.toISOString() };
 }
 
-function parseOptionalIso(value: string | null | undefined): string | null {
-  const t = value?.trim() ?? "";
-  if (!t) return null;
-  const d = new Date(t);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
 
 export async function createAmbassadorSessionRequest(
   input: CreateAmbassadorSessionInput,
@@ -128,8 +125,28 @@ export async function createAmbassadorSessionRequest(
 
   const p1 = parseRequiredIso("Preferred time 1", input.prefTime1Iso);
   if (!p1.ok) return p1;
-  const p2 = parseOptionalIso(input.prefTime2Iso);
-  const p3 = parseOptionalIso(input.prefTime3Iso);
+  const v1 = validateAmbassadorBookingIso(p1.iso, "Preferred time 1");
+  if (!v1.ok) return v1;
+
+  const p2Raw = input.prefTime2Iso?.trim() ?? "";
+  let p2: string | null = null;
+  if (p2Raw) {
+    const parsed2 = parseRequiredIso("Preferred time 2", p2Raw);
+    if (!parsed2.ok) return parsed2;
+    const v2 = validateAmbassadorBookingIso(parsed2.iso, "Preferred time 2");
+    if (!v2.ok) return v2;
+    p2 = v2.iso;
+  }
+
+  const p3Raw = input.prefTime3Iso?.trim() ?? "";
+  let p3: string | null = null;
+  if (p3Raw) {
+    const parsed3 = parseRequiredIso("Preferred time 3", p3Raw);
+    if (!parsed3.ok) return parsed3;
+    const v3 = validateAmbassadorBookingIso(parsed3.iso, "Preferred time 3");
+    if (!v3.ok) return v3;
+    p3 = v3.iso;
+  }
   const discussionTopics = input.discussionTopics?.trim() ?? "";
   if (!discussionTopics) {
     return { ok: false, error: "Please describe what you would like to discuss." };
@@ -202,7 +219,7 @@ export async function createAmbassadorSessionRequest(
     student_name: studentName,
     student_email: studentEmail,
     student_phone: studentPhone,
-    pref_time_1: p1.iso,
+    pref_time_1: v1.iso,
     pref_time_2: p2,
     pref_time_3: p3,
     discussion_topics: discussionTopics,
@@ -265,6 +282,26 @@ export async function createAmbassadorSessionRequest(
     actor.studentId,
     STUDENT_PLATFORM_COMPLETION_FLAGS.viewed_ambassadors,
   ).catch(() => {});
+
+  if (isResendConfigured()) {
+    const emailResult = await sendAmbassadorSessionRequestStudentEmail({
+      to: studentEmail,
+      studentName,
+      studentEmail,
+      studentPhone,
+      ambassadorName: `${amb.first_name} ${amb.last_name}`.trim(),
+      prefTime1Iso: v1.iso,
+      prefTime2Iso: p2,
+      prefTime3Iso: p3,
+      discussionTopics,
+    });
+    if ("error" in emailResult) {
+      console.error(
+        "[ambassador_session_requests] confirmation email:",
+        emailResult.error,
+      );
+    }
+  }
 
   return { ok: true };
 }

@@ -7,6 +7,7 @@ import type { ContentTabCounts } from "../_data/content-tabs-data";
 import {
   contentTabs,
   getContentTabFromPath,
+  isAdminEventDetailPath,
   isAdminInternshipDetailPath,
   isAdminProgramDiscoveryDetailPath,
   isAdminScholarshipDetailPath,
@@ -26,6 +27,7 @@ export function ContentTabsNav({ counts }: ContentTabsNavProps) {
     isAdminUniversityDetailPath(pathname) ||
     isAdminScholarshipDetailPath(pathname) ||
     isAdminInternshipDetailPath(pathname) ||
+    isAdminEventDetailPath(pathname) ||
     isAdminProgramDiscoveryDetailPath(pathname) ||
     isAdminWebinarDetailPath(pathname)
   ) {

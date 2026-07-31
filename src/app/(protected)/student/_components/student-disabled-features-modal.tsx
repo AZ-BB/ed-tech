@@ -71,7 +71,7 @@ export function StudentDisabledFeaturesModal({
   );
   const modalItems = copy.items as Record<
     QuickActionDictKey,
-    { title: string; description: string }
+    { title: string; description: string; benefits?: string[] }
   >;
   const [activeFeature, setActiveFeature] = useState<StudentFeatureKey | null>(
     null,
@@ -134,6 +134,7 @@ export function StudentDisabledFeaturesModal({
             const dictKey =
               FEATURE_TO_QUICK_ACTION_DICT_KEY[featureKey] as QuickActionDictKey;
             const item = modalItems[dictKey];
+            const tabLabel = dict.student.dashboard.quickActionsItems[dictKey].name;
             const isActive = activeFeature === featureKey;
 
             return (
@@ -155,7 +156,7 @@ export function StudentDisabledFeaturesModal({
                     isActive ? "text-[var(--green-dark)]" : "text-[var(--text-mid)]"
                   }`}
                 >
-                  {item.title}
+                  {tabLabel}
                 </span>
               </button>
             );
@@ -170,9 +171,37 @@ export function StudentDisabledFeaturesModal({
           <h3 className="font-[family-name:var(--font-dm-serif)] text-[22px] leading-tight text-[var(--text)]">
             {activeItem.title}
           </h3>
-          <p className="mt-4 flex-1 text-[15px] leading-[1.75] text-[var(--text-light)]">
+          <p className="mt-4 text-[15px] leading-[1.75] text-[var(--text-light)]">
             {activeItem.description}
           </p>
+
+          {activeItem.benefits?.length ? (
+            <ul className="mt-5 flex flex-1 list-none flex-col gap-2.5 p-0">
+              {activeItem.benefits.map((benefit) => (
+                <li
+                  key={benefit}
+                  className="flex items-start gap-2.5 text-[13px] leading-snug text-[var(--text-mid)]"
+                >
+                  <span className="mt-px flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)]">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#2D6A4F"
+                      strokeWidth="3"
+                      aria-hidden
+                    >
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  </span>
+                  {benefit}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="flex-1" />
+          )}
 
           {disabledFeatures.length > 1 ? (
             <div className="mt-6 flex items-center gap-2 border-t border-[var(--border-light)] pt-4">

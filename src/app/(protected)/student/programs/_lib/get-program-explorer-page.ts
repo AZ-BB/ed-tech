@@ -11,6 +11,7 @@ import {
   programRowToDiscoveryProgram,
   type DiscoveryProgram,
 } from "./program-row-to-program";
+import { withValidProgramVideos } from "./with-valid-program-videos";
 
 export type ProgramExplorerPageData = {
   programs: DiscoveryProgram[];
@@ -97,7 +98,9 @@ export async function getProgramDetailBySlug(
   }
 
   if (!data) return null;
-  return programRowToDiscoveryProgram(data as ProgramsDiscoveryRow);
+  return withValidProgramVideos(
+    programRowToDiscoveryProgram(data as ProgramsDiscoveryRow),
+  );
 }
 
 export type RelatedProgramSummary = {

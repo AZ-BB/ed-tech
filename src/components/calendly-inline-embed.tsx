@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { StudentSpinner } from "@/app/(protected)/student/_components/student-spinner";
+
 export type CalendlyPrefill = {
   name?: string;
   email?: string;
@@ -44,8 +46,12 @@ export function CalendlyInlineEmbed({
 
   if (!iframeSrc) {
     return (
-      <div className="flex min-h-[780px] w-full items-center justify-center bg-white">
-        <p className="text-sm text-[var(--text-hint)]">Loading calendar…</p>
+      <div
+        role="status"
+        className="flex min-h-[780px] w-full items-center justify-center bg-white"
+      >
+        <StudentSpinner />
+        <span className="sr-only">Loading calendar…</span>
       </div>
     );
   }

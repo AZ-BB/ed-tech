@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { StudentSpinner } from "../_components/student-spinner";
 
 export default function InternshipsLoading() {
   return (
@@ -19,14 +19,12 @@ export default function InternshipsLoading() {
 
       <div className="mb-6 h-[88px] animate-pulse rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-[var(--sand)]" />
 
-      <div className="flex flex-col items-center gap-3 py-14">
-        <Loader2
-          className="size-8 animate-spin text-[var(--green)]"
-          aria-hidden
-        />
-        <p className="text-[13px] text-[var(--text-light)]">
-          Loading internships…
-        </p>
+      <div
+        role="status"
+        className="flex flex-col items-center gap-3 py-14"
+      >
+        <StudentSpinner />
+        <span className="sr-only">Loading internships…</span>
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-3.5 md:grid-cols-2">

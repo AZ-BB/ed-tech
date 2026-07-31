@@ -31,10 +31,11 @@ export function StudentSubscriptionModal({
     return item;
   }, [featureKey, featureItems]);
 
-  const title = featureCopy
-    ? copy.modalTitleForFeature.replace("{feature}", featureCopy.title)
-    : copy.modalTitle;
+  const title = featureCopy?.title ?? copy.modalTitle;
   const body = featureCopy?.description ?? copy.modalBody;
+  const benefits = featureCopy?.benefits?.length
+    ? featureCopy.benefits
+    : copy.modalBenefits;
 
   useEffect(() => {
     if (!open) return;
@@ -119,7 +120,7 @@ export function StudentSubscriptionModal({
         </p>
 
         <ul className="mb-[22px] flex list-none flex-col gap-2.5 p-0">
-          {copy.modalBenefits.map((benefit) => (
+          {benefits.map((benefit) => (
             <li
               key={benefit}
               className="flex items-start gap-2.5 text-[13px] leading-snug text-[var(--text-mid)]"

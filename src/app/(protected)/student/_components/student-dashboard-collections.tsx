@@ -11,6 +11,7 @@ import {
 import { CountryFlag } from "@/components/country-flag";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { StudentSpinner } from "./student-spinner";
 
 const scrollRowClass =
   "flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--border)]";
@@ -37,9 +38,13 @@ function CollectionCardsRow({
 }) {
   if (loading) {
     return (
-      <p className="px-0.5 py-6 text-xs text-[var(--text-hint)]">
-        {loadingLabel}
-      </p>
+      <div
+        role="status"
+        className="flex items-center justify-center px-0.5 py-6"
+      >
+        <StudentSpinner size="sm" />
+        <span className="sr-only">{loadingLabel}</span>
+      </div>
     );
   }
   if (items.length === 0) {

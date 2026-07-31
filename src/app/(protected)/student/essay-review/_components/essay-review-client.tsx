@@ -1,6 +1,16 @@
 "use client";
 
+import { useStudentFeatureGate } from "@/app/(protected)/student/_components/student-feature-gate-provider";
 import { useLocale } from "@/lib/i18n/locale-context";
+import {
+  dailyLimitStatusFromApiPayload,
+  isAiDailyLimitExceededResponse,
+  type StudentAiDailyLimitStatus,
+} from "@/lib/student-ai-daily-limit";
+import {
+  funnelOverallLimitStatusFromApiPayload,
+  isFunnelOverallLimitExceededResponse,
+} from "@/lib/student-ai-funnel-overall-limit";
 import { useCallback, useMemo, useState } from "react";
 import { downloadEssayReviewReportPdf } from "../_lib/build-essay-review-report-pdf";
 import type { EssayReviewFeedback } from "../_lib/essay-review-types";
@@ -17,9 +27,16 @@ function ratingBadgeClass(rating: string) {
   return "bg-[#FCEBEB] text-[#C0392B]";
 }
 
-export function EssayReviewClient() {
+export function EssayReviewClient({
+  dailyLimitStatus,
+  funnelOverallLimitStatus,
+}: {
+  dailyLimitStatus: StudentAiDailyLimitStatus;
+  funnelOverallLimitStatus: StudentAiDailyLimitStatus;
+}) {
   const { dict } = useLocale();
   const t = dict.student.essayReview;
+  const { guardAiDailyLimitAction, openAiDailyLimitModal } = useStudentFeatureGate();
   const [essayPrompt, setEssayPrompt] = useState("");
   const [university, setUniversity] = useState("");
   const [essayText, setEssayText] = useState("");
@@ -39,6 +56,12 @@ export function EssayReviewClient() {
       showError(t.minWordsError);
       return;
     }
+    if (!guardAiDailyLimitAction("essay_review", funnelOverallLimitStatus, "funnel_overall")) {
+      return;
+    }
+    if (!guardAiDailyLimitAction("essay_review", dailyLimitStatus, "daily")) {
+      return;
+    }
     setError(null);
     setLoading(true);
     setFeedback(null);
@@ -52,8 +75,24 @@ export function EssayReviewClient() {
           university: university.trim(),
         }),
       });
-      const data = (await res.json()) as { error?: string } & Partial<EssayReviewFeedback>;
+      const data = (await res.json()) as { error?: string; code?: string } & Partial<EssayReviewFeedback>;
       if (!res.ok) {
+        if (res.status === 429 && isFunnelOverallLimitExceededResponse(data)) {
+          openAiDailyLimitModal({
+            featureKey: "essay_review",
+            status: funnelOverallLimitStatusFromApiPayload(data),
+            limitKind: "funnel_overall",
+          });
+          return;
+        }
+        if (res.status === 429 && isAiDailyLimitExceededResponse(data)) {
+          openAiDailyLimitModal({
+            featureKey: "essay_review",
+            status: dailyLimitStatusFromApiPayload(data),
+            limitKind: "daily",
+          });
+          return;
+        }
         showError(typeof data.error === "string" ? data.error : t.somethingWrong);
         return;
       }
@@ -69,7 +108,18 @@ export function EssayReviewClient() {
     } finally {
       setLoading(false);
     }
-  }, [essayPrompt, essayText, university, wc, showError, t]);
+  }, [
+    essayPrompt,
+    essayText,
+    university,
+    wc,
+    showError,
+    t,
+    dailyLimitStatus,
+    funnelOverallLimitStatus,
+    guardAiDailyLimitAction,
+    openAiDailyLimitModal,
+  ]);
 
   const runAgain = useCallback(() => {
     setFeedback(null);

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { StudentDiscoveryProfileResponse } from "@/types/discovery";
 import { fetchDiscoveryProfile } from "../_lib/discovery-journey-api";
+import { StudentSpinner } from "../../_components/student-spinner";
 import { DiscoveryTestHeader } from "./discovery-top-bar";
 import styles from "./discovery-journey.module.css";
 
@@ -67,7 +68,10 @@ export function DiscoveryJourneyProfile() {
     return (
       <div className={styles.profilePage}>
         <DiscoveryTestHeader backLabel={t.backToJourney} />
-        <div className={styles.loadingState}>{t.loading}</div>
+        <div className={styles.loadingState} role="status">
+          <StudentSpinner />
+          <span className="sr-only">{t.loading}</span>
+        </div>
       </div>
     );
   }

@@ -53,8 +53,8 @@ export function WebinarDetailClient({ initialWebinar, mode = "student" }: Webina
       </Link>
 
       <WebinarHero
-        featuredWebinar={webinar}
-        onRegisterFeatured={openRegistration}
+        featuredWebinar={webinar.isPast ? null : webinar}
+        onRegisterFeatured={webinar.isPast ? undefined : openRegistration}
         primaryCtaHref="#webinar-detail"
         primaryCtaLabel={w.viewSessionDetails}
       />

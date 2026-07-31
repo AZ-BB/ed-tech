@@ -13,6 +13,10 @@ import {
   isPlatformFeatureEnabledByKey,
   PLATFORM_FEATURE_UNAVAILABLE_MESSAGE,
 } from "@/lib/platform-settings";
+import {
+  buildAiDailyLimitExceededPayload,
+  checkStudentAiDailyLimit,
+} from "@/lib/student-ai-daily-limit";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 export type StudentMatchingPayload = {
@@ -60,7 +64,8 @@ type MatchResponse = {
   matches: UniversityMatch[];
 };
 
-const fallbackModel = "gpt-4.1-mini";
+const UNIVERSITY_MATCHING_MODEL = "gpt-5.6-luna";
+const REQUIRED_MATCH_COUNT = 5;
 
 /** Strict JSON schema for OpenAI Structured Outputs — avoids malformed LLM JSON (e.g. Arabic text). */
 const UNIVERSITY_MATCHING_RESPONSE_FORMAT = {
@@ -77,6 +82,8 @@ const UNIVERSITY_MATCHING_RESPONSE_FORMAT = {
       },
       matches: {
         type: "array",
+        minItems: REQUIRED_MATCH_COUNT,
+        maxItems: REQUIRED_MATCH_COUNT,
         items: {
           type: "object",
           properties: {
@@ -264,6 +271,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: PLATFORM_FEATURE_UNAVAILABLE_MESSAGE }, { status: 403 });
   }
 
+  const limitCheck = await checkStudentAiDailyLimit(auth.studentId, "matching");
+  if (!limitCheck.allowed) {
+    return NextResponse.json(buildAiDailyLimitExceededPayload(limitCheck), { status: 429 });
+  }
+
   const { studentId } = auth;
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -277,7 +289,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const model = process.env.OPENAI_MODEL ?? fallbackModel;
+  const model = UNIVERSITY_MATCHING_MODEL;
 
   let raw: unknown;
   try {
@@ -300,41 +312,62 @@ export async function POST(request: Request) {
   }
 
   const prompt = `
-You are Univeera's university matching advisor. Recommend universities using reasoning and retrieval over your knowledge (web search when available). Do not call external databases owned by this app — your recommendations come entirely from the model.
+You are Univeera's university matching advisor — an experienced counselor helping international students build a realistic, personalized shortlist. Use your knowledge and web search (when available) to recommend real universities and programs. Do not rely on any app-owned database; every recommendation must come from your own reasoning and retrieval.
+
+Your goal: give this student exactly ${REQUIRED_MATCH_COUNT} universities they can actually explore next — not a generic popularity list.
 ${responseLanguageInstructions(payload.locale)}
 
-Student profile (complete questionnaire):
+## Student profile (complete questionnaire)
 ${JSON.stringify(payload, null, 2)}
 
-Return exactly valid JSON with this shape:
+## How to choose the ${REQUIRED_MATCH_COUNT} matches (follow in order)
+
+1. **Anchor on destination and degree** — Respect primaryStudyDestination, degreeLevel, and intendedMajor first. Do not recommend universities in countries the student did not choose unless budget or academic fit makes a nearby alternative clearly better (explain in considerations if so).
+
+2. **Weight academics honestly** — Use academicSystem, predictedScore, testsTaken, and testScoreNotes to judge admissionFit:
+   - **Likely**: profile clearly meets or exceeds typical published expectations for that program.
+   - **Target**: realistic with strong application; some uncertainty.
+   - **Reach**: aspirational but still plausible given ambition and scores — not fantasy picks.
+   Include at least one Likely, at least one Target, and at least one Reach across the ${REQUIRED_MATCH_COUNT} (adjust if the student's scores are uniformly very high or very limited).
+
+3. **Respect budget and lifestyle** — Filter by budgetBand, campusEnvironment, mattersMost, excites, and outsideActivities. A great academic match that ignores budget or campus preference is a bad match.
+
+4. **Connect to long-term goals** — Tie recommendations to goalAfterUniversity, workLocationPreference, and academicAmbition. Explain how each university supports that path.
+
+5. **Ensure diversity across the shortlist** — The ${REQUIRED_MATCH_COUNT} universities should not be five near-duplicates (same city, same tier, same teaching style). Vary geography within the chosen destination when possible, and mix program angles that still fit the major.
+
+6. **Cite the student's answers** — Every whyItMatches bullet must reference a specific answer from the profile (grades, tests, interests, goals, budget, etc.). Never use vague lines like "this fits your profile" without naming what fits.
+
+7. **Be truthful about gaps** — In considerations, flag what the student must verify: language requirements, portfolio/audition, visa rules, scholarship availability, or score cutoffs. Do not invent exact deadlines or guaranteed funding.
+
+## Output JSON shape
 {
-  "profileSummary": "2 sentence summary of how this student's profile should guide university choice",
-  "recommendedStrategy": ["3 concise strategy bullets for applications"],
+  "profileSummary": "2–3 sentences on how this student's academics, goals, and preferences should guide their university search — mention at least 3 distinct profile areas",
+  "recommendedStrategy": ["Exactly 3 concise, actionable strategy bullets for their application journey"],
   "matches": [
     {
       "universityName": "Official university name",
-      "programName": "Relevant program or faculty",
+      "programName": "Specific program, faculty, or degree title",
       "city": "City",
       "country": "Country",
       "tuitionEstimate": "Annual estimate with currency, or 'Check official page'",
       "admissionFit": "Reach" | "Target" | "Likely",
-      "whyItMatches": ["4 or 5 concrete bullets tied to this student's answers; never fewer than 4"],
+      "whyItMatches": ["Exactly 4 or 5 concrete bullets tied to this student's answers"],
       "considerations": "One honest risk, tradeoff, or requirement to verify",
-      "nextSteps": ["2 practical next actions"],
+      "nextSteps": ["Exactly 2 practical next actions for this university"],
       "sourceUrl": "Official university or program URL"
     }
   ]
 }
 
-Rules:
-- Recommend 5 to 7 universities aligned with destination preferences, budget band, academics, lifestyle, and goals.
-- For each match, whyItMatches must be an array of at least 4 and at most 5 strings (each one sentence when possible).
+## Hard rules
+- Return exactly ${REQUIRED_MATCH_COUNT} matches — no fewer, no more. Each must be a distinct university (no duplicate universityName).
+- whyItMatches: 4–5 strings per match; one sentence each when possible; each bullet must tie to a different aspect of the student's profile where possible.
 - Prefer official university or admissions pages for sourceUrl.
-- Do not include matchScore, numeric fit scores, or any other scoring field; the product does not display scores.
+- Do not include matchScore, numeric fit scores, rankings, or any other scoring field.
 - Do not include markdown, comments, or text outside JSON.
-- Escape any double quotes inside string values with a backslash.
-- Do not invent exact deadlines or scholarship guarantees; say what must be verified on official sites.
-- Keep each whyItMatches bullet to one sentence when possible so the full response fits.
+- Escape double quotes inside string values with a backslash.
+- Keep responses concise enough to fit structured output limits.
 `;
 
   try {
@@ -389,10 +422,30 @@ Rules:
       );
     }
 
+    const rawMatches = parsed.matches ?? [];
+    if (rawMatches.length !== REQUIRED_MATCH_COUNT) {
+      return NextResponse.json(
+        {
+          error: `The AI must recommend exactly ${REQUIRED_MATCH_COUNT} universities. Please try again.`,
+        },
+        { status: 502 },
+      );
+    }
+
+    const universityNames = rawMatches.map((m) =>
+      String((m as UniversityMatch).universityName ?? "").trim().toLowerCase(),
+    );
+    if (new Set(universityNames).size !== REQUIRED_MATCH_COUNT) {
+      return NextResponse.json(
+        { error: "The AI must recommend distinct universities. Please try again." },
+        { status: 502 },
+      );
+    }
+
     const matches: MatchResponse = {
       profileSummary: parsed.profileSummary,
       recommendedStrategy: parsed.recommendedStrategy ?? [],
-      matches: (parsed.matches ?? []).map((m) => {
+      matches: rawMatches.map((m) => {
         const {
           universityName,
           programName,

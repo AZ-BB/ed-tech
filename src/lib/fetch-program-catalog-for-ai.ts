@@ -11,6 +11,7 @@ export type ProgramCatalogEntry = {
   tags: string[];
   demand_level: string | null;
   salary_potential: string | null;
+  characteristic_ids: string[];
 };
 
 export type ProgramEnrichmentEntry = ProgramCatalogEntry & {
@@ -22,7 +23,7 @@ export async function fetchProgramCatalogForAi(): Promise<ProgramCatalogEntry[]>
   const { data, error } = await supabase
     .from("programs_discovery")
     .select(
-      "slug, title, category, short_description, tags, demand_level, salary_potential",
+      "slug, title, category, short_description, tags, demand_level, salary_potential, characteristic_ids",
     )
     .eq("active", true)
     .order("featured", { ascending: false })
@@ -41,6 +42,7 @@ export async function fetchProgramCatalogForAi(): Promise<ProgramCatalogEntry[]>
     tags: row.tags ?? [],
     demand_level: row.demand_level,
     salary_potential: row.salary_potential,
+    characteristic_ids: row.characteristic_ids ?? [],
   }));
 }
 

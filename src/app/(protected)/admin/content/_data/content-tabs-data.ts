@@ -7,6 +7,7 @@ export const ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME = `${ADMIN_INTERNSHIPS_HOME}
 export const ADMIN_ANNOUNCEMENTS_HOME = `${ADMIN_CONTENT_HOME}/announcements`;
 export const ADMIN_NEWS_HOME = `${ADMIN_CONTENT_HOME}/news`;
 export const ADMIN_WEBINARS_HOME = `${ADMIN_CONTENT_HOME}/webinars`;
+export const ADMIN_EVENTS_HOME = `${ADMIN_CONTENT_HOME}/events`;
 export const ADMIN_STUDENT_STORIES_HOME = `${ADMIN_CONTENT_HOME}/student-stories`;
 export const ADMIN_DISCOVERY_JOURNEY_HOME = `${ADMIN_CONTENT_HOME}/discovery-journey`;
 
@@ -20,6 +21,7 @@ export type ContentTabId =
   | "announcements"
   | "news"
   | "webinars"
+  | "events"
   | "student-stories";
 
 export type ContentTabCounts = Record<
@@ -32,6 +34,7 @@ export type ContentTabCounts = Record<
   | "announcements"
   | "news"
   | "webinars"
+  | "events"
   | "student-stories",
   number
 >;
@@ -91,6 +94,12 @@ export const contentTabs: readonly ContentTab[] = [
     id: "webinars",
     label: "Webinars",
     href: ADMIN_WEBINARS_HOME,
+    showCount: true,
+  },
+  {
+    id: "events",
+    label: "Events",
+    href: ADMIN_EVENTS_HOME,
     showCount: true,
   },
   {
@@ -169,6 +178,16 @@ export function isAdminWebinarDetailPath(pathname: string): boolean {
   return /^\d+$/.test(id);
 }
 
+/** e.g. /admin/content/events/{uuid} — hide list chrome (tabs, header actions). */
+export function isAdminEventDetailPath(pathname: string): boolean {
+  const n = normalizePath(pathname);
+  const prefix = `${ADMIN_EVENTS_HOME}/`;
+  if (!n.startsWith(prefix)) return false;
+  const id = n.slice(prefix.length).split("/")[0];
+  if (!id || n.slice(prefix.length).includes("/")) return false;
+  return UUID_RE.test(id);
+}
+
 export function isAdminContentListPath(pathname: string): boolean {
   const n = normalizePath(pathname);
   return (
@@ -182,12 +201,14 @@ export function isAdminContentListPath(pathname: string): boolean {
       n === ADMIN_ANNOUNCEMENTS_HOME ||
       n === ADMIN_NEWS_HOME ||
       n === ADMIN_WEBINARS_HOME ||
+      n === ADMIN_EVENTS_HOME ||
       n === ADMIN_STUDENT_STORIES_HOME) &&
     !isAdminUniversityDetailPath(n) &&
     !isAdminScholarshipDetailPath(n) &&
     !isAdminInternshipDetailPath(n) &&
     !isAdminProgramDiscoveryDetailPath(n) &&
-    !isAdminWebinarDetailPath(n)
+    !isAdminWebinarDetailPath(n) &&
+    !isAdminEventDetailPath(n)
   );
 }
 

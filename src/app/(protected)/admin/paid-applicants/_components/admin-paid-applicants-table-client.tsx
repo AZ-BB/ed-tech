@@ -1,44 +1,43 @@
 "use client";
 
-import { sendApplicationPaymentRequest } from "@/actions/admin-application-payments";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-
-import type { AdminPlanOption } from "@/app/(protected)/admin/applications/_lib/fetch-admin-plan-options";
 import {
-  SendPaymentRequestDialog,
-  type SendPaymentRequestApplicationOption,
-} from "@/components/application-support/send-payment-request-dialog";
+  createAdminApplicationPaymentLink,
+  sendAdminLeadApplicationPaymentRequest,
+} from "@/actions/admin-application-payments";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import { format } from "date-fns";
+
+import {
+  LeadPaymentRequestDialog,
+  type LeadPaymentRequestApplicationOption,
+} from "@/components/application-support/lead-payment-request-dialog";
 import { Pagination } from "@/components/pagination";
-import type { ApplicationPlanCatalogRow } from "@/lib/applications-plans";
-import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
+import type {
+  LeadApplicationPaymentEmailInput,
+  LeadApplicationPaymentLinkInput,
+} from "@/lib/lead-application-payment-types";
 import type { AdminPaidApplicantTableRow } from "../_lib/fetch-admin-paid-applicants-page";
-import type { AdminSchoolOption } from "@/app/(protected)/admin/users/_lib/fetch-admin-school-options";
 
-const LIMIT_OPTIONS = [10, 20, 30, 50] as const;
+const LIMIT_OPTIONS = [10, 20, 50] as const;
 
-const SELECT_CHEVRON =
-  'url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%237a7a7a\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")';
-
-const filterSelectClass =
-  "min-w-[140px] cursor-pointer appearance-none rounded-[8px] border border-[#e0deda] bg-white bg-[length:10px_6px] bg-[position:right_8px_center] bg-no-repeat py-[7px] pl-[10px] pr-9 text-[12px] text-[#4a4a4a] outline-none transition-colors focus:border-[#40916C]";
-
-function formatPaidAt(iso: string | null): string {
+function formatPaidOn(iso: string | null): string {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    return format(d, "d MMM yyyy");
+  } catch {
+    return "—";
+  }
 }
 
-function formatAmount(amount: number): string {
-  return `${amount.toLocaleString()} AED`;
+function statusBadgeClass(label: "Active" | "Submitted"): string {
+  if (label === "Submitted") {
+    return "bg-[#dbeafe] text-[#1e40af]";
+  }
+  return "bg-[#E8F5EE] text-[#2D6A4F]";
 }
 
 export type AdminPaidApplicantsTableClientProps = {
@@ -46,16 +45,11 @@ export type AdminPaidApplicantsTableClientProps = {
   totalRows: number;
   page: number;
   limit: number;
-  q: string;
-  schoolId: string;
-  planId: string;
-  paymentRequestApplications: SendPaymentRequestApplicationOption[];
-  availablePlans: ApplicationPlanCatalogRow[];
+  search: string;
+  paymentRequestApplications: LeadPaymentRequestApplicationOption[];
   adminName: string;
   adminEmail: string;
   fromEmailDisplay: string;
-  schoolOptions: AdminSchoolOption[];
-  planOptions: AdminPlanOption[];
 };
 
 export function AdminPaidApplicantsTableClient({
@@ -63,41 +57,89 @@ export function AdminPaidApplicantsTableClient({
   totalRows,
   page,
   limit,
-  q,
-  schoolId,
-  planId,
+  search,
   paymentRequestApplications,
-  availablePlans,
   adminName,
   adminEmail,
   fromEmailDisplay,
-  schoolOptions,
-  planOptions,
 }: AdminPaidApplicantsTableClientProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [paymentRequestOpen, setPaymentRequestOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(search);
+  const [requestPaymentOpen, setRequestPaymentOpen] = useState(false);
   const [requestPaymentError, setRequestPaymentError] = useState<string | null>(null);
   const [requestPaymentMessage, setRequestPaymentMessage] = useState<string | null>(null);
-  const filtersActive =
-    q.trim().length > 0 || schoolId !== "" || planId !== "";
+  const [generatedPayUrl, setGeneratedPayUrl] = useState<string | null>(null);
+
   const hasPaymentTargets = paymentRequestApplications.length > 0;
+
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  const applySearch = useCallback(
+    (value: string) => {
+      startTransition(() => {
+        const next = new URLSearchParams(searchParams.toString());
+        const trimmed = value.trim();
+        if (trimmed) {
+          next.set("search", trimmed);
+        } else {
+          next.delete("search");
+        }
+        next.set("page", "1");
+        router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+      });
+    },
+    [pathname, router, searchParams],
+  );
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      if (searchInput.trim() === search.trim()) return;
+      applySearch(searchInput);
+    }, 300);
+
+    return () => window.clearTimeout(handle);
+  }, [searchInput, search, applySearch]);
+
+  const countLabel =
+    totalRows === 1 ? "1 paying applicant" : `${totalRows} paying applicants`;
 
   function handleOpenRequestPayment() {
     setRequestPaymentError(null);
-    setPaymentRequestOpen(true);
+    setGeneratedPayUrl(null);
+    setRequestPaymentOpen(true);
   }
 
-  function handleSendPaymentRequest(input: SendPaymentRequestInput) {
+  function handleGeneratePaymentLink(input: LeadApplicationPaymentLinkInput) {
     setRequestPaymentError(null);
     startTransition(async () => {
-      const result = await sendApplicationPaymentRequest(input);
+      const result = await createAdminApplicationPaymentLink(input);
       if (!result.ok) {
         setRequestPaymentError(result.error);
         return;
       }
-      setPaymentRequestOpen(false);
+      setGeneratedPayUrl(result.payUrl);
+      setRequestPaymentMessage(
+        `Payment link generated for ${input.amountAed.toLocaleString()} AED.`,
+      );
+      router.refresh();
+    });
+  }
+
+  function handleSendLeadApplicationPayment(input: LeadApplicationPaymentEmailInput) {
+    setRequestPaymentError(null);
+    startTransition(async () => {
+      const result = await sendAdminLeadApplicationPaymentRequest(input);
+      if (!result.ok) {
+        setRequestPaymentError(result.error);
+        return;
+      }
+      setRequestPaymentOpen(false);
+      setGeneratedPayUrl(null);
       setRequestPaymentMessage(
         `Payment request for ${input.amountAed.toLocaleString()} AED sent to ${result.email}.`,
       );
@@ -121,123 +163,67 @@ export function AdminPaidApplicantsTableClient({
       ) : null}
 
       {requestPaymentMessage ? (
-        <p className="mb-3 text-[12px] font-medium text-[#2D6A4F]">
-          {requestPaymentMessage}
-        </p>
+        <p className="mb-3 text-[12px] font-medium text-[#2D6A4F]">{requestPaymentMessage}</p>
       ) : null}
 
-      <div className="overflow-hidden rounded-[12px] border border-[#ece9e4] bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ece9e4] px-5 py-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <h2 className="text-[14px] font-bold text-[#1a1a1a]">Paid Applicants</h2>
-          <span className="text-[11px] text-[#a0a0a0]">
-            {totalRows.toLocaleString()} total
+      <div
+        className="overflow-hidden rounded-[14px] border border-[#ece9e4] bg-white"
+      >
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ece9e4] px-4 py-3.5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <svg
+              className="pointer-events-none absolute left-[10px] top-1/2 h-[13px] w-[13px] -translate-y-1/2 text-[#a0a0a0]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search paying applicants..."
+              className="w-[240px] max-w-full rounded-[8px] border-[1.5px] border-[#e0deda] bg-[#fafaf8] py-[7px] pl-8 pr-3 text-[12.5px] text-[#1a1a1a] outline-none transition-colors placeholder:text-[#a0a0a0] focus:border-[#40916C] focus:bg-white"
+            />
+          </div>
+          <span className="inline-flex rounded-full border border-[#ece9e4] bg-[#fafaf8] px-2.5 py-1 text-[11px] font-semibold text-[#4a4a4a]">
+            {countLabel}
           </span>
         </div>
-
-        <form
-          className="flex min-w-[220px] flex-1 flex-wrap items-center justify-end gap-2"
-          action={pathname}
-          method="get"
-        >
-            <input type="hidden" name="page" value="1" />
-            <input type="hidden" name="limit" value={String(limit)} />
-
-            <div className="relative w-full max-w-[220px]">
-              <svg
-                className="pointer-events-none absolute left-[10px] top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-[#a0a0a0]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-              <label htmlFor="admin-paid-applicants-search" className="sr-only">
-                Search students
-              </label>
-              <input
-                id="admin-paid-applicants-search"
-                key={`${q}-${schoolId}-${planId}`}
-                type="search"
-                name="q"
-                defaultValue={q}
-                placeholder="Search students..."
-                className="w-full rounded-[8px] border border-[#e0deda] bg-white py-[7px] pl-8 pr-3 text-[12px] text-[#1a1a1a] outline-none transition-colors placeholder:text-[#a0a0a0] focus:border-[#40916C]"
-              />
-            </div>
-
-            <select
-              name="school"
-              aria-label="Filter by school"
-              className={`${filterSelectClass} max-w-[220px]`}
-              style={{ backgroundImage: SELECT_CHEVRON }}
-              defaultValue={schoolId}
-            >
-              <option value="">All schools</option>
-              {schoolOptions.map((school) => (
-                <option key={school.id} value={school.id}>
-                  {school.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              name="package"
-              aria-label="Filter by package"
-              className={filterSelectClass}
-              style={{ backgroundImage: SELECT_CHEVRON }}
-              defaultValue={planId}
-            >
-              <option value="">All packages</option>
-              {planOptions.map((plan) => (
-                <option key={plan.id} value={String(plan.id)}>
-                  {plan.label}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="submit"
-              className="cursor-pointer rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
-            >
-              Apply
-            </button>
-        </form>
       </div>
 
-      <div className="overflow-x-auto px-5 pb-1 pt-1 [zoom:0.95]">
-        <table className="w-full border-collapse">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1040px] border-collapse text-[13px]">
           <thead>
-            <tr className="bg-[#fafaf8]">
-              {["Student", "School", "Package", "Paid amount", "Paid at"].map((heading) => (
-                <th
-                  key={heading}
-                  className="border-b border-[#ece9e4] px-4 py-[10px] text-left text-[10px] font-bold uppercase tracking-[0.8px] text-[#a0a0a0]"
-                >
-                  {heading}
-                </th>
-              ))}
+            <tr className="bg-[#fafaf8] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[#a0a0a0]">
+              <th className="px-4 py-3">Student</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Advisor</th>
+              <th className="px-4 py-3">Package purchased</th>
+              <th className="px-4 py-3">Amount paid</th>
+              <th className="px-4 py-3">Paid on</th>
+              <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
-                  className="px-4 py-10 text-center text-[13px] text-[#a0a0a0]"
+                  colSpan={7}
+                  className="px-4 py-10 text-center text-[#a0a0a0]"
                 >
-                  {filtersActive
-                    ? "No paid applicants match your filters."
-                    : "No paid applicants yet."}
+                  {search.trim()
+                    ? "No paying applicants match your search."
+                    : "No paying applicants yet. Applicants appear here after a student completes payment."}
                 </td>
               </tr>
             ) : (
-              rows.map((row, index) => {
-                const isLastRow = index === rows.length - 1;
-                const cellBorder = isLastRow ? "" : "border-b border-[#ece9e4]";
+              rows.map((row) => {
                 const detailHref = `/admin/applications/${row.applicationId}`;
 
                 function openDetail() {
@@ -247,7 +233,7 @@ export function AdminPaidApplicantsTableClient({
                 return (
                   <tr
                     key={row.applicationId}
-                    className="cursor-pointer transition-colors hover:bg-[#f0f7f2]"
+                    className="cursor-pointer border-t border-[#ece9e4] transition-colors hover:bg-[#f0f7f2]"
                     onClick={openDetail}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -257,36 +243,47 @@ export function AdminPaidApplicantsTableClient({
                     }}
                     tabIndex={0}
                     role="link"
-                    aria-label={`View paid application for ${row.studentName}`}
+                    aria-label={`View application for ${row.studentName}`}
                   >
-                    <td className={`${cellBorder} px-4 py-3`}>
-                      <div className="text-[13px] font-semibold text-[#1a1a1a]">
-                        {row.studentName}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5 text-[#1a1a1a]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E8F5EE] text-[11.5px] font-bold text-[#2D6A4F]">
+                          {row.studentInitials}
+                        </span>
+                        <span className="font-semibold">{row.studentName}</span>
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-[#888]">{row.studentEmail}</td>
                     <td
-                      className={`${cellBorder} px-4 py-3 text-[13px] text-[#4a4a4a]`}
+                      className="px-4 py-3 text-[#4a4a4a]"
                       onClick={(event) => event.stopPropagation()}
                     >
-                      {row.schoolId ? (
+                      {row.advisorId ? (
                         <Link
-                          href={`/admin/schools/${row.schoolId}`}
+                          href={`/admin/users/advisors/${row.advisorId}`}
                           className="font-medium text-[#2D6A4F] hover:underline"
                         >
-                          {row.schoolName}
+                          {row.advisorName}
                         </Link>
                       ) : (
-                        row.schoolName
+                        row.advisorName
                       )}
                     </td>
-                    <td className={`${cellBorder} px-4 py-3 text-[13px] text-[#4a4a4a]`}>
-                      {row.packageLabel}
+                    <td className="px-4 py-3 text-[#1a1a1a]">
+                      {row.packagePurchased}
                     </td>
-                    <td className={`${cellBorder} px-4 py-3 text-[13px] font-medium text-[#4a4a4a]`}>
-                      {formatAmount(row.paidAmount)}
+                    <td className="px-4 py-3 font-semibold text-[#1a1a1a]">
+                      AED {row.amountPaidAed.toLocaleString()}
                     </td>
-                    <td className={`${cellBorder} whitespace-nowrap px-4 py-3 text-[13px] text-[#4a4a4a]`}>
-                      {formatPaidAt(row.paidAt)}
+                    <td className="px-4 py-3 text-[#888]">
+                      {formatPaidOn(row.paidOn)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${statusBadgeClass(row.statusLabel)}`}
+                      >
+                        {row.statusLabel}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -296,7 +293,7 @@ export function AdminPaidApplicantsTableClient({
         </table>
       </div>
 
-      <div className="border-t border-[#ece9e4] px-5 py-3">
+      <div className="border-t border-[#ece9e4] px-4 py-3">
         <Pagination
           totalRows={totalRows}
           page={page}
@@ -306,19 +303,24 @@ export function AdminPaidApplicantsTableClient({
       </div>
       </div>
 
-      <SendPaymentRequestDialog
-        open={paymentRequestOpen}
+      <LeadPaymentRequestDialog
+        open={requestPaymentOpen}
         onClose={() => {
-          if (!isPending) setPaymentRequestOpen(false);
+          if (!isPending) {
+            setRequestPaymentOpen(false);
+            setGeneratedPayUrl(null);
+            setRequestPaymentError(null);
+          }
         }}
         applicationOptions={paymentRequestApplications}
-        availablePlans={availablePlans}
         senderName={adminName}
         senderEmail={adminEmail}
         fromEmailDisplay={fromEmailDisplay}
-        onSubmit={handleSendPaymentRequest}
+        onGenerateLink={handleGeneratePaymentLink}
+        onSendEmail={handleSendLeadApplicationPayment}
         isSubmitting={isPending}
         error={requestPaymentError}
+        generatedPayUrl={generatedPayUrl}
       />
     </div>
   );

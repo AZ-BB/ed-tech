@@ -123,7 +123,16 @@ export async function fetchStudentApplicationSupportView(
     }
 
     const pending = resolvePendingPayment((payments ?? []) as PaymentRow[]);
-    const plan = firstEmbed(row.applications_plans);
+
+    const { data: planRow } = await secret
+      .from("applications")
+      .select("applications_plans!applications_plan_id_fkey ( name )")
+      .eq("id", row.id)
+      .maybeSingle();
+    const planEmbed = planRow?.applications_plans;
+    const plan = firstEmbed(
+      planEmbed as { name: string } | { name: string }[] | null | undefined,
+    );
 
     return {
       kind: "payment_pending",
