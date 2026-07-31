@@ -1,7 +1,11 @@
 import { confirmPaymentFromSession } from "@/lib/stripe/confirm-application-payment-from-session";
 import { confirmFunnelSubscriptionFromSession } from "@/lib/stripe/confirm-funnel-subscription-from-session";
 import { confirmIndividualSignupPaymentFromSession } from "@/lib/stripe/confirm-individual-signup-payment-from-session";
-import { getStripeClient, getStripeWebhookSecret } from "@/lib/stripe/config";
+import {
+  constructStripeWebhookEvent,
+  getStripeClient,
+  getStripeWebhookSecrets,
+} from "@/lib/stripe/config";
 import { syncStudentSubscriptionFromStripe } from "@/lib/stripe/sync-student-subscription";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
@@ -70,9 +74,11 @@ async function handleSubscriptionEvent(
 }
 
 export async function POST(request: Request) {
-  const webhookSecret = getStripeWebhookSecret();
-  if (!webhookSecret) {
-    console.error("[stripe webhook] STRIPE_WEBHOOK_SECRET is not set");
+  const webhookSecrets = getStripeWebhookSecrets();
+  if (webhookSecrets.length === 0) {
+    console.error(
+      "[stripe webhook] STRIPE_WEBHOOK_SECRET (and optional STRIPE_CLI_WEBHOOK_SECRET) is not set",
+    );
     return NextResponse.json({ error: "Webhook not configured." }, { status: 503 });
   }
 
@@ -91,7 +97,7 @@ export async function POST(request: Request) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    event = constructStripeWebhookEvent(stripe, rawBody, signature);
   } catch (error) {
     console.error("[stripe webhook] signature verification failed", error);
     return NextResponse.json({ error: "Invalid signature." }, { status: 400 });

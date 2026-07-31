@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { ArrowRight } from "lucide-react";
+import { unstable_rethrow } from "next/navigation";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { individualStudentSignUp } from "@/actions/auth";
 import { CountryCombobox } from "@/components/auth/country-combobox";
@@ -255,10 +256,11 @@ export function IndividualSignupForm() {
       const result = await individualStudentSignUp(fd);
       if (result.error) {
         setSubmitError(result.error);
+        setIsSubmitting(false);
       }
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       setSubmitError(s.errCreateAccount);
-    } finally {
       setIsSubmitting(false);
     }
   };

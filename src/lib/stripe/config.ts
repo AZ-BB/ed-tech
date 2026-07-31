@@ -16,6 +16,45 @@ export function getStripeWebhookSecret(): string | undefined {
   return secret || undefined;
 }
 
+/** Optional CLI listener secret from `stripe listen` (`STRIPE_CLI_WEBHOOK_SECRET`). */
+export function getStripeCliWebhookSecret(): string | undefined {
+  const secret = process.env.STRIPE_CLI_WEBHOOK_SECRET?.trim();
+  return secret || undefined;
+}
+
+/** All configured webhook signing secrets (production + local CLI), deduplicated. */
+export function getStripeWebhookSecrets(): string[] {
+  const secrets = [getStripeWebhookSecret(), getStripeCliWebhookSecret()].filter(
+    (secret): secret is string => Boolean(secret),
+  );
+  return [...new Set(secrets)];
+}
+
+/** Verify a Stripe webhook payload against any configured signing secret. */
+export function constructStripeWebhookEvent(
+  stripe: Stripe,
+  rawBody: string,
+  signature: string,
+): Stripe.Event {
+  const secrets = getStripeWebhookSecrets();
+  if (secrets.length === 0) {
+    throw new Error("No Stripe webhook signing secrets configured.");
+  }
+
+  let lastError: unknown;
+  for (const secret of secrets) {
+    try {
+      return stripe.webhooks.constructEvent(rawBody, signature, secret);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Stripe webhook signature verification failed.");
+}
+
 /** Monthly funnel student subscription Price ID (`STRIPE_FUNNEL_SUBSCRIPTION_PRICE_ID`). */
 export function getFunnelSubscriptionPriceId(): string | undefined {
   const priceId = process.env.STRIPE_FUNNEL_SUBSCRIPTION_PRICE_ID?.trim();

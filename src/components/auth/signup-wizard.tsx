@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { individualStudentSignUp, studentSignUp } from "@/actions/auth";
 import { CountryCombobox } from "@/components/auth/country-combobox";
@@ -349,11 +349,11 @@ export function SignupWizard() {
         schoolChoice === "yes" ? await submitSignUp() : await submitIndividualSignUp();
       if (result.error) {
         setSe({ c: result.error });
-        return;
+        setIsSubmitting(false);
       }
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       setSe({ c: s.errCreateAccount });
-    } finally {
       setIsSubmitting(false);
     }
   }
