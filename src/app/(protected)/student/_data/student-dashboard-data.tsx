@@ -46,6 +46,11 @@ export const sidebarNavItems: SidebarNavItem[] = [
   },
   {
     type: "link",
+    id: "events",
+    href: "/student/events",
+  },
+  {
+    type: "link",
     id: "advisor-sessions",
     href: "/student/advisor-sessions",
   },
@@ -137,7 +142,8 @@ export type QuickActionDictKey =
   | "ambassadors"
   | "applicationSupport"
   | "postAdmission"
-  | "internships";
+  | "internships"
+  | "events";
 
 export type QuickAction = {
   dictKey: QuickActionDictKey;
@@ -170,6 +176,19 @@ const internshipsQuickAction: QuickAction = {
     <>
       <rect x="2" y="7" width="20" height="14" rx="2" />
       <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+    </>
+  ),
+};
+
+const eventsQuickAction: QuickAction = {
+  dictKey: "events",
+  href: "/student/events",
+  iconWrap: "bg-[var(--green-bg)]",
+  iconStroke: "#2D6A4F",
+  icon: (
+    <>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
     </>
   ),
 };
@@ -274,13 +293,13 @@ export const quickActions: QuickAction[] = [
   },
 ];
 
-/** Free funnel: Essay Review replaces Uni discovery; Internships replaces Post Admission. */
+/** Free funnel: Discover Universities stays; Essay Review replaces Application Support; Internships replaces Post Admission. */
 export function getDashboardQuickActions(options?: {
   freeFunnel?: boolean;
 }): QuickAction[] {
   if (!options?.freeFunnel) return quickActions;
   return quickActions.map((action) => {
-    if (action.dictKey === "discoverUniversities") return essayReviewQuickAction;
+    if (action.dictKey === "applicationSupport") return essayReviewQuickAction;
     if (action.dictKey === "postAdmission") return internshipsQuickAction;
     return action;
   });
@@ -290,6 +309,7 @@ export const quickActionByDictKey = {
   ...Object.fromEntries(quickActions.map((action) => [action.dictKey, action])),
   essayReview: essayReviewQuickAction,
   internships: internshipsQuickAction,
+  events: eventsQuickAction,
 } as Record<QuickActionDictKey, QuickAction>;
 
 export const savedTabLabels = [

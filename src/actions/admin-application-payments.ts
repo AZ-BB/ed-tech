@@ -5,12 +5,24 @@ import {
   applicationActivityEntityId,
 } from "@/lib/application-activity-log";
 import { sendApplicationPaymentRequestCore } from "@/lib/application-payment-request-core";
+import {
+  createApplicationPaymentLinkCore,
+  sendLeadApplicationPaymentRequestCore,
+} from "@/lib/lead-application-payment-request-core";
+import type {
+  LeadApplicationPaymentEmailInput,
+  LeadApplicationPaymentLinkInput,
+} from "@/lib/lead-application-payment-types";
 import type { SendPaymentRequestInput } from "@/lib/payment-request-email-content";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { revalidatePath } from "next/cache";
 
 type AdminPaymentActionResult =
   | { ok: true; email: string }
+  | { ok: false; error: string };
+
+type AdminPaymentLinkActionResult =
+  | { ok: true; payUrl: string }
   | { ok: false; error: string };
 
 async function assertAdminAccess() {
@@ -63,6 +75,48 @@ function revalidateApplicationPaths(applicationId: number) {
   revalidatePath(`/advisor/applications/${applicationId}`);
 }
 
+async function logAdminPaymentActivity(
+  secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
+  params: {
+    applicationId: number;
+    studentId: string;
+    message: string;
+    adminId: string;
+  },
+) {
+  const { error: logErr } = await secret.from("acitivity_logs").insert({
+    entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
+    entity_id: applicationActivityEntityId(params.applicationId),
+    action: "payment_request_sent",
+    message: params.message,
+    created_by_type: "admin",
+    admin_id: params.adminId,
+    school_admin_id: null,
+    student_id: params.studentId,
+  });
+  if (logErr) {
+    console.error("[admin-application-payments] activity log", logErr);
+  }
+}
+
+async function assertAdminApplicationAccess(
+  secret: Awaited<ReturnType<typeof createSupabaseSecretClient>>,
+  applicationId: number,
+) {
+  const { data, error } = await secret
+    .from("applications")
+    .select("id")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("[admin-application-payments] application", error);
+    return { ok: false as const, error: "Application not found." };
+  }
+
+  return { ok: true as const };
+}
+
 export async function sendApplicationPaymentRequest(
   input: SendPaymentRequestInput,
 ): Promise<AdminPaymentActionResult> {
@@ -77,33 +131,71 @@ export async function sendApplicationPaymentRequest(
     actorRole: "admin",
     requestedByType: "admin",
     requestedByAdvisorId: null,
-    assertApplicationAccess: async (secret, applicationId) => {
-      const { data, error } = await secret
-        .from("applications")
-        .select("id")
-        .eq("id", applicationId)
-        .maybeSingle();
-
-      if (error || !data) {
-        console.error("[sendApplicationPaymentRequest] application", error);
-        return { ok: false, error: "Application not found." };
-      }
-      return { ok: true };
-    },
+    assertApplicationAccess: async (secret, applicationId) =>
+      assertAdminApplicationAccess(secret, applicationId),
     logActivity: async (secret, params) => {
-      const { error: logErr } = await secret.from("acitivity_logs").insert({
-        entitiy_type: APPLICATION_ACTIVITY_ENTITY_TYPE,
-        entity_id: applicationActivityEntityId(params.applicationId),
-        action: "payment_request_sent",
-        message: params.message,
-        created_by_type: "admin",
-        admin_id: access.userId,
-        school_admin_id: null,
-        student_id: params.studentId,
+      await logAdminPaymentActivity(secret, {
+        ...params,
+        adminId: access.userId,
       });
-      if (logErr) {
-        console.error("[sendApplicationPaymentRequest] activity log", logErr);
-      }
+    },
+  });
+
+  if (result.ok) {
+    revalidateApplicationPaths(input.applicationId);
+  }
+
+  return result;
+}
+
+/** Generate a shareable pay URL for an application (no email). */
+export async function createAdminApplicationPaymentLink(
+  input: LeadApplicationPaymentLinkInput,
+): Promise<AdminPaymentLinkActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const result = await createApplicationPaymentLinkCore({
+    input,
+    actorName: access.actorName,
+    requestedByType: "admin",
+    requestedByAdvisorId: null,
+    assertApplicationAccess: async (secret, applicationId) =>
+      assertAdminApplicationAccess(secret, applicationId),
+    logActivity: async (secret, params) => {
+      await logAdminPaymentActivity(secret, {
+        ...params,
+        adminId: access.userId,
+      });
+    },
+  });
+
+  if (result.ok) {
+    revalidateApplicationPaths(input.applicationId);
+  }
+
+  return result;
+}
+
+/** Send a payment request email with editable recipient. */
+export async function sendAdminLeadApplicationPaymentRequest(
+  input: LeadApplicationPaymentEmailInput,
+): Promise<AdminPaymentActionResult> {
+  const access = await assertAdminAccess();
+  if (!access.ok) return access;
+
+  const result = await sendLeadApplicationPaymentRequestCore({
+    input,
+    actorName: access.actorName,
+    requestedByType: "admin",
+    requestedByAdvisorId: null,
+    assertApplicationAccess: async (secret, applicationId) =>
+      assertAdminApplicationAccess(secret, applicationId),
+    logActivity: async (secret, params) => {
+      await logAdminPaymentActivity(secret, {
+        ...params,
+        adminId: access.userId,
+      });
     },
   });
 

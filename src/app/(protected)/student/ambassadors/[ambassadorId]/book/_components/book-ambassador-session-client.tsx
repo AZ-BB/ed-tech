@@ -1,6 +1,13 @@
 "use client";
 
 import { createAmbassadorSessionRequest } from "@/actions/ambassador-sessions";
+import {
+  formatDateInputLocal,
+  formatTimeInputLocal,
+  getEarliestAmbassadorBookingTime,
+  isAmbassadorBookingTimeAllowed,
+  parseLocalDateTime,
+} from "@/lib/ambassador-booking-time";
 import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useCallback, useState } from "react";
@@ -18,12 +25,8 @@ const pageTitleClass =
   "font-[family-name:var(--font-dm-serif)] text-[22px] tracking-tight text-[var(--text)] break-words sm:text-[26px] md:text-[28px]";
 
 function slotToIso(date: string, time: string): string | null {
-  const d = date.trim();
-  if (!d) return null;
-  const t = (time.trim() || "12:00").slice(0, 5);
-  const normalized = t.length === 5 ? `${t}:00` : t;
-  const parsed = new Date(`${d}T${normalized}`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  const parsed = parseLocalDateTime(date, time);
+  return parsed ? parsed.toISOString() : null;
 }
 
 function formatSlotLabel(iso: string): string {
@@ -79,6 +82,28 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
 
   const displayName = `${ambassador.firstName} ${ambassador.lastName}`;
 
+  const earliestBooking = getEarliestAmbassadorBookingTime();
+  const minBookingDate = formatDateInputLocal(earliestBooking);
+  const minBookingTime = formatTimeInputLocal(earliestBooking);
+
+  const getMinTimeForDate = (selectedDate: string): string | undefined => {
+    if (selectedDate === minBookingDate) return minBookingTime;
+    return undefined;
+  };
+
+  const validateSlotTime = (
+    iso: string | null,
+    tooSoonError: string,
+  ): boolean => {
+    if (!iso) return true;
+    const parsed = new Date(iso);
+    if (!isAmbassadorBookingTimeAllowed(parsed)) {
+      setError(tooSoonError);
+      return false;
+    }
+    return true;
+  };
+
   const goConfirm = useCallback(() => {
     setError(null);
     if (!fullName.trim()) {
@@ -102,6 +127,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
       setError(bt.errors.invalidTime1);
       return;
     }
+    if (!validateSlotTime(p1, bt.errors.tooSoonTime1)) return;
     let p2: string | null = null;
     if (date2.trim()) {
       p2 = slotToIso(date2, time2 || "12:00");
@@ -109,6 +135,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
         setError(bt.errors.invalidTime2);
         return;
       }
+      if (!validateSlotTime(p2, bt.errors.tooSoonTime2)) return;
     }
     let p3: string | null = null;
     if (date3.trim()) {
@@ -117,6 +144,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
         setError(bt.errors.invalidTime3);
         return;
       }
+      if (!validateSlotTime(p3, bt.errors.tooSoonTime3)) return;
     }
     if (!discussion.trim()) {
       setError(bt.errors.discussion);
@@ -178,13 +206,27 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
           <label className="mb-1.5 block text-[11px] font-medium text-[var(--text-hint)]" htmlFor={opts.dateId}>
             {bt.date}
           </label>
-          <input id={opts.dateId} type="date" className={inputClass} value={opts.date} onChange={(e) => opts.setDate(e.target.value)} />
+          <input
+            id={opts.dateId}
+            type="date"
+            className={inputClass}
+            value={opts.date}
+            min={minBookingDate}
+            onChange={(e) => opts.setDate(e.target.value)}
+          />
         </div>
         <div className="min-w-0">
           <label className="mb-1.5 block text-[11px] font-medium text-[var(--text-hint)]" htmlFor={opts.timeId}>
             {bt.time}
           </label>
-          <input id={opts.timeId} type="time" className={inputClass} value={opts.time} onChange={(e) => opts.setTime(e.target.value)} />
+          <input
+            id={opts.timeId}
+            type="time"
+            className={inputClass}
+            value={opts.time}
+            min={getMinTimeForDate(opts.date)}
+            onChange={(e) => opts.setTime(e.target.value)}
+          />
         </div>
       </div>
     </div>
@@ -246,6 +288,7 @@ export function BookAmbassadorSessionClient({ ambassador }: Props) {
                   <p className="mb-5 border-b border-[var(--border-light)] pb-4 text-[13px] font-semibold text-[var(--text)]">
                     {bt.preferredTimes}
                   </p>
+                  <p className="mb-4 text-[12px] leading-relaxed text-[var(--text-hint)]">{bt.leadTimeNote}</p>
                   {timeRow({
                     label: bt.preferredTime1,
                     required: true,

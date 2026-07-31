@@ -289,6 +289,13 @@ export function WebinarRegisterCta({
   const { dict } = useLocale();
   const w = dict.webinars;
 
+  if (webinar.isPast) {
+    return (
+      <button type="button" disabled className={`${className} opacity-70`}>
+        {w.completedBadge}
+      </button>
+    );
+  }
   if (webinar.isRegistered) {
     return (
       <button type="button" disabled className={`${className} opacity-70`}>

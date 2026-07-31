@@ -193,6 +193,7 @@ export const studentEn = {
       phone: "Phone number",
       phonePlaceholder: "+971 XX XXX XXXX",
       preferredTimes: "Preferred times",
+      leadTimeNote: "Preferred times must be at least 48 hours from now. Past dates are not allowed.",
       preferredTime1: "Preferred time 1",
       preferredTime2: "Preferred time 2",
       preferredTime3: "Preferred time 3",
@@ -231,6 +232,9 @@ export const studentEn = {
         invalidTime1: "Preferred time 1 is not a valid date and time.",
         invalidTime2: "Preferred time 2 is not a valid date and time.",
         invalidTime3: "Preferred time 3 is not a valid date and time.",
+        tooSoonTime1: "Preferred time 1 must be at least 48 hours from now.",
+        tooSoonTime2: "Preferred time 2 must be at least 48 hours from now.",
+        tooSoonTime3: "Preferred time 3 must be at least 48 hours from now.",
         discussion: "Please describe what you would like to discuss.",
       },
     },
@@ -812,9 +816,9 @@ export const studentEn = {
       intakeHint:
         "These are the details from your application support intake. Contact your advisor if anything needs updating.",
       intakeTitle: "Application intake",
-      intakeSub: "Academics, preferences, and notes",
+      intakeSub: "Your contact details and study preferences",
       packageTitle: "Package",
-      packageSub: "Your application support plan",
+      packageSub: "Universities and payment for your package",
       universitiesHint:
         "Universities on your application support package. Add schools within your package limit.",
       universitiesTitle: "Universities",
@@ -843,8 +847,10 @@ export const studentEn = {
       labels: {
         fullName: "Full name",
         email: "Email",
-        phone: "Phone",
+        phone: "Phone number",
         school: "School",
+        grade: "Grade",
+        targetDestination: "Target destination",
         intendedFields: "Intended fields",
         openToRelatedFields: "Open to related fields",
         preferredUniOrCountries: "Preferred countries / universities",
@@ -862,7 +868,8 @@ export const studentEn = {
         universityNotes: "University notes",
         additionalNotes: "Additional notes",
         planName: "Plan name",
-        universitiesIncluded: "Universities included",
+        universitiesIncluded: "Universities",
+        amountPaidAed: "Amount paid (AED)",
         priceAed: "Price (AED)",
         description: "Description",
       },
@@ -929,6 +936,7 @@ export const studentEn = {
     universitySearch: "University Search",
     scholarships: "Scholarships",
     internships: "Internships",
+    events: "Events",
     advisorSessions: "1-1 Advisors",
     ambassadors: "Ambassadors",
     applicationSupport: "Application Support",
@@ -941,6 +949,11 @@ export const studentEn = {
     welcomeBack: "Welcome back",
     welcomeBackName: "Welcome back, {name}",
     subtitle: "Here's everything you need to continue your university journey.",
+    funnelLimitedSubtitle:
+      "You currently have access to {count} of {total} platform tools. Explore your available features or unlock full access to access everything.",
+    modulesUnlocked: "Modules Unlocked",
+    modulesUnlockedDesc:
+      "You have access to {count} out of {total} Platform features",
     platformCompletion: "Platform completion",
     completionInfoTitle: "Completion info",
     completionTooltip:
@@ -1067,6 +1080,10 @@ export const studentEn = {
         name: "Internships",
         desc: "Browse vetted internship opportunities",
       },
+      events: {
+        name: "Events",
+        desc: "Discover university fairs, open days, and workshops",
+      },
     },
     disabledFeaturesModal: {
       title: "Unlock more on Univeera",
@@ -1077,14 +1094,24 @@ export const studentEn = {
       close: "Got it",
       items: {
         personalityOverview: {
-          title: "Personality Overview",
+          title: "Unlock Personality Overview",
           description:
-            "Discover how you learn, decide, and thrive through a guided Discovery Journey built around you. Your Personality Overview turns self-awareness into a clear profile you can use when comparing programs, countries, and career paths. It helps you make confident study choices instead of guessing what might fit.",
+            "Discover how your interests, strengths, and preferences shape the way you learn and make decisions. Use your results to explore majors, careers, and university paths that fit you.",
+          benefits: [
+            "Understand your personality, strengths, and learning style.",
+            "Explore majors and careers aligned with your profile.",
+            "Make more confident decisions about your university journey.",
+          ],
         },
         programDiscovery: {
-          title: "Program Discovery",
+          title: "Unlock Program Discovery",
           description:
-            "Search and filter thousands of programs worldwide — from business and engineering to medicine and the arts. Use smart filters and AI matching to surface degrees aligned with your grades, interests, and ambitions. Save promising options and move from browsing to a focused shortlist faster.",
+            "Search universities and programs across leading study destinations in one place. Filter your options and build a shortlist based on your goals, preferences, and academic profile.",
+          benefits: [
+            "Explore universities and programs across multiple countries.",
+            "Filter by major, location, university type, and admission difficulty.",
+            "Save and compare the options that best match your goals.",
+          ],
         },
         discoverUniversities: {
           title: "Discover Universities",
@@ -1092,24 +1119,44 @@ export const studentEn = {
             "Explore 500+ universities locally and globally with rich profiles, requirements, and comparison tools in one place. Build a smart shortlist, track favorites, and see how each option fits your profile before you apply. It is the fastest way to go from “where should I apply?” to a clear target list.",
         },
         scholarships: {
-          title: "Scholarships",
+          title: "Unlock Scholarships",
           description:
-            "Find funding opportunities matched to your background, nationality, and destination countries — before deadlines pass you by. Filter by eligibility, award type, and field so you spend time on scholarships you can actually win. Turn financial stress into a structured search with real options.",
+            "Discover verified scholarships and funding opportunities matched to your background and study plans. Find relevant options faster without searching across hundreds of different websites.",
+          benefits: [
+            "Search scholarships by nationality, destination, major, and type.",
+            "Access verified information and official application links.",
+            "Save relevant opportunities and track important deadlines.",
+          ],
         },
         advisorSessions: {
-          title: "1:1 Advisor",
+          title: "Unlock 1:1 Advisor Support",
           description:
-            "Book expert guidance on demand whenever you need a second opinion or a clear plan. Advisors help with shortlisting, essays, strategy, and tough decisions at every stage of your journey. Get personalized support from people who have guided hundreds of students through competitive applications.",
+            "Speak directly with an experienced university advisor for personalised guidance on your next steps. Get clear answers based on your academic profile, goals, and preferred destinations.",
+          benefits: [
+            "Receive personalised guidance from an experienced advisor.",
+            "Get support with university choices, applications, and next steps.",
+            "Leave each session with clear and practical recommendations.",
+          ],
         },
         ambassadors: {
-          title: "Ambassadors",
+          title: "Unlock University Ambassadors",
           description:
-            "Talk to students who are already on campus at your target universities and hear honest, first-hand insight about student life. Ask about classes, housing, culture, and what it really feels like to study there. It is like a campus visit from wherever you are — before you commit to an application.",
+            "Connect with current students and graduates from universities around the world. Get honest, first-hand insight into academics, campus life, applications, and the overall student experience.",
+          benefits: [
+            "Speak with students who have already completed the journey.",
+            "Ask questions about university life, courses, and applications.",
+            "Make better decisions using genuine student experiences.",
+          ],
         },
         applicationSupport: {
-          title: "Application Support",
+          title: "Unlock Application Support",
           description:
-            "Get end-to-end help with documents, deadlines, personal statements, and the full application process so nothing falls through the cracks. Our team works with you step by step from first draft to final submission. Stay organized, meet every deadline, and present your strongest possible application.",
+            "Get structured support throughout your university application journey, from preparing your documents to managing submissions and deadlines. Stay organised and complete each application with confidence.",
+          benefits: [
+            "Get support with documents, applications, and submissions.",
+            "Keep track of requirements, progress, and deadlines.",
+            "Receive clear guidance throughout every stage of the process.",
+          ],
         },
         postAdmission: {
           title: "Post Admission",
@@ -1117,14 +1164,34 @@ export const studentEn = {
             "After your offer arrives, get step-by-step support for visas, housing, insurance, flights, and arrival planning. We help you navigate the logistics that come after acceptance so your transition abroad is smooth and stress-free. From paperwork to landing — you are not doing it alone.",
         },
         essayReview: {
-          title: "Essay Review",
+          title: "Unlock Essay Review",
           description:
-            "Upload your application essays and get structured AI feedback on clarity, structure, and impact. Iterate faster with concrete suggestions so every draft is stronger than the last. Turn a rough personal statement into a compelling story admissions teams remember.",
+            "Upload your university essays and receive structured AI feedback on clarity, structure, storytelling, and impact. Improve each draft with practical recommendations you can apply immediately.",
+          benefits: [
+            "Identify strengths and weaknesses in your essay.",
+            "Receive practical suggestions to improve clarity and structure.",
+            "Review multiple drafts as your essay develops.",
+          ],
         },
         internships: {
-          title: "Internships",
+          title: "Unlock Internships",
           description:
-            "Browse vetted internship opportunities matched to your interests, format, and location preferences. Save promising roles and request support when you need help finding the right fit. Build experience that strengthens your applications and future career path.",
+            "Browse internship and work-experience opportunities selected for high-school and university-bound students. Build practical experience and strengthen your profile before applying to university.",
+          benefits: [
+            "Explore relevant internships and student opportunities.",
+            "Filter opportunities by location, industry, and eligibility.",
+            "Access verified details and official application links.",
+          ],
+        },
+        events: {
+          title: "Unlock Events",
+          description:
+            "Discover university fairs, open days, webinars, and application workshops happening across the region and online. Find the events that matter for your goals and register directly.",
+          benefits: [
+            "Search fairs, open days, webinars, and workshops in one place.",
+            "Filter by location, month, type, and format.",
+            "Save events and add them to your calendar.",
+          ],
         },
       },
     },
@@ -1157,6 +1224,27 @@ export const studentEn = {
       },
     },
   },
+  aiDailyLimit: {
+    title: "Daily limit reached",
+    titleForFeature: "Daily limit reached for {feature}",
+    body: "You have used all of your available runs for this feature today. Please try again tomorrow.",
+    usageSummary: "Used {used} of {limit} today",
+    resetHint: "Your limit resets at midnight UTC.",
+    gotIt: "Got it",
+    closeAria: "Close dialog",
+    features: {
+      essay_review: "Essay Review",
+      ai_university_matching: "AI University Matching",
+      ai_program_matching: "AI Program Fit Test",
+    },
+    funnelOverall: {
+      title: "Free trial limit reached",
+      titleForFeature: "Free trial limit reached for {feature}",
+      body: "You have used all of your free Essay Review runs. Subscribe to unlock unlimited access.",
+      usageSummary: "Used {used} of {limit} free runs",
+      gotIt: "Got it",
+    },
+  },
   subscription: {
     subscribe: "Subscribe now",
     subscribing: "Redirecting…",
@@ -1179,7 +1267,7 @@ export const studentEn = {
     modalVideoText:
       "Watch how Univeera helps you move from university discovery to application and admission.",
     modalVideoAria: "Video: how Univeera supports your university journey",
-    modalCta: "Continue to payment",
+    modalCta: "Get Full Univeera Access Now",
     modalReassure: "Instant access to all Univeera platform features.",
     closeAria: "Close dialog",
     settingsTitle: "Subscription",
@@ -1195,6 +1283,26 @@ export const studentEn = {
     cancelConfirm:
       "Cancel your subscription? You will keep access until the end of the current billing period.",
     cancelScheduledToast: "Subscription will cancel at the end of the current period.",
+  },
+  signupPayment: {
+    eyebrow: "Univeera Access",
+    title: "Complete your signup to get started",
+    body:
+      "A one-time payment is required to activate your Univeera account and unlock the full student portal.",
+    benefits: [
+      "Access program discovery, university search, and AI matching tools.",
+      "Book advisor sessions and connect with university ambassadors.",
+      "Get support with applications, essays, scholarships, and more.",
+    ],
+    cta: "Pay now",
+    paying: "Redirecting…",
+    checkoutFailed: "Could not start checkout. Try again.",
+    canceledMessage: "Payment was canceled. You can try again when ready.",
+    confirming: "Confirming your payment…",
+    confirmFailed: "Could not confirm your payment. Please try again or contact support.",
+    logOut: "Log out",
+    loggingOut: "Logging out…",
+    reassure: "One-time payment. Secure checkout powered by Stripe.",
   },
   settings: {
     pageTitle: "Account settings",

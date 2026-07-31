@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { StudentLoadingCenter } from "../_components/student-spinner";
 import { ScholarshipDiscovery } from "./_components/scholarship-discovery";
 import { loadScholarshipDiscoveryPageFromSearchParams } from "@/actions/Scholarships";
 
@@ -15,9 +16,10 @@ export default async function StudentScholarshipsPage({ searchParams }: PageProp
   return (
     <Suspense
       fallback={
-        <div className="mx-auto w-full px-2 py-12 text-center text-[14px] text-[var(--text-light)]">
-          Loading scholarships…
-        </div>
+        <StudentLoadingCenter
+          label="Loading scholarships…"
+          className="mx-auto w-full px-2"
+        />
       }
     >
       <ScholarshipDiscovery pageData={pageData} />

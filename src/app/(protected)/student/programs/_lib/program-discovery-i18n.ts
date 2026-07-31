@@ -34,11 +34,10 @@ export function localizeInterestTiles(
 export function localizeProgramRail(
   rail: ProgramRailConfig,
   copy: ProgramsDiscoveryCopy,
-): Pick<ProgramRailConfig, "id" | "filter"> & { eyebrow: string; title: string } {
+): Pick<ProgramRailConfig, "id"> & { eyebrow: string; title: string } {
   const labels = copy.rails[rail.id];
   return {
     id: rail.id,
-    filter: rail.filter,
     eyebrow: labels?.eyebrow ?? rail.eyebrow,
     title: labels?.title ?? rail.title,
   };

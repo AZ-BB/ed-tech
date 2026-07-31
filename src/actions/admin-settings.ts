@@ -2,6 +2,7 @@
 
 import {
   PLATFORM_SETTING_KEYS,
+  type AiDailyLimitFeatureKey,
   type PlatformFeatureKey,
   platformFeatureSettingKey,
 } from "@/lib/platform-settings";
@@ -76,6 +77,12 @@ function revalidateSettingsPaths() {
   revalidatePath("/admin/schools");
 }
 
+function revalidateAiFeaturePaths() {
+  revalidatePath("/student/ai-matching");
+  revalidatePath("/student/program-fit-test");
+  revalidatePath("/student/essay-review");
+}
+
 export async function updatePlatformCreditDefaults(
   formData: FormData,
 ): Promise<AdminSettingsActionResult> {
@@ -108,6 +115,61 @@ export async function updatePlatformCreditDefaults(
   return { ok: true };
 }
 
+const AI_DAILY_LIMIT_FORM_FIELDS: { featureKey: AiDailyLimitFeatureKey; formName: string }[] = [
+  { featureKey: "essay_review", formName: "aiDailyLimitEssayReview" },
+  { featureKey: "ai_university_matching", formName: "aiDailyLimitUniversityMatching" },
+  { featureKey: "ai_program_matching", formName: "aiDailyLimitProgramMatching" },
+];
+
+const AI_DAILY_LIMIT_SETTING_BY_FEATURE: Record<AiDailyLimitFeatureKey, string> = {
+  essay_review: PLATFORM_SETTING_KEYS.aiDailyLimitEssayReview,
+  ai_university_matching: PLATFORM_SETTING_KEYS.aiDailyLimitUniversityMatching,
+  ai_program_matching: PLATFORM_SETTING_KEYS.aiDailyLimitProgramMatching,
+};
+
+export async function updateAiDailyLimits(
+  formData: FormData,
+): Promise<AdminSettingsActionResult> {
+  const access = await assertAdminPermission("edit_system_default");
+  if (!access.ok) return access;
+
+  for (const { featureKey, formName } of AI_DAILY_LIMIT_FORM_FIELDS) {
+    const parsed = parseOptionalNonNegativeInt(formData.get(formName));
+    if (parsed === "invalid") {
+      return {
+        ok: false,
+        error: "AI daily limits must be non-negative numbers or blank for unlimited.",
+      };
+    }
+
+    const result = await upsertSystemSetting(
+      AI_DAILY_LIMIT_SETTING_BY_FEATURE[featureKey],
+      parsed === null ? "" : String(parsed),
+    );
+    if (!result.ok) return result;
+  }
+
+  const funnelOverall = parseOptionalNonNegativeInt(
+    formData.get("funnelOverallLimitEssayReview"),
+  );
+  if (funnelOverall === "invalid") {
+    return {
+      ok: false,
+      error: "Funnel overall essay review limit must be a non-negative number or blank for unlimited.",
+    };
+  }
+
+  const funnelOverallResult = await upsertSystemSetting(
+    PLATFORM_SETTING_KEYS.funnelOverallLimitEssayReview,
+    funnelOverall === null ? "" : String(funnelOverall),
+  );
+  if (!funnelOverallResult.ok) return funnelOverallResult;
+
+  revalidateSettingsPaths();
+  revalidateAiFeaturePaths();
+  return { ok: true };
+}
+
 export async function updatePlatformFeatureFlags(
   formData: FormData,
 ): Promise<AdminSettingsActionResult> {
@@ -133,9 +195,7 @@ export async function updatePlatformFeatureFlags(
   }
 
   revalidatePath("/admin/settings");
-  revalidatePath("/student/ai-matching");
-  revalidatePath("/student/program-fit-test");
-  revalidatePath("/student/essay-review");
+  revalidateAiFeaturePaths();
   revalidatePath("/student/advisor-sessions");
   revalidatePath("/student/ambassadors");
   revalidatePath("/student/application-support");

@@ -119,16 +119,25 @@ export const HERO_FLOAT_PROGRAMS = [
   "Architecture",
 ] as const;
 
+type ProgramRailFilterInput = {
+  salaryPotential: string;
+  aiResilience: string;
+  category: string;
+  characteristicIds: string[];
+  title: string;
+  slug: string;
+};
+
 export type ProgramRailConfig = {
   id: string;
   eyebrow: string;
   title: string;
-  filter: (program: {
-    salaryPotential: string;
-    aiResilience: string;
-    category: string;
-    characteristicIds: string[];
-  }) => boolean;
+  /**
+   * Curated titles in display order. Titles with no matching DB program are skipped.
+   * When set, this takes precedence over `filter`.
+   */
+  programTitles?: readonly string[];
+  filter?: (program: ProgramRailFilterInput) => boolean;
 };
 
 export const PROGRAM_SECTION_DISPLAY_LIMIT = 10;
@@ -138,13 +147,34 @@ export const PROGRAM_RAILS: ProgramRailConfig[] = [
     id: "high-income",
     eyebrow: "For ambitious earners",
     title: "High-income programs",
-    filter: (p) => isHighSalaryMetric(p.salaryPotential),
+    programTitles: [
+      "Artificial Intelligence",
+      "Biomedical Engineering",
+      "Chemical Engineering",
+      "Chemistry",
+      "Cloud Computing",
+      "Cybersecurity",
+      "Data Science",
+      "Entrepreneurship",
+      "Finance",
+    ],
   },
   {
     id: "future-proof",
     eyebrow: "Built for what's next",
     title: "Future-proof programs",
-    filter: (p) => isFutureProofMetric(p.aiResilience),
+    programTitles: [
+      "Investment Banking",
+      "Supply Chain & Logistics",
+      "Medicine",
+      "Computer Science",
+      "Neuroscience",
+      "Radiology & Medical Imaging",
+      "Hospitality & Tourism Management",
+      "Pharmacy",
+      "Mathematics",
+      "Aerospace Engineering",
+    ],
   },
   {
     id: "creative",
@@ -158,18 +188,127 @@ export const PROGRAM_RAILS: ProgramRailConfig[] = [
     id: "problem-solvers",
     eyebrow: "If you love a tough question",
     title: "Programs for problem solvers",
-    filter: (p) => p.characteristicIds.includes("solving-problems"),
+    programTitles: [
+      "Physics",
+      "Electrical Engineering",
+      "Civil Engineering",
+      "Mechanical Engineering",
+      "Biology",
+      "Petroleum Engineering",
+      "Medicine",
+      "Psychology",
+      "Public Policy",
+      "Financial Technology",
+    ],
   },
 ];
 
-function isHighSalaryMetric(value: string): boolean {
-  const v = value.toLowerCase();
-  return v.includes("high") || v.includes("very");
+/** Extra search needles for common title variants / typos. */
+const PROGRAM_TITLE_ALIASES: Record<string, readonly string[]> = {
+  chemistry: ["chemistery"],
+  neuroscience: ["neuro science"],
+  psychology: ["phsycology"],
+  "supply chain and logistics": [
+    "supply chain and logistic",
+    "supply chain logistics",
+    "supply chain logistic",
+  ],
+  "financial technology": [
+    "fintech",
+    "fin tech",
+    "financial technology fintech",
+    "financial technology fin tech",
+  ],
+  "data science": ["datascience"],
+  cybersecurity: ["cyber security"],
+  "investment banking": ["investment bank"],
+  "public policy": ["public policy studies"],
+  "radiology and medical imaging": [
+    "radiology medical imaging",
+    "medical imaging",
+  ],
+  "hospitality and tourism management": [
+    "hospitality tourism management",
+    "hospitality and tourism",
+  ],
+};
+
+function normalizeProgramKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function isFutureProofMetric(value: string): boolean {
-  const v = value.toLowerCase();
-  return v.includes("high") || v.includes("strong");
+function titleSearchNeedles(curatedTitle: string): string[] {
+  const normalized = normalizeProgramKey(curatedTitle);
+  const aliases = PROGRAM_TITLE_ALIASES[normalized] ?? [];
+  return [normalized, ...aliases.map(normalizeProgramKey)];
+}
+
+function findProgramByCuratedTitle<
+  T extends { title: string; slug: string; id: string },
+>(programs: T[], curatedTitle: string, usedIds: Set<string>): T | null {
+  const needles = titleSearchNeedles(curatedTitle);
+  const available = programs.filter((program) => !usedIds.has(program.id));
+
+  const exact = available.find((program) => {
+    const titleKey = normalizeProgramKey(program.title);
+    const slugKey = normalizeProgramKey(program.slug.replace(/-/g, " "));
+    return needles.some((needle) => titleKey === needle || slugKey === needle);
+  });
+  if (exact) return exact;
+
+  const startsWith = available.find((program) => {
+    const titleKey = normalizeProgramKey(program.title);
+    return needles.some(
+      (needle) => titleKey.startsWith(needle) || needle.startsWith(titleKey),
+    );
+  });
+  if (startsWith) return startsWith;
+
+  // Prefer longer needles so short titles like "Finance" don't over-match.
+  const rankedNeedles = [...needles].sort((a, b) => b.length - a.length);
+  for (const needle of rankedNeedles) {
+    if (needle.length < 5) continue;
+    const includes = available.find((program) =>
+      normalizeProgramKey(program.title).includes(needle),
+    );
+    if (includes) return includes;
+  }
+
+  return null;
+}
+
+export function pickProgramsByTitles<
+  T extends { title: string; slug: string; id: string },
+>(programs: T[], curatedTitles: readonly string[]): T[] {
+  const usedIds = new Set<string>();
+  const matched: T[] = [];
+
+  for (const curatedTitle of curatedTitles) {
+    const program = findProgramByCuratedTitle(programs, curatedTitle, usedIds);
+    if (!program) continue;
+    usedIds.add(program.id);
+    matched.push(program);
+  }
+
+  return matched;
+}
+
+export function selectProgramsForRail<T extends ProgramRailFilterInput & { id: string }>(
+  programs: T[],
+  rail: ProgramRailConfig,
+): T[] {
+  if (rail.programTitles?.length) {
+    return pickProgramsByTitles(programs, rail.programTitles);
+  }
+
+  if (!rail.filter) return [];
+
+  return programs.filter(rail.filter).slice(0, PROGRAM_SECTION_DISPLAY_LIMIT);
 }
 
 export const PROGRAM_ICON_VARIANTS = [

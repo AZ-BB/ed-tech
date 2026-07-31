@@ -19,6 +19,7 @@ import { ContentHeaderActions } from "../content/_components/content-header-acti
 import {
   isAdminContentListPath,
   isAdminContentPath,
+  isAdminEventDetailPath,
   isAdminScholarshipDetailPath,
   isAdminUniversityDetailPath,
   isAdminWebinarDetailPath,
@@ -144,13 +145,18 @@ export function AdminPortalShell({
     () => isAdminWebinarDetailPath(pathname ?? ADMIN_HOME),
     [pathname],
   );
+  const eventDetailPage = useMemo(
+    () => isAdminEventDetailPath(pathname ?? ADMIN_HOME),
+    [pathname],
+  );
   const detailPage =
     userDetailPage ||
     schoolDetailPage ||
     applicationDetailPage ||
     universityDetailPage ||
     scholarshipDetailPage ||
-    webinarDetailPage;
+    webinarDetailPage ||
+    eventDetailPage;
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openSidebar = useCallback(() => setSidebarOpen(true), []);

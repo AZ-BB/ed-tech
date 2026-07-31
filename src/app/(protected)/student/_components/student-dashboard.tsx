@@ -5,7 +5,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { formatRelativeTime } from "@/lib/i18n/format-relative-time";
 import { format } from "date-fns";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, useEffect } from "react";
 import { startFreeFunnelApplicationSupport } from "@/actions/free-funnel-application-support";
 import type { ApplicationReceivingAdvisor } from "@/lib/advisor-receiving-flags";
 import type { StudentFormDefaults } from "@/lib/load-student-form-defaults";
@@ -28,8 +28,10 @@ import {
 } from "./dashboard-lock-ui";
 import {
   QUICK_ACTION_TO_FEATURE,
+  countEnabledStudentFeatures,
   defaultStudentFeatureAccess,
   isStudentFeatureEnabled,
+  STUDENT_FEATURE_COUNT,
   type StudentFeatureAccess,
 } from "@/lib/student-feature-access";
 import { useStudentFeatureGate } from "./student-feature-gate-provider";
@@ -230,6 +232,29 @@ const newsTagClass = {
   update: "bg-[var(--green-bg)] text-[var(--green)]",
 } as const;
 
+function AnimatedModulesProgressBar({ percent }: { percent: number }) {
+  const [displayPercent, setDisplayPercent] = useState(0);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setDisplayPercent(percent));
+    return () => cancelAnimationFrame(frame);
+  }, [percent]);
+
+  return (
+    <div className="mt-2 h-2 overflow-hidden rounded bg-[var(--border-light)]">
+      <div
+        className="student-modules-progress-bar relative h-full rounded bg-[var(--green)] transition-[width] duration-[900ms] ease-out"
+        style={{ width: `${displayPercent}%` }}
+      >
+        <span
+          className="student-modules-progress-shimmer pointer-events-none absolute inset-0 rounded bg-gradient-to-r from-transparent via-white/35 to-transparent"
+          aria-hidden
+        />
+      </div>
+    </div>
+  );
+}
+
 type StudentDashboardProps = {
   welcomeFirstName: string;
   platformCompleted: number;
@@ -296,6 +321,13 @@ export function StudentDashboard({
     [showFunnelSubscriptionCta],
   );
   const lockBottomSections = showFunnelSubscriptionCta;
+  const enabledFeatureCount = useMemo(
+    () => countEnabledStudentFeatures(featureAccess),
+    [featureAccess],
+  );
+  const modulesUnlockedPercent = Math.round(
+    (enabledFeatureCount / STUDENT_FEATURE_COUNT) * 100,
+  );
 
   const enabledQuickActionSteps = useMemo(() => {
     const tips = d.quickActionsOnboarding.tips;
@@ -332,46 +364,68 @@ export function StudentDashboard({
                 : d.welcomeBack}
             </h1>
             <p className="mt-1 text-[13px] text-[var(--text-light)]">
-              {d.subtitle}
+              {showFunnelSubscriptionCta
+                ? d.funnelLimitedSubtitle
+                    .replace("{count}", String(enabledFeatureCount))
+                    .replace("{total}", String(STUDENT_FEATURE_COUNT))
+                : d.subtitle}
             </p>
           </div>
           <div className="flex items-center gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-5 py-4">
             <div className="min-w-0 flex-1">
-              <div className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold">
-                {d.platformCompletion}
-                <span className="group relative inline-flex cursor-pointer">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--text-hint)"
-                    strokeWidth="2"
-                    aria-hidden
-                  >
-                    <title>{d.completionInfoTitle}</title>
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 16v-4M12 8h.01" />
-                  </svg>
-                  <span className="pointer-events-none absolute left-1/2 top-6 z-10 hidden w-[280px] -translate-x-1/2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 text-[11px] leading-snug text-[var(--text-mid)] shadow-[0_4px_16px_rgba(0,0,0,0.1)] group-hover:block">
-                    {d.completionTooltip}
-                  </span>
-                </span>
-              </div>
-              <p className="text-xs text-[var(--text-light)]">
-                {d.platformExplored
-                  .replace("{completed}", String(platformCompleted))
-                  .replace("{total}", String(platformTotal))}
-              </p>
-              <div className="mt-2 h-2 overflow-hidden rounded bg-[var(--border-light)]">
-                <div
-                  className="h-full rounded bg-[var(--green)] transition-[width] duration-500"
-                  style={{ width: `${platformPercent}%` }}
-                />
-              </div>
+              {showFunnelSubscriptionCta ? (
+                <>
+                  <div className="mb-1 text-[13px] font-semibold">
+                    {d.modulesUnlocked}
+                  </div>
+                  <p className="text-xs text-[var(--text-light)]">
+                    {d.modulesUnlockedDesc
+                      .replace("{count}", String(enabledFeatureCount))
+                      .replace("{total}", String(STUDENT_FEATURE_COUNT))}
+                  </p>
+                  <AnimatedModulesProgressBar percent={modulesUnlockedPercent} />
+                </>
+              ) : (
+                <>
+                  <div className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold">
+                    {d.platformCompletion}
+                    <span className="group relative inline-flex cursor-pointer">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--text-hint)"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <title>{d.completionInfoTitle}</title>
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4M12 8h.01" />
+                      </svg>
+                      <span className="pointer-events-none absolute left-1/2 top-6 z-10 hidden w-[280px] -translate-x-1/2 rounded-[10px] border border-[var(--border-light)] bg-white p-3 text-[11px] leading-snug text-[var(--text-mid)] shadow-[0_4px_16px_rgba(0,0,0,0.1)] group-hover:block">
+                        {d.completionTooltip}
+                      </span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text-light)]">
+                    {d.platformExplored
+                      .replace("{completed}", String(platformCompleted))
+                      .replace("{total}", String(platformTotal))}
+                  </p>
+                  <div className="mt-2 h-2 overflow-hidden rounded bg-[var(--border-light)]">
+                    <div
+                      className="h-full rounded bg-[var(--green)] transition-[width] duration-500"
+                      style={{ width: `${platformPercent}%` }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
             <div className="min-w-[50px] text-right text-xl font-bold text-[var(--green)]">
-              {platformPercent}%
+              {showFunnelSubscriptionCta
+                ? `${modulesUnlockedPercent}%`
+                : `${platformPercent}%`}
             </div>
           </div>
 
@@ -808,14 +862,30 @@ export function StudentDashboard({
               {d.findEventsDesc}
             </p>
           </div>
-          <button
-            type="button"
-            disabled
-            className="inline-flex shrink-0 cursor-not-allowed items-center justify-center gap-2 self-start rounded-full border border-[var(--border)] bg-[var(--sand)] px-6 py-3 text-[13px] font-semibold text-[var(--text-light)] sm:self-center"
-          >
-            {d.findEventsCta}
-            <ArrowForwardIcon size={16} />
-          </button>
+          {isStudentFeatureEnabled(featureAccess, "events") ? (
+            <Link
+              href="/student/events"
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full border border-[var(--green)] bg-[var(--green)] px-6 py-3 text-[13px] font-semibold text-white transition hover:bg-[var(--green-dark)] sm:self-center"
+            >
+              {d.findEventsCta}
+              <ArrowForwardIcon size={16} />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (showFunnelSubscriptionCta) {
+                  openSubscriptionModal("events");
+                  return;
+                }
+                openDisabledFeaturesModal("events");
+              }}
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full border border-[var(--green)] bg-[var(--green)] px-6 py-3 text-[13px] font-semibold text-white opacity-60 transition hover:opacity-75 sm:self-center"
+            >
+              {d.findEventsCta}
+              <ArrowForwardIcon size={16} />
+            </button>
+          )}
         </div>
       </div>
       </DashboardLockedSection>

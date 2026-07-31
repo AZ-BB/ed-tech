@@ -15,6 +15,7 @@
     "db:seed:scholarships:csv": "node scripts/seed-scholarships-from-csv.mjs",
     "db:seed:scholarships:xlsx": "node scripts/seed-scholarship-discovery-from-xlsx.mjs",
     "db:seed:scholarships:xlsx:all": "node scripts/seed-scholarship-discovery-from-xlsx.mjs --all",
+    "db:seed:events:xlsx": "node scripts/seed-events-from-xlsx.mjs",
     "scholarships:export-csv": "node scripts/scholarships-json-to-standard-csv.mjs",
     "db:migrate:university-logos": "node scripts/migrate-university-logos.mjs",
     "db:migrate:university-logos:dry-run": "node scripts/migrate-university-logos.mjs --dry-run",

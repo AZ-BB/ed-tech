@@ -1,3 +1,5 @@
+import { scholarshipDestinationMatchesFilter } from "../_lib/scholarship-destination-match";
+
 import type { Scholarship } from "./types";
 
 /** Client-side helpers; server discovery mirrors this in `rpc_scholarships_discovery_page` (see Supabase migration). */
@@ -64,15 +66,8 @@ export function filterScholarships(
   return list.filter((s) => {
     if (natN !== "any" && !matchesNationality(natN, s.eligibleNationalities))
       return false;
-    if (destN !== "any") {
-      const dests = s.destinations;
-      if (
-        !dests.includes(destN) &&
-        !dests.includes("Global") &&
-        !dests.includes("Multiple")
-      ) {
-        return false;
-      }
+    if (destN !== "any" && !scholarshipDestinationMatchesFilter(s.destinations, destN)) {
+      return false;
     }
     if (covN !== "any" && s.coverage !== covN) return false;
     return true;

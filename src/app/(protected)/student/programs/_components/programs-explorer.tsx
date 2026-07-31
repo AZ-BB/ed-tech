@@ -1,16 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useLocale } from "@/lib/i18n/locale-context";
 import { ArrowBackIcon } from "../../_components/directional-icons";
+import { ProgramFitTestLink } from "../../_components/program-fit-test-link";
+import { useStudentFeatureGate } from "../../_components/student-feature-gate-provider";
+import { StudentSpinner } from "../../_components/student-spinner";
 import {
   HERO_FLOAT_PROGRAMS,
   PROGRAM_QUICK_CHIPS,
   PROGRAM_RAILS,
   PROGRAM_SECTION_DISPLAY_LIMIT,
+  selectProgramsForRail,
 } from "../_lib/program-discovery-constants";
 import {
   localizeInterestTiles,
@@ -50,11 +54,25 @@ export function ProgramsExplorer({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { openSubscriptionModal } = useStudentFeatureGate();
+  const subscribePromptHandled = useRef(false);
   const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState(pageData.filters.q);
   const [selectedInterest, setSelectedInterest] = useState<string | null>(
     pageData.selectedInterest,
   );
+
+  useEffect(() => {
+    if (searchParams.get("subscribe") !== "1" || subscribePromptHandled.current) {
+      return;
+    }
+    subscribePromptHandled.current = true;
+    openSubscriptionModal("program_discovery");
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("subscribe");
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [searchParams, openSubscriptionModal, router, pathname]);
 
   useEffect(() => {
     setSearchValue(pageData.filters.q);
@@ -112,16 +130,7 @@ export function ProgramsExplorer({
     () =>
       PROGRAM_RAILS.map((rail) => ({
         ...localizeProgramRail(rail, t),
-        programs: pageData.programs
-          .filter((program) =>
-            rail.filter({
-              salaryPotential: program.salaryPotential,
-              aiResilience: program.aiResilience,
-              category: program.category,
-              characteristicIds: program.characteristicIds,
-            }),
-          )
-          .slice(0, PROGRAM_SECTION_DISPLAY_LIMIT),
+        programs: selectProgramsForRail(pageData.programs, rail),
       })).filter((rail) => rail.programs.length > 0),
     [pageData.programs, t],
   );
@@ -313,10 +322,10 @@ export function ProgramsExplorer({
               placeholder={t.searchPlaceholder}
             />
           </div>
-          <Link href="/student/program-fit-test" className={explorerStyles.btnAi}>
+          <ProgramFitTestLink className={explorerStyles.btnAi}>
             <span className={explorerStyles.btnAiIcon}>✦</span>
             {t.helpChooseCta}
-          </Link>
+          </ProgramFitTestLink>
         </div>
 
         {popularChips.some((chip) => chip.slug) ? (
@@ -338,8 +347,12 @@ export function ProgramsExplorer({
       </section>
 
       {isPending ? (
-        <div className="mb-6 text-center text-[14px] text-[var(--text-light)]">
-          {t.loading}
+        <div
+          role="status"
+          className="mb-6 flex items-center justify-center py-2"
+        >
+          <StudentSpinner size="sm" />
+          <span className="sr-only">{t.loading}</span>
         </div>
       ) : null}
 
@@ -409,7 +422,7 @@ export function ProgramsExplorer({
         <p className={explorerStyles.fbText}>
           <strong>{t.fitTestBannerStrong}</strong> {t.fitTestBannerText}
         </p>
-        <Link href="/student/program-fit-test" className={explorerStyles.fbCta}>
+        <ProgramFitTestLink className={explorerStyles.fbCta}>
           {t.startFitTestCta}
           <svg
             width="14"
@@ -423,7 +436,7 @@ export function ProgramsExplorer({
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
           </svg>
-        </Link>
+        </ProgramFitTestLink>
       </div>
 
       <section className={explorerStyles.sectionBlock}>
@@ -472,7 +485,7 @@ export function ProgramsExplorer({
           <h2 className={explorerStyles.bottomCtaTitle}>{t.bottomCtaTitle}</h2>
           <p className={explorerStyles.bottomCtaSub}>{t.bottomCtaSubtitle}</p>
         </div>
-        <Link href="/student/program-fit-test" className={explorerStyles.bottomCtaBtn}>
+        <ProgramFitTestLink className={explorerStyles.bottomCtaBtn}>
           {t.bottomCtaBtn}
           <svg
             width="14"
@@ -486,7 +499,7 @@ export function ProgramsExplorer({
           >
             <path d="M5 12h14M13 5l7 7-7 7" />
           </svg>
-        </Link>
+        </ProgramFitTestLink>
       </div>
       ) : null}
     </div>

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   Check,
-  GraduationCap,
   Loader2,
   MessageSquare,
   RotateCcw,
@@ -14,7 +13,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { ProgramFitMatchResponse } from "@/app/api/ai/program-matching/route";
 import { ArrowBackIcon, ArrowForwardIcon } from "../../_components/directional-icons";
+import { useStudentFeatureGate } from "../../_components/student-feature-gate-provider";
 import { useLocale } from "@/lib/i18n/locale-context";
+import {
+  dailyLimitStatusFromApiPayload,
+  isAiDailyLimitExceededResponse,
+  type StudentAiDailyLimitStatus,
+} from "@/lib/student-ai-daily-limit";
 import {
   PROGRAM_FIT_TEST_STEPS,
   type FitTestQuestionDef,
@@ -123,9 +128,14 @@ function HtmlText({ html, className }: { html: string; className?: string }) {
   );
 }
 
-export function AiProgramFitTest() {
+export function AiProgramFitTest({
+  dailyLimitStatus,
+}: {
+  dailyLimitStatus: StudentAiDailyLimitStatus;
+}) {
   const { dict, locale } = useLocale();
   const t = dict.student.programFitTest;
+  const { guardAiDailyLimitAction, openAiDailyLimitModal } = useStudentFeatureGate();
   const options = t.options.steps as StepOptionsDict;
   const careerSignals = t.options.careerSignals as Record<string, string>;
 
@@ -184,6 +194,10 @@ export function AiProgramFitTest() {
   }, []);
 
   const submitTest = useCallback(async () => {
+    if (!guardAiDailyLimitAction("ai_program_matching", dailyLimitStatus)) {
+      return;
+    }
+
     setScreen("loading");
     setError(null);
 
@@ -198,8 +212,21 @@ export function AiProgramFitTest() {
         }),
       });
 
-      const data = (await res.json()) as ProgramFitMatchResponse & { error?: string };
+      const data = (await res.json()) as ProgramFitMatchResponse & {
+        error?: string;
+        code?: string;
+        limit?: number | null;
+        used?: number;
+      };
       if (!res.ok) {
+        if (res.status === 429 && isAiDailyLimitExceededResponse(data)) {
+          openAiDailyLimitModal({
+            featureKey: "ai_program_matching",
+            status: dailyLimitStatusFromApiPayload(data),
+          });
+          setScreen("quiz");
+          return;
+        }
         throw new Error(data.error ?? t.somethingWrong);
       }
 
@@ -210,7 +237,16 @@ export function AiProgramFitTest() {
       setError(err instanceof Error ? err.message : t.networkError);
       setScreen("quiz");
     }
-  }, [answers, locale, options, t.networkError, t.somethingWrong]);
+  }, [
+    answers,
+    dailyLimitStatus,
+    guardAiDailyLimitAction,
+    locale,
+    openAiDailyLimitModal,
+    options,
+    t.networkError,
+    t.somethingWrong,
+  ]);
 
   const handleNext = () => {
     if (!stepValid) return;
@@ -516,20 +552,6 @@ export function AiProgramFitTest() {
                   </div>
                 ) : null}
 
-                {rec.universities.length > 0 ? (
-                  <div className={styles.recSection}>
-                    <div className={styles.recSectionLabel}>{t.universitiesToExplore}</div>
-                    <div className={styles.recUnis}>
-                      {rec.universities.map((uni) => (
-                        <Link key={uni.href} href={uni.href} className={styles.recUniRow}>
-                          <span className={styles.recUniName}>{uni.name}</span>
-                          <span className={styles.recUniContext}>{uni.context}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
                 <div className={styles.recActions}>
                   <Link href={rec.href} className={styles.recBtnPrimary}>
                     {formatTemplate(t.exploreProgram, { program: rec.title })}
@@ -577,18 +599,6 @@ export function AiProgramFitTest() {
               </div>
               <span className={styles.ctaLink}>
                 {t.ctaAmbassadorLink} <ArrowForwardIcon size={12} />
-              </span>
-            </Link>
-            <Link href="/student/universities" className={styles.ctaCard}>
-              <div className={styles.ctaIcon}>
-                <GraduationCap size={22} />
-              </div>
-              <div>
-                <div className={styles.ctaTitle}>{t.ctaUniversitiesTitle}</div>
-                <div className={styles.ctaDesc}>{t.ctaUniversitiesDesc}</div>
-              </div>
-              <span className={styles.ctaLink}>
-                {t.ctaUniversitiesLink} <ArrowForwardIcon size={12} />
               </span>
             </Link>
             <Link href="/student/application-support" className={styles.ctaCard}>

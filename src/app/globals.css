@@ -14,3 +14,16 @@ button {
         transform: translateY(0);
     }
 }
+
+@keyframes student-modules-progress-shimmer {
+    0% {
+        transform: translateX(-120%);
+    }
+    100% {
+        transform: translateX(220%);
+    }
+}
+
+.student-modules-progress-shimmer {
+    animation: student-modules-progress-shimmer 2.4s ease-in-out infinite;
+}

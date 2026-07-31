@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useLocale } from "@/lib/i18n/locale-context";
+import { StudentSpinner } from "../../_components/student-spinner";
 import type { ProgramDiscoveryPageData } from "../_lib/get-program-discovery-page";
 import { ProgramCard } from "./program-card";
 import { ProgramDetailOverlay } from "./program-detail-overlay";
@@ -122,8 +123,12 @@ export function ProgramDiscovery({
       </div>
 
       {isPending ? (
-        <div className="py-8 text-center text-[14px] text-[var(--text-light)]">
-          {t.loading}
+        <div
+          role="status"
+          className="flex items-center justify-center py-8"
+        >
+          <StudentSpinner size="sm" />
+          <span className="sr-only">{t.loading}</span>
         </div>
       ) : null}
 

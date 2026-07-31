@@ -14,6 +14,7 @@ export type StudentWebinarCard = {
   registeredCount: number;
   isRegistered: boolean;
   isFull: boolean;
+  isPast: boolean;
   speakerName: string;
   speakerTitle: string;
   speakerBio: string;
@@ -50,6 +51,7 @@ const WEBINAR_SELECT = `
   tags,
   agenda,
   max_students,
+  status,
   host_name,
   host_title,
   host_bio,
@@ -74,6 +76,7 @@ type WebinarRow = {
   tags: string[] | null;
   agenda: unknown;
   max_students: number;
+  status: string;
   host_name: string | null;
   host_title: string | null;
   host_bio: string | null;
@@ -97,6 +100,13 @@ type WebinarRow = {
       }[]
     | null;
 };
+
+function isWebinarPast(row: Pick<WebinarRow, "scheduled_at" | "status">): boolean {
+  if (row.status === "completed" || row.status === "cancelled") {
+    return true;
+  }
+  return new Date(row.scheduled_at).getTime() < Date.now();
+}
 
 function mapRowToCard(
   row: WebinarRow,
@@ -128,6 +138,7 @@ function mapRowToCard(
     registeredCount,
     isRegistered,
     isFull: registeredCount >= maxStudents,
+    isPast: isWebinarPast(row),
     speakerName: host.speakerName,
     speakerTitle: host.speakerTitle,
     speakerBio: host.speakerBio,
@@ -177,15 +188,12 @@ export async function fetchStudentWebinarsPage(
   studentId: string | null,
 ): Promise<StudentWebinarCard[]> {
   const supabase = await createSupabaseSecretClient();
-  const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("webinars")
     .select(WEBINAR_SELECT)
-    .eq("status", "upcoming")
-    .gte("scheduled_at", now)
-    .order("is_featured", { ascending: false })
-    .order("scheduled_at", { ascending: true });
+    .in("status", ["upcoming", "live", "completed"])
+    .order("scheduled_at", { ascending: false });
 
   if (error) {
     console.error("[fetchStudentWebinarsPage]", error);
@@ -210,14 +218,12 @@ export async function fetchStudentWebinarById(
   studentId: string | null,
 ): Promise<StudentWebinarCard | null> {
   const supabase = await createSupabaseSecretClient();
-  const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("webinars")
     .select(WEBINAR_SELECT)
     .eq("id", id)
-    .eq("status", "upcoming")
-    .gte("scheduled_at", now)
+    .in("status", ["upcoming", "live", "completed"])
     .maybeSingle();
 
   if (error) {

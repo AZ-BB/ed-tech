@@ -1,8 +1,9 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/locale-context";
+import { Check, Copy } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowBackIcon } from "../../../_components/directional-icons";
 import { UniversityLocation } from "../../_components/university-location";
 import { UniversityDetailSectionTabs } from "./university-detail-section-tabs";
@@ -132,6 +133,72 @@ function DocDot() {
             className="mt-[7px] h-[5px] min-w-[5px] rounded-full bg-[#40916C]"
             aria-hidden
         />
+    );
+}
+
+function ContactEmailRow({
+    email,
+    contactLabel,
+    copyLabel,
+    copiedLabel,
+}: {
+    email: string;
+    contactLabel: string;
+    copyLabel: string;
+    copiedLabel: string;
+}) {
+    const [copied, setCopied] = useState(false);
+    const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (resetTimerRef.current) {
+                clearTimeout(resetTimerRef.current);
+            }
+        };
+    }, []);
+
+    async function handleCopy() {
+        try {
+            await navigator.clipboard.writeText(email);
+            setCopied(true);
+        } catch {
+            setCopied(false);
+            return;
+        }
+
+        if (resetTimerRef.current) {
+            clearTimeout(resetTimerRef.current);
+        }
+        resetTimerRef.current = setTimeout(() => setCopied(false), 2000);
+    }
+
+    return (
+        <div className="mt-3 min-w-0">
+            <div className="mb-0.5 text-[11px] leading-relaxed text-[#a0a0a0]">{contactLabel}</div>
+            <div className="flex min-w-0 items-center gap-1">
+                <a
+                    href={`mailto:${email}`}
+                    title={email}
+                    className="bidi-ltr min-w-0 flex-1 truncate text-[12px] font-medium text-[#2D6A4F] hover:underline"
+                    dir="ltr"
+                >
+                    {email}
+                </a>
+                <button
+                    type="button"
+                    onClick={() => void handleCopy()}
+                    aria-label={copied ? copiedLabel : copyLabel}
+                    className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[6px] border border-[#e0deda] bg-white p-1 text-[#4a4a4a] transition-colors hover:bg-[#f4f3f0] hover:text-[#2D6A4F]"
+                >
+                    {copied ? (
+                        <Check className="h-3.5 w-3.5" aria-hidden />
+                    ) : (
+                        <Copy className="h-3.5 w-3.5" aria-hidden />
+                    )}
+                </button>
+            </div>
+        </div>
     );
 }
 
@@ -579,7 +646,7 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                 </div>
 
                 <aside className="w-full shrink-0 lg:w-[220px] lg:min-w-[220px]">
-                    <div className="rounded-[12px] border border-[#ece9e4] bg-white p-4 sm:p-5 lg:sticky lg:top-6">
+                    <div className="min-w-0 rounded-[12px] border border-[#ece9e4] bg-white p-4 sm:p-5 lg:sticky lg:top-6">
                         <div className="mb-3.5 text-sm font-semibold text-[#1a1a1a]">{t.yourActions}</div>
                         <DetailSidebarActivityButtons />
                         {uni.websiteUrl ? (
@@ -630,12 +697,12 @@ export function UniversityDetailView({ uni }: { uni: UniversityDetailModel }) {
                         </div>
 
                         {uni.email ? (
-                            <p className="mt-3 text-[11px] leading-relaxed text-[#a0a0a0]">
-                                {t.contact}:{" "}
-                                <a href={`mailto:${uni.email}`} className="bidi-ltr font-medium text-[#2D6A4F] hover:underline" dir="ltr">
-                                    {uni.email}
-                                </a>
-                            </p>
+                            <ContactEmailRow
+                                email={uni.email}
+                                contactLabel={t.contact}
+                                copyLabel={t.copyEmail}
+                                copiedLabel={t.copiedEmail}
+                            />
                         ) : null}
                     </div>
                 </aside>

@@ -56,7 +56,7 @@ export function WebinarHero({
         >
           {primaryCtaLabel ?? w.heroCtaViewUpcoming}
         </a>
-        {featuredWebinar && onRegisterFeatured ? (
+        {featuredWebinar && onRegisterFeatured && !featuredWebinar.isPast ? (
           <button
             type="button"
             onClick={() => onRegisterFeatured(featuredWebinar)}

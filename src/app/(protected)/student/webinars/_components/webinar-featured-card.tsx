@@ -20,6 +20,31 @@ import { WebinarSpeakerAvatar } from "./webinar-speaker-avatar";
 import { WebinarTags } from "./webinar-tag-badge";
 import { ChevronIcon, WebinarRegistrationProgress } from "./webinar-ui";
 
+function WebinarStatusBadge({ isPast }: { isPast: boolean }) {
+  const { dict } = useLocale();
+  const w = dict.webinars;
+
+  if (isPast) {
+    return (
+      <span
+        className={`inline-flex items-center gap-2 rounded-full bg-[var(--sand)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-[var(--text-mid)] ${fontSans}`}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--text-light)]" />
+        {w.completedBadge}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full bg-[var(--amber-bg)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-[var(--amber)] ${fontSans}`}
+    >
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--amber)]" />
+      {w.nextSessionBadge}
+    </span>
+  );
+}
+
 type WebinarFeaturedCardProps = {
   webinar: StudentWebinarCard;
   mode: WebinarPageMode;
@@ -69,15 +94,10 @@ export function WebinarFeaturedCard({
         {sectionDescription ?? w.featuredSectionDescription}
       </p>
 
-      <div className="grid min-w-0 overflow-x-clip rounded-[20px] border border-[var(--border-light)] bg-white sm:rounded-[24px] lg:grid-cols-[1.4fr_1fr]">
+      <div className={`grid min-w-0 overflow-x-clip rounded-[20px] border border-[var(--border-light)] bg-white sm:rounded-[24px] lg:grid-cols-[1.4fr_1fr] ${webinar.isPast ? "opacity-90" : ""}`}>
         <div className="flex min-w-0 flex-col gap-4 p-5 sm:gap-[18px] sm:p-7 md:p-9">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <span
-              className={`inline-flex items-center gap-2 rounded-full bg-[var(--amber-bg)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-[var(--amber)] ${fontSans}`}
-            >
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--amber)]" />
-              {w.nextSessionBadge}
-            </span>
+            <WebinarStatusBadge isPast={webinar.isPast} />
             <WebinarTags tags={webinar.tags} />
           </div>
           {titleContent}
@@ -106,11 +126,19 @@ export function WebinarFeaturedCard({
             capacity={webinar.maxStudents}
             variant="featured"
           />
-          <WebinarRegisterCta
-            webinar={webinar}
-            onRegister={onRegister}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--green)] px-6 py-4 text-[14px] font-bold text-white shadow-[0_4px_14px_rgba(45,106,79,0.25)] transition hover:bg-[var(--green-dark)] ${fontSans}`}
-          />
+          {webinar.isPast ? (
+            <div
+              className={`inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-[var(--sand)] px-6 py-4 text-[14px] font-bold text-[var(--text-mid)] ${fontSans}`}
+            >
+              {w.completedBadge}
+            </div>
+          ) : (
+            <WebinarRegisterCta
+              webinar={webinar}
+              onRegister={onRegister}
+              className={`inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--green)] px-6 py-4 text-[14px] font-bold text-white shadow-[0_4px_14px_rgba(45,106,79,0.25)] transition hover:bg-[var(--green-dark)] ${fontSans}`}
+            />
+          )}
           <button
             type="button"
             onClick={onToggleAgenda}
@@ -156,8 +184,11 @@ export function WebinarGridCard({
   const w = dict.webinars;
   const detailHref = webinarDetailHref(webinar.id, mode, locale);
   return (
-    <article className="flex min-w-0 flex-col gap-3.5 rounded-[18px] border border-[var(--border-light)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-6">
-      <WebinarTags tags={webinar.tags} />
+    <article className={`flex min-w-0 flex-col gap-3.5 rounded-[18px] border border-[var(--border-light)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-6 ${webinar.isPast ? "opacity-90" : ""}`}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        {webinar.isPast ? <WebinarStatusBadge isPast /> : null}
+        <WebinarTags tags={webinar.tags} />
+      </div>
       <h3 className={`${fontSerif} text-[18px] leading-[1.2] tracking-[-0.2px] break-words sm:text-[20px]`}>
         <Link
           href={detailHref}
@@ -207,11 +238,19 @@ export function WebinarGridCard({
           ))}
         </ul>
       ) : null}
-      <WebinarRegisterCta
-        webinar={webinar}
-        onRegister={onRegister}
-        className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--green)] px-[18px] py-[11px] text-[13px] font-semibold text-white transition hover:bg-[var(--green-dark)] ${fontSans}`}
-      />
+      {webinar.isPast ? (
+        <div
+          className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--sand)] px-[18px] py-[11px] text-[13px] font-semibold text-[var(--text-mid)] ${fontSans}`}
+        >
+          {w.completedBadge}
+        </div>
+      ) : (
+        <WebinarRegisterCta
+          webinar={webinar}
+          onRegister={onRegister}
+          className={`mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--green)] px-[18px] py-[11px] text-[13px] font-semibold text-white transition hover:bg-[var(--green-dark)] ${fontSans}`}
+        />
+      )}
     </article>
   );
 }

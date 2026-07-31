@@ -38,6 +38,7 @@ type AppRowRaw = {
   status: string | null;
   assigned_to: string | null;
   assigned_admin_id: string | null;
+  scheduled_at: string | null;
   created_at: string | null;
   school_name: string | null;
   advisors: PersonEmbed;
@@ -299,7 +300,7 @@ function buildSessionSearchOrClause(
 
 function mapApplicationRow(row: AppRowRaw): AdminApplicationSupportTableRow {
   const student = firstEmbed(row.student_profiles);
-  const bookedAt = row.created_at ?? new Date(0).toISOString();
+  const bookedAt = row.scheduled_at ?? row.created_at ?? new Date(0).toISOString();
   const adminName = personNameFromEmbed(row.admins);
   const advisorName = personNameFromEmbed(row.advisors);
 
@@ -403,6 +404,7 @@ async function fetchApplicationRows(
       status,
       assigned_to,
       assigned_admin_id,
+      scheduled_at,
       created_at,
       school_name,
       advisors:assigned_to ( first_name, last_name ),

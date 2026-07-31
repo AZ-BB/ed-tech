@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { getUniversityMajors } from "@/actions/student-my-application-universities";
 
+import { StudentSpinner } from "../../_components/student-spinner";
 import type { ActivityCatalogUniversity } from "../_lib/my-applications-types";
 import { ModalVeil } from "./modal-veil";
 
@@ -88,7 +89,10 @@ export function MoveToShortlistModal({
       )}
 
       {step === "major" && loading && (
-        <p className="text-sm text-[var(--text-mid)]">Loading majors…</p>
+        <div role="status" className="flex items-center justify-center py-4">
+          <StudentSpinner size="sm" />
+          <span className="sr-only">Loading majors…</span>
+        </div>
       )}
 
       {step === "major" && !loading && (

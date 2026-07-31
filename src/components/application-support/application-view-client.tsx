@@ -317,7 +317,7 @@ export function ApplicationViewClient({
   const [studentFlagged, setStudentFlagged] = useState(payload.student.flagged);
   const [isPending, startTransition] = useTransition();
 
-  const { application, plan, student, school, payments, internalNotes, studentDocuments, universityTargets, calls, tasks, packageView, payoutSummary } =
+  const { application, student, school, payments, internalNotes, studentDocuments, universityTargets, calls, tasks, packageView, payoutSummary } =
     payload;
 
   const tabDefs = useMemo(() => {
@@ -336,8 +336,7 @@ export function ApplicationViewClient({
     return next;
   }, [config.showPayoutsTab, config.showProfileTab, config.showActivityTab]);
 
-  const planPrice = plan?.price ?? 0;
-  const packageUniversitiesTotal = plan?.universitiesCount ?? packageView.universitiesTotal;
+  const packageUniversitiesTotal = packageView.universitiesTotal;
   const totalPaid = useMemo(
     () =>
       payments
@@ -345,7 +344,6 @@ export function ApplicationViewClient({
         .reduce((sum, payment) => sum + payment.amount, 0),
     [payments],
   );
-  const remainingBalance = Math.max(0, planPrice - totalPaid);
   const hasStudentEmail =
     application.studentEmail.trim() !== "" && application.studentEmail !== "—";
   const hasPendingPaymentRequest = useMemo(
@@ -759,19 +757,22 @@ export function ApplicationViewClient({
           ) : null}
         </SchoolStudentPanel>
 
-        {plan ? (
-          <SchoolStudentPanel head="Package" sub="Application support plan">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <SnapItem label="Plan name" value={plan.name} />
-              <SnapItem
-                label="Universities included"
-                value={String(plan.universitiesCount)}
-              />
-              <SnapItem label="Price (AED)" value={plan.price.toLocaleString()} />
-              <SnapItem label="Description" value={plan.description ?? "—"} />
-            </div>
-          </SchoolStudentPanel>
-        ) : null}
+        <SchoolStudentPanel head="Package" sub="Universities and payment for this application">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SnapItem
+              label="Universities"
+              value={
+                packageView.universitiesTotal > 0
+                  ? String(packageView.universitiesTotal)
+                  : "—"
+              }
+            />
+            <SnapItem
+              label="Amount paid (AED)"
+              value={totalPaid > 0 ? totalPaid.toLocaleString() : "—"}
+            />
+          </div>
+        </SchoolStudentPanel>
       </>
     );
   } else if (tab === "package") {

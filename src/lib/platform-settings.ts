@@ -3,6 +3,10 @@ import { createSupabaseSecretClient } from "@/utils/supabase-server";
 export const PLATFORM_SETTING_KEYS = {
   defaultAdvisorCreditLimit: "default_advisor_credit_limit",
   defaultAmbassadorCreditLimit: "default_ambassador_credit_limit",
+  aiDailyLimitEssayReview: "ai_daily_limit_essay_review",
+  aiDailyLimitUniversityMatching: "ai_daily_limit_university_matching",
+  aiDailyLimitProgramMatching: "ai_daily_limit_program_matching",
+  funnelOverallLimitEssayReview: "ai_funnel_overall_limit_essay_review",
   featureAiUniversityMatching: "feature_ai_university_matching",
   featureAiProgramMatching: "feature_ai_program_matching",
   featureEssayReview: "feature_essay_review",
@@ -40,9 +44,16 @@ const FEATURE_KEY_TO_SETTING: Record<PlatformFeatureKey, string> = {
 export const PLATFORM_FEATURE_UNAVAILABLE_MESSAGE =
   "This service is currently unavailable.";
 
+export type AiDailyLimitFeatureKey =
+  | "essay_review"
+  | "ai_university_matching"
+  | "ai_program_matching";
+
 export type PlatformSettings = {
   defaultAdvisorCreditLimit: number | null;
   defaultAmbassadorCreditLimit: number | null;
+  aiDailyLimits: Record<AiDailyLimitFeatureKey, number | null>;
+  funnelOverallLimitEssayReview: number | null;
   features: Record<PlatformFeatureKey, boolean>;
 };
 
@@ -70,6 +81,20 @@ function buildSettingsFromRows(rows: { key: string; value: string }[]): Platform
     ),
     defaultAmbassadorCreditLimit: parseOptionalNonNegativeInt(
       byKey.get(PLATFORM_SETTING_KEYS.defaultAmbassadorCreditLimit),
+    ),
+    aiDailyLimits: {
+      essay_review: parseOptionalNonNegativeInt(
+        byKey.get(PLATFORM_SETTING_KEYS.aiDailyLimitEssayReview),
+      ),
+      ai_university_matching: parseOptionalNonNegativeInt(
+        byKey.get(PLATFORM_SETTING_KEYS.aiDailyLimitUniversityMatching),
+      ),
+      ai_program_matching: parseOptionalNonNegativeInt(
+        byKey.get(PLATFORM_SETTING_KEYS.aiDailyLimitProgramMatching),
+      ),
+    },
+    funnelOverallLimitEssayReview: parseOptionalNonNegativeInt(
+      byKey.get(PLATFORM_SETTING_KEYS.funnelOverallLimitEssayReview),
     ),
     features: {
       ai_university_matching: parseBooleanSetting(

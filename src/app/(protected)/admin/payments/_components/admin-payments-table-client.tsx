@@ -49,6 +49,16 @@ function paymentStatusClass(status: string): string {
   return "bg-[#FFF3E0] text-[#E67E22]";
 }
 
+function paymentChannelLabel(channel: "manual" | "stripe"): string {
+  return channel === "stripe" ? "Stripe" : "Manual";
+}
+
+function paymentChannelClass(channel: "manual" | "stripe"): string {
+  return channel === "stripe"
+    ? "bg-[#eef2ff] text-[#4338ca]"
+    : "bg-[#f3f4f6] text-[#4b5563]";
+}
+
 export type AdminPaymentsTableClientProps = {
   rows: AdminPaymentTableRow[];
   totalRows: number;
@@ -162,6 +172,7 @@ export function AdminPaymentsTableClient({
                 "Type",
                 "Reference",
                 "Amount",
+                "Payment type",
                 "Status",
                 "Due date",
                 "Requested by",
@@ -181,7 +192,7 @@ export function AdminPaymentsTableClient({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={11}
                   className="border-b border-[#ece9e4] px-4 py-10 text-center text-[13px] text-[#a0a0a0]"
                 >
                   {filtersActive
@@ -221,6 +232,13 @@ export function AdminPaymentsTableClient({
                   </td>
                   <td className="px-4 py-3 text-[13px] font-semibold text-[#1a1a1a]">
                     {row.amount.toLocaleString()} AED
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${paymentChannelClass(row.paymentChannel)}`}
+                    >
+                      {paymentChannelLabel(row.paymentChannel)}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span

@@ -1,5 +1,6 @@
 "use client";
 
+import { exportAdminEventsExcel } from "@/actions/admin-events";
 import { exportAdminDiscoveryJourneyJson } from "@/actions/admin-discovery-journey";
 import { exportAdminProgramsDiscoveryExcel } from "@/actions/admin-programs-discovery";
 import { exportAdminUniversityProgramsExcel } from "@/actions/admin-university-programs";
@@ -16,6 +17,7 @@ import {
   ADMIN_ANNOUNCEMENTS_HOME,
   ADMIN_CONTENT_HOME,
   ADMIN_INTERNSHIPS_HOME,
+  ADMIN_EVENTS_HOME,
   ADMIN_INTERNSHIP_SUPPORT_REQUESTS_HOME,
   ADMIN_NEWS_HOME,
   ADMIN_PROGRAMS_DISCOVERY_HOME,
@@ -34,6 +36,10 @@ import {
   triggerProgramsDiscoverySampleExcelDownload,
 } from "../_lib/admin-programs-discovery-excel";
 import {
+  triggerAdminEventsExcelDownload,
+  triggerEventsSampleExcelDownload,
+} from "../_lib/admin-events-excel";
+import {
   triggerAdminInternshipsExcelDownload,
   triggerInternshipsSampleExcelDownload,
 } from "../_lib/admin-internships-excel";
@@ -48,6 +54,7 @@ import {
 import { AdminAddAnnouncementDialog } from "./admin-add-announcement-dialog";
 import { AdminAddProgramDialog } from "./admin-add-program-dialog";
 import { AdminAddUniversityProgramDialog } from "./admin-add-university-program-dialog";
+import { AdminAddEventDialog } from "./admin-add-event-dialog";
 import { AdminAddInternshipDialog } from "./admin-add-internship-dialog";
 import { AdminAddNewsDialog } from "./admin-add-news-dialog";
 import { AdminAddScholarshipDialog } from "./admin-add-scholarship-dialog";
@@ -58,6 +65,7 @@ import { AdminAddStudentStoryTopicDialog } from "./admin-add-student-story-topic
 import { ContentDiscoveryJourneyImportDialog } from "./content-discovery-journey-import-dialog";
 import { ContentProgramsDiscoveryImportDialog } from "./content-programs-discovery-import-dialog";
 import { ContentUniversityProgramsImportDialog } from "./content-university-programs-import-dialog";
+import { ContentEventsImportDialog } from "./content-events-import-dialog";
 import { ContentInternshipsImportDialog } from "./content-internships-import-dialog";
 import { ContentScholarshipsImportDialog } from "./content-scholarships-import-dialog";
 import { ContentUniversitiesImportDialog } from "./content-universities-import-dialog";
@@ -137,6 +145,7 @@ export function ContentHeaderActions() {
   const isUniversitiesList = normalized === ADMIN_CONTENT_HOME;
   const isScholarshipsList = normalized === ADMIN_SCHOLARSHIPS_HOME;
   const isInternshipsList = normalized === ADMIN_INTERNSHIPS_HOME;
+  const isEventsList = normalized === ADMIN_EVENTS_HOME;
   const isProgramsDiscoveryList = normalized === ADMIN_PROGRAMS_DISCOVERY_HOME;
   const isUniversityProgramsList = normalized === ADMIN_UNIVERSITY_PROGRAMS_HOME;
   const isDiscoveryJourneyList = normalized === ADMIN_DISCOVERY_JOURNEY_HOME;
@@ -164,6 +173,7 @@ export function ContentHeaderActions() {
     !isUniversitiesList &&
     !isScholarshipsList &&
     !isInternshipsList &&
+    !isEventsList &&
     !isProgramsDiscoveryList &&
     !isUniversityProgramsList &&
     !isDiscoveryJourneyList &&
@@ -238,6 +248,28 @@ export function ContentHeaderActions() {
       await triggerAdminInternshipsExcelDownload(
         result.rows,
         `admin-internships-${day}.xlsx`,
+      );
+    });
+  }
+
+  function handleExportEvents() {
+    startExportTransition(async () => {
+      const result = await exportAdminEventsExcel();
+
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+
+      if (result.rows.length === 0) {
+        window.alert("No events to export.");
+        return;
+      }
+
+      const day = new Date().toISOString().slice(0, 10);
+      await triggerAdminEventsExcelDownload(
+        result.rows,
+        `admin-events-${day}.xlsx`,
       );
     });
   }
@@ -584,6 +616,55 @@ export function ContentHeaderActions() {
         </div>
 
         <ContentDiscoveryJourneyImportDialog
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+        />
+      </>
+    );
+  }
+
+  if (isEventsList) {
+    return (
+      <>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-[10px]">
+          <button
+            type="button"
+            disabled={isExportPending}
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleExportEvents}
+          >
+            <HeaderActionIcon icon="export" />
+            {isExportPending ? "Exporting…" : "Export"}
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => void triggerEventsSampleExcelDownload()}
+          >
+            <HeaderActionIcon icon="download" />
+            Download Sample
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e0deda] bg-white px-4 py-[7px] text-[12px] font-semibold text-[#4a4a4a] transition-all duration-150 hover:border-[#2D6A4F] hover:text-[#2D6A4F]"
+            onClick={() => setImportOpen(true)}
+          >
+            <HeaderActionIcon icon="import" />
+            Bulk Import
+          </button>
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#2D6A4F] bg-[#2D6A4F] px-4 py-[7px] text-[12px] font-semibold text-white transition-all duration-150 hover:bg-[#1B4332]"
+            onClick={() => setAddOpen(true)}
+          >
+            <HeaderActionIcon icon="add" />
+            Add Event
+          </button>
+        </div>
+
+        <AdminAddEventDialog open={addOpen} onClose={() => setAddOpen(false)} />
+
+        <ContentEventsImportDialog
           open={importOpen}
           onClose={() => setImportOpen(false)}
         />

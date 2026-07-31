@@ -12,6 +12,7 @@ async function countTable(
     | "announcements"
     | "news_items"
     | "webinars"
+    | "university_events"
     | "student_stories",
 ) {
   const supabase = await createSupabaseSecretClient();
@@ -52,6 +53,7 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     announcements,
     news,
     webinars,
+    events,
     studentStories,
   ] = await Promise.all([
     countTable("universities"),
@@ -63,6 +65,7 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     countTable("announcements"),
     countTable("news_items"),
     countTable("webinars"),
+    countTable("university_events"),
     countTable("student_stories"),
   ]);
 
@@ -76,6 +79,7 @@ export async function fetchContentTabCounts(): Promise<ContentTabCounts> {
     announcements,
     news,
     webinars,
+    events,
     "student-stories": studentStories,
   };
 }

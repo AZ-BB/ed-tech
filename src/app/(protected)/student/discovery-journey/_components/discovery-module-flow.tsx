@@ -18,6 +18,7 @@ import {
   type DiscoveryModuleListItem,
 } from "../_lib/discovery-journey-api";
 import { getModuleTheme, scaleFormatLabel } from "../_lib/discovery-journey-theme";
+import { StudentSpinner } from "../../_components/student-spinner";
 import { DiscoveryModuleResults } from "./discovery-module-results";
 import { DiscoveryTestHeader } from "./discovery-top-bar";
 import { ModuleIcon } from "./module-icon";
@@ -272,8 +273,11 @@ export function DiscoveryModuleFlow({ moduleId }: { moduleId: string }) {
     return (
       <div className={styles.testPage} style={accentStyle}>
         <DiscoveryTestHeader backLabel={t.backToJourney} />
-        <div className={styles.loadingState}>
-          {screen === "submitting" ? t.submitting : t.loading}
+        <div className={styles.loadingState} role="status">
+          <StudentSpinner />
+          <span className="sr-only">
+            {screen === "submitting" ? t.submitting : t.loading}
+          </span>
         </div>
       </div>
     );

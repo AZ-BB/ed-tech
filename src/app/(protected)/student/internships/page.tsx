@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { StudentLoadingCenter } from "../_components/student-spinner";
 import { InternshipDiscovery } from "./_components/internship-discovery";
 import { loadInternshipDiscoveryPageFromSearchParams } from "@/actions/internships";
 
@@ -18,9 +19,10 @@ export default async function StudentInternshipsPage({
   return (
     <Suspense
       fallback={
-        <div className="mx-auto w-full px-2 py-12 text-center text-[14px] text-[var(--text-light)]">
-          Loading internships…
-        </div>
+        <StudentLoadingCenter
+          label="Loading internships…"
+          className="mx-auto w-full px-2"
+        />
       }
     >
       <InternshipDiscovery pageData={pageData} />

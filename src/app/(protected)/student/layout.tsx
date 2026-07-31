@@ -3,11 +3,13 @@ import { defaultLocale, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
-import { requiresFunnelSubscription } from "@/lib/student-subscription";
+import { requiresFunnelSubscription, requiresIndividualSignupPayment } from "@/lib/student-subscription";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { StudentLayoutShell } from "./_components/student-layout-shell";
+import { StudentPaymentWall } from "./_components/student-payment-wall";
 import "../../student-portal.css";
 
 export default async function StudentLayout({
@@ -32,6 +34,17 @@ export default async function StudentLayout({
   const dict = await getDictionary(locale);
 
   const showFunnelSubscribeCta = requiresFunnelSubscription(auth);
+  const requiresSignupPayment = requiresIndividualSignupPayment(auth);
+
+  if (requiresSignupPayment) {
+    return (
+      <LocaleProvider locale={locale} dict={dict}>
+        <Suspense fallback={null}>
+          <StudentPaymentWall />
+        </Suspense>
+      </LocaleProvider>
+    );
+  }
 
   return (
     <LocaleProvider locale={locale} dict={dict}>

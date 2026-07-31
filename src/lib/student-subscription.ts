@@ -50,6 +50,15 @@ export function requiresFunnelSubscription(
   );
 }
 
+/** Individual student: must pay one-time signup fee before portal access. */
+export function requiresIndividualSignupPayment(
+  snapshot: Pick<StudentSubscriptionSnapshot, "studentType"> & {
+    hasPaidSignupFee: boolean;
+  },
+): boolean {
+  return snapshot.studentType === "individual" && !snapshot.hasPaidSignupFee;
+}
+
 export function resolveStudentFeatureAccess(input: {
   studentType: StudentType;
   subscriptionStatus: StudentSubscriptionStatus;
