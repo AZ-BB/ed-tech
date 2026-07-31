@@ -66,8 +66,10 @@ export function StudentAiDailyLimitModal({
             .replace("{limit}", String(status.limit))}
         </p>
       ) : null}
-      {limitKind === "daily" && "resetHint" in copy ? (
-        <p className="mt-2 text-[12px] text-[var(--text-light)]">{copy.resetHint}</p>
+      {limitKind === "daily" ? (
+        <p className="mt-2 text-[12px] text-[var(--text-light)]">
+          {dict.student.aiDailyLimit.resetHint}
+        </p>
       ) : null}
       <button
         type="button"
