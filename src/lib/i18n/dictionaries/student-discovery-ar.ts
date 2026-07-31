@@ -387,6 +387,7 @@ export const studentDiscoveryAr = {
     format: "النمط",
     focus: "التركيز",
     universities: "الجامعات",
+    status: "الحالة",
     formatOnline: "عبر الإنترنت",
     formatInPerson: "حضورياً",
     backToEvents: "العودة إلى الفعاليات",
@@ -395,10 +396,6 @@ export const studentDiscoveryAr = {
     advisorBody:
       "يمكن لمستشار Univeera مساعدتك في اختيار الفعاليات المهمة لأهدافك وتحضير الأسئلة التي تحصل على إجابات حقيقية.",
     bookAdvisor: "حجز جلسة مع مستشار",
-    eventDetails: "تفاصيل الفعالية",
-    status: "الحالة",
-    format: "النمط",
-    cost: "التكلفة",
     pastEvent: "فعالية منتهية",
     modeOnline: "عبر الإنترنت",
     modeInPerson: "حضورياً",

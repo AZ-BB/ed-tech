@@ -6,7 +6,14 @@ import {
   type StudentFeatureKey,
 } from "@/lib/student-feature-access";
 import { useEffect, useMemo } from "react";
+import type { QuickActionDictKey } from "@/app/(protected)/student/_data/student-dashboard-data";
 import { StudentFunnelSubscribeButton } from "./student-funnel-subscribe-button";
+
+type DisabledFeatureModalItem = {
+  title: string;
+  description: string;
+  benefits?: string[];
+};
 
 type StudentSubscriptionModalProps = {
   open: boolean;
@@ -21,19 +28,21 @@ export function StudentSubscriptionModal({
 }: StudentSubscriptionModalProps) {
   const { dict } = useLocale();
   const copy = dict.student.subscription;
-  const featureItems = dict.student.dashboard.disabledFeaturesModal.items;
+  const featureItems = dict.student.dashboard.disabledFeaturesModal
+    .items as Record<QuickActionDictKey, DisabledFeatureModalItem>;
 
   const featureCopy = useMemo(() => {
     if (!featureKey) return null;
-    const dictKey = FEATURE_TO_QUICK_ACTION_DICT_KEY[featureKey];
-    const item = featureItems[dictKey as keyof typeof featureItems];
+    const dictKey =
+      FEATURE_TO_QUICK_ACTION_DICT_KEY[featureKey] as QuickActionDictKey;
+    const item = featureItems[dictKey];
     if (!item) return null;
     return item;
   }, [featureKey, featureItems]);
 
   const title = featureCopy?.title ?? copy.modalTitle;
   const body = featureCopy?.description ?? copy.modalBody;
-  const benefits = featureCopy?.benefits?.length
+  const benefits: readonly string[] = featureCopy?.benefits?.length
     ? featureCopy.benefits
     : copy.modalBenefits;
 
