@@ -1221,6 +1221,8 @@ export const studentEn = {
           "After you receive an offer, get support with visas, housing, insurance, and arrival planning.",
         internships:
           "Explore vetted internship opportunities and request support to find the right fit.",
+        events:
+          "Discover university fairs, open days, webinars, and workshops — find events that matter and register directly.",
       },
     },
   },

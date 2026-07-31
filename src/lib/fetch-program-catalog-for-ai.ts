@@ -55,7 +55,7 @@ export async function fetchProgramsForEnrichment(
   const { data, error } = await supabase
     .from("programs_discovery")
     .select(
-      "slug, title, category, short_description, tags, demand_level, salary_potential, career_paths",
+      "slug, title, category, short_description, tags, demand_level, salary_potential, characteristic_ids, career_paths",
     )
     .eq("active", true)
     .in("slug", slugs);
@@ -75,6 +75,7 @@ export async function fetchProgramsForEnrichment(
       tags: row.tags ?? [],
       demand_level: row.demand_level,
       salary_potential: row.salary_potential,
+      characteristic_ids: row.characteristic_ids ?? [],
       career_paths: Array.isArray(row.career_paths) ? row.career_paths : [],
     });
   }

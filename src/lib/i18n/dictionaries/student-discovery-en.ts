@@ -388,6 +388,7 @@ export const studentDiscoveryEn = {
     format: "Format",
     focus: "Focus",
     universities: "Universities",
+    status: "Status",
     formatOnline: "Online",
     formatInPerson: "In-person",
     backToEvents: "Back to events",
@@ -396,10 +397,6 @@ export const studentDiscoveryEn = {
     advisorBody:
       "A Univeera advisor can help you pick the events that matter for your goals and prep the questions that get real answers.",
     bookAdvisor: "Book advisor session",
-    eventDetails: "Event details",
-    status: "Status",
-    format: "Format",
-    cost: "Cost",
     pastEvent: "Past event",
     modeOnline: "online",
     modeInPerson: "in person",
