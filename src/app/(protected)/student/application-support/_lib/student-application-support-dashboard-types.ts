@@ -27,6 +27,20 @@ export type StudentApplicationSupportIntake = {
   universities: string[];
 };
 
+export type StudentApplicationSupportAdvisor = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  title: string | null;
+  languages: string | null;
+  experienceYears: number | null;
+  about: string | null;
+  avatarUrl: string | null;
+  sessionFor: string | null;
+  specializationsLabel: string | null;
+  calendlySchedulingUrl: string | null;
+};
+
 export type StudentApplicationSupportDashboardPayload = {
   studentId: string;
   application: StudentApplicationSupportIntake;
@@ -35,4 +49,5 @@ export type StudentApplicationSupportDashboardPayload = {
   universityTargets: ApplicationUniversityTargetRow[];
   documents: DocRow[];
   tasks: ApplicationTaskRow[];
+  advisor: StudentApplicationSupportAdvisor | null;
 };

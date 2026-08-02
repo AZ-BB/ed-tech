@@ -159,7 +159,7 @@ export function EventDetailView({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[960px] px-5 pb-16 pt-6">
+    <div className="mx-auto w-full max-w-[1280px] pb-16 pt-6">
       <button
         type="button"
         onClick={onBack}

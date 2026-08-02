@@ -69,7 +69,7 @@ export function EventCard({
 
   return (
     <article
-      className="flex h-full cursor-pointer flex-col rounded-[18px] border border-[var(--border-light)] bg-white p-5 shadow-[0_1px_2px_rgba(20,40,30,0.03),0_12px_26px_-18px_rgba(20,40,30,0.16)] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-[4px] hover:border-[var(--border)] hover:shadow-[0_8px_16px_-8px_rgba(20,40,30,0.10),0_28px_46px_-24px_rgba(20,40,30,0.26)]"
+      className="flex h-full cursor-pointer flex-col rounded-[18px] border border-[var(--border-light)] bg-white p-6 shadow-[0_1px_2px_rgba(20,40,30,0.03),0_12px_26px_-18px_rgba(20,40,30,0.16)] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-[4px] hover:border-[var(--border)] hover:shadow-[0_8px_16px_-8px_rgba(20,40,30,0.10),0_28px_46px_-24px_rgba(20,40,30,0.26)]"
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

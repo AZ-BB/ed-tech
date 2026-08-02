@@ -7,6 +7,7 @@ import {
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import type { EventDiscoverySearchParams } from "./parse-event-discovery-search-params";
+import { eventCountryMatchesLocationFilter } from "./event-location-options";
 
 export type StudentEventRow =
   Database["public"]["Tables"]["university_events"]["Row"];
@@ -97,7 +98,7 @@ function eventMatchesFilters(
   if (query.location) {
     if (query.location === "Online") {
       if (!isOnlineEventMode(event.mode)) return false;
-    } else if ((event.country ?? "").trim() !== query.location) {
+    } else if (!eventCountryMatchesLocationFilter(event.country, query.location)) {
       return false;
     }
   }

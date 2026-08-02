@@ -3102,7 +3102,7 @@ export function MyApplicationsClient({
           onClose={() => setRecModal(false)}
           title={app.requestRecTitle}
         >
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             <div>
               <label className={labelClass}>{app.teacherName}</label>
               <input
@@ -3111,17 +3111,7 @@ export function MyApplicationsClient({
                 onChange={(e) =>
                   setRecForm((f) => ({ ...f, teacher_name: e.target.value }))
                 }
-              />
-            </div>
-            <div>
-              <label className={labelClass}>{app.subjectOptional}</label>
-              <input
-                className={`${fieldClass} mt-1.5 w-full`}
-                value={recForm.teacher_subject}
-                onChange={(e) =>
-                  setRecForm((f) => ({ ...f, teacher_subject: e.target.value }))
-                }
-                placeholder={app.subjectPlaceholder}
+                placeholder={app.teacherNamePlaceholder}
               />
             </div>
             <div>
@@ -3133,8 +3123,20 @@ export function MyApplicationsClient({
                 onChange={(e) =>
                   setRecForm((f) => ({ ...f, teacher_email: e.target.value }))
                 }
+                placeholder={app.teacherEmailPlaceholder}
               />
             </div>
+          </div>
+          <div className="mt-3.5">
+            <label className={labelClass}>{app.subjectOptional}</label>
+            <input
+              className={`${fieldClass} mt-1.5 w-full`}
+              value={recForm.teacher_subject}
+              onChange={(e) =>
+                setRecForm((f) => ({ ...f, teacher_subject: e.target.value }))
+              }
+              placeholder={app.subjectPlaceholder}
+            />
           </div>
           <div className="mt-3.5">
             <label className={labelClass}>{app.forWhichApplication}</label>
@@ -3144,16 +3146,18 @@ export function MyApplicationsClient({
               onChange={(e) =>
                 setRecForm((f) => ({ ...f, for_application: e.target.value }))
               }
+              placeholder={app.forApplicationPlaceholder}
             />
           </div>
           <div className="mt-3.5">
             <label className={labelClass}>{app.personalNoteOptional}</label>
             <textarea
-              className={`${fieldClass} mt-1.5 min-h-[60px] w-full resize-y`}
+              className={`${fieldClass} mt-1.5 min-h-[96px] w-full resize-y`}
               value={recForm.personal_note}
               onChange={(e) =>
                 setRecForm((f) => ({ ...f, personal_note: e.target.value }))
               }
+              placeholder={app.personalNotePlaceholder}
             />
           </div>
           <div className="mt-3.5">

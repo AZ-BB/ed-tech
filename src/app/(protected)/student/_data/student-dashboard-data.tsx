@@ -36,18 +36,8 @@ export const sidebarNavItems: SidebarNavItem[] = [
   },
   {
     type: "link",
-    id: "scholarships",
-    href: "/student/scholarships",
-  },
-  {
-    type: "link",
-    id: "internships",
-    href: "/student/internships",
-  },
-  {
-    type: "link",
-    id: "events",
-    href: "/student/events",
+    id: "essay-review",
+    href: "/student/essay-review",
   },
   {
     type: "link",
@@ -68,6 +58,16 @@ export const sidebarNavItems: SidebarNavItem[] = [
     type: "link",
     id: "post-admission-support",
     href: "/student/post-admission-support",
+  },
+  {
+    type: "link",
+    id: "internships",
+    href: "/student/internships",
+  },
+  {
+    type: "link",
+    id: "events",
+    href: "/student/events",
   },
   {
     type: "link",
