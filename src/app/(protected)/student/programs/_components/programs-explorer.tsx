@@ -13,7 +13,6 @@ import {
   HERO_FLOAT_PROGRAMS,
   PROGRAM_QUICK_CHIPS,
   PROGRAM_RAILS,
-  PROGRAM_SECTION_DISPLAY_LIMIT,
   selectProgramsForRail,
 } from "../_lib/program-discovery-constants";
 import {
@@ -241,9 +240,7 @@ export function ProgramsExplorer({
             <div className={explorerStyles.emptyState}>{t.noMatch}</div>
           ) : (
             <div className={explorerStyles.selProgramGrid}>
-              {interestPrograms
-                .slice(0, PROGRAM_SECTION_DISPLAY_LIMIT)
-                .map((program) => (
+              {interestPrograms.map((program) => (
                 <ProgramExplorerCard
                   key={program.id}
                   program={program}

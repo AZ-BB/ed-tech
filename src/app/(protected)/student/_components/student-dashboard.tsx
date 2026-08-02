@@ -834,6 +834,39 @@ export function StudentDashboard({
         </div>
       </div>
 
+      <div className="relative mb-5 overflow-hidden rounded-[20px] bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#40916C] px-9 py-8 text-white after:pointer-events-none after:absolute after:-right-[60px] after:-top-[60px] after:h-[200px] after:w-[200px] after:rounded-full after:bg-white/[0.04] max-[800px]:px-8">
+        <h2 className="relative z-[1] font-[family-name:var(--font-dm-serif)] text-[22px]">
+          {d.essayReviewBannerTitle}
+        </h2>
+        <p className="relative z-[1] mt-2 max-w-[560px] text-[13px] leading-relaxed text-white/70">
+          {d.essayReviewBannerDesc}
+        </p>
+        {isStudentFeatureEnabled(featureAccess, "essay_review") ? (
+          <Link
+            href="/student/essay-review"
+            className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[#40916C] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
+          >
+            {d.essayReviewBannerCta}
+            <ArrowForwardIcon size={14} />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if (showFunnelSubscriptionCta) {
+                openSubscriptionModal("essay_review");
+                return;
+              }
+              openDisabledFeaturesModal("essay_review");
+            }}
+            className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[#40916C] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
+          >
+            {d.essayReviewBannerCta}
+            <ArrowForwardIcon size={14} />
+          </button>
+        )}
+      </div>
+
       <div className="mb-5 grid gap-3.5 max-[800px]:grid-cols-1 lg:grid-cols-2">
         <div className="flex flex-col gap-4 rounded-2xl border border-[var(--border-light)] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-6">
           <div className="min-w-0">

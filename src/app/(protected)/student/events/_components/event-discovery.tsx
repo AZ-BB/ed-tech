@@ -144,12 +144,12 @@ export function EventDiscovery({ pageData }: { pageData: EventDiscoveryPageData 
           }}
         />
       ) : (
-        <div className="mx-auto w-full max-w-[1100px] px-5 pb-16 pt-6">
-          <header className="mb-5">
-            <h1 className="font-[family-name:var(--font-dm-serif)] text-[26px] text-[var(--text)]">
+        <div className="mx-auto w-full max-w-[1400px] pb-16 pt-6">
+          <header className="mb-6">
+            <h1 className="font-[family-name:var(--font-dm-serif)] text-[28px] text-[var(--text)] sm:text-[30px]">
               {t.pageTitle}
             </h1>
-            <p className="mt-1 text-[14px] leading-normal text-[var(--text-light)]">
+            <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-[var(--text-light)]">
               {t.pageSubtitle}
             </p>
           </header>
@@ -169,10 +169,15 @@ export function EventDiscovery({ pageData }: { pageData: EventDiscoveryPageData 
               type: t.filterType,
               format: t.filterFormat,
               clearFilters: t.clearFilters,
+              locationOnline: t.locationOnline,
+              optGroupGcc: t.optGroupGcc,
+              optGroupLevant: t.optGroupLevant,
+              optGroupNorthAfrica: t.optGroupNorthAfrica,
+              optGroupOther: t.optGroupOther,
             }}
           />
 
-          <p className="mb-4 text-[13px] font-medium text-[var(--text-light)]">
+          <p className="mb-5 text-[14px] font-medium text-[var(--text-light)]">
             <strong className="font-semibold text-[var(--text)]">{pageData.events.length}</strong>{" "}
             {pageData.events.length === 1 ? t.resultsSingular : t.resultsPlural}
           </p>
@@ -187,7 +192,7 @@ export function EventDiscovery({ pageData }: { pageData: EventDiscoveryPageData 
               }}
             />
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3">
               {pageData.events.map((event) => (
                 <EventCard
                   key={event.id}

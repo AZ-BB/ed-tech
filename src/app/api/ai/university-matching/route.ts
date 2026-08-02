@@ -138,6 +138,33 @@ function asStringArray(value: unknown): string[] {
     .filter(Boolean);
 }
 
+/** Strip URLs and markdown links from whyItMatches bullets; remove leftover empty "()" */
+function stripLinksFromWhyItMatchesText(text: string): string {
+  let result = text;
+
+  // [label](https://...) → label
+  result = result.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+  // <https://...>
+  result = result.replace(/<https?:\/\/[^>]+>/gi, "");
+  // http(s) URLs
+  result = result.replace(/https?:\/\/[^\s)<>\]"']+/gi, "");
+  // www. URLs
+  result = result.replace(/\bwww\.[^\s)<>\]"']+/gi, "");
+
+  // Empty or whitespace-only parentheses left after URL removal
+  result = result.replace(/\(\s*\)/g, "");
+
+  result = result.replace(/\s{2,}/g, " ");
+  result = result.replace(/\s+([.,;:!?])/g, "$1");
+  return result.trim();
+}
+
+function sanitizeWhyItMatches(value: unknown): string[] {
+  return asStringArray(value)
+    .map(stripLinksFromWhyItMatchesText)
+    .filter(Boolean);
+}
+
 function parseLocale(value: unknown): "en" | "ar" | undefined {
   if (value === "en" || value === "ar") return value;
   return undefined;
@@ -336,7 +363,7 @@ ${JSON.stringify(payload, null, 2)}
 
 5. **Ensure diversity across the shortlist** — The ${REQUIRED_MATCH_COUNT} universities should not be five near-duplicates (same city, same tier, same teaching style). Vary geography within the chosen destination when possible, and mix program angles that still fit the major.
 
-6. **Cite the student's answers** — Every whyItMatches bullet must reference a specific answer from the profile (grades, tests, interests, goals, budget, etc.). Never use vague lines like "this fits your profile" without naming what fits.
+6. **Cite the student's answers** — Every whyItMatches bullet must reference a specific answer from the profile (grades, tests, interests, goals, budget, etc.). Never use vague lines like "this fits your profile" without naming what fits. Write plain text only in whyItMatches: no URLs, no markdown links, no parenthetical source citations, and no web addresses of any kind. Put official links only in sourceUrl.
 
 7. **Be truthful about gaps** — In considerations, flag what the student must verify: language requirements, portfolio/audition, visa rules, scholarship availability, or score cutoffs. Do not invent exact deadlines or guaranteed funding.
 
@@ -362,7 +389,7 @@ ${JSON.stringify(payload, null, 2)}
 
 ## Hard rules
 - Return exactly ${REQUIRED_MATCH_COUNT} matches — no fewer, no more. Each must be a distinct university (no duplicate universityName).
-- whyItMatches: 4–5 strings per match; one sentence each when possible; each bullet must tie to a different aspect of the student's profile where possible.
+- whyItMatches: 4–5 strings per match; one sentence each when possible; each bullet must tie to a different aspect of the student's profile where possible. Plain text only — never include links, URLs, or empty parentheses from removed citations.
 - Prefer official university or admissions pages for sourceUrl.
 - Do not include matchScore, numeric fit scores, rankings, or any other scoring field.
 - Do not include markdown, comments, or text outside JSON.
@@ -465,7 +492,7 @@ ${JSON.stringify(payload, null, 2)}
           country,
           tuitionEstimate,
           admissionFit,
-          whyItMatches: asStringArray(whyItMatches),
+          whyItMatches: sanitizeWhyItMatches(whyItMatches),
           considerations,
           nextSteps: asStringArray(nextSteps),
           sourceUrl,

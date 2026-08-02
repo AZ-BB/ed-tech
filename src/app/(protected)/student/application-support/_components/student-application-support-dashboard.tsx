@@ -27,11 +27,12 @@ import {
 } from "@/app/(protected)/student/my-applications/_lib/my-applications-defaults";
 
 import type { StudentApplicationSupportDashboardPayload } from "../_lib/student-application-support-dashboard-types";
+import { StudentApplicationSupportAdvisorTab } from "./student-application-support-advisor-tab";
 
 type DocRow =
   Database["public"]["Tables"]["student_my_application_documents"]["Row"];
 
-type TabId = "intake" | "universities" | "documents" | "tasks";
+type TabId = "intake" | "advisor" | "universities" | "documents" | "tasks";
 
 const PANEL_CLASS =
   "mb-3.5 min-w-0 overflow-x-clip rounded-[12px] border border-[var(--border-light)] bg-white sm:rounded-[14px]";
@@ -99,6 +100,7 @@ function formatDate(iso: string | null | undefined, locale?: string) {
 function parseTab(raw: string | null): TabId {
   if (
     raw === "intake" ||
+    raw === "advisor" ||
     raw === "universities" ||
     raw === "documents" ||
     raw === "tasks"
@@ -427,6 +429,7 @@ export function StudentApplicationSupportDashboard({
         {(
           [
             ["intake", d.tabs.intake, null],
+            ["advisor", d.tabs.advisor, null],
             [
               "universities",
               d.tabs.universities,
@@ -545,6 +548,26 @@ export function StudentApplicationSupportDashboard({
                   }
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {tab === "advisor" && initial.advisor ? (
+        <StudentApplicationSupportAdvisorTab
+          advisor={initial.advisor}
+          applicationId={application.id}
+          studentName={application.studentName}
+          studentEmail={application.studentEmail}
+        />
+      ) : null}
+
+      {tab === "advisor" && !initial.advisor ? (
+        <div className="animate-[my-apps-fade-in_0.2s_ease] min-w-0">
+          <CalloutInfo>{d.advisor.noAdvisorHint}</CalloutInfo>
+          <div className={PANEL_CLASS}>
+            <div className={PANEL_BODY_CLASS}>
+              <p className="text-sm text-[var(--text-mid)]">{d.advisor.noAdvisorMessage}</p>
             </div>
           </div>
         </div>

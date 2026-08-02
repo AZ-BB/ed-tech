@@ -537,11 +537,16 @@ export const studentAr: {
     counselorFeedback: "ملاحظات المستشار",
     noCounselorComments: "لا توجد تعليقات بعد. سيترك مستشارك ملاحظاته هنا",
     teacherName: "اسم المعلم",
+    teacherNamePlaceholder: "مثال: أ. أحمد",
     subjectOptional: "المادة (اختياري)",
     subjectPlaceholder: "مثال: Mathematics",
     teacherEmail: "بريد المعلم",
+    teacherEmailPlaceholder: "teacher@school.edu",
     forWhichApplication: "لأي تقديم؟",
+    forApplicationPlaceholder: "مثال: جامعة Edinburgh — Economics",
     personalNoteOptional: "ملاحظة شخصية (اختياري)",
+    personalNotePlaceholder:
+      "مثال: اذكر قيادتي في نادي المناظرة واهتمامي بالاقتصاد…",
     neededBy: "متى تحتاجه؟",
     forRecLabel: "لـ:",
     requestedLabel: "طُلب",
@@ -857,9 +862,32 @@ export const studentAr: {
       no: "لا",
       tabs: {
         intake: "الاستبيان",
+        advisor: "المستشار",
         universities: "الجامعات",
         documents: "المستندات",
         tasks: "المهام",
+      },
+      advisor: {
+        hintBold: "مستشارك المخصص.",
+        hintBody:
+          "يراجع {name} طلباتك ومستنداتك ومقالاتك ويقدّم إرشاداً يناسب ملفك.",
+        panelTitle: "مستشاري",
+        onlineNow: "متاح الآن",
+        supportsAdmissions: "يدعم التقديم إلى {regions}",
+        experienceYears: "{count} سنوات في إرشاد طلاب الخليج",
+        bookSession: "احجز جلسة",
+        calendlyTitle: "احجز جلسة مع {name} — Calendly",
+        calendlyUnavailable:
+          "لم يربط {name} حساب Calendly بعد. تواصل مع مستشارك لترتيب جلسة.",
+        noAdvisorHint: "سيتم تعيين مستشارك قريباً.",
+        noAdvisorMessage:
+          "نطابقك مع مستشار قبول مخصص. عد لاحقاً أو تواصل مع الدعم إذا احتجت مساعدة.",
+        modal: {
+          closeAria: "إغلاق الحجز",
+          loading: "جاري تحميل الجدولة…",
+          alreadyScheduledMessage: "لديك جلسة مجدولة بالفعل في {date}.",
+          alreadyScheduledClose: "إغلاق",
+        },
       },
       labels: {
         fullName: "الاسم الكامل",
@@ -951,10 +979,10 @@ export const studentAr: {
     personalityOverview: "نظرة عامة على الشخصية",
     programDiscovery: "اكتشاف البرامج",
     universitySearch: "البحث عن الجامعات",
-    scholarships: "المنح الدراسية",
+    essayReview: "مراجعة المقالات بالذكاء الاصطناعي",
     internships: "التدريبات",
     events: "الفعاليات",
-    advisorSessions: "جلسات فردية مع مستشارين",
+    advisorSessions: "مستشار فردي",
     ambassadors: "السفراء",
     applicationSupport: "دعم التقديم",
     postAdmission: "ما بعد القبول",
@@ -1021,6 +1049,10 @@ export const studentAr: {
     findEventsTitle: "اعثر على فعاليات الجامعات",
     findEventsDesc: "ابحث في قائمة الفعاليات التي تقام في بلدك",
     findEventsCta: "اعثر على فعالية",
+    essayReviewBannerTitle: "احصل على ملاحظات حول مقالاتك وبياناتك الشخصية",
+    essayReviewBannerDesc:
+      "مراجع المقالات بالذكاء الاصطناعي لدينا اطلع على أكثر من 10,000 مقال ويمكنه تقديم ملاحظات واضحة وقابلة للتطبيق حول ما يجب تغييره.",
+    essayReviewBannerCta: "راجع مقالي",
     activity: {
       universities_viewed: "الجامعات المُشاهَدة",
       universities_saved: "الجامعات المحفوظة",

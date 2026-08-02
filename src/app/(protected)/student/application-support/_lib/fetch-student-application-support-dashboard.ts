@@ -16,6 +16,7 @@ import type {
   StudentApplicationSupportDashboardPayload,
   StudentApplicationSupportIntake,
 } from "./student-application-support-dashboard-types";
+import { fetchStudentApplicationSupportAdvisor } from "./fetch-student-application-support-advisor";
 
 type SecretClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
 
@@ -44,6 +45,7 @@ const STUDENT_APPLICATION_SELECT = `
   additional_notes,
   status,
   scheduled_at,
+  assigned_to,
   package_data,
   updated_at,
   payments ( amount, status )
@@ -79,6 +81,7 @@ type ApplicationRowRaw = {
   additional_notes: string | null;
   status: string | null;
   scheduled_at: string | null;
+  assigned_to: string | null;
   package_data: unknown;
   updated_at: string | null;
   payments: PaymentEmbed | PaymentEmbed[] | null;
@@ -179,10 +182,11 @@ export async function fetchStudentApplicationSupportDashboard(
   const universitiesTotal = resolveApplicationUniversitiesTotal(packageData, 0);
   const totalPaidAed = sumPaidPayments(row.payments);
 
-  const [universityTargets, tasks, documents] = await Promise.all([
+  const [universityTargets, tasks, documents, advisor] = await Promise.all([
     fetchApplicationUniversityTargets(secret, row.id),
     fetchApplicationTasks(secret, row.id),
     ensureStudentApplicationDocuments(secret, studentId),
+    fetchStudentApplicationSupportAdvisor(secret, row.assigned_to),
   ]);
 
   return {
@@ -193,5 +197,6 @@ export async function fetchStudentApplicationSupportDashboard(
     universityTargets,
     documents,
     tasks,
+    advisor,
   };
 }

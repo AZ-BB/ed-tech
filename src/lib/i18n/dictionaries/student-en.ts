@@ -510,11 +510,16 @@ export const studentEn = {
     noCounselorComments:
       "No comments yet — your counselor will leave feedback here",
     teacherName: "Teacher name",
+    teacherNamePlaceholder: "e.g. Mr. Smith",
     subjectOptional: "Subject (optional)",
     subjectPlaceholder: "e.g. Mathematics",
     teacherEmail: "Teacher email",
+    teacherEmailPlaceholder: "teacher@school.edu",
     forWhichApplication: "For which application?",
+    forApplicationPlaceholder: "e.g. University of Edinburgh — Economics",
     personalNoteOptional: "Personal note (optional)",
+    personalNotePlaceholder:
+      "e.g. Mention my leadership in the debate club and my interest in economics…",
     neededBy: "When do you need it by?",
     forRecLabel: "For:",
     requestedLabel: "Requested",
@@ -840,9 +845,32 @@ export const studentEn = {
       no: "No",
       tabs: {
         intake: "Intake",
+        advisor: "Advisor",
         universities: "Universities",
         documents: "Documents",
         tasks: "Tasks",
+      },
+      advisor: {
+        hintBold: "Your dedicated advisor.",
+        hintBody:
+          "{name} reviews your applications, documents, and essays and tailors guidance to your profile.",
+        panelTitle: "My Advisor",
+        onlineNow: "Online now",
+        supportsAdmissions: "Supports {regions} admissions",
+        experienceYears: "{count} years guiding GCC students",
+        bookSession: "Book session",
+        calendlyTitle: "Book a session with {name} — Calendly",
+        calendlyUnavailable:
+          "{name} has not connected Calendly yet. Contact your advisor to arrange a session.",
+        noAdvisorHint: "Your advisor will be assigned soon.",
+        noAdvisorMessage:
+          "We are matching you with a dedicated admissions advisor. Check back shortly or contact support if you need help.",
+        modal: {
+          closeAria: "Close booking",
+          loading: "Loading scheduler…",
+          alreadyScheduledMessage: "You already have a session scheduled for {date}.",
+          alreadyScheduledClose: "Close",
+        },
       },
       labels: {
         fullName: "Full name",
@@ -934,10 +962,10 @@ export const studentEn = {
     personalityOverview: "Personality Overview",
     programDiscovery: "Program Discovery",
     universitySearch: "University Search",
-    scholarships: "Scholarships",
+    essayReview: "AI Essay Review",
     internships: "Internships",
     events: "Events",
-    advisorSessions: "1-1 Advisors",
+    advisorSessions: "1-1 Advisor",
     ambassadors: "Ambassadors",
     applicationSupport: "Application Support",
     postAdmission: "Post Admission",
@@ -1006,6 +1034,10 @@ export const studentEn = {
     findEventsTitle: "Find University Events",
     findEventsDesc: "Search the list of events taking place in your country",
     findEventsCta: "Find Event",
+    essayReviewBannerTitle: "Get feedback on your Essays & Personal Statements",
+    essayReviewBannerDesc:
+      "Our AI essay reviewer has seen 10,000+ essays and can give you clear actionable feedback on what to change.",
+    essayReviewBannerCta: "Review my essay",
     activity: {
       universities_viewed: "Universities Viewed",
       universities_saved: "Universities Saved",

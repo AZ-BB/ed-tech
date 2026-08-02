@@ -7,17 +7,17 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { StudentLanguageSwitcher } from "@/lib/i18n/student-language-switcher";
 import {
   Brain,
+  Briefcase,
+  Calendar,
   ClipboardList,
   Compass,
+  FileText,
   LayoutDashboard,
   LogOut,
   Package,
   ScanSearch,
-  Briefcase,
-  Calendar,
   Send,
   Settings,
-  Star,
   UserRound,
   UsersRound,
   Video,
@@ -47,7 +47,7 @@ const NAV_ID_TO_KEY: Record<string, keyof Dictionary["student"]["nav"]> = {
   "personality-check": "personalityOverview",
   "program-discovery": "programDiscovery",
   "university-search": "universitySearch",
-  scholarships: "scholarships",
+  "essay-review": "essayReview",
   internships: "internships",
   events: "events",
   "advisor-sessions": "advisorSessions",
@@ -88,8 +88,8 @@ function StudentNavIcon({
       return <Compass {...common} />;
     case "university-search":
       return <ScanSearch {...common} />;
-    case "scholarships":
-      return <Star {...common} />;
+    case "essay-review":
+      return <FileText {...common} />;
     case "internships":
       return <Briefcase {...common} />;
     case "events":
@@ -176,6 +176,11 @@ function isStudentAmbassadorsCatalogPath(pathname: string) {
   return normalizePath(pathname) === "/student/ambassadors";
 }
 
+function isStudentEventsPath(pathname: string) {
+  const normalized = normalizePath(pathname);
+  return normalized === "/student/events" || normalized.startsWith("/student/events/");
+}
+
 function isStudentWebinarsPath(pathname: string) {
   const normalized = normalizePath(pathname);
   return normalized === "/student/webinars" || normalized.startsWith("/student/webinars/");
@@ -222,6 +227,9 @@ function shellHeaderWidthClass(pathname: string): string {
   }
   if (isStudentWebinarsPath(pathname)) {
     return "mx-auto w-full max-w-[1180px]";
+  }
+  if (isStudentEventsPath(pathname)) {
+    return "mx-auto w-full max-w-[1400px]";
   }
   if (isStudentInternshipsPath(pathname)) {
     return "mx-auto w-full max-w-[1100px]";
@@ -463,9 +471,12 @@ export function StudentLayoutShell({
   const headerWidthClass = shellHeaderWidthClass(pathname);
   const useGreenPageBackground = isStudentApplicationSupportPath(pathname);
   const isDiscoveryJourney = isStudentDiscoveryJourneyPath(pathname);
+  const isEvents = isStudentEventsPath(pathname);
   const contentPaddingClass = isDiscoveryJourney
     ? "px-4 sm:px-6"
-    : "px-4 sm:px-6 md:px-10 lg:px-16";
+    : isEvents
+      ? "px-4 sm:px-6 md:px-8 lg:px-10"
+      : "px-4 sm:px-6 md:px-10 lg:px-16";
 
   const openSidebar = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
