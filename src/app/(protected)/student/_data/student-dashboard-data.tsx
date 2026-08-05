@@ -41,6 +41,11 @@ export const sidebarNavItems: SidebarNavItem[] = [
   },
   {
     type: "link",
+    id: "scholarships",
+    href: "/student/scholarships",
+  },
+  {
+    type: "link",
     id: "advisor-sessions",
     href: "/student/advisor-sessions",
   },
