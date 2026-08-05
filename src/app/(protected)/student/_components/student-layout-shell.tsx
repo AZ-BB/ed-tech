@@ -6,6 +6,7 @@ import { getDirection, type Locale } from "@/lib/i18n/config";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { StudentLanguageSwitcher } from "@/lib/i18n/student-language-switcher";
 import {
+  Award,
   Brain,
   Briefcase,
   Calendar,
@@ -48,6 +49,7 @@ const NAV_ID_TO_KEY: Record<string, keyof Dictionary["student"]["nav"]> = {
   "program-discovery": "programDiscovery",
   "university-search": "universitySearch",
   "essay-review": "essayReview",
+  scholarships: "scholarships",
   internships: "internships",
   events: "events",
   "advisor-sessions": "advisorSessions",
@@ -90,6 +92,8 @@ function StudentNavIcon({
       return <ScanSearch {...common} />;
     case "essay-review":
       return <FileText {...common} />;
+    case "scholarships":
+      return <Award {...common} />;
     case "internships":
       return <Briefcase {...common} />;
     case "events":
@@ -130,6 +134,11 @@ function isSidebarNavLinkActive(
   if (item.id === "university-search") {
     return (
       n === "/student/universities" || n.startsWith("/student/universities/")
+    );
+  }
+  if (item.id === "scholarships") {
+    return (
+      n === "/student/scholarships" || n.startsWith("/student/scholarships/")
     );
   }
   if (n === h) return true;
