@@ -51,6 +51,7 @@ export const NAV_ID_TO_FEATURE: Partial<Record<string, StudentFeatureKey>> = {
   "program-discovery": "program_discovery",
   "university-search": "universities",
   "essay-review": "essay_review",
+  scholarships: "scholarships",
   internships: "internships",
   events: "events",
   "advisor-sessions": "advisor_sessions",

@@ -963,6 +963,7 @@ export const studentEn = {
     programDiscovery: "Program Discovery",
     universitySearch: "University Search",
     essayReview: "AI Essay Review",
+    scholarships: "Scholarships",
     internships: "Internships",
     events: "Events",
     advisorSessions: "1-1 Advisor",

@@ -980,6 +980,7 @@ export const studentAr: {
     programDiscovery: "اكتشاف البرامج",
     universitySearch: "البحث عن الجامعات",
     essayReview: "مراجعة المقالات بالذكاء الاصطناعي",
+    scholarships: "المنح الدراسية",
     internships: "التدريبات",
     events: "الفعاليات",
     advisorSessions: "مستشار فردي",
