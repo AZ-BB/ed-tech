@@ -1,4 +1,6 @@
 export const signupAr = {
+  step1of2: "الخطوة 1 من 2",
+  step2of2: "الخطوة 2 من 2",
   step1of3: "الخطوة 1 من 3",
   step2of3: "الخطوة 2 من 3",
   step3of3: "الخطوة 3 من 3",
