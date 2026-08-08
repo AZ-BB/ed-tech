@@ -2,8 +2,7 @@
 
 import clsx from "clsx";
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
-import { unstable_rethrow, useRouter } from "next/navigation";
+import { unstable_rethrow } from "next/navigation";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { individualStudentSignUp, studentSignUp } from "@/actions/auth";
 import { CountryCombobox } from "@/components/auth/country-combobox";
@@ -76,7 +75,7 @@ const fieldNormal = `${fieldBase} border-[var(--border)] focus:border-[var(--gre
 const fieldErr = `${fieldBase} border-red-500 shadow-[0_0_0_3px_rgba(229,57,53,0.08)]`;
 const fieldOk = `${fieldBase} border-[var(--green-light)]`;
 
-type Step = "profile" | "account" | "school";
+type Step = "details" | "school";
 
 function getPasswordStrength(
   v: string,
@@ -123,23 +122,6 @@ function SplitLayout({ left, right, brand }: SplitProps) {
       </div>
       <div className="flex flex-1 items-start justify-center overflow-y-auto bg-[var(--sand)] px-4 py-7 sm:px-6 sm:py-9 lg:items-center lg:px-8">
         {right}
-      </div>
-    </div>
-  );
-}
-
-function ProgressBar({ label, stepText, pct }: { label: string; stepText: string; pct: number }) {
-  return (
-    <div className="mb-6 w-full max-w-md">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-[var(--text-light)]">{label}</span>
-        <span className="text-xs font-semibold text-[var(--green)]">{stepText}</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--border-light)]">
-        <div
-          className="h-full rounded-full bg-[var(--green)] transition-[width] duration-300 ease-out"
-          style={{ width: `${pct}%` }}
-        />
       </div>
     </div>
   );
@@ -195,18 +177,16 @@ function LegalModalBody({ doc }: { doc: LegalDoc }) {
 
 export function SignupWizard() {
   const uid = useId();
-  const router = useRouter();
   const { dict } = useLocale();
   const a = dict.auth;
   const s = dict.signup;
   const strengthLabel = strengthLabels(s);
-  const [step, setStep] = useState<Step>("profile");
+  const [step, setStep] = useState<Step>("details");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [grade, setGrade] = useState("");
   const [nationality, setNationality] = useState<Country | null>(null);
-  const [residence, setResidence] = useState<Country | null>(null);
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -222,15 +202,17 @@ export function SignupWizard() {
   const [legal, setLegal] = useState<"terms" | "privacy" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Field-level errors (simple strings, empty = no error)
-  const [pe, setPe] = useState({
+  const [errors, setErrors] = useState({
     f: "",
     l: "",
-    s: "",
+    g: "",
     n: "",
-    r: "",
+    e: "",
+    p: "",
+    pw: "",
+    c: "",
+    t: "",
   });
-  const [ae, setAe] = useState({ e: "", p: "", pw: "", c: "", t: "" });
   const [se, setSe] = useState({ c: "" });
 
   const pwStr = getPasswordStrength(password);
@@ -247,27 +229,35 @@ export function SignupWizard() {
   const schoolCodeLongEnough =
     schoolCode.trim().length >= MIN_SCHOOL_CODE_LENGTH;
 
-  function validateProfile() {
+  function validateDetails() {
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
     const next = {
       f: !firstName.trim() ? s.errFirstName : "",
       l: !lastName.trim() ? s.errLastName : "",
-      s: !grade ? s.errGrade : "",
+      g: !grade ? s.errGrade : "",
       n: !nationality ? s.errNationality : "",
-      r: !residence ? s.errResidence : "",
+      e: !email.trim() || !emailValid ? s.errEmail : "",
+      p: !phone.trim() ? s.errPhone : "",
+      pw:
+        getPasswordStrength(password) < MIN_PASSWORD_STRENGTH
+          ? s.errPassword
+          : "",
+      c: !confirmPassword || password !== confirmPassword ? s.errPasswordMatch : "",
+      t: !terms ? s.errTerms : "",
     };
-    setPe(next);
-    return !next.f && !next.l && !next.s && !next.n && !next.r;
+    setErrors(next);
+    return Object.values(next).every((value) => !value);
   }
 
   const buildSignUpFormData = useCallback((): FormData | null => {
-    if (!nationality || !residence) return null;
+    if (!nationality) return null;
     const fd = new FormData();
     fd.append("firstName", firstName.trim());
     fd.append("lastName", lastName.trim());
     fd.append("grade", grade);
     fd.append("email", email.trim());
     fd.append("nationalityCountryCode", nationality.alpha2);
-    fd.append("residenceCountryCode", residence.alpha2);
+    fd.append("residenceCountryCode", nationality.alpha2);
     fd.append("phoneNumber", phone.trim());
     fd.append("password", password);
     fd.append("schoolAccessCode", schoolCode.trim());
@@ -278,7 +268,6 @@ export function SignupWizard() {
     grade,
     email,
     nationality,
-    residence,
     phone,
     password,
     schoolCode,
@@ -319,22 +308,6 @@ export function SignupWizard() {
     return individualStudentSignUp(fd);
   }, [buildIndividualSignUpFormData, s.errMissingData]);
 
-  function validateAccount() {
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-    const next = {
-      e: !email.trim() || !emailValid ? s.errEmail : "",
-      p: !phone.trim() ? s.errPhone : "",
-      pw:
-        getPasswordStrength(password) < MIN_PASSWORD_STRENGTH
-          ? s.errPassword
-          : "",
-      c: !confirmPassword || password !== confirmPassword ? s.errPasswordMatch : "",
-      t: !terms ? s.errTerms : "",
-    };
-    setAe(next);
-    return !next.e && !next.p && !next.pw && !next.c && !next.t;
-  }
-
   async function handleSchoolNext() {
     if (schoolChoice === "") return;
     if (schoolChoice === "yes") {
@@ -358,13 +331,15 @@ export function SignupWizard() {
     }
   }
 
-  const profileLeft = (
+  const detailsLeft = (
     <>
       <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
-        {s.step1of3}
+        {s.step1of2}
       </p>
-      <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">{s.profileLeftTitle}</h1>
-      <p className={slHint}>{s.profileLeftSub}</p>
+      <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">
+        {s.individualLeftTitle}
+      </h1>
+      <p className={slHint}>{s.individualLeftSub}</p>
       <ul className="mt-5 hidden list-none flex-col gap-2 sm:mt-7 sm:flex">
         <li className={feat}>
           <div className={featIcon} aria-hidden>
@@ -396,36 +371,24 @@ export function SignupWizard() {
     </>
   );
 
-  const accountLeft = (
-    <>
-      <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
-        {s.step2of3}
-      </p>
-      <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">{s.accountLeftTitle}</h1>
-      <p className={slHint}>{s.accountLeftSub}</p>
-    </>
-  );
-
   const schoolLeft = (
     <>
       <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
-        {s.step3of3}
+        {s.step2of2}
       </p>
       <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">{s.schoolLeftTitle}</h1>
       <p className={slHint}>{s.schoolLeftSub}</p>
     </>
   );
 
-  const leftContent =
-    step === "profile" ? profileLeft : step === "account" ? accountLeft : schoolLeft;
+  const leftContent = step === "details" ? detailsLeft : schoolLeft;
 
   const rightPanel = (
     <div className="w-full max-w-md pb-8 pt-1 sm:pt-0 lg:py-0">
-      {step === "profile" && (
+      {step === "details" && (
         <>
-          <ProgressBar label={s.progressProfile} stepText={s.step1of3} pct={33} />
-          <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{s.tellAboutYou}</h2>
-          <p className="mb-5 text-sm text-[var(--text-light)]">{s.tellAboutYouSub}</p>
+          <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{s.individualFormTitle}</h2>
+          <p className="mb-5 text-sm text-[var(--text-light)]">{s.individualFormSub}</p>
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -437,9 +400,9 @@ export function SignupWizard() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Noura"
-                  className={clsx(pe.f ? fieldErr : fieldNormal)}
+                  className={clsx(errors.f ? fieldErr : fieldNormal)}
                 />
-                {pe.f ? <p className="mt-1 text-[11px] text-red-600">{pe.f}</p> : null}
+                {errors.f ? <p className="mt-1 text-[11px] text-red-600">{errors.f}</p> : null}
               </div>
               <div>
                 <label htmlFor={`${uid}-ln`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
@@ -450,71 +413,11 @@ export function SignupWizard() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Al-Mansoori"
-                  className={clsx(pe.l ? fieldErr : fieldNormal)}
+                  className={clsx(errors.l ? fieldErr : fieldNormal)}
                 />
-                {pe.l ? <p className="mt-1 text-[11px] text-red-600">{pe.l}</p> : null}
+                {errors.l ? <p className="mt-1 text-[11px] text-red-600">{errors.l}</p> : null}
               </div>
             </div>
-            <div>
-              <label htmlFor={`${uid}-grade`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
-                {s.grade}
-              </label>
-              <select
-                id={`${uid}-grade`}
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                className={clsx(pe.s ? fieldErr : fieldNormal)}
-              >
-                <option value="">{s.selectGrade}</option>
-                {STUDENT_SCHOOL_GRADE_OPTIONS.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-              {pe.s ? <p className="mt-1 text-[11px] text-red-600">{pe.s}</p> : null}
-            </div>
-            <CountryCombobox
-              id={`${uid}-nat`}
-              label={s.nationality}
-              value={nationality}
-              onChange={setNationality}
-              placeholder={s.selectNationality}
-              error={pe.n}
-            />
-            <CountryCombobox
-              id={`${uid}-res`}
-              label={s.countryOfResidence}
-              value={residence}
-              onChange={setResidence}
-              placeholder={s.selectCountry}
-              error={pe.r}
-            />
-          </div>
-          <div className="mt-6 flex items-center justify-between">
-            <LocalizedLink href="/login" className={btnBack}>
-              {s.back}
-            </LocalizedLink>
-            <button
-              type="button"
-              className={btnPrimary}
-              onClick={() => {
-                if (validateProfile()) setStep("account");
-              }}
-            >
-              {s.next}
-              <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} />
-            </button>
-          </div>
-        </>
-      )}
-
-      {step === "account" && (
-        <>
-          <ProgressBar label={s.progressAccount} stepText={s.step2of3} pct={66} />
-          <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{a.signupCreateAccount}</h2>
-          <p className="mb-5 text-sm text-[var(--text-light)]">{a.signupCredentials}</p>
-          <div className="flex flex-col gap-4">
             <div>
               <label htmlFor={`${uid}-em`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
                 {a.email}
@@ -526,9 +429,9 @@ export function SignupWizard() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 autoComplete="email"
-                className={clsx(ae.e ? fieldErr : fieldNormal)}
+                className={clsx(errors.e ? fieldErr : fieldNormal)}
               />
-              {ae.e ? <p className="mt-1 text-[11px] text-red-600">{ae.e}</p> : null}
+              {errors.e ? <p className="mt-1 text-[11px] text-red-600">{errors.e}</p> : null}
             </div>
             <div>
               <label htmlFor={`${uid}-ph`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
@@ -540,9 +443,38 @@ export function SignupWizard() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+971 XX XXX XXXX"
-                className={clsx(ae.p ? fieldErr : fieldNormal)}
+                className={clsx(errors.p ? fieldErr : fieldNormal)}
               />
-              {ae.p ? <p className="mt-1 text-[11px] text-red-600">{ae.p}</p> : null}
+              {errors.p ? <p className="mt-1 text-[11px] text-red-600">{errors.p}</p> : null}
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor={`${uid}-grade`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
+                  {s.grade}
+                </label>
+                <select
+                  id={`${uid}-grade`}
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                  className={clsx(errors.g ? fieldErr : fieldNormal)}
+                >
+                  <option value="">{s.selectGrade}</option>
+                  {STUDENT_SCHOOL_GRADE_OPTIONS.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+                {errors.g ? <p className="mt-1 text-[11px] text-red-600">{errors.g}</p> : null}
+              </div>
+              <CountryCombobox
+                id={`${uid}-nat`}
+                label={s.nationality}
+                value={nationality}
+                onChange={setNationality}
+                placeholder={s.selectNationality}
+                error={errors.n}
+              />
             </div>
             <div>
               <label htmlFor={`${uid}-pw`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
@@ -558,7 +490,7 @@ export function SignupWizard() {
                   autoComplete="new-password"
                   className={clsx(
                     "m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl py-3 pe-12 ps-4 text-sm leading-normal text-[var(--text)] antialiased transition focus:outline-none focus:ring-0",
-                    ae.pw
+                    errors.pw
                       ? fieldErr
                       : getPasswordStrength(password) >= MIN_PASSWORD_STRENGTH
                         ? fieldOk
@@ -568,7 +500,7 @@ export function SignupWizard() {
                 <button
                   type="button"
                   className="absolute top-1/2 end-3 -translate-y-1/2 border-0 bg-transparent p-1 text-[var(--text-hint)] hover:text-[var(--text-mid)]"
-                  onClick={() => setShowPw((s) => !s)}
+                  onClick={() => setShowPw((v) => !v)}
                   aria-label={showPw ? a.hidePassword : a.showPassword}
                 >
                   {showPw ? <EyeOffIcon /> : <EyeIcon />}
@@ -602,7 +534,7 @@ export function SignupWizard() {
               <p className="mt-1 text-[10px] text-[var(--text-hint)]">
                 {password ? strengthLabel[pwStr] : s.passwordHint}
               </p>
-              {ae.pw ? <p className="mt-1 text-[11px] text-red-600">{ae.pw}</p> : null}
+              {errors.pw ? <p className="mt-1 text-[11px] text-red-600">{errors.pw}</p> : null}
             </div>
             <div>
               <label htmlFor={`${uid}-cpw`} className="mb-1.5 block text-xs font-semibold text-[var(--text-mid)]">
@@ -618,19 +550,19 @@ export function SignupWizard() {
                   autoComplete="new-password"
                   className={clsx(
                     "m-0 box-border min-h-12 w-full max-w-full appearance-none rounded-xl py-3 pe-12 ps-4 text-sm leading-normal text-[var(--text)] antialiased transition focus:outline-none focus:ring-0",
-                    ae.c ? fieldErr : matchOk ? fieldOk : fieldNormal,
+                    errors.c ? fieldErr : matchOk ? fieldOk : fieldNormal,
                   )}
                 />
                 <button
                   type="button"
                   className="absolute top-1/2 end-3 -translate-y-1/2 border-0 bg-transparent p-1 text-[var(--text-hint)]"
-                  onClick={() => setShowCpw((s) => !s)}
+                  onClick={() => setShowCpw((v) => !v)}
                   aria-label={showCpw ? a.hidePassword : a.showPassword}
                 >
                   {showCpw ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
-              {ae.c ? <p className="mt-1 text-[11px] text-red-600">{ae.c}</p> : null}
+              {errors.c ? <p className="mt-1 text-[11px] text-red-600">{errors.c}</p> : null}
             </div>
             <div>
               <label className="flex cursor-pointer items-start gap-2.5">
@@ -659,18 +591,18 @@ export function SignupWizard() {
                   </button>
                 </span>
               </label>
-              {ae.t ? <p className="mt-1 text-[11px] text-red-600">{ae.t}</p> : null}
+              {errors.t ? <p className="mt-1 text-[11px] text-red-600">{errors.t}</p> : null}
             </div>
           </div>
           <div className="mt-6 flex items-center justify-between">
-            <button type="button" className={btnBack} onClick={() => setStep("profile")}>
+            <LocalizedLink href="/login" className={btnBack}>
               {s.back}
-            </button>
+            </LocalizedLink>
             <button
               type="button"
               className={btnPrimary}
               onClick={() => {
-                if (validateAccount()) setStep("school");
+                if (validateDetails()) setStep("school");
               }}
             >
               {s.next}
@@ -682,7 +614,6 @@ export function SignupWizard() {
 
       {step === "school" && (
         <>
-          <ProgressBar label={s.progressAccess} stepText={s.step3of3} pct={100} />
           <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{s.schoolQuestion}</h2>
           <p className="mb-5 text-sm text-[var(--text-light)]">{s.schoolQuestionSub}</p>
           <div className="flex flex-col gap-3">
@@ -773,7 +704,7 @@ export function SignupWizard() {
           ) : null}
           {se.c ? <p className="mt-4 text-[11px] text-red-600">{se.c}</p> : null}
           <div className="mt-6 flex items-center justify-between">
-            <button type="button" className={btnBack} onClick={() => setStep("account")}>
+            <button type="button" className={btnBack} onClick={() => setStep("details")}>
               {s.back}
             </button>
             <button

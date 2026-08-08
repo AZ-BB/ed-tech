@@ -1,4 +1,6 @@
 export const signupEn = {
+  step1of2: "Step 1 of 2",
+  step2of2: "Step 2 of 2",
   step1of3: "Step 1 of 3",
   step2of3: "Step 2 of 3",
   step3of3: "Step 3 of 3",
