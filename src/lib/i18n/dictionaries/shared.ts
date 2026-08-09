@@ -111,83 +111,76 @@ export const authEn = {
 } as const;
 
 export const homeEn = {
-  heroBadge: "Built for students across the Middle East",
-  heroTitle: "From confusion to acceptance",
-  heroTitleEm: "acceptance",
+  metadataTitle: "Univeera — University applications platform for Middle East students",
+  metadataDescription:
+    "Explore universities, find scholarships, get essay support, speak to advisors, connect with student ambassadors, and manage applications in one platform built for students in the Middle East.",
+  heroBadge: "Built for students applying from the Middle East",
+  heroTitleLine1: "Your university journey,",
+  heroTitleEm: "all in one platform",
   heroSub:
-    "Discover, prepare, and apply to universities — all in one platform designed to guide students and teachers from first search to acceptance letter.",
+    "Explore universities, find scholarships, get essay support, speak to advisors, connect with student ambassadors, and manage your applications from one platform built for students in the Middle East.",
+  heroTrust:
+    "University search • Scholarships • Essay support • Advisors • Ambassadors",
+  heroClusterCaption:
+    "Advisors, ambassadors, and student mentors in one platform",
+  watchTour: "Watch the 2-Minute Tour",
+  videoLabel: "See it in action",
+  videoTitle: "See how Univeera works",
+  videoSub:
+    "Watch how students use Univeera to explore universities, discover scholarships, connect with advisors and ambassadors, and manage their applications in one place.",
+  videoBadge: "2-minute platform tour",
+  videoNote:
+    "A quick walkthrough of the student experience — from first search to final application.",
   howItWorksLabel: "How it works",
-  howItWorksTitle: "A simpler way to navigate your university journey",
-  howItWorksSub: "Five steps from exploration to your acceptance letter.",
+  howItWorksTitle: "A simple way to navigate your university journey",
+  howItWorksSub: "Four steps from sign-up to submitting your applications.",
   steps: [
     {
-      title: "Create your profile",
-      desc: "Tell us about your academic background, interests, and preferred destinations.",
+      title: "Sign up to Univeera",
+      desc: "Create your account and tell us about your goals and preferred destinations.",
     },
     {
-      title: "Explore universities",
-      desc: "Search and filter 1,000+ universities matched to your profile.",
+      title: "Explore universities and scholarships",
+      desc: "Search universities, compare options, and discover scholarships matched to you.",
     },
     {
-      title: "Prepare with confidence",
-      desc: "Program discovery, essay tools, and resources to strengthen your application.",
+      title: "Speak to advisors and ambassadors",
+      desc: "Get guidance from expert advisors and hear directly from students already there.",
     },
     {
-      title: "Get real guidance",
-      desc: "Speak to advisors and students who have already been through it.",
-    },
-    {
-      title: "Apply smarter",
-      desc: "Apply with the right support — or let us handle the process for you.",
+      title: "Plan and complete your applications",
+      desc: "Track deadlines, strengthen your essays, and apply with confidence.",
     },
   ],
-  featuresLabel: "Everything you need",
-  featuresTitle: "One platform, every tool",
-  featuresSub: "From choosing the right university to submitting your application.",
-  features: [
-    {
-      name: "Program discovery",
-      desc: "View 100+ programs, identify what fits you best and see what careers that leads to — all while connecting with working professionals.",
-    },
-    {
-      name: "University search database",
-      desc: "Browse local, regional, and global universities with detailed requirements.",
-    },
-    {
-      name: "Scholarship opportunities",
-      desc: "Find and filter scholarships that match your profile and needs.",
-    },
-    {
-      name: "1:1 advisor sessions",
-      desc: "Get expert guidance tailored to your goals and application strategy.",
-    },
-    {
-      name: "Essay support (AI-powered)",
-      desc: "Receive actionable feedback to improve your personal statement.",
-    },
-    {
-      name: "University ambassadors",
-      desc: "Speak to students who have already studied at your target university.",
-    },
-    {
-      name: "Application support",
-      desc: "Tell us your targets — we'll handle the full application process for you.",
-    },
-    {
-      name: "Post-admission support",
-      desc: "We'll handle visas, accommodations, and flights — and connect you with fellow Middle East students at your university.",
-    },
-  ],
-  proofLabel: "Trusted by students across the region",
-  proofTitle: "Real impact, real numbers",
-  proofStats: [
-    { num: "10,000+", label: "Students supported" },
-    { num: "50+", label: "Partner schools" },
-    { num: "1,000+", label: "Advisory sessions" },
-    { num: "500+", label: "Universities covered" },
-  ],
+  featuresLabel: "One platform",
+  featuresTitle: "One platform, every tool for your university journey",
+  featuresSub:
+    "From university discovery to scholarships, essays, advisor support, and application tracking, Univeera brings everything students need into one place.",
+  proofLabel: "Proven track record",
+  proofTitle: "Trusted by students across the region",
+  proofSub:
+    "Univeera combines university search, scholarships, advisors, ambassadors, and application tools to help students make smarter university decisions.",
+  marqueeHead: "Pathways to leading universities around the world",
+  advisorsEyebrow: "Expert guidance when you need it",
+  advisorsTitle: "Meet the advisors behind your university journey",
+  advisorsSub:
+    "Applications are confusing, deadlines are scattered, essays are stressful, and students often don't know if they are making the right decisions. Univeera gives students access to advisors who can help them move forward with clarity and confidence.",
+  exploreAdvisors: "Explore Advisors",
+  advisorsCtaNote:
+    "Advisor sessions can be booked directly through the Univeera platform.",
+  ambassadorsEyebrow: "Ambassador network",
+  ambassadorsTitle:
+    "Students can hear directly from our network of 100+ ambassadors",
+  ambassadorsLead: "Real people who have been in their shoes before.",
+  ambassadorsSub:
+    "Students can connect with current university students and graduates to ask questions about academics, applications, campus life, moving abroad, accommodation, and what it is really like to study there.",
+  exploreAmbassadors: "Explore Ambassadors",
+  askAmbassador: "Ask a question",
   testiLabel: "What students say",
-  testiTitle: "Real results, real stories",
+  testiTitle:
+    "Students across the region are using Univeera to make smarter university decisions",
+  testiSub:
+    "Hear how students used Univeera to find universities, discover scholarships, speak to advisors, and feel more confident about their next step.",
   testimonials: [
     {
       quote:
@@ -216,40 +209,42 @@ export const homeEn = {
   faqTitle: "Frequently asked questions",
   faqItems: [
     {
-      q: "What is this platform and how does it work?",
-      a: "We guide you through the entire university journey — from discovering universities to preparing your application and submitting it — all in one place.",
+      q: "Who is Univeera for?",
+      a: "Univeera is built for students across the Middle East planning to apply to universities locally or abroad — and for the parents supporting them.",
     },
     {
-      q: "Who is this platform for?",
-      a: "This platform is designed for students across the Middle East who are planning to apply to universities locally or abroad.",
+      q: "Do I need to know where I want to apply before joining?",
+      a: "Not at all. Many students start with no clear idea. Univeera helps you explore universities, compare options, and narrow down the right fit.",
     },
     {
-      q: "Do I need SAT, IELTS, or ACT to apply?",
-      a: "It depends on the universities you are applying to. We help you understand exactly what each university requires and guide you on how to prepare.",
+      q: "Are advisor sessions included?",
+      a: "You can book 1:1 sessions with expert advisors directly through the platform. Availability depends on your plan — details are shown when you book.",
     },
     {
-      q: "How does the AI university matching work?",
-      a: "You answer a few questions about your grades, interests, and goals, and our system recommends universities that best match your profile.",
+      q: "Can I speak to students from universities I am considering?",
+      a: "Yes. You can connect with our network of 100+ ambassadors — current students and graduates — to ask honest questions about life at their university.",
     },
     {
-      q: "Can I speak to someone who studied at my target university?",
-      a: "Yes — you can connect with student ambassadors and book 1:1 sessions to learn from their experience.",
+      q: "Does Univeera submit applications for me?",
+      a: "Univeera helps you plan, prepare, and track applications, with optional support to guide you through submission. You stay in control of every step.",
     },
     {
-      q: 'What is the "Apply for Me" service?',
-      a: "You tell us which universities you want to apply to, provide your documents, and we handle the application process on your behalf.",
+      q: "Which countries does Univeera cover?",
+      a: "Univeera supports pathways to universities across the US, UK, Canada, Europe, the Middle East, and beyond — with 1,000+ universities searchable.",
     },
     {
-      q: "Can I use the platform through my school?",
-      a: "Yes — if your school is partnered with us, you will receive login details and access without needing to purchase individually.",
-    },
-    {
-      q: "Can I cancel my subscription?",
-      a: "Yes — you can cancel your subscription at any time based on our cancellation policy.",
+      q: "Can parents use the platform too?",
+      a: "Yes. Parents are welcome to explore alongside their child to stay informed and support their university decisions with more clarity.",
     },
   ],
-  ctaTitle: "Start your journey today",
-  ctaSub: "Take the first step toward your future.",
+  ctaTitle: "Your university journey starts today",
+  ctaSub:
+    "Join thousands of students exploring universities, discovering scholarships, and applying with real support — all in one place.",
+  ctaReassure: "Full platform access · Plans shown at sign-up",
+  ctaLoginPrefix: "Already have an account?",
+  stickyCtaTitle: "Start your university journey with Univeera",
+  stickyCtaSub:
+    "Universities, scholarships, advisors and ambassadors — all in one platform.",
   signUp: "Sign up",
 } as const;
 
