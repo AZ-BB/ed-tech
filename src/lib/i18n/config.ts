@@ -49,6 +49,8 @@ export const localizedPublicPaths = [
   "/login",
   "/signup",
   "/signup/individual",
+  "/custom",
+  "/custom/signup",
   "/auth/reset-password",
 ] as const;
 

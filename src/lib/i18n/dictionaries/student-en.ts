@@ -1339,6 +1339,26 @@ export const studentEn = {
     loggingOut: "Logging out…",
     reassure: "One-time payment. Secure checkout powered by Stripe.",
   },
+  customSubscription: {
+    eyebrow: "Monthly subscription",
+    title: "Subscribe to access your portal",
+    body:
+      "A monthly subscription is required to activate your Univeera custom plan and unlock your student portal.",
+    benefits: [
+      "Program discovery, university search, and scholarships.",
+      "Internships, events, and essay review.",
+      "Application support and post-admission guidance.",
+    ],
+    cta: "Subscribe now",
+    paying: "Redirecting…",
+    checkoutFailed: "Could not start checkout. Try again.",
+    canceledMessage: "Subscription checkout was canceled. You can try again when ready.",
+    confirming: "Confirming your subscription…",
+    confirmFailed: "Could not confirm your subscription. Please try again or contact support.",
+    logOut: "Log out",
+    loggingOut: "Logging out…",
+    reassure: "Monthly subscription. Secure checkout powered by Stripe. Cancel anytime.",
+  },
   settings: {
     pageTitle: "Account settings",
     pageSubtitle: "Manage your account details, security, and preferences",

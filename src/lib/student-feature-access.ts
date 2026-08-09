@@ -31,6 +31,21 @@ export const FUNNEL_DEFAULT_DISABLED_FEATURES = [
   "application_support",
 ] as const satisfies readonly StudentFeatureKey[];
 
+/** Custom subscribers get these features; advisor_sessions and ambassadors stay off. */
+export const CUSTOM_DEFAULT_ENABLED_FEATURES = [
+  "personality_overview",
+  "program_discovery",
+  "universities",
+  "scholarships",
+  "internships",
+  "events",
+  "essay_review",
+  "application_support",
+  "post_admission",
+] as const satisfies readonly StudentFeatureKey[];
+
+export type StudentTypeOption = "school" | "individual" | "funnel" | "custom";
+
 export const STUDENT_FEATURE_LABELS: Record<StudentFeatureKey, string> = {
   personality_overview: "Personality Overview",
   program_discovery: "Program Discovery",
@@ -115,9 +130,17 @@ export const FEATURE_ROUTE_PREFIXES: {
   { prefix: "/student/post-admission-support", feature: "post_admission" },
 ];
 
+export function customStudentFeatureAccess(): StudentFeatureAccess {
+  const access = defaultStudentFeatureAccess(false);
+  for (const key of CUSTOM_DEFAULT_ENABLED_FEATURES) {
+    access[key] = true;
+  }
+  return access;
+}
+
 export function defaultStudentFeatureAccess(
   enabled = true,
-  options?: { studentType?: "school" | "individual" | "funnel" },
+  options?: { studentType?: StudentTypeOption },
 ): StudentFeatureAccess {
   const access: StudentFeatureAccess = {
     personality_overview: enabled,
@@ -139,12 +162,16 @@ export function defaultStudentFeatureAccess(
     }
   }
 
+  if (enabled && options?.studentType === "custom") {
+    return customStudentFeatureAccess();
+  }
+
   return access;
 }
 
 export function parseStudentFeatureAccess(
   raw: Json | null | undefined,
-  options?: { studentType?: "school" | "individual" | "funnel" },
+  options?: { studentType?: StudentTypeOption },
 ): StudentFeatureAccess {
   // No stored/provided list → use type defaults (legacy null = full access).
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {

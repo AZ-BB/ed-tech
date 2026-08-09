@@ -9,6 +9,7 @@ type LandingStickyCtaProps = {
   sub: string;
   ctaLabel: string;
   locale: Locale;
+  signupHref?: string;
 };
 
 export function LandingStickyCta({
@@ -16,6 +17,7 @@ export function LandingStickyCta({
   sub,
   ctaLabel,
   locale,
+  signupHref = "/signup",
 }: LandingStickyCtaProps) {
   const [visible, setVisible] = useState(false);
 
@@ -35,7 +37,7 @@ export function LandingStickyCta({
           <b>{title}</b>
           <span>{sub}</span>
         </div>
-        <Link href={localizePath("/signup", locale)} className="sticky-cta-btn">
+        <Link href={localizePath(signupHref, locale)} className="sticky-cta-btn">
           {ctaLabel}{" "}
           <svg
             width="15"

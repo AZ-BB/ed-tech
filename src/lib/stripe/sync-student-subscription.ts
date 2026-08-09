@@ -61,10 +61,27 @@ export async function syncStudentSubscriptionFromStripe(
     return { ok: false, error: "Student profile not found for subscription." };
   }
 
-  if (profile.student_type !== "funnel") {
+  const kind = subscription.metadata?.kind?.trim();
+  const studentType = profile.student_type;
+
+  if (studentType === "funnel" && kind !== "funnel_subscription") {
     return {
       ok: false,
-      error: "Subscription sync is only supported for funnel students.",
+      error: "Subscription kind does not match funnel student type.",
+    };
+  }
+
+  if (studentType === "custom" && kind !== "custom_subscription") {
+    return {
+      ok: false,
+      error: "Subscription kind does not match custom student type.",
+    };
+  }
+
+  if (studentType !== "funnel" && studentType !== "custom") {
+    return {
+      ok: false,
+      error: "Subscription sync is only supported for funnel and custom students.",
     };
   }
 

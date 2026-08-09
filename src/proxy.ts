@@ -140,6 +140,7 @@ export async function proxy(request: NextRequest) {
     "/for-schools",
     "/for-advisors",
     "/blog",
+    "/custom",
   ];
   const isPublicGuestOnlyRoute = publicGuestOnlyRoutes.some((route) =>
     pathMatches(pathname, route),

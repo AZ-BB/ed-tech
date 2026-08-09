@@ -4727,7 +4727,7 @@ export type Database = {
         | "incomplete_expired"
         | "unpaid"
         | "paused"
-      student_type: "school" | "individual" | "funnel"
+      student_type: "school" | "individual" | "funnel" | "custom"
       tuition_type: "full" | "partial"
       university_difficulty: "easy" | "medium" | "hard"
       university_doc_requirement_status:
@@ -4984,7 +4984,7 @@ export const Constants = {
         "unpaid",
         "paused",
       ],
-      student_type: ["school", "individual", "funnel"],
+      student_type: ["school", "individual", "funnel", "custom"],
       tuition_type: ["full", "partial"],
       university_difficulty: ["easy", "medium", "hard"],
       university_doc_requirement_status: [

@@ -1,5 +1,6 @@
 import type { Database } from "@/database.types";
 import {
+  customStudentFeatureAccess,
   defaultStudentFeatureAccess,
   parseStudentFeatureAccess,
   type StudentFeatureAccess,
@@ -37,6 +38,21 @@ export function canManageFunnelSubscription(
   return snapshot.studentType === "funnel";
 }
 
+export function canManageCustomSubscription(
+  snapshot: Pick<StudentSubscriptionSnapshot, "studentType">,
+): boolean {
+  return snapshot.studentType === "custom";
+}
+
+export function canManageStudentSubscription(
+  snapshot: Pick<StudentSubscriptionSnapshot, "studentType">,
+): boolean {
+  return (
+    canManageFunnelSubscription(snapshot) ||
+    canManageCustomSubscription(snapshot)
+  );
+}
+
 /** Free funnel student: can browse gated surfaces but must subscribe for apply/book actions. */
 export function requiresFunnelSubscription(
   snapshot: Pick<
@@ -46,6 +62,19 @@ export function requiresFunnelSubscription(
 ): boolean {
   return (
     canManageFunnelSubscription(snapshot) &&
+    !isStudentSubscriptionActive(snapshot.subscriptionStatus)
+  );
+}
+
+/** Custom student: must have active subscription before portal access. */
+export function requiresCustomSubscription(
+  snapshot: Pick<
+    StudentSubscriptionSnapshot,
+    "studentType" | "subscriptionStatus"
+  >,
+): boolean {
+  return (
+    canManageCustomSubscription(snapshot) &&
     !isStudentSubscriptionActive(snapshot.subscriptionStatus)
   );
 }
@@ -72,6 +101,12 @@ export function resolveStudentFeatureAccess(input: {
     isStudentSubscriptionActive(input.subscriptionStatus)
   ) {
     return defaultStudentFeatureAccess(true);
+  }
+  if (
+    input.studentType === "custom" &&
+    isStudentSubscriptionActive(input.subscriptionStatus)
+  ) {
+    return customStudentFeatureAccess();
   }
   return stored;
 }

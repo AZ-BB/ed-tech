@@ -1,6 +1,7 @@
+import { confirmCustomSubscriptionFromSession } from "@/lib/stripe/confirm-custom-subscription-from-session";
 import { confirmFunnelSubscriptionFromSession } from "@/lib/stripe/confirm-funnel-subscription-from-session";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
-import { canManageFunnelSubscription } from "@/lib/student-subscription";
+import { canManageStudentSubscription } from "@/lib/student-subscription";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -14,7 +15,7 @@ export default async function StudentSubscriptionSuccessPage({
     redirect("/login");
   }
 
-  if (!canManageFunnelSubscription(auth)) {
+  if (!canManageStudentSubscription(auth)) {
     redirect("/student");
   }
 
@@ -23,7 +24,10 @@ export default async function StudentSubscriptionSuccessPage({
 
   let message = "Your subscription is being activated. Refresh the dashboard in a moment.";
   if (sessionId) {
-    const result = await confirmFunnelSubscriptionFromSession(sessionId);
+    const result =
+      auth.studentType === "custom"
+        ? await confirmCustomSubscriptionFromSession(sessionId)
+        : await confirmFunnelSubscriptionFromSession(sessionId);
     if (result.ok) {
       message = "Your monthly subscription is now active. Welcome to full Univeera access.";
     } else {

@@ -2,6 +2,10 @@
 
 import { logout } from "@/actions/auth";
 import {
+  cancelCustomSubscriptionAction,
+  createCustomSubscriptionCheckoutAction,
+} from "@/actions/custom-subscription";
+import {
   cancelFunnelSubscriptionAction,
   createFunnelSubscriptionCheckoutAction,
 } from "@/actions/student-subscription";
@@ -97,6 +101,7 @@ function roValueClass() {
 }
 
 export type StudentSettingsSubscription = {
+  kind: "funnel" | "custom";
   status: string;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
@@ -163,7 +168,10 @@ export function StudentSettingsClient({
   function handleSubscribe() {
     setSubscriptionMessage(null);
     startSubscriptionTransition(async () => {
-      const result = await createFunnelSubscriptionCheckoutAction();
+      const result =
+        subscription?.kind === "custom"
+          ? await createCustomSubscriptionCheckoutAction()
+          : await createFunnelSubscriptionCheckoutAction();
       if (result.error || !result.data?.url) {
         setSubscriptionMessage(result.error ?? subscriptionCopy.checkoutFailed);
         return;
@@ -176,7 +184,10 @@ export function StudentSettingsClient({
     if (!window.confirm(subscriptionCopy.cancelConfirm)) return;
     setSubscriptionMessage(null);
     startSubscriptionTransition(async () => {
-      const result = await cancelFunnelSubscriptionAction();
+      const result =
+        subscription?.kind === "custom"
+          ? await cancelCustomSubscriptionAction()
+          : await cancelFunnelSubscriptionAction();
       if (result.error) {
         setSubscriptionMessage(result.error);
         return;

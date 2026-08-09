@@ -16,6 +16,10 @@ type PublicMarketingNavProps = {
   audienceActive?: AudienceActive;
   /** Landing page: track section scroll + hash clicks. Subpage: toggle scrolled at 20px. */
   scrollMode?: "landing" | "subpage";
+  /** Signup CTA destination (defaults to `/signup`). */
+  signupHref?: string;
+  /** Base path for in-page section anchors (defaults to `/`). */
+  landingPath?: string;
 };
 
 function NavLogoIcon() {
@@ -63,6 +67,8 @@ export function PublicMarketingNav({
   variant,
   audienceActive,
   scrollMode = variant === "landing" ? "landing" : "subpage",
+  signupHref = "/signup",
+  landingPath = "/",
 }: PublicMarketingNavProps) {
   const { dict } = useLocale();
   const hasLocale = useLocaleContext() !== null;
@@ -197,21 +203,21 @@ export function PublicMarketingNav({
       <>
         <LocalizedLink
           className={linkClass}
-          href="/#how-it-works"
+          href={`${landingPath}#how-it-works`}
           onClick={inDrawer ? closeDrawer : undefined}
         >
           {dict.nav.howItWorks}
         </LocalizedLink>
         <LocalizedLink
           className={linkClass}
-          href="/#features"
+          href={`${landingPath}#features`}
           onClick={inDrawer ? closeDrawer : undefined}
         >
           {dict.nav.features}
         </LocalizedLink>
         <LocalizedLink
           className={linkClass}
-          href="/#testimonials"
+          href={`${landingPath}#testimonials`}
           onClick={inDrawer ? closeDrawer : undefined}
         >
           {dict.nav.testimonials}
@@ -227,7 +233,7 @@ export function PublicMarketingNav({
         ) : null}
         <LocalizedLink
           className={linkClass}
-          href="/#faq"
+          href={`${landingPath}#faq`}
           onClick={inDrawer ? closeDrawer : undefined}
         >
           {dict.nav.faq}
@@ -247,7 +253,7 @@ export function PublicMarketingNav({
       </LocalizedLink>
       <LocalizedLink
         className={inDrawer ? "nav-drawer-cta" : "nav-cta"}
-        href="/signup"
+        href={signupHref}
         onClick={inDrawer ? closeDrawer : undefined}
       >
         {dict.nav.startJourney}
@@ -299,7 +305,7 @@ export function PublicMarketingNav({
     <>
       <nav className="nav" id="navbar" dir="ltr">
         <div className="nav-brand">
-          <LocalizedLink className="nav-logo" href="/">
+          <LocalizedLink className="nav-logo" href={landingPath}>
             <div className="nav-logo-icon">
               <NavLogoIcon />
             </div>

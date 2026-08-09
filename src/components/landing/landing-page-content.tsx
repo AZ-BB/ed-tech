@@ -1,10 +1,4 @@
-import {
-  ADVISORS,
-  AMBASSADORS,
-  OPT_TOOLS,
-  PTR_METRICS,
-  PTR_UNIS,
-} from "@/components/landing/data/landing-page-data";
+import { PTR_UNIS } from "@/components/landing/data/landing-page-data";
 import { LandingFaq } from "@/components/landing/landing-faq";
 import { LandingHeroCluster } from "@/components/landing/landing-hero-cluster";
 import { LandingPlatformVideo } from "@/components/landing/landing-platform-video";
@@ -16,6 +10,7 @@ import type { Dictionary } from "@/lib/i18n/get-dictionary";
 type LandingPageContentProps = {
   dict: Dictionary;
   locale: Locale;
+  signupHref?: string;
 };
 
 function ArrowIcon() {
@@ -35,7 +30,11 @@ function ArrowIcon() {
   );
 }
 
-export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
+export function LandingPageContent({
+  dict,
+  locale,
+  signupHref = "/signup",
+}: LandingPageContentProps) {
   const h = dict.home;
 
   return (
@@ -54,7 +53,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
             </h1>
             <p className="hero-sub fade-up d3">{h.heroSub}</p>
             <div className="hero-ctas fade-up d4">
-              <ServerLocalizedLink href="/signup" locale={locale} style={{ textDecoration: "none" }}>
+              <ServerLocalizedLink href={signupHref} locale={locale} style={{ textDecoration: "none" }}>
                 <button type="button" className="btn-hero">
                   {dict.nav.startJourney} <ArrowIcon />
                 </button>
@@ -95,7 +94,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
           <LandingPlatformVideo badge={h.videoBadge} title={h.videoTitle} />
           <div className="video-note">{h.videoNote}</div>
           <div style={{ marginTop: 26 }}>
-            <ServerLocalizedLink href="/signup" locale={locale} style={{ textDecoration: "none" }}>
+            <ServerLocalizedLink href={signupHref} locale={locale} style={{ textDecoration: "none" }}>
               <button type="button" className="btn-hero" style={{ margin: "0 auto" }}>
                 {dict.nav.startJourney} <ArrowIcon />
               </button>
@@ -117,7 +116,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
             <p className="ptr-sub">{h.proofSub}</p>
           </div>
           <div className="ptr-grid">
-            {PTR_METRICS.map((metric) => (
+            {h.ptrMetrics.map((metric) => (
               <div key={metric.label} className="ptr-card">
                 <div className="ptr-ic">{PTR_ICONS[metric.icon]}</div>
                 <div className="ptr-num">{metric.num}</div>
@@ -155,7 +154,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
             <p className="adv-sub">{h.advisorsSub}</p>
           </div>
           <div className="adv-grid">
-            {ADVISORS.map((advisor) => (
+            {h.advisors.map((advisor) => (
               <div key={advisor.name} className="adv-card">
                 <div className="adv-photo">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -173,7 +172,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
             ))}
           </div>
           <div className="adv-cta">
-            <ServerLocalizedLink href="/signup" locale={locale} style={{ textDecoration: "none" }}>
+            <ServerLocalizedLink href={signupHref} locale={locale} style={{ textDecoration: "none" }}>
               <button type="button" className="adv-btn">
                 {h.exploreAdvisors}{" "}
                 <svg
@@ -202,10 +201,10 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
           </h2>
           <div className="section-sub">{h.featuresSub}</div>
           <div className="feat-grid">
-            {OPT_TOOLS.map((tool) => (
+            {h.tools.map((tool) => (
               <ServerLocalizedLink
                 key={tool.title}
-                href="/signup"
+                href={signupHref}
                 locale={locale}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
@@ -232,7 +231,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
             </h2>
             <p className="amb-lead">{h.ambassadorsLead}</p>
             <p className="amb-sub">{h.ambassadorsSub}</p>
-            <ServerLocalizedLink href="/signup" locale={locale} style={{ textDecoration: "none" }}>
+            <ServerLocalizedLink href={signupHref} locale={locale} style={{ textDecoration: "none" }}>
               <button type="button" className="amb-cta-btn">
                 {h.exploreAmbassadors}{" "}
                 <svg
@@ -250,7 +249,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
             </ServerLocalizedLink>
           </div>
           <div className="amb-grid">
-            {AMBASSADORS.map((amb) => (
+            {h.ambassadors.map((amb) => (
               <div key={amb.name} className="amb-card">
                 <div className="amb-photo">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -295,7 +294,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
             ))}
           </div>
           <div className="how-cta">
-            <ServerLocalizedLink href="/signup" locale={locale} style={{ textDecoration: "none" }}>
+            <ServerLocalizedLink href={signupHref} locale={locale} style={{ textDecoration: "none" }}>
               <button type="button" className="btn-hero" style={{ margin: "0 auto" }}>
                 {dict.nav.startJourney} <ArrowIcon />
               </button>
@@ -365,7 +364,7 @@ export function LandingPageContent({ dict, locale }: LandingPageContentProps) {
           </h2>
           <div className="cta-sub">{h.ctaSub}</div>
           <div className="cta-btns">
-            <ServerLocalizedLink href="/signup" locale={locale} style={{ textDecoration: "none" }}>
+            <ServerLocalizedLink href={signupHref} locale={locale} style={{ textDecoration: "none" }}>
               <button type="button" className="btn-hero">
                 {dict.nav.startJourney} <ArrowIcon />
               </button>
