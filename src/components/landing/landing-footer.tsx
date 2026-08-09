@@ -2,9 +2,18 @@
 
 import { LocalizedLink } from "@/lib/i18n/localized-link";
 import { useLocale } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
-export function LandingFooter() {
-  const { dict } = useLocale();
+type LandingFooterProps = {
+  dict?: Dictionary;
+  locale?: Locale;
+};
+
+export function LandingFooter({ dict: dictProp, locale: localeProp }: LandingFooterProps = {}) {
+  const ctx = useLocale();
+  const dict = dictProp ?? ctx.dict;
+  const locale = localeProp ?? ctx.locale;
 
   return (
     <footer className="footer">

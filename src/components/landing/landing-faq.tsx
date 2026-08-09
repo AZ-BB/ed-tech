@@ -1,23 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale } from "@/lib/i18n/locale-context";
 
-export function LandingFaq() {
-  const { dict } = useLocale();
-  const h = dict.home;
+type FaqItem = {
+  q: string;
+  a: string;
+};
+
+type LandingFaqProps = {
+  label: string;
+  title: string;
+  items: readonly FaqItem[];
+};
+
+export function LandingFaq({ label, title, items }: LandingFaqProps) {
   const [open, setOpen] = useState<Record<number, boolean>>({});
 
   return (
     <section className="faq-section" id="faq">
       <div className="section-inner" style={{ textAlign: "center" }}>
-        <div className="section-label">{h.faqLabel}</div>
+        <div className="section-label">{label}</div>
         <div className="section-title serif" style={{ maxWidth: "100%", margin: "0 auto 0" }}>
-          {h.faqTitle}
+          {title}
         </div>
       </div>
       <div className="faq-grid">
-        {h.faqItems.map((item, i) => (
+        {items.map((item, i) => (
           <div key={item.q} className={`faq-item${open[i] ? " open" : ""}`}>
             <button
               type="button"
