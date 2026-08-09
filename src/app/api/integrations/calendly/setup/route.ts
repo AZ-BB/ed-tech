@@ -6,6 +6,7 @@ import {
   CALENDLY_OAUTH_COOKIE_MAX_AGE_SEC,
   CALENDLY_OAUTH_COOKIE_STATE,
   CALENDLY_OAUTH_COOKIE_VERIFIER,
+  ensureAdvisorInvitedToCalendlyOrganization,
   generateCodeChallenge,
   generateCodeVerifier,
   generateOAuthState,
@@ -60,6 +61,14 @@ export async function GET(request: Request) {
     });
     return settingsRedirect("already_connected", request);
   }
+
+  const inviteResult = await ensureAdvisorInvitedToCalendlyOrganization(access.email);
+  logCalendly("setup", "Calendly organization invite check", {
+    advisorId: access.advisorId,
+    ok: inviteResult.ok,
+    status: inviteResult.ok ? inviteResult.status : null,
+    error: inviteResult.ok ? null : inviteResult.error,
+  });
 
   const state = generateOAuthState();
   const verifier = generateCodeVerifier();
