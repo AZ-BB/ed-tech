@@ -110,8 +110,12 @@ export async function GET(request: Request) {
         logCalendlyError("callback", "Post-connect webhook repair failed", undefined, {
           advisorId,
           error: repair.error,
+          reason: repair.reason,
         });
-        return settingsRedirect("webhook_error", request);
+        return settingsRedirect(
+          repair.reason === "plan_required" ? "webhook_plan_required" : "webhook_error",
+          request,
+        );
       }
     }
 

@@ -12,6 +12,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { ProgramFitMatchResponse } from "@/app/api/ai/program-matching/route";
+import { ApplicationSupportLink } from "../../_components/application-support-link";
 import { ArrowBackIcon, ArrowForwardIcon } from "../../_components/directional-icons";
 import { useStudentFeatureGate } from "../../_components/student-feature-gate-provider";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -601,7 +602,7 @@ export function AiProgramFitTest({
                 {t.ctaAmbassadorLink} <ArrowForwardIcon size={12} />
               </span>
             </Link>
-            <Link href="/student/application-support" className={styles.ctaCard}>
+            <ApplicationSupportLink href="/student/application-support" className={styles.ctaCard}>
               <div className={styles.ctaIcon}>
                 <Sparkles size={22} />
               </div>
@@ -612,7 +613,7 @@ export function AiProgramFitTest({
               <span className={styles.ctaLink}>
                 {t.ctaApplicationLink} <ArrowForwardIcon size={12} />
               </span>
-            </Link>
+            </ApplicationSupportLink>
           </div>
 
           <button type="button" className={styles.restartBtn} onClick={restart}>

@@ -1,9 +1,14 @@
 "use client";
 
-import { disconnectCalendlyAction, repairCalendlyWebhookAction } from "@/actions/advisor-calendly";
+import { disconnectCalendlyAction } from "@/actions/advisor-calendly";
 import { updateAdvisorProfileAction } from "@/actions/advisor-settings";
 import type { AdvisorSettingsPagePayload } from "@/app/(protected)/advisor/settings/_lib/fetch-advisor-settings-page";
 import { CountryMultiSelectAutocomplete } from "@/app/(protected)/admin/users/_components/country-multi-select-autocomplete";
+import {
+  CALENDLY_CONNECT_ERROR_MESSAGE,
+  CALENDLY_PLAN_REQUIRED_MESSAGE,
+  CALENDLY_WEBHOOK_UNKNOWN_ERROR_MESSAGE,
+} from "@/lib/calendly-messages";
 import type { GeneralResponse } from "@/utils/response";
 import { createSupabaseBrowserClient } from "@/utils/supabase-browser";
 import { useRouter } from "next/navigation";
@@ -149,6 +154,7 @@ export function AdvisorSettingsClient({
   calendlyConnected,
   calendlyConnectedAt,
   calendlyWebhookActive,
+  calendlyWebhookIssueReason,
   defaults,
   countries,
 }: AdvisorSettingsClientProps) {
@@ -157,7 +163,6 @@ export function AdvisorSettingsClient({
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [calendlyDisconnecting, setCalendlyDisconnecting] = useState(false);
   const [calendlyConnecting, setCalendlyConnecting] = useState(false);
-  const [calendlyRepairing, setCalendlyRepairing] = useState(false);
   const [calendlyError, setCalendlyError] = useState<string | null>(null);
 
   const [specializationCountryCodes, setSpecializationCountryCodes] = useState(
@@ -223,12 +228,13 @@ export function AdvisorSettingsClient({
       router.replace("/advisor/settings", { scroll: false });
       router.refresh();
     } else if (status === "error") {
-      setCalendlyError("Could not connect Calendly. Please try again.");
+      setCalendlyError(CALENDLY_CONNECT_ERROR_MESSAGE);
+      router.replace("/advisor/settings", { scroll: false });
+    } else if (status === "webhook_plan_required") {
+      setCalendlyError(CALENDLY_PLAN_REQUIRED_MESSAGE);
       router.replace("/advisor/settings", { scroll: false });
     } else if (status === "webhook_error") {
-      setCalendlyError(
-        "Calendly connected, but booking notifications could not be registered. Use Repair booking webhook below or reconnect Calendly.",
-      );
+      setCalendlyError(CALENDLY_WEBHOOK_UNKNOWN_ERROR_MESSAGE);
       router.replace("/advisor/settings", { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for OAuth redirect
@@ -295,29 +301,6 @@ export function AdvisorSettingsClient({
 
   function syncPwConfirmValue() {
     setPwConfirmValue(pwConfirmRef.current?.value ?? "");
-  }
-
-  async function handleCalendlyRepairWebhook() {
-    if (calendlyRepairing) return;
-
-    setCalendlyError(null);
-    setCalendlyRepairing(true);
-    try {
-      const result = await repairCalendlyWebhookAction();
-      if (result.error) {
-        setCalendlyError(
-          typeof result.error === "string"
-            ? result.error
-            : "Could not repair Calendly webhook. Please try again.",
-        );
-        return;
-      }
-      router.refresh();
-    } catch {
-      setCalendlyError("Could not repair Calendly webhook. Please try again.");
-    } finally {
-      setCalendlyRepairing(false);
-    }
   }
 
   async function handleCalendlyDisconnect() {
@@ -792,10 +775,14 @@ export function AdvisorSettingsClient({
                   <span className="block mt-0.5 text-[var(--green-dark)]">
                     Booking notifications are active.
                   </span>
+                ) : calendlyWebhookIssueReason === "plan_required" ? (
+                  <span className="block mt-0.5 text-[#b45309]">
+                    Booking webhook is missing — {CALENDLY_PLAN_REQUIRED_MESSAGE}
+                  </span>
                 ) : (
                   <span className="block mt-0.5 text-[#b45309]">
-                    Booking webhook is missing — student Calendly bookings will not sync until you
-                    repair it.
+                    Booking webhook is missing — student Calendly bookings will not sync. Try
+                    disconnecting and reconnecting Calendly.
                   </span>
                 )}
                 <span className="block mt-0.5">
@@ -810,27 +797,6 @@ export function AdvisorSettingsClient({
           </div>
           {calendlyConnected ? (
             <div className="flex flex-wrap items-center gap-2">
-              {!calendlyWebhookActive ? (
-                <button
-                  type="button"
-                  className={btnPrimaryClass()}
-                  disabled={calendlyRepairing}
-                  onClick={() => void handleCalendlyRepairWebhook()}
-                  aria-busy={calendlyRepairing}
-                >
-                  {calendlyRepairing ? (
-                    <>
-                      <span
-                        className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-white"
-                        aria-hidden
-                      />
-                      Repairing…
-                    </>
-                  ) : (
-                    "Repair booking webhook"
-                  )}
-                </button>
-              ) : null}
               <button
                 type="button"
                 className={btnSecondaryClass()}

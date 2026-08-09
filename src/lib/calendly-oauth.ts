@@ -1,5 +1,6 @@
 import "server-only";
 
+import { CALENDLY_PLAN_REQUIRED_MESSAGE } from "@/lib/calendly-messages";
 import { logCalendly, logCalendlyError, logCalendlyWarn } from "@/lib/calendly-log";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
 import {
@@ -254,6 +255,17 @@ async function calendlyApiGet<T>(accessToken: string, path: string): Promise<T> 
   return data;
 }
 
+export class CalendlyPlanRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CalendlyPlanRequiredError";
+  }
+}
+
+function isCalendlyPlanRequiredResponse(status: number, message: string): boolean {
+  return status === 403 && /upgrade/i.test(message) && /standard|teams|enterprise/i.test(message);
+}
+
 async function calendlyApiPost<T>(accessToken: string, path: string, body: unknown): Promise<T> {
   logCalendly("api", "POST request", { path, body });
 
@@ -280,6 +292,9 @@ async function calendlyApiPost<T>(accessToken: string, path: string, body: unkno
       message: (data as { message?: string }).message ?? null,
       title: (data as { title?: string }).title ?? null,
     });
+    if (isCalendlyPlanRequiredResponse(res.status, message)) {
+      throw new CalendlyPlanRequiredError(message);
+    }
     throw new Error(message);
   }
 
@@ -630,6 +645,7 @@ export async function completeAdvisorCalendlyOAuth(opts: {
   } catch (err) {
     logCalendlyError("oauth", "Webhook subscription step failed during connect", err, {
       advisorId: opts.advisorId,
+      isPlanRequired: err instanceof CalendlyPlanRequiredError,
       callbackUrl: await buildCalendlyWebhookCallbackUrl(),
     });
   }
@@ -794,20 +810,43 @@ export async function advisorHasCalendlyWebhookSubscription(
   return Boolean(uri);
 }
 
+export type CalendlyWebhookFailureReason = "plan_required" | "incomplete_connection" | "unknown";
+
+function toCalendlyWebhookFailure(err: unknown): {
+  reason: CalendlyWebhookFailureReason;
+  error: string;
+} {
+  if (err instanceof CalendlyPlanRequiredError) {
+    return { reason: "plan_required", error: CALENDLY_PLAN_REQUIRED_MESSAGE };
+  }
+  return {
+    reason: "unknown",
+    error:
+      err instanceof Error ? err.message : "Could not register Calendly webhook. Check server logs.",
+  };
+}
+
 export async function repairAdvisorCalendlyWebhookSubscription(
   advisorId: string,
-): Promise<{ ok: true; subscriptionUri: string } | { ok: false; error: string }> {
+): Promise<
+  { ok: true; subscriptionUri: string } | { ok: false; error: string; reason: CalendlyWebhookFailureReason }
+> {
   logCalendly("oauth", "Repairing advisor Calendly webhook subscription", { advisorId });
 
   const ctx = await loadAdvisorCalendlyRepairContext(advisorId);
   if (!ctx) {
-    return { ok: false, error: "Calendly is not connected for this advisor." };
+    return {
+      ok: false,
+      error: "Calendly is not connected for this advisor.",
+      reason: "incomplete_connection",
+    };
   }
 
   if (!ctx.userUri || !ctx.organizationUri) {
     return {
       ok: false,
       error: "Calendly connection is incomplete. Disconnect and reconnect Calendly.",
+      reason: "incomplete_connection",
     };
   }
 
@@ -824,6 +863,7 @@ export async function repairAdvisorCalendlyWebhookSubscription(
         err instanceof Error
           ? err.message
           : "Could not refresh Calendly access token. Reconnect Calendly.",
+      reason: "unknown",
     };
   }
 
@@ -840,13 +880,7 @@ export async function repairAdvisorCalendlyWebhookSubscription(
       advisorId,
       callbackUrl: await buildCalendlyWebhookCallbackUrl(),
     });
-    return {
-      ok: false,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Could not register Calendly webhook. Check server logs.",
-    };
+    return { ok: false, ...toCalendlyWebhookFailure(err) };
   }
 
   const secret = await createSupabaseSecretClient();
@@ -863,7 +897,7 @@ export async function repairAdvisorCalendlyWebhookSubscription(
       advisorId,
       subscriptionUri,
     });
-    return { ok: false, error: "Webhook was created but could not be saved." };
+    return { ok: false, error: "Webhook was created but could not be saved.", reason: "unknown" };
   }
 
   logCalendly("oauth", "Advisor Calendly webhook repaired", {

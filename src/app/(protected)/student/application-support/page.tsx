@@ -12,6 +12,7 @@ import { Suspense } from "react";
 
 import { ApplicationSupportClient } from "./_components/application-support-client";
 import { ApplicationSupportStatusView } from "./_components/application-support-status-view";
+import { CustomApplicationSupportIntakeGate } from "./_components/custom-application-support-intake-gate";
 import { StudentApplicationSupportDashboard } from "./_components/student-application-support-dashboard";
 import { fetchStudentApplicationSupportView } from "./_lib/fetch-student-application-support-view";
 import { StudentFeatureUnavailable } from "../_components/student-feature-unavailable";
@@ -67,10 +68,12 @@ export default async function StudentApplicationSupportPage() {
     ]);
 
   return (
-    <ApplicationSupportClient
-      plans={plans ?? []}
-      applicationReceivingAdvisor={applicationReceivingAdvisor}
-      profileDefaults={profileDefaults}
-    />
+    <CustomApplicationSupportIntakeGate isCustomStudent={auth.studentType === "custom"}>
+      <ApplicationSupportClient
+        plans={plans ?? []}
+        applicationReceivingAdvisor={applicationReceivingAdvisor}
+        profileDefaults={profileDefaults}
+      />
+    </CustomApplicationSupportIntakeGate>
   );
 }

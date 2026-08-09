@@ -24,7 +24,7 @@ import {
   Video,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   sidebarNavItems,
@@ -281,7 +281,9 @@ function SidebarNav({
   onRequestLogout: () => void;
 }) {
   const pathname = usePathname();
-  const { openDisabledFeaturesModal } = useStudentFeatureGate();
+  const router = useRouter();
+  const { openDisabledFeaturesModal, guardApplicationSupportClick } =
+    useStudentFeatureGate();
 
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-3.5">
@@ -348,6 +350,27 @@ function SidebarNav({
             >
               {inner}
             </div>
+          );
+        }
+
+        if (item.id === "application-support") {
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              className="block text-inherit no-underline"
+              onClick={(event) => {
+                guardApplicationSupportClick(event, () => {
+                  onNavigate?.();
+                  router.push(item.href);
+                });
+                if (!event.defaultPrevented) {
+                  onNavigate?.();
+                }
+              }}
+            >
+              <div className={rowClass}>{inner}</div>
+            </Link>
           );
         }
 
@@ -443,6 +466,7 @@ export function StudentLayoutShell({
   hasSchoolLinked = true,
   featureAccess = defaultStudentFeatureAccess(true),
   showFunnelSubscribeCta = false,
+  isCustomStudent = false,
 }: {
   children: React.ReactNode;
   locale: Locale;
@@ -450,6 +474,7 @@ export function StudentLayoutShell({
   hasSchoolLinked?: boolean;
   featureAccess?: StudentFeatureAccess;
   showFunnelSubscribeCta?: boolean;
+  isCustomStudent?: boolean;
 }) {
   /** Collapsible drawer from the right + dimmed overlay — same pattern as dashboard.html */
   const { dict } = useLocale();
@@ -514,6 +539,7 @@ export function StudentLayoutShell({
     <StudentFeatureGateProvider
       featureAccess={featureAccess}
       showFunnelSubscribeCta={showFunnelSubscribeCta}
+      isCustomStudent={isCustomStudent}
     >
       <div
         className={`student-portal min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}

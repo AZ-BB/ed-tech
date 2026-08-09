@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { useMemo, useState, type ReactNode } from "react";
 
 import { useLocale } from "@/lib/i18n/locale-context";
+import { ApplicationSupportLink } from "../../_components/application-support-link";
 import { ArrowBackIcon } from "../../_components/directional-icons";
 import { ProgramFitTestLink } from "../../_components/program-fit-test-link";
 import type { ProgramCareerPath } from "@/lib/programs-discovery-types";
@@ -766,7 +767,7 @@ export function ProgramDetailView({
                 <div className={detailStyles.pnsSub}>{t.pnsAdvisorDesc}</div>
               </div>
             </Link>
-            <Link href="/student/application-support" className={detailStyles.pnsCard}>
+            <ApplicationSupportLink href="/student/application-support" className={detailStyles.pnsCard}>
               <div className={detailStyles.pnsIcon} aria-hidden>
                 <svg
                   width="20"
@@ -787,7 +788,7 @@ export function ProgramDetailView({
                 <div className={detailStyles.pnsTitle}>{t.pnsApplication}</div>
                 <div className={detailStyles.pnsSub}>{t.pnsApplicationDesc}</div>
               </div>
-            </Link>
+            </ApplicationSupportLink>
             <ProgramFitTestLink className={detailStyles.pnsCard}>
               <div className={detailStyles.pnsIcon} aria-hidden>
                 <svg
