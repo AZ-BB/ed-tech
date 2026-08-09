@@ -1,5 +1,8 @@
 import { assertAdvisorAccess } from "@/lib/advisor-access";
-import { repairAdvisorCalendlyWebhookSubscription } from "@/lib/calendly-oauth";
+import {
+  repairAdvisorCalendlyWebhookSubscription,
+  type CalendlyWebhookFailureReason,
+} from "@/lib/calendly-oauth";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 function jsonArrayToMultiline(raw: unknown): string {
@@ -19,6 +22,7 @@ export type AdvisorSettingsPagePayload = {
   calendlyConnected: boolean;
   calendlyConnectedAt: string | null;
   calendlyWebhookActive: boolean;
+  calendlyWebhookIssueReason: CalendlyWebhookFailureReason | null;
   defaults: {
     firstName: string;
     lastName: string;
@@ -89,11 +93,13 @@ export async function fetchAdvisorSettingsPage(): Promise<AdvisorSettingsPagePay
   if (countriesError) console.error("[fetchAdvisorSettingsPage] countries", countriesError);
 
   let calendlyWebhookActive = Boolean(advisor.calendly_webhook_subscription_uri?.trim());
+  let calendlyWebhookIssueReason: CalendlyWebhookFailureReason | null = null;
   if (advisor.calendly_refresh_token?.trim() && !calendlyWebhookActive) {
     const repair = await repairAdvisorCalendlyWebhookSubscription(access.advisorId);
     if (repair.ok) {
       calendlyWebhookActive = true;
     } else {
+      calendlyWebhookIssueReason = repair.reason;
       console.error("[fetchAdvisorSettingsPage] calendly webhook repair", repair.error);
     }
   }
@@ -122,6 +128,7 @@ export async function fetchAdvisorSettingsPage(): Promise<AdvisorSettingsPagePay
     calendlyConnected: Boolean(advisor.calendly_refresh_token?.trim()),
     calendlyConnectedAt: advisor.calendly_connected_at?.trim() || null,
     calendlyWebhookActive,
+    calendlyWebhookIssueReason,
     defaults: {
       firstName: advisor.first_name ?? "",
       lastName: advisor.last_name ?? "",

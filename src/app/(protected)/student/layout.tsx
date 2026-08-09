@@ -65,6 +65,7 @@ export default async function StudentLayout({
         hasSchoolLinked={auth.hasSchoolLinked}
         featureAccess={auth.featureAccess}
         showFunnelSubscribeCta={showFunnelSubscribeCta}
+        isCustomStudent={auth.studentType === "custom"}
       >
         {children}
       </StudentLayoutShell>

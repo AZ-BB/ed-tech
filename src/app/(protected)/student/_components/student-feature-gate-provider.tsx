@@ -14,9 +14,15 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
+  type MouseEvent,
   type ReactNode,
 } from "react";
+import { CustomApplicationSupportWarningModal } from "./custom-application-support-warning-modal";
+import {
+  setCustomApplicationSupportWarningAcknowledged,
+} from "@/lib/custom-application-support-warning";
 import {
   StudentAiDailyLimitModal,
   type AiUsageLimitKind,
@@ -46,6 +52,17 @@ type StudentFeatureGateContextValue = {
     status: StudentAiDailyLimitStatus,
     limitKind?: AiUsageLimitKind,
   ) => boolean;
+  /** Custom students must acknowledge paid-service warning before app support. */
+  isCustomStudent: boolean;
+  requestApplicationSupportAccess: (
+    onProceed: () => void,
+    onCancel?: () => void,
+  ) => void;
+  guardApplicationSupportClick: (
+    event: MouseEvent,
+    onProceed: () => void,
+    onCancel?: () => void,
+  ) => void;
 };
 
 const StudentFeatureGateContext =
@@ -55,10 +72,12 @@ export function StudentFeatureGateProvider({
   children,
   featureAccess = defaultStudentFeatureAccess(true),
   showFunnelSubscribeCta = false,
+  isCustomStudent = false,
 }: {
   children: ReactNode;
   featureAccess?: StudentFeatureAccess;
   showFunnelSubscribeCta?: boolean;
+  isCustomStudent?: boolean;
 }) {
   const [disabledOpen, setDisabledOpen] = useState(false);
   const [highlightedFeature, setHighlightedFeature] =
@@ -72,6 +91,53 @@ export function StudentFeatureGateProvider({
   const [aiDailyLimitStatus, setAiDailyLimitStatus] =
     useState<StudentAiDailyLimitStatus | null>(null);
   const [aiLimitKind, setAiLimitKind] = useState<AiUsageLimitKind>("daily");
+  const [customAppSupportWarningOpen, setCustomAppSupportWarningOpen] =
+    useState(false);
+  const customAppSupportProceedRef = useRef<(() => void) | null>(null);
+  const customAppSupportCancelRef = useRef<(() => void) | null>(null);
+
+  const closeCustomApplicationSupportWarning = useCallback(() => {
+    setCustomAppSupportWarningOpen(false);
+    const onCancel = customAppSupportCancelRef.current;
+    customAppSupportProceedRef.current = null;
+    customAppSupportCancelRef.current = null;
+    onCancel?.();
+  }, []);
+
+  const confirmCustomApplicationSupportWarning = useCallback(() => {
+    setCustomAppSupportWarningOpen(false);
+    const onProceed = customAppSupportProceedRef.current;
+    customAppSupportProceedRef.current = null;
+    customAppSupportCancelRef.current = null;
+    setCustomApplicationSupportWarningAcknowledged();
+    onProceed?.();
+  }, []);
+
+  const requestApplicationSupportAccess = useCallback(
+    (onProceed: () => void, onCancel?: () => void) => {
+      if (!isCustomStudent) {
+        onProceed();
+        return;
+      }
+      customAppSupportProceedRef.current = onProceed;
+      customAppSupportCancelRef.current = onCancel ?? null;
+      setCustomAppSupportWarningOpen(true);
+    },
+    [isCustomStudent],
+  );
+
+  const guardApplicationSupportClick = useCallback(
+    (
+      event: MouseEvent,
+      onProceed: () => void,
+      onCancel?: () => void,
+    ) => {
+      if (!isCustomStudent) return;
+      event.preventDefault();
+      requestApplicationSupportAccess(onProceed, onCancel);
+    },
+    [isCustomStudent, requestApplicationSupportAccess],
+  );
 
   const openDisabledFeaturesModal = useCallback(
     (featureKey?: StudentFeatureKey) => {
@@ -144,6 +210,9 @@ export function StudentFeatureGateProvider({
       openAiDailyLimitModal,
       guardFunnelSubscriptionAction,
       guardAiDailyLimitAction,
+      isCustomStudent,
+      requestApplicationSupportAccess,
+      guardApplicationSupportClick,
     }),
     [
       openDisabledFeaturesModal,
@@ -152,6 +221,9 @@ export function StudentFeatureGateProvider({
       openAiDailyLimitModal,
       guardFunnelSubscriptionAction,
       guardAiDailyLimitAction,
+      isCustomStudent,
+      requestApplicationSupportAccess,
+      guardApplicationSupportClick,
     ],
   );
 
@@ -179,6 +251,13 @@ export function StudentFeatureGateProvider({
         status={aiDailyLimitStatus}
         limitKind={aiLimitKind}
       />
+      {isCustomStudent ? (
+        <CustomApplicationSupportWarningModal
+          open={customAppSupportWarningOpen}
+          onClose={closeCustomApplicationSupportWarning}
+          onContinue={confirmCustomApplicationSupportWarning}
+        />
+      ) : null}
     </StudentFeatureGateContext.Provider>
   );
 }

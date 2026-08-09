@@ -36,6 +36,10 @@ import {
 } from "@/lib/student-feature-access";
 import { useStudentFeatureGate } from "./student-feature-gate-provider";
 import { StudentFunnelSubscribeButton } from "./student-funnel-subscribe-button";
+import {
+  ApplicationSupportLink,
+  isApplicationSupportHref,
+} from "./application-support-link";
 
 /** Student dashboard only: maps stored log copy to second-person. Does not change DB values. */
 function formatActivityLogMessageForStudent(message: string): string {
@@ -571,7 +575,17 @@ export function StudentDashboard({
               );
             }
 
-            return (
+            return isApplicationSupportHref(action.href) ? (
+              <ApplicationSupportLink
+                key={action.dictKey}
+                href={action.href}
+                scroll={false}
+                data-quick-action={action.dictKey}
+                className="block h-full min-w-0 text-inherit no-underline"
+              >
+                {card}
+              </ApplicationSupportLink>
+            ) : (
               <Link
                 key={action.dictKey}
                 href={action.href}
@@ -665,13 +679,13 @@ export function StudentDashboard({
             ) : null}
           </>
         ) : (
-          <Link
+          <ApplicationSupportLink
             href="/student/application-support"
             className="relative z-[1] mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-7 py-3 text-[13px] font-semibold text-[#40916C] transition-all hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
           >
             {d.startApplicationSupport}
             <ArrowForwardIcon size={14} />
-          </Link>
+          </ApplicationSupportLink>
         )}
       </div>
 

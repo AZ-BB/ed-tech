@@ -611,6 +611,17 @@ export const studentEn = {
       ctaTitle: "Ready to start your application journey?",
       ctaSub: "Tell us where you stand today and we'll help you build a clear path forward.",
     },
+    customWarning: {
+      eyebrow: "Paid service",
+      title: "Application Support may cost around 1,000 AED",
+      body:
+        "This is a premium advisor-led service. The final fee depends on your package and number of universities. Only continue if you are willing to pay for dedicated application support.",
+      note:
+        "After your advisor reviews your request, you will receive a secure payment link before work begins.",
+      cancel: "Not now",
+      continue: "I understand, continue",
+      closeAria: "Close dialog",
+    },
     valueCards: [
       {
         title: "University Strategy",

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { CALENDLY_PLAN_REQUIRED_MESSAGE } from "@/lib/calendly-messages";
 import { logCalendly, logCalendlyError, logCalendlyWarn } from "@/lib/calendly-log";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
 import {
@@ -145,6 +146,10 @@ export function getCalendlyOAuthConfig(): CalendlyOAuthConfig | null {
   return { clientId, clientSecret, redirectUri };
 }
 
+function getCalendlyOrgAdminAccessToken(): string | null {
+  return process.env.CALENDLY_ORG_ADMIN_ACCESS_TOKEN?.trim() || null;
+}
+
 async function postTokenRequest(body: Record<string, string>): Promise<CalendlyTokenResponse> {
   const config = getCalendlyOAuthConfig();
   if (!config) {
@@ -254,6 +259,17 @@ async function calendlyApiGet<T>(accessToken: string, path: string): Promise<T> 
   return data;
 }
 
+export class CalendlyPlanRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CalendlyPlanRequiredError";
+  }
+}
+
+function isCalendlyPlanRequiredResponse(status: number, message: string): boolean {
+  return status === 403 && /upgrade/i.test(message) && /standard|teams|enterprise/i.test(message);
+}
+
 async function calendlyApiPost<T>(accessToken: string, path: string, body: unknown): Promise<T> {
   logCalendly("api", "POST request", { path, body });
 
@@ -280,6 +296,9 @@ async function calendlyApiPost<T>(accessToken: string, path: string, body: unkno
       message: (data as { message?: string }).message ?? null,
       title: (data as { title?: string }).title ?? null,
     });
+    if (isCalendlyPlanRequiredResponse(res.status, message)) {
+      throw new CalendlyPlanRequiredError(message);
+    }
     throw new Error(message);
   }
 
@@ -512,6 +531,135 @@ async function createCalendlyWebhookSubscription(opts: {
   return data.resource.uri.trim();
 }
 
+type OrganizationInvitationResource = {
+  uri: string;
+  email: string;
+  status: "pending" | "accepted" | "declined";
+  organization: string;
+};
+
+let cachedCalendlyOrgAdminOrganizationUri: string | null = null;
+
+async function resolveCalendlyOrgAdminOrganizationUri(accessToken: string): Promise<string> {
+  if (cachedCalendlyOrgAdminOrganizationUri) return cachedCalendlyOrgAdminOrganizationUri;
+
+  const data = await calendlyApiGet<{ resource: CalendlyUserApiResource }>(accessToken, "/users/me");
+  const organizationUri =
+    data.resource?.current_organization?.trim() || data.resource?.organization?.trim() || "";
+
+  if (!organizationUri) {
+    throw new Error("Could not resolve the Calendly organization for the admin access token.");
+  }
+
+  cachedCalendlyOrgAdminOrganizationUri = organizationUri;
+  return organizationUri;
+}
+
+function calendlyOrganizationUuidFromUri(organizationUri: string): string {
+  const segments = organizationUri.split("/").filter(Boolean);
+  return segments[segments.length - 1] ?? "";
+}
+
+async function findExistingCalendlyOrgMembershipByEmail(
+  accessToken: string,
+  organizationUri: string,
+  email: string,
+): Promise<boolean> {
+  const params = new URLSearchParams({ organization: organizationUri, email });
+  const data = await calendlyApiGet<{ collection?: unknown[] }>(
+    accessToken,
+    `/organization_memberships?${params.toString()}`,
+  );
+  return (data.collection ?? []).length > 0;
+}
+
+async function findExistingCalendlyOrgInvitationByEmail(
+  accessToken: string,
+  organizationUuid: string,
+  email: string,
+): Promise<boolean> {
+  const data = await calendlyApiGet<{ collection?: OrganizationInvitationResource[] }>(
+    accessToken,
+    `/organizations/${organizationUuid}/invitations?status=pending&count=100`,
+  );
+  const normalizedEmail = email.trim().toLowerCase();
+  return (data.collection ?? []).some(
+    (invite) => invite.email?.trim().toLowerCase() === normalizedEmail,
+  );
+}
+
+export type CalendlyOrgInviteOutcome =
+  | { ok: true; status: "already_member" | "already_invited" | "invited" }
+  | { ok: false; error: string };
+
+/**
+ * Invites the advisor's email to the org-admin's Calendly organization (using
+ * CALENDLY_ORG_ADMIN_ACCESS_TOKEN) before they go through the OAuth connect
+ * flow, so they no longer need to be invited manually from Calendly's admin
+ * dashboard first. No-ops silently if the admin token isn't configured.
+ */
+export async function ensureAdvisorInvitedToCalendlyOrganization(
+  email: string,
+): Promise<CalendlyOrgInviteOutcome> {
+  const trimmedEmail = email.trim().toLowerCase();
+  if (!trimmedEmail) {
+    return { ok: false, error: "Missing advisor email." };
+  }
+
+  const adminToken = getCalendlyOrgAdminAccessToken();
+  if (!adminToken) {
+    logCalendlyWarn("oauth", "Calendly org admin token not configured — skipping auto-invite", {
+      email: trimmedEmail,
+    });
+    return { ok: false, error: "Calendly organization auto-invite is not configured." };
+  }
+
+  try {
+    const organizationUri = await resolveCalendlyOrgAdminOrganizationUri(adminToken);
+    const organizationUuid = calendlyOrganizationUuidFromUri(organizationUri);
+
+    const alreadyMember = await findExistingCalendlyOrgMembershipByEmail(
+      adminToken,
+      organizationUri,
+      trimmedEmail,
+    );
+    if (alreadyMember) {
+      logCalendly("oauth", "Advisor already a Calendly org member — skipping invite", {
+        email: trimmedEmail,
+      });
+      return { ok: true, status: "already_member" };
+    }
+
+    const alreadyInvited = await findExistingCalendlyOrgInvitationByEmail(
+      adminToken,
+      organizationUuid,
+      trimmedEmail,
+    );
+    if (alreadyInvited) {
+      logCalendly("oauth", "Advisor already has a pending Calendly org invitation", {
+        email: trimmedEmail,
+      });
+      return { ok: true, status: "already_invited" };
+    }
+
+    await calendlyApiPost(adminToken, `/organizations/${organizationUuid}/invitations`, {
+      email: trimmedEmail,
+    });
+
+    logCalendly("oauth", "Invited advisor to Calendly organization", { email: trimmedEmail });
+    return { ok: true, status: "invited" };
+  } catch (err) {
+    logCalendlyError("oauth", "Could not invite advisor to Calendly organization", err, {
+      email: trimmedEmail,
+    });
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Could not invite advisor to Calendly organization.",
+    };
+  }
+}
+
 export async function buildCalendlyWebhookCallbackUrl(): Promise<string> {
   const configured = process.env.CALENDLY_WEBHOOK_CALLBACK_URL?.trim();
   if (configured) {
@@ -630,6 +778,7 @@ export async function completeAdvisorCalendlyOAuth(opts: {
   } catch (err) {
     logCalendlyError("oauth", "Webhook subscription step failed during connect", err, {
       advisorId: opts.advisorId,
+      isPlanRequired: err instanceof CalendlyPlanRequiredError,
       callbackUrl: await buildCalendlyWebhookCallbackUrl(),
     });
   }
@@ -794,20 +943,43 @@ export async function advisorHasCalendlyWebhookSubscription(
   return Boolean(uri);
 }
 
+export type CalendlyWebhookFailureReason = "plan_required" | "incomplete_connection" | "unknown";
+
+function toCalendlyWebhookFailure(err: unknown): {
+  reason: CalendlyWebhookFailureReason;
+  error: string;
+} {
+  if (err instanceof CalendlyPlanRequiredError) {
+    return { reason: "plan_required", error: CALENDLY_PLAN_REQUIRED_MESSAGE };
+  }
+  return {
+    reason: "unknown",
+    error:
+      err instanceof Error ? err.message : "Could not register Calendly webhook. Check server logs.",
+  };
+}
+
 export async function repairAdvisorCalendlyWebhookSubscription(
   advisorId: string,
-): Promise<{ ok: true; subscriptionUri: string } | { ok: false; error: string }> {
+): Promise<
+  { ok: true; subscriptionUri: string } | { ok: false; error: string; reason: CalendlyWebhookFailureReason }
+> {
   logCalendly("oauth", "Repairing advisor Calendly webhook subscription", { advisorId });
 
   const ctx = await loadAdvisorCalendlyRepairContext(advisorId);
   if (!ctx) {
-    return { ok: false, error: "Calendly is not connected for this advisor." };
+    return {
+      ok: false,
+      error: "Calendly is not connected for this advisor.",
+      reason: "incomplete_connection",
+    };
   }
 
   if (!ctx.userUri || !ctx.organizationUri) {
     return {
       ok: false,
       error: "Calendly connection is incomplete. Disconnect and reconnect Calendly.",
+      reason: "incomplete_connection",
     };
   }
 
@@ -824,6 +996,7 @@ export async function repairAdvisorCalendlyWebhookSubscription(
         err instanceof Error
           ? err.message
           : "Could not refresh Calendly access token. Reconnect Calendly.",
+      reason: "unknown",
     };
   }
 
@@ -840,13 +1013,7 @@ export async function repairAdvisorCalendlyWebhookSubscription(
       advisorId,
       callbackUrl: await buildCalendlyWebhookCallbackUrl(),
     });
-    return {
-      ok: false,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Could not register Calendly webhook. Check server logs.",
-    };
+    return { ok: false, ...toCalendlyWebhookFailure(err) };
   }
 
   const secret = await createSupabaseSecretClient();
@@ -863,7 +1030,7 @@ export async function repairAdvisorCalendlyWebhookSubscription(
       advisorId,
       subscriptionUri,
     });
-    return { ok: false, error: "Webhook was created but could not be saved." };
+    return { ok: false, error: "Webhook was created but could not be saved.", reason: "unknown" };
   }
 
   logCalendly("oauth", "Advisor Calendly webhook repaired", {
