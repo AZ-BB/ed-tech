@@ -28,6 +28,7 @@ export const studentAr: {
   aiDailyLimit: Localize<typeof studentEn.aiDailyLimit>;
   subscription: Localize<typeof studentEn.subscription>;
   signupPayment: Localize<typeof studentEn.signupPayment>;
+  customSubscription: Localize<typeof studentEn.customSubscription>;
   settings: Localize<typeof studentEn.settings>;
   logout: Localize<typeof studentEn.logout>;
   universities: Localize<typeof studentEn.universities>;
@@ -1352,6 +1353,26 @@ export const studentAr: {
     logOut: "تسجيل الخروج",
     loggingOut: "جارٍ تسجيل الخروج…",
     reassure: "دفع لمرة واحدة. دفع آمن عبر Stripe.",
+  },
+  customSubscription: {
+    eyebrow: "اشتراك شهري",
+    title: "اشترك للوصول إلى بوابتك",
+    body:
+      "يلزم اشتراك شهري لتفعيل خطتك المخصصة في يونيفيرا وفتح بوابة الطالب.",
+    benefits: [
+      "اكتشاف البرامج والبحث عن الجامعات والمنح.",
+      "التدريب والفعاليات ومراجعة المقالات.",
+      "دعم التقديم وإرشاد ما بعد القبول.",
+    ],
+    cta: "اشترك الآن",
+    paying: "جارٍ التحويل…",
+    checkoutFailed: "تعذّر بدء الدفع. حاول مرة أخرى.",
+    canceledMessage: "تم إلغاء الاشتراك. يمكنك المحاولة مرة أخرى عندما تكون جاهزًا.",
+    confirming: "جارٍ تأكيد الاشتراك…",
+    confirmFailed: "تعذّر تأكيد الاشتراك. حاول مرة أخرى أو تواصل مع الدعم.",
+    logOut: "تسجيل الخروج",
+    loggingOut: "جارٍ تسجيل الخروج…",
+    reassure: "اشتراك شهري. دفع آمن عبر Stripe. يمكنك الإلغاء في أي وقت.",
   },
   settings: {
     pageTitle: "إعدادات الحساب",

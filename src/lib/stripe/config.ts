@@ -61,6 +61,12 @@ export function getFunnelSubscriptionPriceId(): string | undefined {
   return priceId || undefined;
 }
 
+/** Monthly custom student subscription Price ID (`STRIPE_CUSTOM_SUBSCRIPTION_PRICE_ID`). */
+export function getCustomSubscriptionPriceId(): string | undefined {
+  const priceId = process.env.STRIPE_CUSTOM_SUBSCRIPTION_PRICE_ID?.trim();
+  return priceId || undefined;
+}
+
 /** One-time individual student signup Price ID (`STRIPE_INDIVIDUAL_SIGNUP_PRICE_ID`). */
 export function getIndividualSignupPriceId(): string | undefined {
   const priceId = process.env.STRIPE_INDIVIDUAL_SIGNUP_PRICE_ID?.trim();

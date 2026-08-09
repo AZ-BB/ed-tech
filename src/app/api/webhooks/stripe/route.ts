@@ -1,3 +1,4 @@
+import { confirmCustomSubscriptionFromSession } from "@/lib/stripe/confirm-custom-subscription-from-session";
 import { confirmPaymentFromSession } from "@/lib/stripe/confirm-application-payment-from-session";
 import { confirmFunnelSubscriptionFromSession } from "@/lib/stripe/confirm-funnel-subscription-from-session";
 import { confirmIndividualSignupPaymentFromSession } from "@/lib/stripe/confirm-individual-signup-payment-from-session";
@@ -21,16 +22,25 @@ async function handleCheckoutSessionCompleted(
     return;
   }
 
-  if (session.metadata?.kind === "funnel_subscription" || session.mode === "subscription") {
-    if (session.metadata?.kind !== "funnel_subscription") {
-      return;
-    }
-
+  if (session.metadata?.kind === "funnel_subscription") {
     const result = await confirmFunnelSubscriptionFromSession(sessionId);
     if (!result.ok) {
       console.error("[stripe webhook] funnel subscription confirm failed", result.error);
       throw new Error(result.error);
     }
+    return;
+  }
+
+  if (session.metadata?.kind === "custom_subscription") {
+    const result = await confirmCustomSubscriptionFromSession(sessionId);
+    if (!result.ok) {
+      console.error("[stripe webhook] custom subscription confirm failed", result.error);
+      throw new Error(result.error);
+    }
+    return;
+  }
+
+  if (session.mode === "subscription") {
     return;
   }
 
@@ -62,7 +72,8 @@ async function handleCheckoutSessionCompleted(
 async function handleSubscriptionEvent(
   subscription: Stripe.Subscription,
 ): Promise<void> {
-  if (subscription.metadata?.kind !== "funnel_subscription") {
+  const kind = subscription.metadata?.kind?.trim();
+  if (kind !== "funnel_subscription" && kind !== "custom_subscription") {
     return;
   }
 

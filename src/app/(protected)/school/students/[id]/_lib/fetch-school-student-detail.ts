@@ -12,6 +12,7 @@ import {
   getStudentApplicationProfileCompletion,
   studentApplicationProfileRowToCompletionInput,
 } from "@/lib/student-application-profile-completion";
+import { formatStudentTypeLabel } from "@/lib/format-student-type-label";
 import { teacherNameFromEmbed } from "@/lib/student-teacher-assignment";
 import {
   parseStudentFeatureAccess,
@@ -48,6 +49,8 @@ export type SchoolStudentDetailPayload = {
     email: string;
     gradeDisplay: string | null;
     schoolName: string;
+    studentType: string;
+    studentTypeLabel: string;
     nationalityName: string | null;
     profilePercent: number;
     curriculumDisplay: string | null;
@@ -186,6 +189,7 @@ export async function fetchSchoolStudentDetail(
       signup_ambassador_credit_limit,
       total_logins,
       feature_access,
+      student_type,
       schools (
         name,
         credit_pool
@@ -608,6 +612,8 @@ export async function fetchSchoolStudentDetail(
       email: profile.email?.trim() ?? "",
       gradeDisplay: profile.grade?.trim() ?? null,
       schoolName,
+      studentType: profile.student_type ?? "individual",
+      studentTypeLabel: formatStudentTypeLabel(profile.student_type),
       nationalityName,
       profilePercent,
       curriculumDisplay,

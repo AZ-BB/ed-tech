@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Json } from "@/database.types";
 import {
+  customStudentFeatureAccess,
   parseStudentFeatureAccess,
   type StudentFeatureAccess,
 } from "@/lib/student-feature-access";
@@ -11,7 +12,7 @@ import { randomBytes } from "crypto";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
-export const STUDENT_TYPE_VALUES = ["school", "individual", "funnel"] as const;
+export const STUDENT_TYPE_VALUES = ["school", "individual", "funnel", "custom"] as const;
 export type StudentType = (typeof STUDENT_TYPE_VALUES)[number];
 
 export type ProvisionIndependentStudentInput = {
@@ -60,9 +61,12 @@ export async function provisionIndependentStudent(
       ? input.password
       : generatePassword();
   const studentType = input.studentType ?? "individual";
-  const featureAccess = parseStudentFeatureAccess(input.featureAccess ?? null, {
-    studentType,
-  });
+  const featureAccess =
+    input.featureAccess !== undefined
+      ? parseStudentFeatureAccess(input.featureAccess ?? null, { studentType })
+      : studentType === "custom"
+        ? customStudentFeatureAccess()
+        : parseStudentFeatureAccess(null, { studentType });
   const metaData =
     input.metaData === undefined ? null : (input.metaData as Json | null);
 

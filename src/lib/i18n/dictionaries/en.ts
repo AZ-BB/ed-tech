@@ -9,6 +9,7 @@ import {
 } from "./shared";
 import { privacyEn, termsEn } from "./legal-en";
 import { signupEn } from "./signup-en";
+import { customEn, customSignupEn } from "./custom-en";
 import { forAdvisorsEn } from "./for-advisors-en";
 import { aboutEn } from "./about-en";
 import { webinarsEn } from "./webinars-en";
@@ -31,4 +32,6 @@ export const en = {
   forAdvisors: forAdvisorsEn,
   about: aboutEn,
   student: studentEn,
+  custom: customEn,
+  customSignup: customSignupEn,
 } as const;

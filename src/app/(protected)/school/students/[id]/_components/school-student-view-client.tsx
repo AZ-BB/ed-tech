@@ -1028,6 +1028,9 @@ export function SchoolStudentViewClient({
     );
 
   const sidebarRows: { lab: string; val: ReactNode; valSmall?: boolean }[] = [
+    ...(documentsPortal === "admin"
+      ? [{ lab: "Account type", val: student.studentTypeLabel }]
+      : []),
     { lab: "School", val: schoolInfo?.name ?? student.schoolName ?? "—" },
     { lab: "Teacher", val: teacherSidebarValue },
     { lab: "Grade", val: student.gradeDisplay ?? "—" },

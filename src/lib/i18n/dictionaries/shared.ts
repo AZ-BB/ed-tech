@@ -156,10 +156,99 @@ export const homeEn = {
   featuresTitle: "One platform, every tool for your university journey",
   featuresSub:
     "From university discovery to scholarships, essays, advisor support, and application tracking, Univeera brings everything students need into one place.",
+  tools: [
+    {
+      icon: "search",
+      title: "University Search",
+      desc: "Search and compare universities across destinations, majors, and requirements.",
+    },
+    {
+      icon: "gift",
+      title: "Scholarship Hub",
+      desc: "Discover and filter scholarships matched to your profile and goals.",
+    },
+    {
+      icon: "spark",
+      title: "AI University Matching",
+      desc: "Answer a few questions and get university recommendations tailored to you.",
+    },
+    {
+      icon: "pen",
+      title: "Essay Support",
+      desc: "Get actionable feedback to strengthen your personal statement and essays.",
+    },
+    {
+      icon: "track",
+      title: "Application Tracker",
+      desc: "Keep every deadline, document, and application organised in one place.",
+    },
+    {
+      icon: "chat",
+      title: "Advisor Sessions",
+      desc: "Book 1:1 guidance with vetted advisors tailored to your application strategy.",
+    },
+    {
+      icon: "users",
+      title: "Ambassador Network",
+      desc: "Speak to current students and graduates from your target universities.",
+    },
+    {
+      icon: "cal",
+      title: "Webinars & Events",
+      desc: "Join live sessions on applications, scholarships, and studying abroad.",
+    },
+    {
+      icon: "brief",
+      title: "Internship Opportunities",
+      desc: "Explore internships and experiences that strengthen your applications.",
+    },
+  ],
   proofLabel: "Proven track record",
   proofTitle: "Trusted by students across the region",
   proofSub:
     "Univeera combines university search, scholarships, advisors, ambassadors, and application tools to help students make smarter university decisions.",
+  ptrMetrics: [
+    {
+      num: "150,000+",
+      label: "Students using Univeera",
+      icon: "users",
+      support:
+        "Students use Univeera to explore universities, scholarships, and support in one place.",
+    },
+    {
+      num: "$50M+",
+      label: "Scholarship funding secured",
+      icon: "award",
+      support:
+        "Helping students discover funding opportunities and make university options more accessible.",
+    },
+    {
+      num: "1,000+",
+      label: "Universities searchable",
+      icon: "search",
+      support:
+        "Search and compare universities across destinations, majors, and requirements.",
+    },
+    {
+      num: "100+",
+      label: "Ambassadors across top universities",
+      icon: "cap",
+      support:
+        "Speak to students and graduates who have already experienced the journey.",
+    },
+    {
+      num: "150+",
+      label: "Schools worked with",
+      icon: "school",
+      support: "Partnering with schools to support students across the region.",
+    },
+    {
+      num: "8+",
+      label: "Countries supported",
+      icon: "globe",
+      support: "Serving students across the Middle East and beyond.",
+    },
+  ],
   marqueeHead: "Pathways to leading universities around the world",
   advisorsEyebrow: "Expert guidance when you need it",
   advisorsTitle: "Meet the advisors behind your university journey",
@@ -168,6 +257,43 @@ export const homeEn = {
   exploreAdvisors: "Explore Advisors",
   advisorsCtaNote:
     "Advisor sessions can be booked directly through the Univeera platform.",
+  advisors: [
+    {
+      img: "/landing/advisors/advisor-1.jpeg",
+      name: "Omar Khaled",
+      cred: "UK & Europe Applications",
+      tag: "UK Applications",
+      role: "Helps students with UCAS, personal statements, university shortlists, and application planning.",
+    },
+    {
+      img: "/landing/advisors/advisor-2.jpeg",
+      name: "Ahmad Hassan",
+      cred: "US & Canada Applications",
+      tag: "US Applications",
+      role: "Supports students with Common App strategy, essays, deadlines, and university selection.",
+    },
+    {
+      img: "/landing/advisors/advisor-3.jpeg",
+      name: "Yasmine Fares",
+      cred: "Essay & Personal Statement Support",
+      tag: "Essays",
+      role: "Guides students through essay structure, clarity, storytelling, and final review.",
+    },
+    {
+      img: "/landing/advisors/advisor-4.jpeg",
+      name: "Sarah Alkhatib",
+      cred: "Scholarships & Funding Guidance",
+      tag: "Scholarships",
+      role: "Helps students identify relevant scholarships and understand eligibility requirements.",
+    },
+    {
+      img: "/landing/advisors/advisor-5.jpeg",
+      name: "Hana Alsayed",
+      cred: "University Strategy Advisor",
+      tag: "Strategy",
+      role: "Helps students build balanced university lists based on goals, grades, budget, and destination.",
+    },
+  ],
   ambassadorsEyebrow: "Ambassador network",
   ambassadorsTitle:
     "Students can hear directly from our network of 100+ ambassadors",
@@ -176,6 +302,56 @@ export const homeEn = {
     "Students can connect with current university students and graduates to ask questions about academics, applications, campus life, moving abroad, accommodation, and what it is really like to study there.",
   exploreAmbassadors: "Explore Ambassadors",
   askAmbassador: "Ask a question",
+  ambassadors: [
+    {
+      name: "Sara",
+      img: "/landing/ambassadors/ambassador-1.jpeg",
+      university: "King's College London",
+      country: "United Kingdom",
+      flag: "🇬🇧",
+      tags: ["Campus life", "Applications"],
+    },
+    {
+      name: "Omar",
+      img: "/landing/ambassadors/ambassador-2.jpeg",
+      university: "University of Toronto",
+      country: "Canada",
+      flag: "🇨🇦",
+      tags: ["Student life", "Moving abroad"],
+    },
+    {
+      name: "Noor",
+      img: "/landing/ambassadors/ambassador-3.jpeg",
+      university: "UCL",
+      country: "United Kingdom",
+      flag: "🇬🇧",
+      tags: ["Academics", "Accommodation"],
+    },
+    {
+      name: "Khalid",
+      img: "/landing/ambassadors/ambassador-4.jpeg",
+      university: "NYU",
+      country: "United States",
+      flag: "🇺🇸",
+      tags: ["Applications", "Academics"],
+    },
+    {
+      name: "Leen",
+      img: "/landing/ambassadors/ambassador-5.jpeg",
+      university: "University of Manchester",
+      country: "United Kingdom",
+      flag: "🇬🇧",
+      tags: ["Student life", "Campus life"],
+    },
+    {
+      name: "Youssef",
+      img: "/landing/ambassadors/ambassador-6.jpeg",
+      university: "Imperial College London",
+      country: "United Kingdom",
+      flag: "🇬🇧",
+      tags: ["Academics", "Applications"],
+    },
+  ],
   testiLabel: "What students say",
   testiTitle:
     "Students across the region are using Univeera to make smarter university decisions",

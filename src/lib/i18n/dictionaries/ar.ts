@@ -9,6 +9,7 @@ import {
 } from "./shared-ar";
 import { privacyAr, termsAr } from "./legal-ar";
 import { signupAr } from "./signup-ar";
+import { customAr, customSignupAr } from "./custom-ar";
 import { forAdvisorsAr } from "./for-advisors-ar";
 import { aboutAr } from "./about-ar";
 import { webinarsAr } from "./webinars-ar";
@@ -31,4 +32,6 @@ export const ar = {
   forAdvisors: forAdvisorsAr,
   about: aboutAr,
   student: studentAr,
+  custom: customAr,
+  customSignup: customSignupAr,
 } as const;
