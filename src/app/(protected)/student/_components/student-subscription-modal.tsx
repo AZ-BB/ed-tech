@@ -1,13 +1,16 @@
 "use client";
 
+import type { QuickActionDictKey } from "@/app/(protected)/student/_data/student-dashboard-data";
 import { useLocale } from "@/lib/i18n/locale-context";
 import {
   FEATURE_TO_QUICK_ACTION_DICT_KEY,
   type StudentFeatureKey,
 } from "@/lib/student-feature-access";
-import { useEffect, useMemo } from "react";
-import type { QuickActionDictKey } from "@/app/(protected)/student/_data/student-dashboard-data";
+import { useEffect, useMemo, useRef } from "react";
 import { StudentFunnelSubscribeButton } from "./student-funnel-subscribe-button";
+
+const LANDING_VIDEO_URL =
+  "https://cqtqhrvyakjiafaxpijd.supabase.co/storage/v1/object/public/landing-page/landing.mp4";
 
 type DisabledFeatureModalItem = {
   title: string;
@@ -45,6 +48,15 @@ export function StudentSubscriptionModal({
   const benefits: readonly string[] = featureCopy?.benefits?.length
     ? featureCopy.benefits
     : copy.modalBenefits;
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (open) return;
+    const video = videoRef.current;
+    if (!video) return;
+    video.pause();
+    video.currentTime = 0;
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -155,29 +167,17 @@ export function StudentSubscriptionModal({
         <div className="mb-2.5 text-[13px] font-semibold text-[var(--text)]">
           {copy.modalVideoHeading}
         </div>
-        {/*
-          Video embed placeholder — replace with YouTube/Vimeo/Wistia iframe
-          or <video controls> when URLs are available.
-        */}
-        <div
-          className="relative mb-6 flex aspect-video w-full cursor-default flex-col items-center justify-center gap-3.5 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B4332] to-[#2b5844]"
-          role="img"
-          aria-label={copy.modalVideoAria}
-        >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="#1B4332"
-              aria-hidden
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-          <p className="max-w-[360px] px-5 text-center text-[12.5px] leading-snug text-white/85">
-            {copy.modalVideoText}
-          </p>
+        <div className="mb-6 aspect-video overflow-hidden rounded-2xl bg-[#1B4332]">
+          <video
+            ref={videoRef}
+            className="h-full w-full"
+            src={LANDING_VIDEO_URL}
+            controls
+            playsInline
+            preload="auto"
+            title={dict.home.videoTitle}
+            aria-label={copy.modalVideoAria}
+          />
         </div>
 
         <StudentFunnelSubscribeButton
