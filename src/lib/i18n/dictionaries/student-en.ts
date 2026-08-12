@@ -1332,15 +1332,54 @@ export const studentEn = {
   },
   signupPayment: {
     eyebrow: "Univeera Access",
-    title: "Complete your signup to get started",
+    priceSubOneTime: "One-time payment",
+    priceSubNoSubscription: "No subscription",
+    priceSubInstant: "Instant access",
+    title: "Get into the university that's right for you",
     body:
-      "A one-time payment is required to activate your Univeera account and unlock the full student portal.",
-    benefits: [
-      "Access program discovery, university search, and AI matching tools.",
-      "Book advisor sessions and connect with university ambassadors.",
-      "Get support with applications, essays, scholarships, and more.",
+      "One payment unlocks the full Univeera platform — your matches, your funding, your advisor, your plan.",
+    inclusionsCaption: "Everything you unlock",
+    inclusions: [
+      {
+        title: "Find your perfect university match",
+        description:
+          "AI matching across 1,500+ universities — built around your grades, budget and goals",
+      },
+      {
+        title: "Unlock 300+ scholarships",
+        description:
+          "Verified funding opportunities you won't find searching on your own",
+      },
+      {
+        title: "Your own admissions advisor",
+        description:
+          "A private one-to-one session to turn your goals into a clear plan",
+        badge: "Included",
+      },
+      {
+        title: "Talk to students already there",
+        description:
+          "Real answers from ambassadors at 60+ universities in 20+ countries",
+      },
+      {
+        title: "Make your applications stand out",
+        description: "Essay and application support from shortlist to submission",
+      },
+      {
+        title: "Land internships early",
+        description: "Opportunities that make your profile impossible to ignore",
+      },
+      {
+        title: "Meet universities face to face",
+        description: "Fairs, webinars and admissions events all year round",
+      },
+      {
+        title: "Never miss a deadline",
+        description:
+          "Every requirement, document and date tracked in one dashboard",
+      },
     ],
-    cta: "Pay now",
+    cta: "Pay {price} — unlock full access",
     paying: "Redirecting…",
     checkoutFailed: "Could not start checkout. Try again.",
     canceledMessage: "Payment was canceled. You can try again when ready.",
@@ -1348,7 +1387,10 @@ export const studentEn = {
     confirmFailed: "Could not confirm your payment. Please try again or contact support.",
     logOut: "Log out",
     loggingOut: "Logging out…",
-    reassure: "One-time payment. Secure checkout powered by Stripe.",
+    assureOneTime: "One-time payment",
+    assureStripe: "Secure Stripe checkout",
+    assureInstant: "Instant portal access",
+    stripeLine: "Secure checkout powered by Stripe",
   },
   customSubscription: {
     eyebrow: "Monthly subscription",

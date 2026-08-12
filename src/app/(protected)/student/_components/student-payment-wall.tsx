@@ -9,7 +9,22 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-export function StudentPaymentWall() {
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="h-[11px] w-[11px] stroke-[#2C4433] stroke-[3]"
+    >
+      <path d="M4 12.5l5 5L20 6.5" />
+    </svg>
+  );
+}
+
+export function StudentPaymentWall({ displayPrice }: { displayPrice: string }) {
   const { dict } = useLocale();
   const copy = dict.student.signupPayment;
   const router = useRouter();
@@ -22,6 +37,7 @@ export function StudentPaymentWall() {
 
   const sessionId = searchParams.get("signup_session_id")?.trim() ?? "";
   const paymentCanceled = searchParams.get("signup_payment") === "canceled";
+  const ctaLabel = copy.cta.replace("{price}", displayPrice);
 
   useEffect(() => {
     if (paymentCanceled) {
@@ -67,59 +83,71 @@ export function StudentPaymentWall() {
   const isBusy = payPending || confirmPending || logoutPending || Boolean(sessionId);
 
   return (
-    <div className="student-portal flex min-h-screen items-center justify-center bg-[var(--sand)] px-4 py-10 font-[family-name:var(--font-dm-sans)]">
-      <div className="w-full max-w-[560px] rounded-[20px] bg-white px-8 py-10 shadow-[0_20px_60px_rgba(10,20,14,0.12)] max-[640px]:px-5 max-[640px]:py-8">
-        <div className="mb-3.5 flex h-11 w-11 items-center justify-center rounded-[13px] bg-[var(--green-bg)]">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#2D6A4F"
-            strokeWidth="1.8"
-            aria-hidden
-          >
-            <rect x="3" y="11" width="18" height="11" rx="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
-        </div>
+    <div className="student-portal flex min-h-screen items-center justify-center bg-[#F2F1EA] px-5 py-9 font-[family-name:var(--font-dm-sans)] max-[560px]:items-start max-[560px]:px-2 max-[560px]:py-2.5">
+      <main className="w-full max-w-[620px] rounded-[22px] bg-white px-14 pb-10 pt-[52px] shadow-[0_24px_64px_rgba(44,68,51,0.09)] max-[560px]:rounded-[18px] max-[560px]:px-[22px] max-[560px]:pb-[30px] max-[560px]:pt-9">
+        <header className="text-center">
+          <p className="mb-[22px] text-[11.5px] font-bold uppercase tracking-[0.2em] text-[#3D5A44] max-[560px]:mb-4">
+            {copy.eyebrow}
+          </p>
+          <p className="font-[family-name:var(--font-dm-serif)] text-[72px] leading-none text-[#2C4433] max-[560px]:text-[56px]">
+            {displayPrice}
+          </p>
+          <p className="mt-[13px] text-sm tracking-[0.02em] text-[#6A7466] max-[560px]:text-[13px]">
+            <b className="font-semibold text-[#22301F]">{copy.priceSubOneTime}</b>
+            <span className="mx-[7px] text-[#C9A85C]">·</span>
+            {copy.priceSubNoSubscription}
+            <span className="mx-[7px] text-[#C9A85C]">·</span>
+            {copy.priceSubInstant}
+          </p>
+          <hr className="mx-auto my-[26px] h-0.5 w-11 border-0 bg-[#C9A85C] max-[560px]:my-[22px]" />
+        </header>
 
-        <span className="mb-2 inline-block text-[10.5px] font-bold uppercase tracking-[1.2px] text-[var(--green)]">
-          {copy.eyebrow}
-        </span>
-        <h1 className="mb-2.5 font-[family-name:var(--font-dm-serif)] text-[26px] leading-tight text-[var(--text)] max-[640px]:text-[22px]">
+        <h1 className="mb-2 text-center font-[family-name:var(--font-dm-serif)] text-[23px] font-normal leading-[1.3] text-[#22301F] max-[560px]:text-xl">
           {copy.title}
         </h1>
-        <p className="mb-[18px] text-[13.5px] leading-relaxed text-[var(--text-mid)]">
+        <p className="mb-8 text-center text-[14.5px] leading-[1.55] text-[#6A7466] max-[560px]:mb-[26px] max-[560px]:text-[13.5px]">
           {copy.body}
         </p>
 
-        <ul className="mb-[22px] flex list-none flex-col gap-2.5 p-0">
-          {copy.benefits.map((benefit) => (
-            <li
-              key={benefit}
-              className="flex items-start gap-2.5 text-[13px] leading-snug text-[var(--text-mid)]"
-            >
-              <span className="mt-px flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-full bg-[var(--green-bg)]">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#2D6A4F"
-                  strokeWidth="3"
-                  aria-hidden
-                >
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              </span>
-              {benefit}
-            </li>
-          ))}
-        </ul>
+        <table className="mb-[30px] w-full border-collapse">
+          <caption className="caption-top border-b border-[#2C4433] pb-[11px] text-start text-[11px] font-bold uppercase tracking-[0.18em] text-[#A8863D]">
+            {copy.inclusionsCaption}
+          </caption>
+          <tbody>
+            {copy.inclusions.map((item, index) => (
+              <tr
+                key={item.title}
+                className={
+                  index === copy.inclusions.length - 1
+                    ? "[&_td]:border-b [&_td]:border-[#2C4433]"
+                    : ""
+                }
+              >
+                <td className="border-b border-[#EAE8DE] py-3.5 pe-[18px] align-top max-[560px]:py-3">
+                  <strong className="mb-0.5 flex flex-wrap items-center gap-2 text-[15px] font-semibold max-[560px]:text-[14.5px]">
+                    {item.title}
+                    {"badge" in item && item.badge ? (
+                      <span className="rounded-full border border-[#C9A85C] px-2 py-[3px] text-[9.5px] font-bold uppercase leading-none tracking-[0.12em] text-[#A8863D]">
+                        {item.badge}
+                      </span>
+                    ) : null}
+                  </strong>
+                  <span className="block text-[13px] leading-[1.45] text-[#6A7466] max-[560px]:text-[12.5px]">
+                    {item.description}
+                  </span>
+                </td>
+                <td className="w-[34px] border-b border-[#EAE8DE] py-3.5 text-end align-top max-[560px]:py-3">
+                  <span className="inline-flex h-[23px] w-[23px] items-center justify-center rounded-full bg-[#E8EFE9]">
+                    <CheckIcon />
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         {confirmMessage ? (
-          <p className="mb-4 text-center text-sm font-medium text-[var(--green-dark)]">
+          <p className="mb-4 text-center text-sm font-medium text-[#2C4433]">
             {confirmMessage}
           </p>
         ) : null}
@@ -130,26 +158,39 @@ export function StudentPaymentWall() {
 
         <button
           type="button"
-          className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-[var(--green)] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)] hover:shadow-[0_6px_18px_rgba(27,67,50,0.22)] disabled:cursor-not-allowed disabled:opacity-55"
+          className="block w-full cursor-pointer rounded-[13px] border-none bg-[#2C4433] px-6 py-[18px] text-center text-base font-semibold tracking-[0.01em] text-[#FDFCF7] transition hover:bg-[#3D5A44] hover:shadow-[0_12px_28px_rgba(44,68,51,0.28)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[#C9A85C] focus-visible:outline-offset-3 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none"
           disabled={isBusy}
           onClick={handlePay}
         >
-          {payPending || confirmPending ? copy.paying : copy.cta}
+          {payPending || confirmPending ? copy.paying : ctaLabel}
         </button>
+
+        <div className="mt-[15px] flex flex-wrap justify-center gap-5 text-[12.5px] text-[#6A7466] max-[560px]:gap-3 max-[560px]:text-xs">
+          <span className="inline-flex items-center gap-1.5">
+            <CheckIcon />
+            {copy.assureOneTime}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <CheckIcon />
+            {copy.assureStripe}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <CheckIcon />
+            {copy.assureInstant}
+          </span>
+        </div>
+
+        <p className="mt-3 text-center text-xs text-[#9AA396]">{copy.stripeLine}</p>
 
         <button
           type="button"
-          className="mt-4 block w-full cursor-pointer border-none bg-transparent p-2 text-center text-[12.5px] font-semibold text-[var(--text-light)] transition hover:text-[var(--green-dark)] hover:underline disabled:cursor-not-allowed disabled:opacity-55"
+          className="mt-4 block w-full cursor-pointer border-none bg-transparent p-2 text-center text-sm text-[#6A7466] transition hover:text-[#22301F] hover:underline focus-visible:rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3D5A44] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
           disabled={isBusy}
           onClick={handleLogout}
         >
           {logoutPending ? copy.loggingOut : copy.logOut}
         </button>
-
-        <p className="mt-2.5 text-center text-[11px] text-[var(--text-hint)]">
-          {copy.reassure}
-        </p>
-      </div>
+      </main>
     </div>
   );
 }

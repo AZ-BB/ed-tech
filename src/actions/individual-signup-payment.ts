@@ -2,6 +2,7 @@
 
 import { createIndividualSignupCheckoutSession } from "@/lib/stripe/create-individual-signup-checkout-session";
 import { confirmIndividualSignupPaymentFromSession } from "@/lib/stripe/confirm-individual-signup-payment-from-session";
+import { getIndividualSignupPricingForRequest } from "@/lib/stripe/individual-signup-pricing";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import { requiresIndividualSignupPayment } from "@/lib/student-subscription";
 import type { GeneralResponse } from "@/utils/response";
@@ -31,10 +32,13 @@ export async function createIndividualSignupCheckoutAction(): Promise<
     return { data: null, error: "Could not load your billing profile." };
   }
 
+  const pricing = await getIndividualSignupPricingForRequest();
+
   const checkout = await createIndividualSignupCheckoutSession({
     studentId: auth.studentId,
     customerEmail: profile.email,
     stripeCustomerId: profile.stripe_customer_id,
+    currency: pricing.currency,
   });
 
   if (!checkout.ok) {
