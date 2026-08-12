@@ -4,6 +4,7 @@ import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
 import { requiresCustomSubscription, requiresFunnelSubscription, requiresIndividualSignupPayment } from "@/lib/student-subscription";
+import { getIndividualSignupPricingForRequest } from "@/lib/stripe/individual-signup-pricing";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -39,10 +40,13 @@ export default async function StudentLayout({
   const requiresSubscription = requiresCustomSubscription(auth);
 
   if (requiresSignupPayment) {
+    const pricing = await getIndividualSignupPricingForRequest();
+    const displayPrice = pricing.displayPrice;
+
     return (
       <LocaleProvider locale={locale} dict={dict}>
         <Suspense fallback={null}>
-          <StudentPaymentWall />
+          <StudentPaymentWall displayPrice={displayPrice} />
         </Suspense>
       </LocaleProvider>
     );

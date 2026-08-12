@@ -2,11 +2,13 @@ import "server-only";
 
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
 import { getIndividualSignupPriceId, getStripeClient } from "@/lib/stripe/config";
+import type { IndividualSignupCurrency } from "@/lib/stripe/individual-signup-pricing";
 
 export type CreateIndividualSignupCheckoutInput = {
   studentId: string;
   customerEmail: string;
   stripeCustomerId?: string | null;
+  currency: IndividualSignupCurrency;
 };
 
 export type CreateIndividualSignupCheckoutResult =
@@ -42,6 +44,7 @@ export async function createIndividualSignupCheckoutSession(
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      currency: input.currency.toLowerCase(),
       customer: existingCustomerId,
       customer_email: existingCustomerId ? undefined : input.customerEmail,
       line_items: [{ price: priceId, quantity: 1 }],
