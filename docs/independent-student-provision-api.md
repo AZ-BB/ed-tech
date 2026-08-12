@@ -58,6 +58,7 @@ Content-Type: application/json
 | `email` | string | yes | Unique email used as the login identity |
 | `grade` | string | yes | Exactly one of: `Grade 9`, `Grade 10`, `Grade 11`, `Grade 12` |
 | `nationalityCountryCode` | string | yes | ISO 3166-1 alpha-2 country code (e.g. `EG`, `US`, `GB`) |
+| `phone` | string | no | Contact phone number stored on the student profile (max 64 characters) |
 | `password` | string | no | Account password (min 8 characters). If omitted, one is generated automatically and not returned. |
 | `studentType` | string | no | `individual` or `funnel`. Defaults to `funnel` for API-provisioned accounts. |
 | `featureAccess` | object | no | Which portal features the student can use (see below) |
@@ -100,6 +101,7 @@ New accounts receive **1 advisor** and **1 ambassador** session credit by defaul
   "email": "ada@example.com",
   "grade": "Grade 12",
   "nationalityCountryCode": "EG",
+  "phone": "+971 50 123 4567",
   "featureAccess": {
     "personality_overview": true,
     "program_discovery": true,
@@ -186,6 +188,7 @@ curl -X POST "https://univeera.me/api/students/independent" \
     "email": "ada@example.com",
     "grade": "Grade 12",
     "nationalityCountryCode": "EG",
+    "phone": "+971 50 123 4567",
     "featureAccess": {
       "personality_overview": true,
       "program_discovery": true,
@@ -221,6 +224,7 @@ const res = await fetch("https://univeera.me/api/students/independent", {
     email: "ada@example.com",
     grade: "Grade 12",
     nationalityCountryCode: "EG",
+    phone: "+971 50 123 4567",
     featureAccess: {
       personality_overview: true,
       program_discovery: true,
