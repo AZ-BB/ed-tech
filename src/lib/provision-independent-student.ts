@@ -21,6 +21,8 @@ export type ProvisionIndependentStudentInput = {
   email: string;
   grade: string;
   nationalityCountryCode: string;
+  /** Optional contact phone stored on `student_profiles.phone`. */
+  phone?: string;
   /** If omitted, a random password is generated. */
   password?: string;
   /** Defaults to individual when omitted. */
@@ -56,6 +58,8 @@ export async function provisionIndependentStudent(
   const email = input.email.trim().toLowerCase();
   const grade = input.grade.trim();
   const nationalityCountryCode = input.nationalityCountryCode.trim();
+  const phoneRaw = input.phone?.trim() ?? "";
+  const phone = phoneRaw.length > 0 ? phoneRaw.slice(0, 64) : null;
   const password =
     input.password != null && input.password.length > 0
       ? input.password
@@ -172,6 +176,7 @@ export async function provisionIndependentStudent(
     email,
     first_name: firstName,
     last_name: lastName,
+    phone,
     school_id: null,
     nationality_country_code: nationalityCountryCode,
     grade,

@@ -98,6 +98,10 @@ export async function POST(request: Request) {
   const email = String(body.email ?? "").trim();
   const grade = String(body.grade ?? "").trim();
   const nationalityCountryCode = String(body.nationalityCountryCode ?? "").trim();
+  const phone =
+    body.phone === undefined || body.phone === null
+      ? undefined
+      : String(body.phone);
   const password =
     body.password === undefined || body.password === null
       ? undefined
@@ -149,6 +153,7 @@ export async function POST(request: Request) {
     email,
     grade,
     nationalityCountryCode,
+    phone,
     password,
     studentType,
     featureAccess: featureAccessRaw,
