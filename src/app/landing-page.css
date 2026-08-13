@@ -2183,19 +2183,11 @@ html[dir="rtl"] .nav-drawer--open {
   }
 
   .hero-right {
-    display: flex;
-    justify-content: center;
-    margin-top: 22px;
+    display: none;
   }
 
   .hero-trust {
     text-align: center;
-  }
-
-  .hero-cluster {
-    transform: scale(0.94);
-    transform-origin: top center;
-    margin-bottom: -24px;
   }
 
   .ptr-section {
@@ -2388,19 +2380,6 @@ html[dir="rtl"] .nav-drawer--open {
     font-size: 15px;
     background: var(--white);
     border-color: rgba(0, 0, 0, 0.08);
-  }
-
-  .hero-cluster {
-    height: 330px;
-    transform: scale(0.82);
-    transform-origin: top center;
-    margin: 0 auto -40px;
-  }
-
-  .hero-cap {
-    bottom: -22px;
-    font-size: 11.5px;
-    padding: 0 12px;
   }
 
   .ptr-grid {
