@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Serif_Display, Noto_Sans_Arabic } from "next/font/google";
 import { cookies, headers } from "next/headers";
+import { MicrosoftClarity } from "@/components/microsoft-clarity";
 import { defaultLocale, getDocumentDirection, isLocale } from "@/lib/i18n/config";
 import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import "./globals.css";
@@ -55,7 +56,10 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       className={`${dmSans.variable} ${dmSerif.variable} ${notoSansArabic.variable} h-full antialiased`}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <MicrosoftClarity />
+      </body>
     </html>
   );
 }
