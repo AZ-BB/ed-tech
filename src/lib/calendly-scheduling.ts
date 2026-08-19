@@ -3,6 +3,11 @@ export const CALENDLY_SCHEDULING_BASE_URL =
   process.env.NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL?.trim() ||
   "https://calendly.com/admin-univeera/30min";
 
+/** Influencer / custom student 1:1 advisor booking — embed only, no webhook or DB session. */
+export const CALENDLY_INFLUENCER_ADVISOR_URL =
+  process.env.NEXT_PUBLIC_CALENDLY_INFLUENCER_ADVISOR_URL?.trim() ||
+  CALENDLY_SCHEDULING_BASE_URL;
+
 /** UTM content value linking a Calendly booking back to an advisor session row. */
 export function advisorSessionUtmContent(sessionId: number): string {
   return `advisor_session:${sessionId}`;

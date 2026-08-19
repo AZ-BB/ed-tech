@@ -66,6 +66,12 @@ export const studentEn = {
       "Scholarships and funding",
     ],
     modalCompleteNote: "Complete your advisor session request on the next page.",
+    influencerCalendly: {
+      modalTitleNamed: "Book a session with {name}",
+      closeAria: "Close calendar",
+      detailsNote: "Pick a time in the calendar. This does not create a session in Univeera.",
+      modalNote: "The calendar opens so you can choose a time.",
+    },
     book: {
       backToAdvisors: "Back to advisors",
       step1Title: "Tell us about your goals",

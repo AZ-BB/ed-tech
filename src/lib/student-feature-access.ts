@@ -31,7 +31,7 @@ export const FUNNEL_DEFAULT_DISABLED_FEATURES = [
   "application_support",
 ] as const satisfies readonly StudentFeatureKey[];
 
-/** Custom subscribers get these features; advisor_sessions and ambassadors stay off. */
+/** Custom / influencer students get these features. */
 export const CUSTOM_DEFAULT_ENABLED_FEATURES = [
   "personality_overview",
   "program_discovery",
@@ -40,6 +40,8 @@ export const CUSTOM_DEFAULT_ENABLED_FEATURES = [
   "internships",
   "events",
   "essay_review",
+  "advisor_sessions",
+  "ambassadors",
   "application_support",
   "post_admission",
 ] as const satisfies readonly StudentFeatureKey[];

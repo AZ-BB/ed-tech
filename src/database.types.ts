@@ -2026,6 +2026,24 @@ export type Database = {
           },
         ]
       }
+      page_visits: {
+        Row: {
+          path: string
+          updated_at: string
+          visit_count: number
+        }
+        Insert: {
+          path: string
+          updated_at?: string
+          visit_count?: number
+        }
+        Update: {
+          path?: string
+          updated_at?: string
+          visit_count?: number
+        }
+        Relationships: []
+      }
       post_admission_calls: {
         Row: {
           author_name: string
@@ -4538,6 +4556,7 @@ export type Database = {
       }
       current_advisor_id: { Args: never; Returns: string }
       current_school_admin_school_id: { Args: never; Returns: string }
+      increment_page_visit: { Args: { p_path: string }; Returns: number }
       notify_assigned_advisors_for_student: {
         Args: {
           p_body: string

@@ -3,7 +3,7 @@ import { defaultLocale, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
-import { requiresCustomSubscription, requiresFunnelSubscription, requiresIndividualSignupPayment } from "@/lib/student-subscription";
+import { requiresFunnelSubscription, requiresIndividualSignupPayment } from "@/lib/student-subscription";
 import { getIndividualSignupPricingForRequest } from "@/lib/stripe/individual-signup-pricing";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -11,7 +11,6 @@ import { Suspense } from "react";
 
 import { StudentLayoutShell } from "./_components/student-layout-shell";
 import { StudentPaymentWall } from "./_components/student-payment-wall";
-import { StudentSubscriptionWall } from "./_components/student-subscription-wall";
 import "../../student-portal.css";
 
 export default async function StudentLayout({
@@ -37,7 +36,6 @@ export default async function StudentLayout({
 
   const showFunnelSubscribeCta = requiresFunnelSubscription(auth);
   const requiresSignupPayment = requiresIndividualSignupPayment(auth);
-  const requiresSubscription = requiresCustomSubscription(auth);
 
   if (requiresSignupPayment) {
     const pricing = await getIndividualSignupPricingForRequest();
@@ -47,16 +45,6 @@ export default async function StudentLayout({
       <LocaleProvider locale={locale} dict={dict}>
         <Suspense fallback={null}>
           <StudentPaymentWall displayPrice={displayPrice} />
-        </Suspense>
-      </LocaleProvider>
-    );
-  }
-
-  if (requiresSubscription) {
-    return (
-      <LocaleProvider locale={locale} dict={dict}>
-        <Suspense fallback={null}>
-          <StudentSubscriptionWall />
         </Suspense>
       </LocaleProvider>
     );

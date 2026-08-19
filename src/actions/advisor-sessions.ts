@@ -155,13 +155,20 @@ export async function createAdvisorSessionBooking(
 
   const { data: studentRow, error: studentErr } = await secret
     .from("student_profiles")
-    .select("school_id, advisor_credit_limit")
+    .select("school_id, advisor_credit_limit, student_type")
     .eq("id", actor.studentId)
     .maybeSingle();
 
   if (studentErr) {
     console.error("[advisor_sessions] student profile:", studentErr);
     return { ok: false, error: "Could not verify your booking limit. Please try again." };
+  }
+
+  if (studentRow?.student_type === "custom") {
+    return {
+      ok: false,
+      error: "Influencer accounts book advisor sessions in Calendly only.",
+    };
   }
 
   const advisorCreditsRemaining = studentRow?.advisor_credit_limit;

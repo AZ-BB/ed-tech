@@ -4,6 +4,10 @@ import {
   isPlatformFeatureEnabled,
   PLATFORM_FEATURE_LABELS,
 } from "@/lib/platform-settings";
+import {
+  buildCalendlySchedulingPageUrl,
+  CALENDLY_INFLUENCER_ADVISOR_URL,
+} from "@/lib/calendly-scheduling";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -31,8 +35,9 @@ export default async function AdvisorSessionsPage() {
   // Catalog read uses the secret client so nested embeds are not stripped by
   // per-table RLS (PostgREST can return empty parents when child RLS differs).
   const secret = await createSupabaseSecretClient();
+  const isInfluencerFlow = auth.studentType === "custom";
 
-  const [{ data: rows }, { data: countryRows }] = await Promise.all([
+  const [{ data: rows }, { data: countryRows }, profileResult] = await Promise.all([
     secret
       .from("advisors")
       .select(
@@ -59,10 +64,37 @@ export default async function AdvisorSessionsPage() {
       .eq("is_active", true)
       .order("last_name"),
     secret.from("countries").select("id, name").order("name"),
+    isInfluencerFlow
+      ? secret
+          .from("student_profiles")
+          .select("first_name, last_name, email")
+          .eq("id", auth.studentId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const advisors = mapAdvisorRows((rows ?? []) as AdvisorQueryRow[]);
   const catalogCountries = (countryRows ?? []) as { id: string; name: string }[];
+  const profile = profileResult.data;
+  const influencerName = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim();
+  const influencerEmail = profile?.email?.trim() ?? "";
+  const influencerCalendly = isInfluencerFlow
+    ? {
+        url: buildCalendlySchedulingPageUrl({
+          base: CALENDLY_INFLUENCER_ADVISOR_URL,
+          name: influencerName,
+          email: influencerEmail,
+          ctxParts: [],
+        }),
+        prefill: { name: influencerName, email: influencerEmail },
+      }
+    : null;
 
-  return <AdvisorSessionsClient initialAdvisors={advisors} catalogCountries={catalogCountries} />;
+  return (
+    <AdvisorSessionsClient
+      initialAdvisors={advisors}
+      catalogCountries={catalogCountries}
+      influencerCalendly={influencerCalendly}
+    />
+  );
 }

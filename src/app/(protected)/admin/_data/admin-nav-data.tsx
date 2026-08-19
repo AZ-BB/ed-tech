@@ -209,6 +209,20 @@ export const adminNavSections: readonly AdminNavSection[] = [
     title: "Insights",
     links: [
       {
+        href: `${ADMIN_HOME}/funnels`,
+        label: "Funnels",
+        icon: (
+          <NavSvg
+            paths={
+              <>
+                <path d="M3 4h18" />
+                <path d="M6 4l5 7v8l2 1V11l5-7" />
+              </>
+            }
+          />
+        ),
+      },
+      {
         href: `${ADMIN_HOME}/reports`,
         label: "Reports",
         icon: (
@@ -285,6 +299,7 @@ export const ADMIN_PAGE_TITLE_BY_PATH: Record<string, string> = {
   [`${ADMIN_HOME}/paid-applicants`]: "Paid Applicant",
   [`${ADMIN_HOME}/documents`]: "Documents",
   [`${ADMIN_HOME}/lessons`]: "Lessons",
+  [`${ADMIN_HOME}/funnels`]: "Funnels",
   [`${ADMIN_HOME}/reports`]: "Reports",
   [`${ADMIN_HOME}/activity-log`]: "Activity Log",
   [`${ADMIN_HOME}/contact-us`]: "Contact Us",

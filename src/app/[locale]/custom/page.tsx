@@ -6,10 +6,13 @@ import { LandingStickyCta } from "@/components/landing/landing-sticky-cta";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
+import { incrementPageVisit, INFLUENCER_LANDING_PAGE_PATH } from "@/lib/page-visits";
 import { LandingPageJsonLd } from "@/lib/seo/landing-page-json-ld";
 
 const CUSTOM_LANDING_PATH = "/custom";
 const CUSTOM_SIGNUP_HREF = "/custom/signup";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ locale: Locale }>;
@@ -54,6 +57,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CustomLandingPage({ params }: PageProps) {
   const { locale } = await params;
+  if (locale === "ar") {
+    await incrementPageVisit(INFLUENCER_LANDING_PAGE_PATH);
+  }
   const dict = await getDictionary(locale);
   const baseUrl = await getPublicSiteBaseUrl();
 
