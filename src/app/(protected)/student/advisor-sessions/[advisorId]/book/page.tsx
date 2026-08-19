@@ -5,11 +5,16 @@ import {
   isPlatformFeatureEnabled,
   PLATFORM_FEATURE_LABELS,
 } from "@/lib/platform-settings";
+import {
+  buildCalendlySchedulingPageUrl,
+  CALENDLY_INFLUENCER_ADVISOR_URL,
+} from "@/lib/calendly-scheduling";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { StudentFeatureUnavailable } from "../../../_components/student-feature-unavailable";
 import { BookAdvisorSessionClient } from "./_components/book-advisor-session-client";
+import { InfluencerAdvisorBookClient } from "./_components/influencer-advisor-book-client";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -57,6 +62,23 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
 
   if (!data) {
     notFound();
+  }
+
+  if (auth.studentType === "custom") {
+    const name = profileDefaults.fullName.trim();
+    const email = profileDefaults.email.trim();
+    return (
+      <InfluencerAdvisorBookClient
+        advisorName={`${data.first_name} ${data.last_name}`.trim()}
+        calendlyUrl={buildCalendlySchedulingPageUrl({
+          base: CALENDLY_INFLUENCER_ADVISOR_URL,
+          name,
+          email,
+          ctxParts: [],
+        })}
+        prefill={{ name, email }}
+      />
+    );
   }
 
   const calendlySchedulingUrl = data.calendly_scheduling_url?.trim() || null;

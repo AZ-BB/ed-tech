@@ -6,6 +6,7 @@ import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { useLocale } from "@/lib/i18n/locale-context";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { InfluencerAdvisorCalendlyModal } from "./influencer-advisor-calendly-modal";
 
 const SAVED_KEY = "saved_advisors";
 
@@ -106,11 +107,20 @@ type Props = {
   initialAdvisors: AdvisorCatalogAdvisor[];
   /** Rows from `public.countries` (`id` = alpha-2, `name` = display label). */
   catalogCountries: { id: string; name: string }[];
+  influencerCalendly?: {
+    url: string;
+    prefill: { name: string; email: string };
+  } | null;
 };
 
-export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Props) {
+export function AdvisorSessionsClient({
+  initialAdvisors,
+  catalogCountries,
+  influencerCalendly = null,
+}: Props) {
   const { dict } = useLocale();
   const at = dict.student.advisors;
+  const isInfluencerFlow = Boolean(influencerCalendly?.url);
   const langOptions = useMemo(
     () => [
       { value: "", label: at.language },
@@ -133,7 +143,16 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
   const [lang, setLang] = useState("");
   const [bg, setBg] = useState("");
   const [detail, setDetail] = useState<AdvisorCatalogAdvisor | null>(null);
+  const [calendlyAdvisor, setCalendlyAdvisor] = useState<AdvisorCatalogAdvisor | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
+
+  const openInfluencerCalendly = useCallback(
+    (advisor: AdvisorCatalogAdvisor) => {
+      if (!isInfluencerFlow) return;
+      setCalendlyAdvisor(advisor);
+    },
+    [isInfluencerFlow],
+  );
 
   useEffect(() => {
     setSavedIds(readSavedIds());
@@ -487,19 +506,35 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                       <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
                     </svg>
                   </button>
-                  <Link
-                    href={`/student/advisor-sessions/${a.id}/book`}
-                    className="inline-flex items-center gap-1.5 rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {at.bookSession}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                    </svg>
-                  </Link>
+                  {isInfluencerFlow ? (
+                    <button
+                      type="button"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-[50px] border-0 bg-[var(--green)] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[var(--green-dark)] [&_svg]:shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openInfluencerCalendly(a);
+                      }}
+                    >
+                      {at.bookSession}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/student/advisor-sessions/${a.id}/book`}
+                      className="inline-flex items-center gap-1.5 rounded-[50px] bg-[var(--green)] px-5 py-2 text-xs font-semibold !text-white no-underline transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {at.bookSession}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                      </svg>
+                    </Link>
+                  )}
                 </div>
                 <p className="mt-2.5 text-center text-[10.5px] text-[var(--text-hint)]">
-                  {at.detailsSavedNote}
+                  {isInfluencerFlow ? at.influencerCalendly.detailsNote : at.detailsSavedNote}
                 </p>
               </div>
             </div>
@@ -650,18 +685,36 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
                       </div>
                     </div>
                     <div className="text-center">
-                      <Link
-                        href={`/student/advisor-sessions/${detail.id}/book`}
-                        className="inline-flex items-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3 text-[13px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
-                        onClick={() => setDetail(null)}
-                      >
-                        {at.bookSession}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
-                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                        </svg>
-                      </Link>
+                      {isInfluencerFlow ? (
+                        <button
+                          type="button"
+                          className="inline-flex cursor-pointer items-center gap-2 rounded-[50px] border-0 bg-[var(--green)] px-7 py-3 text-[13px] font-semibold text-white shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] [&_svg]:shrink-0"
+                          onClick={() => {
+                            openInfluencerCalendly(detail);
+                            setDetail(null);
+                          }}
+                        >
+                          {at.bookSession}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <Link
+                          href={`/student/advisor-sessions/${detail.id}/book`}
+                          className="inline-flex items-center gap-2 rounded-[50px] bg-[var(--green)] px-7 py-3 text-[13px] font-semibold !text-white no-underline shadow-[0_2px_10px_rgba(45,106,79,0.2)] transition hover:bg-[var(--green-dark)] hover:!text-white [&_svg]:shrink-0"
+                          onClick={() => setDetail(null)}
+                        >
+                          {at.bookSession}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" aria-hidden>
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                        </Link>
+                      )}
                       <p className="mt-2 text-[10.5px] text-[var(--text-hint)]">
-                        {at.modalCompleteNote}
+                        {isInfluencerFlow
+                          ? at.influencerCalendly.modalNote
+                          : at.modalCompleteNote}
                       </p>
                     </div>
                   </div>
@@ -670,6 +723,20 @@ export function AdvisorSessionsClient({ initialAdvisors, catalogCountries }: Pro
             })()}
           </div>
         </div>
+      ) : null}
+
+      {influencerCalendly?.url && calendlyAdvisor ? (
+        <InfluencerAdvisorCalendlyModal
+          open
+          onClose={() => setCalendlyAdvisor(null)}
+          url={influencerCalendly.url}
+          title={at.influencerCalendly.modalTitleNamed.replace(
+            "{name}",
+            `${calendlyAdvisor.firstName} ${calendlyAdvisor.lastName}`,
+          )}
+          closeAria={at.influencerCalendly.closeAria}
+          prefill={influencerCalendly.prefill}
+        />
       ) : null}
     </div>
   );

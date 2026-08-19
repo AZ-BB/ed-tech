@@ -96,6 +96,12 @@ export const studentAr: {
       "المنح والتمويل",
     ],
     modalCompleteNote: "أكمل طلب جلسة المستشار في الصفحة التالية.",
+    influencerCalendly: {
+      modalTitleNamed: "احجز جلسة مع {name}",
+      closeAria: "إغلاق التقويم",
+      detailsNote: "اختر وقتاً في التقويم. لن تُنشأ جلسة داخل Univeera.",
+      modalNote: "سيُفتح التقويم لتختار الوقت المناسب.",
+    },
     book: {
       backToAdvisors: "العودة إلى المستشارين",
       step1Title: "أخبرنا عن أهدافك",

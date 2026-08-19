@@ -66,19 +66,6 @@ export function requiresFunnelSubscription(
   );
 }
 
-/** Custom student: must have active subscription before portal access. */
-export function requiresCustomSubscription(
-  snapshot: Pick<
-    StudentSubscriptionSnapshot,
-    "studentType" | "subscriptionStatus"
-  >,
-): boolean {
-  return (
-    canManageCustomSubscription(snapshot) &&
-    !isStudentSubscriptionActive(snapshot.subscriptionStatus)
-  );
-}
-
 /** Individual student: must pay one-time signup fee before portal access. */
 export function requiresIndividualSignupPayment(
   snapshot: Pick<StudentSubscriptionSnapshot, "studentType"> & {
@@ -102,10 +89,7 @@ export function resolveStudentFeatureAccess(input: {
   ) {
     return defaultStudentFeatureAccess(true);
   }
-  if (
-    input.studentType === "custom" &&
-    isStudentSubscriptionActive(input.subscriptionStatus)
-  ) {
+  if (input.studentType === "custom") {
     return customStudentFeatureAccess();
   }
   return stored;
