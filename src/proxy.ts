@@ -141,6 +141,7 @@ export async function proxy(request: NextRequest) {
     "/for-advisors",
     "/blog",
     "/custom",
+    "/custom-with-form",
   ];
   const isPublicGuestOnlyRoute = publicGuestOnlyRoutes.some((route) =>
     pathMatches(pathname, route),
@@ -153,6 +154,7 @@ export async function proxy(request: NextRequest) {
     pathMatches(pathname, "/auth/callback") ||
     pathMatches(pathname, "/auth/confirm") ||
     pathMatches(pathname, "/auth/reset-password");
+  const isCustomWithFormSignup = pathMatches(pathname, "/custom-with-form/signup");
 
   if (!user && !isPublicForGuests) {
     const redirectUrl = new URL(loginPath(request), request.url);
@@ -164,7 +166,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(authedHome, request.url));
   }
 
-  if (user && isPublicGuestOnlyRoute && !isAuthFlowRoute) {
+  if (user && isPublicGuestOnlyRoute && !isAuthFlowRoute && !isCustomWithFormSignup) {
     const dest = authedHome ?? (locale ? `/${locale}` : `/${defaultLocale}`);
     return NextResponse.redirect(new URL(dest, request.url));
   }

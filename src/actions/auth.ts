@@ -3,6 +3,10 @@
 import { STUDENT_SCHOOL_GRADE_OPTIONS } from "@/lib/school-portal-destination-options";
 import { SCHOOL_DEACTIVATED_LOGIN_MESSAGE, isSchoolActive } from "@/lib/school-access";
 import { provisionIndependentStudent } from "@/lib/provision-independent-student";
+import {
+    CUSTOM_WITH_FORM_FEATURE,
+    mapCustomWithFormGrade,
+} from "@/lib/custom-with-form";
 import { defaultStudentFeatureAccess } from "@/lib/student-feature-access";
 import { GeneralResponse } from "@/utils/response";
 import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
@@ -456,16 +460,20 @@ export async function individualStudentSignUp(
     redirect("/");
 }
 
-export async function customStudentSignUp(
+async function signUpCustomStudent(
     formData: FormData,
+    source: "custom-signup" | "custom-with-form-signup",
 ): Promise<GeneralResponse<boolean>> {
+    const isFormFunnel = source === "custom-with-form-signup";
     const firstName = String(formData.get("firstName") ?? "").trim();
     const lastName = String(formData.get("lastName") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
     const nationalityCountryCode = String(formData.get("nationalityCountryCode") ?? "").trim();
     const phoneNumber = String(formData.get("phoneNumber") ?? "").trim();
     const password = String(formData.get("password") ?? "");
-    const grade = String(formData.get("grade") ?? "").trim();
+    const gradeRaw = String(formData.get("grade") ?? "").trim();
+    const advisory = String(formData.get("advisory") ?? "").trim();
+    const grade = isFormFunnel ? (mapCustomWithFormGrade(gradeRaw) ?? gradeRaw) : gradeRaw;
 
     if (
         !firstName ||
@@ -482,6 +490,13 @@ export async function customStudentSignUp(
         };
     }
 
+    if (isFormFunnel && advisory !== "yes" && advisory !== "no") {
+        return {
+            data: false,
+            error: "Please choose whether you want an advisory session.",
+        };
+    }
+
     if (!GRADE_ALLOWED.has(grade)) {
         return {
             data: false,
@@ -489,11 +504,12 @@ export async function customStudentSignUp(
         };
     }
 
-    if (!isPasswordStrongEnough(password)) {
+    if (isFormFunnel ? password.length < 8 : !isPasswordStrongEnough(password)) {
         return {
             data: false,
-            error:
-                "Password must be Good or stronger: at least 8 characters with uppercase, lowercase, and a number.",
+            error: isFormFunnel
+                ? "Password must be at least 8 characters."
+                : "Password must be Good or stronger: at least 8 characters with uppercase, lowercase, and a number.",
         };
     }
 
@@ -505,7 +521,14 @@ export async function customStudentSignUp(
         nationalityCountryCode,
         password,
         studentType: "custom",
-        metaData: { source: "custom-signup" },
+        metaData: isFormFunnel
+            ? {
+                  source,
+                  advisory,
+                  gradeValue: gradeRaw,
+                  feature: CUSTOM_WITH_FORM_FEATURE,
+              }
+            : { source },
     });
 
     if (!provisioned.ok) {
@@ -522,7 +545,7 @@ export async function customStudentSignUp(
         .eq("id", provisioned.studentId);
 
     if (phoneError) {
-        console.error("[customStudentSignUp] phone update", phoneError);
+        console.error(`[${source}] phone update`, phoneError);
     }
 
     const supabaseClient = await createSupabaseServerClient();
@@ -531,5 +554,21 @@ export async function customStudentSignUp(
         password,
     });
 
-    redirect("/");
+    if (!isFormFunnel) {
+        redirect("/");
+    }
+
+    return { data: true, error: null };
+}
+
+export async function customStudentSignUp(
+    formData: FormData,
+): Promise<GeneralResponse<boolean>> {
+    return signUpCustomStudent(formData, "custom-signup");
+}
+
+export async function customWithFormStudentSignUp(
+    formData: FormData,
+): Promise<GeneralResponse<boolean>> {
+    return signUpCustomStudent(formData, "custom-with-form-signup");
 }

@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { unstable_rethrow } from "next/navigation";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { customStudentSignUp } from "@/actions/auth";
+import type { GeneralResponse } from "@/utils/response";
 import { CountryCombobox } from "@/components/auth/country-combobox";
 import { LocalizedLink } from "@/lib/i18n/localized-link";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -164,7 +165,13 @@ function SplitLayout({
   );
 }
 
-export function CustomSignupForm() {
+export function CustomSignupForm({
+  landingHref = "/custom",
+  signUp = customStudentSignUp,
+}: {
+  landingHref?: string;
+  signUp?: (formData: FormData) => Promise<GeneralResponse<boolean>>;
+}) {
   const uid = useId();
   const { dict } = useLocale();
   const a = dict.auth;
@@ -254,7 +261,7 @@ export function CustomSignupForm() {
       fd.append("phoneNumber", phone.trim());
       fd.append("password", password);
 
-      const result = await customStudentSignUp(fd);
+      const result = await signUp(fd);
       if (result.error) {
         setSubmitError(result.error);
         setIsSubmitting(false);
@@ -564,7 +571,7 @@ export function CustomSignupForm() {
         </button>
 
         <p className="text-center text-sm text-[var(--text-light)]">
-          <LocalizedLink href="/custom" className="font-medium text-[var(--green)] hover:underline">
+          <LocalizedLink href={landingHref} className="font-medium text-[var(--green)] hover:underline">
             {cs.backToLanding}
           </LocalizedLink>
         </p>
@@ -573,7 +580,7 @@ export function CustomSignupForm() {
   );
 
   const brandLink = (
-    <LocalizedLink href="/custom" className="inline-flex items-center gap-2.5">
+    <LocalizedLink href={landingHref} className="inline-flex items-center gap-2.5">
       <div
         className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-white/15 ring-1 ring-white/20"
         aria-hidden
@@ -585,7 +592,7 @@ export function CustomSignupForm() {
   );
 
   return (
-    <div className="relative min-h-screen bg-[var(--sand)]" data-page="signup-custom">
+    <div className="relative min-h-screen bg-[var(--sand)]" data-page={landingHref === "/custom-with-form" ? "signup-custom-with-form" : "signup-custom"}>
       {legal ? (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4 sm:p-8"
