@@ -332,7 +332,7 @@ export function LandingPageContent({
                             : "#854F0B",
                     }}
                   >
-                    {t.name.slice(0, 2).toUpperCase()}
+                    {t.name.slice(0, locale === "ar" ? 1 : 2).toUpperCase()}
                   </div>
                   <div>
                     <div className="testi-name">{t.name}</div>
