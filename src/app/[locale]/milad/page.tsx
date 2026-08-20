@@ -9,8 +9,8 @@ import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
 import { incrementPageVisit, INFLUENCER_LANDING_PAGE_PATH } from "@/lib/page-visits";
 import { LandingPageJsonLd } from "@/lib/seo/landing-page-json-ld";
 
-const CUSTOM_LANDING_PATH = "/custom";
-const CUSTOM_SIGNUP_HREF = "/custom/signup";
+const CUSTOM_LANDING_PATH = "/milad";
+const CUSTOM_SIGNUP_HREF = "/milad/signup";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const dict = await getDictionary(locale);
   const baseUrl = await getPublicSiteBaseUrl();
-  const canonical = `${baseUrl}/${locale}/custom`;
+  const canonical = `${baseUrl}/${locale}/milad`;
 
   return {
     title: dict.home.metadataTitle,
@@ -30,9 +30,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical,
       languages: {
-        en: `${baseUrl}/en/custom`,
-        ar: `${baseUrl}/ar/custom`,
-        "x-default": `${baseUrl}/en/custom`,
+        en: `${baseUrl}/en/milad`,
+        ar: `${baseUrl}/ar/milad`,
+        "x-default": `${baseUrl}/en/milad`,
       },
     },
     openGraph: {

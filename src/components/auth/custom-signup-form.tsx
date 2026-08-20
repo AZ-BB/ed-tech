@@ -166,7 +166,7 @@ function SplitLayout({
 }
 
 export function CustomSignupForm({
-  landingHref = "/custom",
+  landingHref = "/milad",
   signUp = customStudentSignUp,
 }: {
   landingHref?: string;
