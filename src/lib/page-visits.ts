@@ -2,7 +2,7 @@ import "server-only";
 
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
-export const INFLUENCER_LANDING_PAGE_PATH = "/ar/custom";
+export const INFLUENCER_LANDING_PAGE_PATH = "/ar/milad";
 export const CUSTOM_WITH_FORM_LANDING_PAGE_PATH = "/ar/custom-with-form";
 
 export async function incrementPageVisit(path: string): Promise<void> {
