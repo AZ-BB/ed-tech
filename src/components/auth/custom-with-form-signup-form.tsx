@@ -13,6 +13,7 @@ import {
 } from "@/lib/custom-with-form";
 import { LocalizedLink } from "@/lib/i18n/localized-link";
 import { useLocale } from "@/lib/i18n/locale-context";
+import type { GeneralResponse } from "@/utils/response";
 import { unstable_rethrow } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -48,7 +49,15 @@ function guessCountryCode(): string {
   return "AE";
 }
 
-export function CustomWithFormSignupForm({ fontClassName }: { fontClassName?: string }) {
+export function CustomWithFormSignupForm({
+  fontClassName,
+  landingHref = "/custom-with-form",
+  signUp = customWithFormStudentSignUp,
+}: {
+  fontClassName?: string;
+  landingHref?: string;
+  signUp?: (formData: FormData) => Promise<GeneralResponse<boolean>>;
+}) {
   const { dict, locale } = useLocale();
   const copy = dict.customWithFormSignup;
   const isLtr = locale !== "ar";
@@ -210,7 +219,7 @@ export function CustomWithFormSignupForm({ fontClassName }: { fontClassName?: st
       fd.append("grade", grade);
       fd.append("advisory", advisory);
 
-      const result = await customWithFormStudentSignUp(fd);
+      const result = await signUp(fd);
       if (result.error) {
         setSubmitError(String(result.error));
         setIsSubmitting(false);
@@ -231,7 +240,7 @@ export function CustomWithFormSignupForm({ fontClassName }: { fontClassName?: st
   return (
     <div className={`${styles.page} ${fontClassName ?? ""}`}>
       <div className={styles.root} data-ltr={isLtr ? "true" : undefined} dir={isLtr ? "ltr" : "rtl"}>
-        <LocalizedLink href="/custom-with-form" className={styles.back}>
+        <LocalizedLink href={landingHref} className={styles.back}>
           {copy.backToLanding}
         </LocalizedLink>
         <div className={styles.card}>

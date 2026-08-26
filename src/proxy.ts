@@ -155,7 +155,9 @@ export async function proxy(request: NextRequest) {
     pathMatches(pathname, "/auth/callback") ||
     pathMatches(pathname, "/auth/confirm") ||
     pathMatches(pathname, "/auth/reset-password");
-  const isCustomWithFormSignup = pathMatches(pathname, "/custom-with-form/signup");
+  const isFormFunnelSignup =
+    pathMatches(pathname, "/custom-with-form/signup") ||
+    pathMatches(pathname, "/diana/signup");
 
   if (!user && !isPublicForGuests) {
     const redirectUrl = new URL(loginPath(request), request.url);
@@ -167,7 +169,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(authedHome, request.url));
   }
 
-  if (user && isPublicGuestOnlyRoute && !isAuthFlowRoute && !isCustomWithFormSignup) {
+  if (user && isPublicGuestOnlyRoute && !isAuthFlowRoute && !isFormFunnelSignup) {
     const dest = authedHome ?? (locale ? `/${locale}` : `/${defaultLocale}`);
     return NextResponse.redirect(new URL(dest, request.url));
   }
