@@ -1,9 +1,18 @@
 import type { Database, Json } from "@/database.types";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import {
+  getScholarshipTranslationStatus,
+  parseScholarshipContentAr,
+  parseScholarshipContentArMeta,
+  type ScholarshipContentAr,
+  type ScholarshipTranslationStatus,
+} from "@/lib/scholarship-translatable-fields";
 import { resolveScholarshipApplicationUrl } from "@/lib/scholarship-application-url";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type ScholarshipType = Database["public"]["Enums"]["scholarship_type"];
+
+export type { ScholarshipTranslationStatus };
 
 const TYPE_LABELS: Record<ScholarshipType, string> = {
   government: "Government",
@@ -52,6 +61,9 @@ export type AdminScholarshipDetailScholarship = {
   tooltip: string | null;
   discoverySlug: string | null;
   applicationUrl: string | null;
+  contentAr: ScholarshipContentAr;
+  contentArTranslatedAt: string | null;
+  translationStatus: ScholarshipTranslationStatus;
 };
 
 export type AdminScholarshipDetailPayload = {
@@ -190,6 +202,39 @@ export async function fetchAdminScholarshipDetail(
         scholarship.application_url,
         scholarship.discovery_payload,
       ) || null,
+    contentAr: parseScholarshipContentAr(scholarship.content_ar),
+    contentArTranslatedAt:
+      parseScholarshipContentArMeta(scholarship.content_ar_meta)?.translated_at ?? null,
+    translationStatus: getScholarshipTranslationStatus(
+      {
+        name: scholarship.name,
+        nationality_country_code: scholarship.nationality_country_code,
+        description: scholarship.description,
+        target_students: scholarship.target_students,
+        level: scholarship.level,
+        fields: scholarship.fields,
+        coverage: scholarship.coverage,
+        competition: scholarship.competition,
+        tuition: scholarship.tuition,
+        travel: scholarship.travel,
+        living_stipend: scholarship.living_stipend,
+        other_benefits: scholarship.other_benefits,
+        city: scholarship.city,
+        academic_eligibility: scholarship.academic_eligibility,
+        sat_policy: scholarship.sat_policy,
+        documents: scholarship.documents,
+        deadline: scholarship.deadline,
+        method: scholarship.method,
+        tooltip: scholarship.tooltip,
+        other: scholarship.other,
+        intakes: scholarship.intakes,
+        is_renewable: scholarship.is_renewable,
+        type: scholarship.type,
+        discovery_payload: scholarship.discovery_payload,
+      },
+      parseScholarshipContentAr(scholarship.content_ar),
+      parseScholarshipContentArMeta(scholarship.content_ar_meta),
+    ),
   };
 
   return {

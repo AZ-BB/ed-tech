@@ -2,10 +2,13 @@ import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
+
 import { WebinarDetailClient } from "../_components/webinar-detail-client";
 import {
   fetchStudentWebinarById,
   getStudentIdForWebinars,
+  localizeWebinarCard,
 } from "../_lib/fetch-student-webinars";
 
 export const dynamic = "force-dynamic";
@@ -25,13 +28,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Webinar not found" };
   }
 
+  const locale = await getServerLocale();
   const webinar = await fetchStudentWebinarById(id, null);
   if (!webinar) {
     return { title: "Webinar not found" };
   }
 
+  const localized = localizeWebinarCard(locale, webinar);
+
   return {
-    title: webinar.title,
+    title: localized.title,
   };
 }
 

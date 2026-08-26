@@ -1,4 +1,7 @@
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
+import { applyWebinarLocalization } from "@/lib/content-localization";
+import type { Json } from "@/database.types";
+import type { Locale } from "@/lib/i18n/config";
 import { resolveWebinarHost } from "@/lib/webinar-host";
 
 export type StudentWebinarCard = {
@@ -21,7 +24,18 @@ export type StudentWebinarCard = {
   speakerInitials: string;
   speakerImageUrl: string | null;
   avatarColorClass: string;
+  contentAr?: Json | null;
+  useRtlContent?: boolean;
 };
+
+export function localizeWebinarCard(
+  locale: Locale,
+  card: StudentWebinarCard,
+): StudentWebinarCard {
+  const { contentAr, ...base } = card;
+  const localized = applyWebinarLocalization(locale, base, contentAr ?? null);
+  return { ...localized, contentAr: contentAr ?? null };
+}
 
 const AVATAR_COLORS = [
   "av-1",
@@ -56,6 +70,7 @@ const WEBINAR_SELECT = `
   host_title,
   host_bio,
   host_image_url,
+  content_ar,
   advisors (
     first_name,
     last_name,
@@ -81,6 +96,7 @@ type WebinarRow = {
   host_title: string | null;
   host_bio: string | null;
   host_image_url: string | null;
+  content_ar: Json | null;
   advisors:
     | {
         first_name: string | null;
@@ -145,6 +161,7 @@ function mapRowToCard(
     speakerInitials: host.speakerInitials,
     speakerImageUrl: host.speakerImageUrl,
     avatarColorClass,
+    contentAr: row.content_ar ?? null,
   };
 }
 
@@ -186,6 +203,7 @@ async function fetchRegistrationMeta(
 
 export async function fetchStudentWebinarsPage(
   studentId: string | null,
+  _locale?: Locale,
 ): Promise<StudentWebinarCard[]> {
   const supabase = await createSupabaseSecretClient();
 
@@ -216,6 +234,7 @@ export async function fetchStudentWebinarsPage(
 export async function fetchStudentWebinarById(
   id: number,
   studentId: string | null,
+  _locale?: Locale,
 ): Promise<StudentWebinarCard | null> {
   const supabase = await createSupabaseSecretClient();
 

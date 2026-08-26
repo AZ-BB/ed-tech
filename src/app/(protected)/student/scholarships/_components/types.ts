@@ -43,4 +43,6 @@ export type Scholarship = {
   linkStatus: ScholarshipLinkStatus;
   linkNotes: string;
   fallbackUrl: string;
+  /** When true, card/detail should render Arabic content RTL. */
+  useRtlContent?: boolean;
 };

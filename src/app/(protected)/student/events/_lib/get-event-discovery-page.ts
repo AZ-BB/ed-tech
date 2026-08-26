@@ -1,4 +1,8 @@
 import type { Database } from "@/database.types";
+import { applyEventLocalization } from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
+import type { Locale } from "@/lib/i18n/config";
+
 import {
   formatEventDateParts,
   isOnlineEventMode,
@@ -38,7 +42,9 @@ export type StudentEventCard = {
   whyAttend: string | null;
   prepSteps: string | null;
   regionFocus: string | null;
+  timeDisplay: string | null;
   isSaved: boolean;
+  useRtlContent?: boolean;
 };
 
 export type EventDiscoveryPageData = {
@@ -56,8 +62,9 @@ export type EventDiscoveryPageData = {
 function mapRow(
   row: StudentEventRow,
   savedIds: Set<string>,
+  locale: Locale,
 ): StudentEventCard {
-  return {
+  const base: StudentEventCard = {
     id: row.id,
     eventId: row.event_id,
     name: row.event_name,
@@ -83,8 +90,10 @@ function mapRow(
     whyAttend: row.why_attend,
     prepSteps: row.prep_steps,
     regionFocus: row.region_focus,
+    timeDisplay: null,
     isSaved: savedIds.has(row.id),
   };
+  return applyEventLocalization(locale, base, row.content_ar ?? null);
 }
 
 function eventMatchesFilters(
@@ -146,6 +155,7 @@ function sortEvents(events: StudentEventCard[]): StudentEventCard[] {
 export async function getEventDiscoveryPageData(
   query: EventDiscoverySearchParams,
 ): Promise<EventDiscoveryPageData> {
+  const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -185,7 +195,7 @@ export async function getEventDiscoveryPageData(
     );
   }
 
-  const allEvents = (rows ?? []).map((row) => mapRow(row, savedIds));
+  const allEvents = (rows ?? []).map((row) => mapRow(row, savedIds, locale));
   const locationSet = new Set<string>();
   const typeSet = new Set<string>();
 

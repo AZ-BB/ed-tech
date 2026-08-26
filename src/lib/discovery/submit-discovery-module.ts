@@ -1,5 +1,7 @@
 import { computeCombinedProfile } from "@/lib/discovery/computeCombinedProfile";
 import {
+  fetchDiscoveryModuleContentArMap,
+  fetchDiscoverySettings,
   fetchStudentAttempts,
   loadDiscoveryConfig,
   upsertStudentAttempt,
@@ -8,6 +10,12 @@ import {
 import { getStudentDiscoveryModuleCount } from "@/lib/discovery/discovery-student-modules";
 import { getModuleFromConfig, scoreModule } from "@/lib/discovery/scoreModule";
 import { validateAnswers } from "@/lib/discovery/validateAnswers";
+import {
+  applyDiscoveryCombinedProfileLocalization,
+  applyDiscoveryModuleLocalization,
+  localizeModuleResult,
+} from "@/lib/content-localization";
+import type { Locale } from "@/lib/i18n/config";
 import {
   recordStudentPlatformCompletionOnce,
   STUDENT_PLATFORM_COMPLETION_FLAGS,
@@ -24,6 +32,7 @@ export async function submitDiscoveryModule(
   studentId: string,
   moduleId: string,
   answers: ModuleAnswer[],
+  locale: Locale = "en",
 ): Promise<ModuleResult> {
   const config = await loadDiscoveryConfig(service);
   const module = getModuleFromConfig(config, moduleId);
@@ -69,12 +78,21 @@ export async function submitDiscoveryModule(
     // Platform completion uses server client with student session — caller handles this
   }
 
-  return result;
+  const contentArMap = await fetchDiscoveryModuleContentArMap(service);
+  const moduleConfig = getModuleFromConfig(config, moduleId);
+  const moduleContentAr = contentArMap[moduleId] ?? null;
+  return localizeModuleResult(
+    locale,
+    result,
+    moduleContentAr as never,
+    moduleConfig?.categories,
+  );
 }
 
 export async function buildStudentDiscoveryProfileResponse(
   service: ServiceClient,
   studentId: string,
+  locale: Locale = "en",
 ): Promise<StudentDiscoveryProfileResponse> {
   const config = await loadDiscoveryConfig(service);
   const attempts = await fetchStudentAttempts(service, studentId);
@@ -85,11 +103,48 @@ export async function buildStudentDiscoveryProfileResponse(
   const combined = computeCombinedProfile(config, moduleResults);
   const totalModules = getStudentDiscoveryModuleCount(config);
 
+  const [contentArMap, settings] = await Promise.all([
+    fetchDiscoveryModuleContentArMap(service),
+    fetchDiscoverySettings(service),
+  ]);
+
+  const localizedModuleResults = moduleResults.map((result) => {
+    const moduleConfig = config.modules.find((m) => m.moduleId === result.moduleId);
+    return localizeModuleResult(
+      locale,
+      result,
+      (contentArMap[result.moduleId] ?? null) as never,
+      moduleConfig?.categories,
+    );
+  });
+
+  const localizedCombinedProfile = combined?.profile
+    ? applyDiscoveryCombinedProfileLocalization(
+        locale,
+        combined.profile,
+        settings.content_ar ?? null,
+      )
+    : null;
+
+  const localizedEarlySignals = (combined?.earlySignals ?? []).map((signal) => {
+    const moduleConfig = config.modules.find((m) => m.moduleId === signal.moduleId);
+    if (!moduleConfig) return signal;
+    const localized = applyDiscoveryModuleLocalization(
+      locale,
+      moduleConfig,
+      (contentArMap[signal.moduleId] ?? null) as never,
+    );
+    return {
+      ...signal,
+      moduleTitle: localized.title,
+    };
+  });
+
   return {
     completedModules: moduleResults.map((r) => r.moduleId),
-    earlySignals: combined?.earlySignals ?? [],
-    combinedProfile: combined?.profile ?? null,
-    moduleResults,
+    earlySignals: localizedEarlySignals,
+    combinedProfile: localizedCombinedProfile,
+    moduleResults: localizedModuleResults,
     completedCount: moduleResults.length,
     totalModules,
   };

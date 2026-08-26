@@ -70,6 +70,8 @@ export function InternshipDetailOverlay({
   const payClass =
     it.payTier === "paid" ? "green" : it.payTier === "free" ? "blue" : "orange";
   const hasLink = Boolean(it.officialUrl && it.officialUrl !== "#");
+  const textDir = it.useRtlContent ? "rtl" : "ltr";
+  const bidiClass = it.useRtlContent ? "" : "bidi-ltr";
 
   return (
     <div
@@ -93,7 +95,7 @@ export function InternshipDetailOverlay({
             >
               <span>{it.initials}</span>
             </div>
-            <div className="detail-banner-text">
+            <div className="detail-banner-text" dir={textDir}>
               <h2 id="internship-detail-title">{it.name}</h2>
               <div className="detail-banner-provider">{it.provider}</div>
             </div>
@@ -119,7 +121,7 @@ export function InternshipDetailOverlay({
           </button>
         </div>
         <div className="detail-layout">
-          <div className="detail-content">
+          <div className={clsx("detail-content", bidiClass)} dir={textDir}>
             <div className="d-card">
               <div className="d-title">
                 <svg

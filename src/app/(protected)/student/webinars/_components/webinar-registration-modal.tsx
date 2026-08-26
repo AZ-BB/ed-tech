@@ -142,7 +142,7 @@ export function WebinarRegistrationModal({
   onConfirm,
 }: WebinarRegistrationModalProps) {
   const isPublic = mode === "public";
-  const { dict } = useLocale();
+  const { locale, dict } = useLocale();
   const w = dict.webinars;
 
   return (
@@ -189,9 +189,9 @@ export function WebinarRegistrationModal({
             </p>
             <h3 className={`mb-3.5 break-words ${fontSerif} text-[19px] leading-[1.2] sm:text-[22px]`}>{webinar.title}</h3>
             <div className="mb-[18px] flex flex-col gap-1.5 rounded-[11px] bg-[var(--sand)] p-3.5 text-[12.5px] leading-normal text-[var(--text-mid)]">
-              <span>{formatWebinarDate(webinar.scheduledAt)}</span>
+              <span>{formatWebinarDate(webinar.scheduledAt, locale)}</span>
               <span>
-                {formatWebinarTime(webinar.scheduledAt)} {webinar.timezoneLabel}
+                {formatWebinarTime(webinar.scheduledAt, locale)} {webinar.timezoneLabel}
               </span>
               <span>{webinar.speakerName}</span>
             </div>

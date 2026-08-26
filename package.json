@@ -23,6 +23,8 @@
     "db:backfill:admin-permissions:dry-run": "node scripts/backfill-admin-permissions.mjs --dry-run",
     "db:translate:universities": "npx tsx scripts/translate-all-universities.ts",
     "db:translate:universities:dry-run": "npx tsx scripts/translate-all-universities.ts --dry-run",
+    "db:translate:discovery-journey": "npx tsx scripts/translate-all-discovery-journey.ts",
+    "db:translate:discovery-journey:dry-run": "npx tsx scripts/translate-all-discovery-journey.ts --dry-run",
     "stripe": "npx stripe listen --forward-to localhost:3000/api/webhooks/stripe"
   },
   "dependencies": {

@@ -1,12 +1,21 @@
 import type { Database } from "@/database.types";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
 import { normalizeInternshipBulletList } from "@/lib/internship-bullet-list";
+import {
+  getInternshipTranslationStatus,
+  parseInternshipContentAr,
+  parseInternshipContentArMeta,
+  type InternshipContentAr,
+  type InternshipTranslationStatus,
+} from "@/lib/internship-translatable-fields";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type InternshipSection = Database["public"]["Enums"]["internship_section"];
 type InternshipFormat = Database["public"]["Enums"]["internship_format"];
 type InternshipPayTier = Database["public"]["Enums"]["internship_pay_tier"];
 type InternshipUrlStatus = Database["public"]["Enums"]["internship_url_status"];
+
+export type { InternshipTranslationStatus };
 
 const SECTION_LABELS: Record<InternshipSection, string> = {
   live: "Live",
@@ -67,6 +76,9 @@ export type AdminInternshipDetailInternship = {
   whatYoullGainText: string;
   eligibility: string;
   howToApply: string;
+  contentAr: InternshipContentAr;
+  contentArTranslatedAt: string | null;
+  translationStatus: InternshipTranslationStatus;
 };
 
 export type AdminInternshipDetailPayload = {
@@ -160,6 +172,27 @@ export async function fetchAdminInternshipDetail(
     ).join("\n"),
     eligibility: internship.eligibility.trim(),
     howToApply: internship.how_to_apply.trim(),
+    contentAr: parseInternshipContentAr(internship.content_ar),
+    contentArTranslatedAt:
+      parseInternshipContentArMeta(internship.content_ar_meta)?.translated_at ?? null,
+    translationStatus: getInternshipTranslationStatus(
+      {
+        name: internship.name,
+        provider: internship.provider,
+        country_code: internship.country_code,
+        location_label: internship.location_label,
+        field: internship.field,
+        pay_label: internship.pay_label,
+        duration: internship.duration,
+        summary: internship.summary,
+        what_youll_do: internship.what_youll_do,
+        what_youll_gain: internship.what_youll_gain,
+        eligibility: internship.eligibility,
+        how_to_apply: internship.how_to_apply,
+      },
+      parseInternshipContentAr(internship.content_ar),
+      parseInternshipContentArMeta(internship.content_ar_meta),
+    ),
   };
 
   return {

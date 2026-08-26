@@ -47,12 +47,17 @@ export function InternshipCard({ internship: it, onOpenDetail }: Props) {
   const payValClass =
     it.payTier === "paid" ? "green" : it.payTier === "free" ? "" : "orange";
 
+  const cardDir = it.useRtlContent ? "rtl" : "ltr";
+
   return (
     <div
       role="button"
       tabIndex={0}
-      className="internship-card internship-card-ltr"
-      dir="ltr"
+      className={clsx(
+        "internship-card",
+        !it.useRtlContent && "internship-card-ltr",
+      )}
+      dir={cardDir}
       onClick={onOpenDetail}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

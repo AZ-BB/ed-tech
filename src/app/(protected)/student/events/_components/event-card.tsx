@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/locale-context";
 import type { StudentEventCard } from "../_lib/get-event-discovery-page";
 import { EventTypeIcon } from "./event-type-icon";
 import {
@@ -9,6 +10,7 @@ import {
   isOnlineEventMode,
   resolveEventTypeStyle,
   splitSemicolonList,
+  type EventCountdownLabels,
 } from "@/lib/event-type-styles";
 
 type EventCardProps = {
@@ -56,9 +58,19 @@ export function EventCard({
   onToggleSave,
   labels,
 }: EventCardProps) {
+  const { locale, dict } = useLocale();
+  const eventLabels = dict.student.events;
+  const countdownLabels: EventCountdownLabels = {
+    dateTbc: eventLabels.countdownDateTbc,
+    pastEvent: eventLabels.pastEvent,
+    today: eventLabels.countdownToday,
+    tomorrow: eventLabels.countdownTomorrow,
+    inDays: (count) => eventLabels.countdownInDays.replace("{count}", String(count)),
+  };
+
   const style = resolveEventTypeStyle(event.eventType);
-  const date = formatEventDateParts(event.dateStart);
-  const countdown = eventCountdown(event.dateStart);
+  const date = formatEventDateParts(event.dateStart, locale, eventLabels.countdownDateTbc);
+  const countdown = eventCountdown(event.dateStart, countdownLabels, locale);
   const countdownStyle = countdownClasses(countdown.cls);
   const online = isOnlineEventMode(event.mode);
   const uniCount = event.universityCount ?? 0;
@@ -70,6 +82,7 @@ export function EventCard({
   return (
     <article
       className="flex h-full cursor-pointer flex-col rounded-[18px] border border-[var(--border-light)] bg-white p-6 shadow-[0_1px_2px_rgba(20,40,30,0.03),0_12px_26px_-18px_rgba(20,40,30,0.16)] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-[4px] hover:border-[var(--border)] hover:shadow-[0_8px_16px_-8px_rgba(20,40,30,0.10),0_28px_46px_-24px_rgba(20,40,30,0.26)]"
+      dir={event.useRtlContent ? "rtl" : "ltr"}
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -125,7 +138,12 @@ export function EventCard({
       <div className="mb-4 flex flex-col gap-2">
         <div className="flex items-center gap-2 text-[12.5px] text-[var(--text-mid)]">
           <ClockIcon />
-          {formatEventTimeLabel(event.startTime, event.endTime, event.timezone)}
+          {formatEventTimeLabel(
+            event.startTime,
+            event.endTime,
+            event.timezone,
+            eventLabels.timeTbc,
+          )}
         </div>
         {online ? (
           <div className="flex items-center gap-2 text-[12.5px] font-semibold text-[var(--green)]">

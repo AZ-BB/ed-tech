@@ -1,9 +1,12 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/locale-context";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import type { StudentWebinarCard } from "../_lib/fetch-student-webinars";
+import {
+  localizeWebinarCard,
+  type StudentWebinarCard,
+} from "../_lib/fetch-student-webinars";
 import { sectionDescClass, sectionEyebrowClass, sectionTitleClass } from "./webinar-constants";
 import {
   WebinarFeaturedCard,
@@ -19,14 +22,19 @@ type WebinarsClientProps = {
 };
 
 export function WebinarsClient({ initialWebinars, mode = "student" }: WebinarsClientProps) {
-  const { dict } = useLocale();
+  const { locale, dict } = useLocale();
   const wt = dict.webinars;
-  const [webinars, setWebinars] = useState(initialWebinars);
+  const [webinarsRaw, setWebinarsRaw] = useState(initialWebinars);
   const [openAgendaIds, setOpenAgendaIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    setWebinars(initialWebinars);
+    setWebinarsRaw(initialWebinars);
   }, [initialWebinars]);
+
+  const webinars = useMemo(
+    () => webinarsRaw.map((webinar) => localizeWebinarCard(locale, webinar)),
+    [webinarsRaw, locale],
+  );
 
   const sortedWebinars = [...webinars].sort(
     (a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
@@ -41,7 +49,7 @@ export function WebinarsClient({ initialWebinars, mode = "student" }: WebinarsCl
   const { openRegistration, registrationModal } = useWebinarRegistration({
     mode,
     onRegistered: (webinarId) => {
-      setWebinars((prev) =>
+      setWebinarsRaw((prev) =>
         prev.map((w) =>
           w.id === webinarId
             ? {

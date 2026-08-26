@@ -42,6 +42,8 @@ export const SCHOLARSHIPS_DISCOVERY_SELECT_BASE = [
   "tooltip",
   "deadline_date",
   "docuemnts",
+  "content_ar",
+  "content_ar_meta",
 ].join(",");
 
 export const SCHOLARSHIPS_DISCOVERY_PAYLOAD_COLUMN = "discovery_payload";

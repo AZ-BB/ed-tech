@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import {
+  fetchDiscoveryModuleContentArMap,
   fetchStudentAttempt,
+  loadDiscoveryConfig,
 } from "@/lib/discovery/discovery-repository";
+import { getModuleFromConfig } from "@/lib/discovery/scoreModule";
 import {
   recordDiscoveryJourneyCompletionIfDone,
   submitDiscoveryModule,
 } from "@/lib/discovery/submit-discovery-module";
+import { localizeModuleResult } from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
-import type { ModuleAnswer } from "@/types/discovery";
+import type { ModuleAnswer, ModuleResult } from "@/types/discovery";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -35,8 +40,9 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   try {
+    const locale = await getServerLocale();
     const service = await createSupabaseSecretClient();
-    const result = await submitDiscoveryModule(service, auth.studentId, moduleId, answers);
+    const result = await submitDiscoveryModule(service, auth.studentId, moduleId, answers, locale);
 
     const supabase = await createSupabaseServerClient();
     await recordDiscoveryJourneyCompletionIfDone(supabase, auth.studentId, service);
@@ -59,16 +65,30 @@ export async function GET(_request: Request, context: RouteContext) {
   const { moduleId } = await context.params;
 
   try {
+    const locale = await getServerLocale();
     const service = await createSupabaseSecretClient();
-    const attempt = await fetchStudentAttempt(service, auth.studentId, moduleId);
+    const [attempt, contentArMap, config] = await Promise.all([
+      fetchStudentAttempt(service, auth.studentId, moduleId),
+      fetchDiscoveryModuleContentArMap(service),
+      loadDiscoveryConfig(service),
+    ]);
+
     if (!attempt) {
       return NextResponse.json({ error: "No result found for this module." }, { status: 404 });
     }
 
+    const moduleConfig = getModuleFromConfig(config, moduleId);
+    const result = localizeModuleResult(
+      locale,
+      attempt.result_json as unknown as ModuleResult,
+      (contentArMap[moduleId] ?? null) as never,
+      moduleConfig?.categories,
+    );
+
     return NextResponse.json({
       moduleId,
       answers: attempt.answers_json,
-      result: attempt.result_json,
+      result,
     });
   } catch (error) {
     console.error("[discovery/module] GET", error);

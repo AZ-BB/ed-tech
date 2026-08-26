@@ -1,6 +1,6 @@
 "use server";
 
-import { exportPortableDocument, fetchDiscoverySettings, loadDiscoveryConfig, replaceAllFromImport, saveDiscoveryModule, saveDiscoverySettings } from "@/lib/discovery/discovery-repository";
+import { exportPortableDocument, fetchDiscoveryModuleContentArMap, fetchDiscoveryModuleRows, fetchDiscoverySettings, fetchDiscoverySettingsContentAr, loadDiscoveryConfig, replaceAllFromImport, saveDiscoveryModule, saveDiscoverySettings } from "@/lib/discovery/discovery-repository";
 import { validateModuleConfig, validatePortableDiscoveryDocument } from "@/lib/discovery/validateDiscoveryConfig";
 import type {
   DiscoveryModuleConfig,
@@ -9,6 +9,7 @@ import type {
   ScoringRulesConfig,
 } from "@/types/discovery";
 import type { CombinedProfileConfig } from "@/types/discovery";
+import type { DiscoveryModuleContentAr, DiscoverySettingsContentAr } from "@/lib/discovery-translatable-fields";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { revalidatePath } from "next/cache";
 
@@ -55,6 +56,9 @@ export async function getAdminDiscoveryJourneyPageData(): Promise<
   ActionResult<{
     config: Awaited<ReturnType<typeof loadDiscoveryConfig>>;
     settings: Awaited<ReturnType<typeof fetchDiscoverySettings>>;
+    modulesContentAr: Record<string, DiscoveryModuleContentAr>;
+    settingsContentAr: DiscoverySettingsContentAr;
+    moduleRows: Awaited<ReturnType<typeof fetchDiscoveryModuleRows>>;
   }>
 > {
   const auth = await assertAdminAccess();
@@ -62,11 +66,17 @@ export async function getAdminDiscoveryJourneyPageData(): Promise<
 
   try {
     const service = await createSupabaseSecretClient();
-    const [config, settings] = await Promise.all([
+    const [config, settings, modulesContentAr, settingsContentAr, moduleRows] = await Promise.all([
       loadDiscoveryConfig(service),
       fetchDiscoverySettings(service),
+      fetchDiscoveryModuleContentArMap(service),
+      fetchDiscoverySettingsContentAr(service),
+      fetchDiscoveryModuleRows(service),
     ]);
-    return { ok: true, data: { config, settings } };
+    return {
+      ok: true,
+      data: { config, settings, modulesContentAr, settingsContentAr, moduleRows },
+    };
   } catch (error) {
     console.error("[admin-discovery-journey] load", error);
     return { ok: false, error: "Failed to load discovery journey configuration." };
@@ -75,6 +85,7 @@ export async function getAdminDiscoveryJourneyPageData(): Promise<
 
 export async function saveAdminDiscoveryModule(
   module: DiscoveryModuleConfig,
+  contentAr?: DiscoveryModuleContentAr,
 ): Promise<ActionResult> {
   const auth = await assertAdminAccess();
   if (!auth.ok) return auth;
@@ -87,10 +98,10 @@ export async function saveAdminDiscoveryModule(
     };
   }
 
-  try {
-    const service = await createSupabaseSecretClient();
-    await saveDiscoveryModule(service, module, auth.adminId);
-    revalidateDiscoveryAdmin();
+    try {
+      const service = await createSupabaseSecretClient();
+      await saveDiscoveryModule(service, module, auth.adminId, contentAr);
+      revalidateDiscoveryAdmin();
     return { ok: true };
   } catch (error) {
     console.error("[admin-discovery-journey] save module", error);
@@ -102,6 +113,7 @@ export async function saveAdminDiscoverySettings(input: {
   scales_json?: DiscoveryScales;
   combined_profiles_json?: CombinedProfileConfig[];
   scoring_rules_json?: ScoringRulesConfig;
+  content_ar?: DiscoverySettingsContentAr;
 }): Promise<ActionResult> {
   const auth = await assertAdminAccess();
   if (!auth.ok) return auth;

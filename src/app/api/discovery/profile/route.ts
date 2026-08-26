@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildStudentDiscoveryProfileResponse } from "@/lib/discovery/submit-discovery-module";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -12,8 +13,9 @@ export async function GET() {
   }
 
   try {
+    const locale = await getServerLocale();
     const service = await createSupabaseSecretClient();
-    const profile = await buildStudentDiscoveryProfileResponse(service, auth.studentId);
+    const profile = await buildStudentDiscoveryProfileResponse(service, auth.studentId, locale);
     return NextResponse.json(profile);
   } catch (error) {
     console.error("[discovery/profile] GET", error);

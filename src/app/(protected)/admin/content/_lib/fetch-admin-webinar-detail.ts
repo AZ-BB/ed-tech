@@ -1,7 +1,23 @@
+import type { Database } from "@/database.types";
+import {
+  getWebinarTranslationStatus,
+  parseWebinarContentAr,
+  parseWebinarContentArMeta,
+  type WebinarContentAr,
+  type WebinarTranslationStatus,
+} from "@/lib/webinar-translatable-fields";
+import { displayHostName as resolveDisplayHostName } from "@/lib/webinar-host";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import type { AdminWebinarTableRow } from "./fetch-admin-webinars-page";
-import { displayHostName as resolveDisplayHostName } from "@/lib/webinar-host";
+
+export type { WebinarTranslationStatus };
+
+export type AdminWebinarDetailPayload = AdminWebinarTableRow & {
+  contentAr: WebinarContentAr;
+  contentArTranslatedAt: string | null;
+  translationStatus: WebinarTranslationStatus;
+};
 
 export type AdminWebinarEnrollmentRow = {
   id: number;
@@ -18,7 +34,7 @@ export type AdminWebinarEnrollmentRow = {
 
 export async function fetchAdminWebinarDetail(
   webinarId: number,
-): Promise<AdminWebinarTableRow | null> {
+): Promise<AdminWebinarDetailPayload | null> {
   const supabase = await createSupabaseSecretClient();
   const { data, error } = await supabase
     .from("webinars")
@@ -41,7 +57,9 @@ export async function fetchAdminWebinarDetail(
       host_title,
       host_bio,
       host_image_url,
-      advisors ( first_name, last_name )
+      content_ar,
+      content_ar_meta,
+      advisors ( first_name, last_name, title, description, about, avatar_url )
     `,
     )
     .eq("id", webinarId)
@@ -65,6 +83,9 @@ export async function fetchAdminWebinarDetail(
   const agenda = Array.isArray(data.agenda)
     ? data.agenda.map((item) => String(item ?? "").trim()).filter(Boolean)
     : [];
+
+  const contentAr = parseWebinarContentAr(data.content_ar);
+  const meta = parseWebinarContentArMeta(data.content_ar_meta);
 
   return {
     id: data.id,
@@ -93,6 +114,24 @@ export async function fetchAdminWebinarDetail(
     status: data.status,
     meetingLink: data.meeting_link,
     isFeatured: data.is_featured ?? false,
+    contentAr,
+    contentArTranslatedAt: meta?.translated_at ?? null,
+    translationStatus: getWebinarTranslationStatus(
+      {
+        title: data.title,
+        description: data.description,
+        format: data.format,
+        tags: data.tags,
+        agenda: data.agenda,
+        host_name: data.host_name,
+        host_title: data.host_title,
+        host_bio: data.host_bio,
+        host_image_url: data.host_image_url,
+        advisors: advisor ?? null,
+      },
+      contentAr,
+      meta,
+    ),
   };
 }
 

@@ -332,7 +332,9 @@ export function DiscoveryJourneyLanding() {
               </div>
 
               <div>
-                <div className={styles.moduleNum}>MODULE {moduleNum}</div>
+                <div className={styles.moduleNum}>
+                  {t.moduleEyebrow.replace("{number}", moduleNum)}
+                </div>
                 <div className={styles.moduleTitle}>{mod.title}</div>
                 <div className={styles.moduleSubtitle}>
                   {mod.subtitle ?? "\u00A0"}

@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "@/lib/i18n/locale-context";
 
-import type { StudentWebinarCard } from "../_lib/fetch-student-webinars";
+import {
+  localizeWebinarCard,
+  type StudentWebinarCard,
+} from "../_lib/fetch-student-webinars";
 import { WebinarFeaturedCard, WebinarPageShell } from "./webinar-featured-card";
 import { fontSans, webinarsListHref, type WebinarPageMode } from "./webinar-constants";
 import { useWebinarRegistration } from "./webinar-registration-modal";
@@ -18,17 +21,22 @@ type WebinarDetailClientProps = {
 export function WebinarDetailClient({ initialWebinar, mode = "student" }: WebinarDetailClientProps) {
   const { locale, dict } = useLocale();
   const w = dict.webinars;
-  const [webinar, setWebinar] = useState(initialWebinar);
+  const [webinarRaw, setWebinarRaw] = useState(initialWebinar);
   const [agendaOpen, setAgendaOpen] = useState(true);
 
   useEffect(() => {
-    setWebinar(initialWebinar);
+    setWebinarRaw(initialWebinar);
   }, [initialWebinar]);
+
+  const webinar = useMemo(
+    () => localizeWebinarCard(locale, webinarRaw),
+    [webinarRaw, locale],
+  );
 
   const { openRegistration, registrationModal } = useWebinarRegistration({
     mode,
     onRegistered: (webinarId) => {
-      setWebinar((prev) =>
+      setWebinarRaw((prev) =>
         prev.id === webinarId
           ? {
               ...prev,

@@ -316,14 +316,18 @@ export function DiscoveryModuleFlow({ moduleId }: { moduleId: string }) {
       <div className={styles.testPage} style={accentStyle}>
         <DiscoveryTestHeader
           backLabel={t.backToJourney}
-          title={`Module ${module.number} · ${module.title}`}
+          title={t.moduleHeaderTitle
+            .replace("{number}", module.number)
+            .replace("{title}", module.title)}
         />
 
         <div className={styles.testIntro}>
           <div className={styles.testIntroIcon}>
             <ModuleIcon icon={theme.icon} size={30} />
           </div>
-          <div className={styles.testIntroEyebrow}>MODULE {module.number}</div>
+          <div className={styles.testIntroEyebrow}>
+            {t.moduleEyebrow.replace("{number}", module.number)}
+          </div>
           <h1 className={styles.testIntroTitle}>{module.title}</h1>
           {module.description ? (
             <p className={styles.testIntroSub}>{module.description}</p>
@@ -375,7 +379,9 @@ export function DiscoveryModuleFlow({ moduleId }: { moduleId: string }) {
     <div className={styles.testPage} style={accentStyle}>
       <DiscoveryTestHeader
         backLabel={t.backToJourney}
-        title={`Module ${module.number} · ${module.title}`}
+        title={t.moduleHeaderTitle
+          .replace("{number}", module.number)
+          .replace("{title}", module.title)}
       />
 
       {error ? <div className={styles.errorBanner}>{error}</div> : null}

@@ -1,5 +1,9 @@
 import "server-only";
 
+import type { Json } from "@/database.types";
+import { applyInternshipLocalization } from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
+import type { Locale } from "@/lib/i18n/config";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import type { Internship, InternshipSection } from "../_components/types";
@@ -69,12 +73,17 @@ function parseRpcPayload(raw: unknown): RpcDiscoveryPayload | null {
   return { total, rows: rows as Record<string, unknown>[] };
 }
 
-function mapRow(raw: Record<string, unknown>): Internship | null {
+function mapRow(raw: Record<string, unknown>, locale: Locale): Internship | null {
   if (!raw || typeof raw !== "object") return null;
   const id = typeof raw.id === "string" ? raw.id : "";
   const slug = typeof raw.slug === "string" ? raw.slug : "";
   if (!id && !slug) return null;
-  return internshipRowToInternship(raw as unknown as InternshipDiscoveryRow);
+  const internship = internshipRowToInternship(raw as unknown as InternshipDiscoveryRow);
+  return applyInternshipLocalization(
+    locale,
+    internship,
+    (raw.content_ar as Json | null | undefined) ?? null,
+  );
 }
 
 type SupabaseServer = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -121,6 +130,7 @@ async function loadSavedDiscoveryIds(): Promise<string[]> {
 
 async function fetchInternshipByDetailId(
   detailId: string,
+  locale: Locale,
 ): Promise<Internship | null> {
   const supabase = await createSupabaseServerClient();
   const bySlug = await supabase
@@ -130,8 +140,10 @@ async function fetchInternshipByDetailId(
     .eq("is_active", true)
     .maybeSingle();
   if (bySlug.data) {
-    return internshipRowToInternship(
-      bySlug.data as unknown as InternshipDiscoveryRow,
+    return applyInternshipLocalization(
+      locale,
+      internshipRowToInternship(bySlug.data as unknown as InternshipDiscoveryRow),
+      bySlug.data.content_ar,
     );
   }
 
@@ -146,8 +158,10 @@ async function fetchInternshipByDetailId(
     .eq("is_active", true)
     .maybeSingle();
   if (byId.data) {
-    return internshipRowToInternship(
-      byId.data as unknown as InternshipDiscoveryRow,
+    return applyInternshipLocalization(
+      locale,
+      internshipRowToInternship(byId.data as unknown as InternshipDiscoveryRow),
+      byId.data.content_ar,
     );
   }
   return null;
@@ -184,6 +198,7 @@ function rpcLoc(loc: InternshipLocFilter): string {
 export async function getInternshipDiscoveryPageData(
   query: InternshipDiscoveryResolvedQuery,
 ): Promise<InternshipDiscoveryPageData> {
+  const locale = await getServerLocale();
   const filters = {
     loc: query.loc,
     pay: query.pay,
@@ -207,7 +222,7 @@ export async function getInternshipDiscoveryPageData(
   let internships: Internship[] = [];
   if (parsed) {
     for (const row of parsed.rows) {
-      const mapped = mapRow(row);
+      const mapped = mapRow(row, locale);
       if (mapped) internships.push(mapped);
     }
   }
@@ -231,7 +246,7 @@ export async function getInternshipDiscoveryPageData(
   const detailInternship = query.detail
     ? (internships.find(
         (i) => i.slug === query.detail || i.id === query.detail,
-      ) ?? (await fetchInternshipByDetailId(query.detail)))
+      ) ?? (await fetchInternshipByDetailId(query.detail, locale)))
     : null;
 
   return {

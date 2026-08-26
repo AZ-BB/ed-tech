@@ -1,6 +1,7 @@
 import { flagFromCountryCode } from "@/lib/country-flag-emoji";
 import { scholarshipLinkFieldsFromApplicationUrl } from "@/lib/scholarship-application-url";
 import { overlayScholarshipCoreRequirementFields } from "@/lib/scholarship-requirement-fields";
+import type { Json } from "@/database.types";
 
 import type { Scholarship } from "../_components/types";
 
@@ -47,6 +48,8 @@ export type ScholarshipDiscoveryRow = {
   tooltip?: string | null;
   tuition_type: string | null;
   discovery_payload?: unknown;
+  content_ar?: Json | null;
+  content_ar_meta?: Json | null;
 };
 
 function typeToBadgeClass(type: string | null | undefined): string {

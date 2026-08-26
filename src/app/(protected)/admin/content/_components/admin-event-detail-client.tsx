@@ -6,10 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import type { AdminEventDetail } from "../_lib/fetch-admin-event-detail";
+import type { AdminEventDetailPayload } from "../_lib/fetch-admin-event-detail";
 import { AdminEventFormFields } from "./admin-event-form-fields";
+import { AdminEventTranslatePanel } from "../events/[id]/_components/admin-event-translate-panel";
 
-export function AdminEventDetailClient({ event }: { event: AdminEventDetail }) {
+export function AdminEventDetailClient({ payload }: { payload: AdminEventDetailPayload }) {
+  const event = payload.event;
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSavePending, startSaveTransition] = useTransition();
@@ -75,6 +77,8 @@ export function AdminEventDetailClient({ event }: { event: AdminEventDetail }) {
           {isDeletePending ? "Deleting…" : "Delete event"}
         </button>
       </div>
+
+      <AdminEventTranslatePanel payload={payload} />
 
       <form
         onSubmit={handleSubmit}

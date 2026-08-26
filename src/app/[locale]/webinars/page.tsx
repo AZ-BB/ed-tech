@@ -20,8 +20,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PublicWebinarsPage() {
-  const webinars = await fetchPublicWebinarsPage();
+export default async function PublicWebinarsPage({ params }: PageProps) {
+  const { locale } = await params;
+  const webinars = await fetchPublicWebinarsPage(locale);
 
   return (
     <>

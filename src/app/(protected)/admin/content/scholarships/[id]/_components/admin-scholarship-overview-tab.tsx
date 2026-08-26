@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import type { AdminScholarshipDetailPayload } from "../_lib/fetch-admin-scholarship-detail";
 import { AdminEditScholarshipDialog } from "./admin-edit-scholarship-dialog";
+import { AdminScholarshipTranslatePanel } from "./admin-scholarship-translate-panel";
 
 function SnapItem({ label, value }: { label: string; value: string }) {
   return (
@@ -101,6 +102,8 @@ export function AdminScholarshipOverviewTab({ payload }: AdminScholarshipOvervie
           </p>
         </div>
       ) : null}
+
+      <AdminScholarshipTranslatePanel scholarship={scholarship} />
 
       <AdminEditScholarshipDialog
         open={editOpen}

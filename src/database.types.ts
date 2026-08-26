@@ -1610,6 +1610,8 @@ export type Database = {
       discovery_modules: {
         Row: {
           answer_format: string
+          content_ar: Json | null
+          content_ar_meta: Json | null
           content_json: Json
           description: string | null
           id: string
@@ -1624,6 +1626,8 @@ export type Database = {
         }
         Insert: {
           answer_format: string
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           content_json?: Json
           description?: string | null
           id: string
@@ -1638,6 +1642,8 @@ export type Database = {
         }
         Update: {
           answer_format?: string
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           content_json?: Json
           description?: string | null
           id?: string
@@ -1663,6 +1669,8 @@ export type Database = {
       discovery_settings: {
         Row: {
           combined_profiles_json: Json
+          content_ar: Json | null
+          content_ar_meta: Json | null
           id: string
           scales_json: Json
           scoring_rules_json: Json
@@ -1672,6 +1680,8 @@ export type Database = {
         }
         Insert: {
           combined_profiles_json?: Json
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           id: string
           scales_json?: Json
           scoring_rules_json?: Json
@@ -1681,6 +1691,8 @@ export type Database = {
         }
         Update: {
           combined_profiles_json?: Json
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           id?: string
           scales_json?: Json
           scoring_rules_json?: Json
@@ -1753,6 +1765,8 @@ export type Database = {
       }
       internships: {
         Row: {
+          content_ar: Json | null
+          content_ar_meta: Json | null
           country_code: string
           created_at: string
           duration: string
@@ -1780,6 +1794,8 @@ export type Database = {
           what_youll_gain: string[]
         }
         Insert: {
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           country_code: string
           created_at?: string
           duration: string
@@ -1807,6 +1823,8 @@ export type Database = {
           what_youll_gain?: string[]
         }
         Update: {
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           country_code?: string
           created_at?: string
           duration?: string
@@ -2409,6 +2427,8 @@ export type Database = {
           competition:
             | Database["public"]["Enums"]["scholarship_competition_type"]
             | null
+          content_ar: Json | null
+          content_ar_meta: Json | null
           coverage: string | null
           created_at: string | null
           deadline: string | null
@@ -2450,6 +2470,8 @@ export type Database = {
           competition?:
             | Database["public"]["Enums"]["scholarship_competition_type"]
             | null
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           coverage?: string | null
           created_at?: string | null
           deadline?: string | null
@@ -2491,6 +2513,8 @@ export type Database = {
           competition?:
             | Database["public"]["Enums"]["scholarship_competition_type"]
             | null
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           coverage?: string | null
           created_at?: string | null
           deadline?: string | null
@@ -4103,6 +4127,8 @@ export type Database = {
       university_events: {
         Row: {
           city: string | null
+          content_ar: Json | null
+          content_ar_meta: Json | null
           cost: string | null
           country: string | null
           created_at: string
@@ -4145,6 +4171,8 @@ export type Database = {
         }
         Insert: {
           city?: string | null
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           cost?: string | null
           country?: string | null
           created_at?: string
@@ -4187,6 +4215,8 @@ export type Database = {
         }
         Update: {
           city?: string | null
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           cost?: string | null
           country?: string | null
           created_at?: string
@@ -4419,6 +4449,8 @@ export type Database = {
         Row: {
           advisor_id: string | null
           agenda: Json
+          content_ar: Json | null
+          content_ar_meta: Json | null
           created_at: string | null
           description: string | null
           format: string
@@ -4440,6 +4472,8 @@ export type Database = {
         Insert: {
           advisor_id?: string | null
           agenda?: Json
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           created_at?: string | null
           description?: string | null
           format?: string
@@ -4461,6 +4495,8 @@ export type Database = {
         Update: {
           advisor_id?: string | null
           agenda?: Json
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           created_at?: string | null
           description?: string | null
           format?: string
