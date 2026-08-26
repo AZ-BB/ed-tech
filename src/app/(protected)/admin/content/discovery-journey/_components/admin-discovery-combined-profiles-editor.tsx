@@ -1,17 +1,33 @@
 "use client";
 
 import type { CombinedProfileConfig } from "@/types/discovery";
+import type { DiscoverySettingsContentAr } from "@/lib/discovery-translatable-fields";
 import { emptyCombinedProfile } from "../_lib/admin-discovery-form-factories";
-import { Field, ItemCard, StringListField } from "./admin-discovery-form-primitives";
+import {
+  getCombinedProfileSummaryAr,
+  getCombinedProfileTitleAr,
+  setCombinedProfileSummaryAr,
+  setCombinedProfileTitleAr,
+} from "../_lib/admin-discovery-content-ar-helpers";
+import {
+  BilingualField,
+  Field,
+  ItemCard,
+  StringListField,
+} from "./admin-discovery-form-primitives";
 
 type AdminDiscoveryCombinedProfilesEditorProps = {
   value: CombinedProfileConfig[];
+  contentAr: DiscoverySettingsContentAr;
   onChange: (value: CombinedProfileConfig[]) => void;
+  onContentArChange: (contentAr: DiscoverySettingsContentAr) => void;
 };
 
 export function AdminDiscoveryCombinedProfilesEditor({
   value,
+  contentAr,
   onChange,
+  onContentArChange,
 }: AdminDiscoveryCombinedProfilesEditorProps) {
   function updateProfile(index: number, patch: Partial<CombinedProfileConfig>) {
     onChange(value.map((profile, i) => (i === index ? { ...profile, ...patch } : profile)));
@@ -59,6 +75,7 @@ export function AdminDiscoveryCombinedProfilesEditor({
         <p className="text-[12px] text-[#a0a0a0]">No combined profiles yet.</p>
       ) : (
         value.map((profile, profileIndex) => {
+          const profileId = profile.profile_id;
           const isFallback = profile.triggers.length === 0;
           return (
             <ItemCard
@@ -72,24 +89,30 @@ export function AdminDiscoveryCombinedProfilesEditor({
               onRemove={() => onChange(value.filter((_, i) => i !== profileIndex))}
             >
               <div className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field
-                    label="Profile ID"
-                    value={profile.profile_id}
-                    onChange={(profile_id) => updateProfile(profileIndex, { profile_id })}
-                  />
-                  <Field
-                    label="Title"
-                    value={profile.title}
-                    onChange={(title) => updateProfile(profileIndex, { title })}
-                  />
-                </div>
                 <Field
+                  label="Profile ID"
+                  value={profile.profile_id}
+                  onChange={(nextProfileId) => updateProfile(profileIndex, { profile_id: nextProfileId })}
+                />
+                <BilingualField
+                  label="Title"
+                  enValue={profile.title}
+                  arValue={getCombinedProfileTitleAr(contentAr, profileId)}
+                  onEnChange={(title) => updateProfile(profileIndex, { title })}
+                  onArChange={(title) =>
+                    onContentArChange(setCombinedProfileTitleAr(contentAr, profileId, title))
+                  }
+                />
+                <BilingualField
                   label="Summary"
-                  value={profile.summary}
+                  enValue={profile.summary}
+                  arValue={getCombinedProfileSummaryAr(contentAr, profileId)}
                   multiline
                   rows={3}
-                  onChange={(summary) => updateProfile(profileIndex, { summary })}
+                  onEnChange={(summary) => updateProfile(profileIndex, { summary })}
+                  onArChange={(summary) =>
+                    onContentArChange(setCombinedProfileSummaryAr(contentAr, profileId, summary))
+                  }
                 />
 
                 <div className="space-y-3">
@@ -135,7 +158,7 @@ export function AdminDiscoveryCombinedProfilesEditor({
                           </button>
                         </div>
                         <StringListField
-                          label="Categories (one per line)"
+                          label="Categories (EN only — scoring keys)"
                           value={group}
                           rows={3}
                           onChange={(categories) =>

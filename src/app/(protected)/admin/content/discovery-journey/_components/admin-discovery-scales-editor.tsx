@@ -2,24 +2,33 @@
 
 import { useState } from "react";
 import type { DiscoveryScaleOption, DiscoveryScales, ScaleId } from "@/types/discovery";
+import type { DiscoverySettingsContentAr } from "@/lib/discovery-translatable-fields";
 import {
   SCALE_IDS,
   SCALE_LABELS,
   emptyScaleOption,
 } from "../_lib/admin-discovery-form-factories";
+import { getScaleLabelAr, setScaleLabelAr } from "../_lib/admin-discovery-content-ar-helpers";
 import {
+  BilingualField,
   CollapsibleSection,
-  Field,
   ItemCard,
   NumberField,
 } from "./admin-discovery-form-primitives";
 
 type AdminDiscoveryScalesEditorProps = {
   value: DiscoveryScales;
+  contentAr: DiscoverySettingsContentAr;
   onChange: (value: DiscoveryScales) => void;
+  onContentArChange: (contentAr: DiscoverySettingsContentAr) => void;
 };
 
-export function AdminDiscoveryScalesEditor({ value, onChange }: AdminDiscoveryScalesEditorProps) {
+export function AdminDiscoveryScalesEditor({
+  value,
+  contentAr,
+  onChange,
+  onContentArChange,
+}: AdminDiscoveryScalesEditorProps) {
   const [openScale, setOpenScale] = useState<ScaleId | null>("interest");
 
   function updateScale(scaleId: ScaleId, options: DiscoveryScaleOption[]) {
@@ -67,7 +76,7 @@ export function AdminDiscoveryScalesEditor({ value, onChange }: AdminDiscoverySc
                     )
                   }
                 >
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3 md:grid-cols-[120px_1fr]">
                     <NumberField
                       label="Value"
                       value={option.value}
@@ -81,16 +90,20 @@ export function AdminDiscoveryScalesEditor({ value, onChange }: AdminDiscoverySc
                         )
                       }
                     />
-                    <Field
+                    <BilingualField
                       label="Label"
-                      value={option.label}
-                      onChange={(label) =>
+                      enValue={option.label}
+                      arValue={getScaleLabelAr(contentAr, scaleId, option.value)}
+                      onEnChange={(label) =>
                         updateScale(
                           scaleId,
                           options.map((row, itemIndex) =>
                             itemIndex === index ? { ...row, label } : row,
                           ),
                         )
+                      }
+                      onArChange={(label) =>
+                        onContentArChange(setScaleLabelAr(contentAr, scaleId, option.value, label))
                       }
                     />
                   </div>

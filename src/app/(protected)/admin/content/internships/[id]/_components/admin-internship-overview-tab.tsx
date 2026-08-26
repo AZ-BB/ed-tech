@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import type { AdminInternshipDetailPayload } from "../_lib/fetch-admin-internship-detail";
 import { AdminEditInternshipDialog } from "./admin-edit-internship-dialog";
+import { AdminInternshipTranslatePanel } from "./admin-internship-translate-panel";
 
 function SnapItem({ label, value }: { label: string; value: string }) {
   return (
@@ -123,6 +124,8 @@ export function AdminInternshipOverviewTab({
           </p>
         </div>
       ) : null}
+
+      <AdminInternshipTranslatePanel internship={internship} />
 
       <AdminEditInternshipDialog
         open={editOpen}

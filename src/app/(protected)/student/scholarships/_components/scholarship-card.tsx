@@ -25,6 +25,8 @@ export function ScholarshipCard({
     s.coverage === "full"
       ? "text-[var(--green)]"
       : "text-[#E65100]";
+  const cardDir = s.useRtlContent ? "rtl" : "ltr";
+  const cardTextAlign = s.useRtlContent ? "text-right" : "text-left";
 
   return (
     <div
@@ -37,8 +39,12 @@ export function ScholarshipCard({
           onOpenDetail();
         }
       }}
-      className="scholarship-card-ltr relative w-full min-w-0 max-w-full cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-4 text-left transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:p-5 sm:px-[22px]"
-      dir="ltr"
+      className={clsx(
+        "relative w-full min-w-0 max-w-full cursor-pointer rounded-[var(--radius-lg)] border border-[var(--border-light)] bg-white p-4 transition-all hover:border-[var(--border)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.04)] sm:p-5 sm:px-[22px]",
+        cardTextAlign,
+        !s.useRtlContent && "scholarship-card-ltr",
+      )}
+      dir={cardDir}
     >
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-[var(--text)] break-words">

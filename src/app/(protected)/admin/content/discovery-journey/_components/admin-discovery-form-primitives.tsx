@@ -14,6 +14,8 @@ type FieldProps = {
   multiline?: boolean;
   rows?: number;
   placeholder?: string;
+  dir?: "ltr" | "rtl";
+  readOnly?: boolean;
 };
 
 export function Field({
@@ -23,7 +25,10 @@ export function Field({
   multiline = false,
   rows = 2,
   placeholder,
+  dir,
+  readOnly = false,
 }: FieldProps) {
+  const inputClass = `${discoveryInputClass}${readOnly ? " bg-[#f7f7f5] text-[#666]" : ""}`;
   return (
     <div>
       <label className={discoveryLabelClass}>{label}</label>
@@ -32,18 +37,104 @@ export function Field({
           value={value}
           rows={rows}
           placeholder={placeholder}
+          dir={dir}
+          readOnly={readOnly}
           onChange={(event) => onChange(event.target.value)}
-          className={discoveryInputClass}
+          className={inputClass}
         />
       ) : (
         <input
           type="text"
           value={value}
           placeholder={placeholder}
+          dir={dir}
+          readOnly={readOnly}
           onChange={(event) => onChange(event.target.value)}
-          className={discoveryInputClass}
+          className={inputClass}
         />
       )}
+    </div>
+  );
+}
+
+type BilingualFieldProps = {
+  label: string;
+  enValue: string;
+  arValue: string;
+  onEnChange: (value: string) => void;
+  onArChange: (value: string) => void;
+  multiline?: boolean;
+  rows?: number;
+  enReadOnly?: boolean;
+};
+
+export function BilingualField({
+  label,
+  enValue,
+  arValue,
+  onEnChange,
+  onArChange,
+  multiline = false,
+  rows = 2,
+  enReadOnly = false,
+}: BilingualFieldProps) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      <Field
+        label={`${label} (EN)`}
+        value={enValue}
+        onChange={onEnChange}
+        multiline={multiline}
+        rows={rows}
+        readOnly={enReadOnly}
+      />
+      <Field
+        label={`${label} (AR)`}
+        value={arValue}
+        onChange={onArChange}
+        multiline={multiline}
+        rows={rows}
+        dir="rtl"
+      />
+    </div>
+  );
+}
+
+type BilingualStringListFieldProps = {
+  label: string;
+  enValue: string[];
+  arValue: string[];
+  onEnChange: (value: string[]) => void;
+  onArChange: (value: string[]) => void;
+  rows?: number;
+  enReadOnly?: boolean;
+};
+
+export function BilingualStringListField({
+  label,
+  enValue,
+  arValue,
+  onEnChange,
+  onArChange,
+  rows = 4,
+  enReadOnly = false,
+}: BilingualStringListFieldProps) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      <StringListField
+        label={`${label} (EN)`}
+        value={enValue}
+        rows={rows}
+        readOnly={enReadOnly}
+        onChange={onEnChange}
+      />
+      <StringListField
+        label={`${label} (AR)`}
+        value={arValue}
+        rows={rows}
+        dir="rtl"
+        onChange={onArChange}
+      />
     </div>
   );
 }
@@ -80,6 +171,8 @@ type StringListFieldProps = {
   onChange: (value: string[]) => void;
   rows?: number;
   placeholder?: string;
+  readOnly?: boolean;
+  dir?: "ltr" | "rtl";
 };
 
 export function StringListField({
@@ -88,6 +181,8 @@ export function StringListField({
   onChange,
   rows = 4,
   placeholder = "One item per line",
+  readOnly = false,
+  dir,
 }: StringListFieldProps) {
   return (
     <Field
@@ -96,6 +191,8 @@ export function StringListField({
       multiline
       rows={rows}
       placeholder={placeholder}
+      readOnly={readOnly}
+      dir={dir}
       onChange={(text) =>
         onChange(
           text

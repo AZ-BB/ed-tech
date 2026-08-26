@@ -6,6 +6,7 @@ import type {
   DiscoveryQuestion,
   ScaleId,
 } from "@/types/discovery";
+import type { DiscoveryModuleContentAr } from "@/lib/discovery-translatable-fields";
 import {
   defaultQuestionForAnswerFormat,
   emptyForcedQuestion,
@@ -13,6 +14,15 @@ import {
   emptyScenarioQuestion,
 } from "../_lib/admin-discovery-form-factories";
 import {
+  getForcedOptionLabelAr,
+  getQuestionTextAr,
+  getScenarioOptionLabelAr,
+  setForcedOptionLabelAr,
+  setQuestionTextAr,
+  setScenarioOptionLabelAr,
+} from "../_lib/admin-discovery-content-ar-helpers";
+import {
+  BilingualField,
   CategoryField,
   CollapsibleSection,
   Field,
@@ -24,7 +34,9 @@ type AdminDiscoveryQuestionsEditorProps = {
   questions: DiscoveryQuestion[];
   categories: string[];
   answerFormat: AnswerFormat;
+  contentAr: DiscoveryModuleContentAr;
   onChange: (questions: DiscoveryQuestion[]) => void;
+  onContentArChange: (contentAr: DiscoveryModuleContentAr) => void;
 };
 
 type ResponseType = DiscoveryQuestion["response_type"];
@@ -69,7 +81,9 @@ export function AdminDiscoveryQuestionsEditor({
   questions,
   categories,
   answerFormat,
+  contentAr,
   onChange,
+  onContentArChange,
 }: AdminDiscoveryQuestionsEditorProps) {
   const [open, setOpen] = useState(true);
 
@@ -111,7 +125,9 @@ export function AdminDiscoveryQuestionsEditor({
                 question={question}
                 categories={categories}
                 answerFormat={answerFormat}
+                contentAr={contentAr}
                 onChange={(next) => updateQuestion(index, next)}
+                onContentArChange={onContentArChange}
               />
             </ItemCard>
           ))}
@@ -125,19 +141,25 @@ function QuestionFields({
   question,
   categories,
   answerFormat,
+  contentAr,
   onChange,
+  onContentArChange,
 }: {
   question: DiscoveryQuestion;
   categories: string[];
   answerFormat: AnswerFormat;
+  contentAr: DiscoveryModuleContentAr;
   onChange: (question: DiscoveryQuestion) => void;
+  onContentArChange: (contentAr: DiscoveryModuleContentAr) => void;
 }) {
+  const itemId = question.item_id;
+
   function changeResponseType(responseType: ResponseType) {
     if (question.response_type === responseType) return;
-    const itemId = question.item_id || `q${Date.now()}`;
-    const index = Number.parseInt(itemId.replace(/\D/g, ""), 10) || 1;
+    const stableItemId = question.item_id || `q${Date.now()}`;
+    const index = Number.parseInt(stableItemId.replace(/\D/g, ""), 10) || 1;
     const next = createQuestionForType(responseType, index, answerFormat, categories);
-    onChange({ ...next, item_id: itemId, text: question.text });
+    onChange({ ...next, item_id: stableItemId, text: question.text });
   }
 
   return (
@@ -146,7 +168,7 @@ function QuestionFields({
         <Field
           label="Item ID"
           value={question.item_id}
-          onChange={(item_id) => onChange({ ...question, item_id })}
+          onChange={(nextItemId) => onChange({ ...question, item_id: nextItemId })}
         />
         <div>
           <label className="mb-1 block text-[12px] font-semibold text-[#4a4a4a]">
@@ -164,12 +186,14 @@ function QuestionFields({
         </div>
       </div>
 
-      <Field
+      <BilingualField
         label="Question text"
-        value={question.text}
+        enValue={question.text}
+        arValue={getQuestionTextAr(contentAr, itemId)}
         multiline
         rows={3}
-        onChange={(text) => onChange({ ...question, text })}
+        onEnChange={(text) => onChange({ ...question, text })}
+        onArChange={(text) => onContentArChange(setQuestionTextAr(contentAr, itemId, text))}
       />
 
       {question.response_type === "rating_1_5" ? (
@@ -205,13 +229,21 @@ function QuestionFields({
             label="Option A"
             value={question.optionA}
             categories={categories}
+            arLabel={getForcedOptionLabelAr(contentAr, itemId, "optionA")}
             onChange={(optionA) => onChange({ ...question, optionA })}
+            onArLabelChange={(label) =>
+              onContentArChange(setForcedOptionLabelAr(contentAr, itemId, "optionA", label))
+            }
           />
           <ForcedOptionFields
             label="Option B"
             value={question.optionB}
             categories={categories}
+            arLabel={getForcedOptionLabelAr(contentAr, itemId, "optionB")}
             onChange={(optionB) => onChange({ ...question, optionB })}
+            onArLabelChange={(label) =>
+              onContentArChange(setForcedOptionLabelAr(contentAr, itemId, "optionB", label))
+            }
           />
         </div>
       ) : null}
@@ -256,19 +288,25 @@ function QuestionFields({
                   Remove
                 </button>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <Field
-                  label="Label"
-                  value={option.label}
-                  onChange={(label) =>
-                    onChange({
-                      ...question,
-                      options: question.options.map((row, i) =>
-                        i === optionIndex ? { ...row, label } : row,
-                      ),
-                    })
-                  }
-                />
+              <BilingualField
+                label="Label"
+                enValue={option.label}
+                arValue={getScenarioOptionLabelAr(contentAr, itemId, optionIndex)}
+                onEnChange={(label) =>
+                  onChange({
+                    ...question,
+                    options: question.options.map((row, i) =>
+                      i === optionIndex ? { ...row, label } : row,
+                    ),
+                  })
+                }
+                onArChange={(label) =>
+                  onContentArChange(
+                    setScenarioOptionLabelAr(contentAr, itemId, optionIndex, label),
+                  )
+                }
+              />
+              <div className="mt-3">
                 <CategoryField
                   label="Category"
                   value={option.category}
@@ -295,20 +333,26 @@ function ForcedOptionFields({
   label,
   value,
   categories,
+  arLabel,
   onChange,
+  onArLabelChange,
 }: {
   label: string;
   value: { label: string; category: string };
   categories: string[];
+  arLabel: string;
   onChange: (value: { label: string; category: string }) => void;
+  onArLabelChange: (label: string) => void;
 }) {
   return (
     <div className="space-y-3 rounded-[8px] border border-[#ece9e4] bg-[#faf9f7] p-3">
       <h5 className="text-[12px] font-semibold text-[#4a4a4a]">{label}</h5>
-      <Field
+      <BilingualField
         label="Label"
-        value={value.label}
-        onChange={(nextLabel) => onChange({ ...value, label: nextLabel })}
+        enValue={value.label}
+        arValue={arLabel}
+        onEnChange={(nextLabel) => onChange({ ...value, label: nextLabel })}
+        onArChange={onArLabelChange}
       />
       <CategoryField
         label="Category"

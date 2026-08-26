@@ -1,4 +1,12 @@
 import {
+  parseDiscoveryModuleContentAr,
+  parseDiscoverySettingsContentAr,
+  serializeDiscoveryModuleContentAr,
+  serializeDiscoverySettingsContentAr,
+  type DiscoveryModuleContentAr,
+  type DiscoverySettingsContentAr,
+} from "@/lib/discovery-translatable-fields";
+import {
   assembleDiscoveryConfig,
   assemblePortableDocument,
   moduleConfigToContentJson,
@@ -37,6 +45,8 @@ function parseModuleRow(row: Record<string, unknown>): DiscoveryModuleRow {
     is_active: Boolean(row.is_active),
     sort_order: Number(row.sort_order ?? 0),
     content_json: (row.content_json ?? { categories: [], questions: [], profiles: [] }) as DiscoveryModuleRow["content_json"],
+    content_ar: row.content_ar != null ? (row.content_ar as Json) : null,
+    content_ar_meta: row.content_ar_meta != null ? (row.content_ar_meta as Json) : null,
     updated_at: String(row.updated_at ?? ""),
     updated_by: row.updated_by != null ? String(row.updated_by) : null,
   };
@@ -49,6 +59,8 @@ function parseSettingsRow(row: Record<string, unknown>): DiscoverySettingsRow {
     combined_profiles_json: (row.combined_profiles_json ??
       []) as DiscoverySettingsRow["combined_profiles_json"],
     scoring_rules_json: normalizeScoringRulesJson(row.scoring_rules_json),
+    content_ar: row.content_ar != null ? (row.content_ar as Json) : null,
+    content_ar_meta: row.content_ar_meta != null ? (row.content_ar_meta as Json) : null,
     version: Number(row.version ?? 1),
     updated_at: String(row.updated_at ?? ""),
     updated_by: row.updated_by != null ? String(row.updated_by) : null,
@@ -142,11 +154,17 @@ export async function saveDiscoveryModule(
   service: ServiceClient,
   module: DiscoveryModuleConfig,
   updatedBy: string | null,
+  contentAr?: DiscoveryModuleContentAr | null,
 ): Promise<void> {
   const row = moduleConfigToRowInsert(module, updatedBy);
   const { error } = await service.from("discovery_modules").upsert({
     ...row,
     content_json: row.content_json as unknown as Json,
+    ...(contentAr !== undefined
+      ? {
+          content_ar: contentAr ? serializeDiscoveryModuleContentAr(contentAr) : null,
+        }
+      : {}),
   });
   if (error) throw error;
   await bumpSettingsVersion(service, updatedBy);
@@ -166,6 +184,7 @@ export type DiscoverySettingsUpdate = {
   scales_json?: DiscoveryScales;
   combined_profiles_json?: DiscoverySettingsRow["combined_profiles_json"];
   scoring_rules_json?: ScoringRulesConfig;
+  content_ar?: DiscoverySettingsContentAr | null;
 };
 
 export async function saveDiscoverySettings(
@@ -175,22 +194,71 @@ export async function saveDiscoverySettings(
 ): Promise<DiscoverySettingsRow> {
   const current = await fetchDiscoverySettings(service);
   const nextVersion = current.version + 1;
-  const payload = {
-    scales_json: (partial.scales_json ?? current.scales_json) as unknown as Json,
-    combined_profiles_json: (partial.combined_profiles_json ??
-      current.combined_profiles_json) as unknown as Json,
-    scoring_rules_json: (partial.scoring_rules_json ?? current.scoring_rules_json) as unknown as Json,
-    version: nextVersion,
-    updated_by: updatedBy,
-  };
   const { data, error } = await service
     .from("discovery_settings")
-    .update(payload)
+    .update({
+      scales_json: (partial.scales_json ?? current.scales_json) as unknown as Json,
+      combined_profiles_json: (partial.combined_profiles_json ??
+        current.combined_profiles_json) as unknown as Json,
+      scoring_rules_json: (partial.scoring_rules_json ??
+        current.scoring_rules_json) as unknown as Json,
+      version: nextVersion,
+      updated_by: updatedBy,
+      ...(partial.content_ar !== undefined
+        ? {
+            content_ar: partial.content_ar
+              ? serializeDiscoverySettingsContentAr(partial.content_ar)
+              : null,
+          }
+        : {}),
+    })
     .eq("id", SETTINGS_ID)
     .select("*")
     .single();
   if (error) throw error;
   return parseSettingsRow(data as Record<string, unknown>);
+}
+
+export async function fetchDiscoveryModuleContentArMap(
+  service: ServiceClient,
+): Promise<Record<string, DiscoveryModuleContentAr>> {
+  const { data, error } = await service.from("discovery_modules").select("id, content_ar");
+  if (error) throw error;
+  const map: Record<string, DiscoveryModuleContentAr> = {};
+  for (const row of data ?? []) {
+    map[String(row.id)] = parseDiscoveryModuleContentAr(row.content_ar);
+  }
+  return map;
+}
+
+export async function fetchDiscoverySettingsContentAr(
+  service: ServiceClient,
+): Promise<DiscoverySettingsContentAr> {
+  const settings = await fetchDiscoverySettings(service);
+  return parseDiscoverySettingsContentAr(settings.content_ar ?? null);
+}
+
+export async function saveDiscoveryModuleContentAr(
+  service: ServiceClient,
+  moduleId: string,
+  contentAr: DiscoveryModuleContentAr,
+): Promise<void> {
+  const { error } = await service
+    .from("discovery_modules")
+    .update({ content_ar: serializeDiscoveryModuleContentAr(contentAr) })
+    .eq("id", moduleId);
+  if (error) throw error;
+}
+
+export async function saveDiscoverySettingsContentAr(
+  service: ServiceClient,
+  contentAr: DiscoverySettingsContentAr,
+): Promise<void> {
+  const { error } = await service
+    .from("discovery_settings")
+    .update({ content_ar: serializeDiscoverySettingsContentAr(contentAr) })
+    .eq("id", SETTINGS_ID);
+  if (error) throw error;
 }
 
 export async function replaceAllFromImport(

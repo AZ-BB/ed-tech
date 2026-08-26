@@ -1,5 +1,6 @@
 import { flagFromCountryCode } from "@/lib/country-flag-emoji";
 import { normalizeInternshipBulletList } from "@/lib/internship-bullet-list";
+import type { Json } from "@/database.types";
 import type {
   Internship,
   InternshipFormat,
@@ -35,6 +36,8 @@ export type InternshipDiscoveryRow = {
   eligibility: string;
   how_to_apply: string;
   country_name?: string | null;
+  content_ar?: Json | null;
+  content_ar_meta?: Json | null;
 };
 
 const SECTIONS = new Set(["live", "global", "competition", "find"]);

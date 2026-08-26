@@ -95,16 +95,19 @@ export function WebinarFeaturedCard({
       </p>
 
       <div className={`grid min-w-0 overflow-x-clip rounded-[20px] border border-[var(--border-light)] bg-white sm:rounded-[24px] lg:grid-cols-[1.4fr_1fr] ${webinar.isPast ? "opacity-90" : ""}`}>
-        <div className="flex min-w-0 flex-col gap-4 p-5 sm:gap-[18px] sm:p-7 md:p-9">
+        <div
+          className="flex min-w-0 flex-col gap-4 p-5 sm:gap-[18px] sm:p-7 md:p-9"
+          dir={webinar.useRtlContent ? "rtl" : "ltr"}
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <WebinarStatusBadge isPast={webinar.isPast} />
             <WebinarTags tags={webinar.tags} />
           </div>
           {titleContent}
           <div className="flex min-w-0 flex-wrap gap-3 border-y border-[var(--border-light)] py-3.5 text-[12px] font-medium leading-snug text-[var(--text-mid)] sm:gap-6 sm:text-[13px]">
-            <span className="shrink-0">{formatWebinarDate(webinar.scheduledAt)}</span>
+            <span className="shrink-0">{formatWebinarDate(webinar.scheduledAt, locale)}</span>
             <span className="min-w-0 break-words">
-              {formatWebinarTime(webinar.scheduledAt)} {webinar.timezoneLabel}
+              {formatWebinarTime(webinar.scheduledAt, locale)} {webinar.timezoneLabel}
             </span>
             <span className="min-w-0 break-words">{webinar.format}</span>
           </div>
@@ -184,7 +187,10 @@ export function WebinarGridCard({
   const w = dict.webinars;
   const detailHref = webinarDetailHref(webinar.id, mode, locale);
   return (
-    <article className={`flex min-w-0 flex-col gap-3.5 rounded-[18px] border border-[var(--border-light)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-6 ${webinar.isPast ? "opacity-90" : ""}`}>
+    <article
+      className={`flex min-w-0 flex-col gap-3.5 rounded-[18px] border border-[var(--border-light)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[var(--green-light)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] sm:p-6 ${webinar.isPast ? "opacity-90" : ""}`}
+      dir={webinar.useRtlContent ? "rtl" : "ltr"}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         {webinar.isPast ? <WebinarStatusBadge isPast /> : null}
         <WebinarTags tags={webinar.tags} />
@@ -198,9 +204,9 @@ export function WebinarGridCard({
         </Link>
       </h3>
       <div className="flex min-w-0 flex-wrap gap-2.5 text-[12px] text-[var(--text-light)] sm:gap-3.5 sm:text-[12.5px]">
-        <span className="shrink-0">{formatWebinarDate(webinar.scheduledAt)}</span>
+        <span className="shrink-0">{formatWebinarDate(webinar.scheduledAt, locale)}</span>
         <span className="min-w-0 break-words">
-          {formatWebinarTime(webinar.scheduledAt)} {webinar.timezoneLabel}
+          {formatWebinarTime(webinar.scheduledAt, locale)} {webinar.timezoneLabel}
         </span>
       </div>
       <p className="text-[13px] leading-[1.55] text-[var(--text-mid)] break-words sm:text-[13.5px]">{webinar.description}</p>

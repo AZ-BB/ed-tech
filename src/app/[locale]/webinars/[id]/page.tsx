@@ -7,6 +7,7 @@ import { getDictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
 import { fetchPublicWebinarById } from "../_lib/fetch-public-webinars";
+import { localizeWebinarCard } from "@/app/(protected)/student/webinars/_lib/fetch-student-webinars";
 
 export const dynamic = "force-dynamic";
 
@@ -26,25 +27,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: dict.webinars.notFound };
   }
 
-  const webinar = await fetchPublicWebinarById(id);
+  const webinar = await fetchPublicWebinarById(id, locale);
   if (!webinar) {
     return { title: dict.webinars.notFound };
   }
 
+  const localized = localizeWebinarCard(locale, webinar);
+
   return {
-    title: webinar.title,
-    description: webinar.description,
+    title: localized.title,
+    description: localized.description,
   };
 }
 
 export default async function PublicWebinarDetailPage({ params }: PageProps) {
-  const { id: idRaw } = await params;
+  const { id: idRaw, locale } = await params;
   const id = parseWebinarId(idRaw);
   if (!id) {
     notFound();
   }
 
-  const webinar = await fetchPublicWebinarById(id);
+  const webinar = await fetchPublicWebinarById(id, locale);
   if (!webinar) {
     notFound();
   }

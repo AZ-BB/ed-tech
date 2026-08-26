@@ -15,5 +15,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  return <AdminEventDetailClient event={event} />;
+  return (
+    <AdminEventDetailClient payload={event} />
+  );
 }

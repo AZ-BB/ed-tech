@@ -1,3 +1,5 @@
+import type { Json } from "@/database.types";
+
 export type AnswerFormat =
   | "interest"
   | "frequency"
@@ -76,6 +78,8 @@ export type DiscoveryModuleRow = {
   is_active: boolean;
   sort_order: number;
   content_json: DiscoveryModuleContentJson;
+  content_ar?: Json | null;
+  content_ar_meta?: Json | null;
   updated_at: string;
   updated_by: string | null;
 };
@@ -85,6 +89,8 @@ export type DiscoverySettingsRow = {
   scales_json: DiscoveryScales;
   combined_profiles_json: CombinedProfileConfig[];
   scoring_rules_json: ScoringRulesConfig;
+  content_ar?: Json | null;
+  content_ar_meta?: Json | null;
   version: number;
   updated_at: string;
   updated_by: string | null;

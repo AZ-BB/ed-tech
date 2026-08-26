@@ -14,6 +14,8 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { useLocale } from "@/lib/i18n/locale-context";
+
 import type { StudentEventCard } from "../_lib/get-event-discovery-page";
 import { EventTypeIcon } from "./event-type-icon";
 import {
@@ -22,10 +24,12 @@ import {
   eventStatusDotColor,
   formatEventDateParts,
   formatEventTimeLabel,
-  formatRegionFocusLabel,
   isOnlineEventMode,
+  localizeEventRegistrationStatus,
   resolveEventTypeStyle,
   splitSemicolonList,
+  type EventCountdownLabels,
+  type EventRegistrationStatusLabels,
 } from "@/lib/event-type-styles";
 
 type EventDetailViewProps = {
@@ -98,12 +102,30 @@ export function EventDetailView({
   onToggleSave,
   labels,
 }: EventDetailViewProps) {
+  const { locale, dict } = useLocale();
+  const eventLabels = dict.student.events;
   const tabsRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<DetailSection>("d-overview");
 
+  const countdownLabels: EventCountdownLabels = {
+    dateTbc: eventLabels.countdownDateTbc,
+    pastEvent: eventLabels.pastEvent,
+    today: eventLabels.countdownToday,
+    tomorrow: eventLabels.countdownTomorrow,
+    inDays: (count) => eventLabels.countdownInDays.replace("{count}", String(count)),
+  };
+  const registrationLabels: EventRegistrationStatusLabels = {
+    registrationOpen: eventLabels.registrationOpen,
+    regStatusOpen: eventLabels.regStatusOpen,
+    regStatusFull: eventLabels.regStatusFull,
+    regStatusClosingSoon: eventLabels.regStatusClosingSoon,
+    regStatusNotYetOpen: eventLabels.regStatusNotYetOpen,
+    regStatusPastEvent: eventLabels.regStatusPastEvent,
+  };
+
   const style = resolveEventTypeStyle(event.eventType);
-  const date = formatEventDateParts(event.dateStart);
-  const countdown = eventCountdown(event.dateStart);
+  const date = formatEventDateParts(event.dateStart, locale, eventLabels.countdownDateTbc);
+  const countdown = eventCountdown(event.dateStart, countdownLabels, locale);
   const online = isOnlineEventMode(event.mode);
   const audience = splitSemicolonList(event.targetAudience);
   const whyItems =
@@ -118,10 +140,17 @@ export function EventDetailView({
   const statusText =
     countdown.cls === "past"
       ? labels.pastEvent
-      : event.registrationStatus?.trim() || "Registration open";
-  const timeLabel = formatEventTimeLabel(event.startTime, event.endTime, event.timezone);
+      : localizeEventRegistrationStatus(event.registrationStatus, registrationLabels);
+  const timeLabel =
+    event.timeDisplay?.trim() ||
+    formatEventTimeLabel(
+      event.startTime,
+      event.endTime,
+      event.timezone,
+      eventLabels.timeTbc,
+    );
   const formatLabel = online ? labels.formatOnline : labels.formatInPerson;
-  const focusLabel = formatRegionFocusLabel(event.regionFocus);
+  const focusLabel = event.regionFocus?.trim() || "—";
   const universityStat =
     (event.universityCount ?? 0) > 0 ? String(event.universityCount) : "—";
 
@@ -159,7 +188,10 @@ export function EventDetailView({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] pb-16 pt-6">
+    <div
+      className="mx-auto w-full max-w-[1280px] pb-16 pt-6"
+      dir={event.useRtlContent ? "rtl" : "ltr"}
+    >
       <button
         type="button"
         onClick={onBack}

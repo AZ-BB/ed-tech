@@ -118,35 +118,41 @@ export function formatEventTimeLabel(
   startTime: string | null | undefined,
   endTime: string | null | undefined,
   timezone: string | null | undefined,
+  timeTbcLabel = "Time to be confirmed",
 ): string {
   const start = startTime?.trim();
   const end = endTime?.trim();
   const tz = timezone?.trim();
-  if (!start && !end) return "Time to be confirmed";
+  if (!start && !end) return timeTbcLabel;
   if (start && end) {
     return tz ? `${start} – ${end} ${tz}` : `${start} – ${end}`;
   }
-  return tz ? `${start || end} ${tz}` : start || end || "Time to be confirmed";
+  return tz ? `${start || end} ${tz}` : start || end || timeTbcLabel;
 }
 
-export function formatEventDateParts(dateStart: string | null | undefined): {
+export function formatEventDateParts(
+  dateStart: string | null | undefined,
+  locale: "en" | "ar" = "en",
+  dateTbcLabel = "Date to be confirmed",
+): {
   day: string;
   month: string;
   monthNum: number;
   full: string;
 } {
+  const dateLocale = locale === "ar" ? "ar" : "en-US";
   if (!dateStart) {
-    return { day: "—", month: "TBC", monthNum: 0, full: "Date to be confirmed" };
+    return { day: "—", month: "TBC", monthNum: 0, full: dateTbcLabel };
   }
   const d = new Date(`${dateStart}T12:00:00`);
   if (Number.isNaN(d.getTime())) {
-    return { day: "—", month: "TBC", monthNum: 0, full: "Date to be confirmed" };
+    return { day: "—", month: "TBC", monthNum: 0, full: dateTbcLabel };
   }
   return {
     day: String(d.getDate()),
-    month: d.toLocaleString("en-US", { month: "short" }),
+    month: d.toLocaleString(dateLocale, { month: "short" }),
     monthNum: d.getMonth() + 1,
-    full: d.toLocaleString("en-US", {
+    full: d.toLocaleString(dateLocale, {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -155,23 +161,69 @@ export function formatEventDateParts(dateStart: string | null | undefined): {
   };
 }
 
-export function eventCountdown(dateStart: string | null | undefined): {
+export type EventCountdownLabels = {
+  dateTbc: string;
+  pastEvent: string;
+  today: string;
+  tomorrow: string;
+  inDays: (count: number) => string;
+};
+
+export type EventRegistrationStatusLabels = {
+  registrationOpen: string;
+  regStatusOpen: string;
+  regStatusFull: string;
+  regStatusClosingSoon: string;
+  regStatusNotYetOpen: string;
+  regStatusPastEvent: string;
+};
+
+const DEFAULT_COUNTDOWN_LABELS: EventCountdownLabels = {
+  dateTbc: "Date to be confirmed",
+  pastEvent: "Past event",
+  today: "Happening today",
+  tomorrow: "Tomorrow",
+  inDays: (count) => `In ${count} days`,
+};
+
+export function localizeEventRegistrationStatus(
+  status: string | null | undefined,
+  labels: EventRegistrationStatusLabels,
+): string {
+  const raw = status?.trim();
+  if (!raw) return labels.registrationOpen;
+
+  const map: Record<string, string> = {
+    open: labels.regStatusOpen,
+    full: labels.regStatusFull,
+    "closing soon": labels.regStatusClosingSoon,
+    "not yet open": labels.regStatusNotYetOpen,
+    "past event": labels.regStatusPastEvent,
+  };
+
+  return map[raw.toLowerCase()] ?? raw;
+}
+
+export function eventCountdown(
+  dateStart: string | null | undefined,
+  labels: EventCountdownLabels = DEFAULT_COUNTDOWN_LABELS,
+  locale: "en" | "ar" = "en",
+): {
   text: string;
   cls: "past" | "soon" | "near" | "far";
 } {
-  if (!dateStart) return { text: "Date to be confirmed", cls: "far" };
+  if (!dateStart) return { text: labels.dateTbc, cls: "far" };
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const d = new Date(`${dateStart}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return { text: "Date to be confirmed", cls: "far" };
+  if (Number.isNaN(d.getTime())) return { text: labels.dateTbc, cls: "far" };
   d.setHours(0, 0, 0, 0);
   const diff = Math.round((d.getTime() - now.getTime()) / 86400000);
-  if (diff < 0) return { text: "Past event", cls: "past" };
-  if (diff === 0) return { text: "Happening today", cls: "soon" };
-  if (diff === 1) return { text: "Tomorrow", cls: "soon" };
-  if (diff <= 7) return { text: `In ${diff} days`, cls: "soon" };
-  if (diff <= 30) return { text: `In ${diff} days`, cls: "near" };
-  const f = formatEventDateParts(dateStart);
+  if (diff < 0) return { text: labels.pastEvent, cls: "past" };
+  if (diff === 0) return { text: labels.today, cls: "soon" };
+  if (diff === 1) return { text: labels.tomorrow, cls: "soon" };
+  if (diff <= 30) return { text: labels.inDays(diff), cls: diff <= 7 ? "soon" : "near" };
+  const f = formatEventDateParts(dateStart, locale, labels.dateTbc);
   return { text: `${f.month} ${f.day}`, cls: "far" };
 }
 

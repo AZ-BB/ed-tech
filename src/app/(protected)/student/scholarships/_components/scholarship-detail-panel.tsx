@@ -74,6 +74,8 @@ export function ScholarshipDetailPanel({
   if (!s) return null;
 
   const natLocked = s.eligibleNationalities.length <= 3;
+  const textDir = s.useRtlContent ? "rtl" : "ltr";
+  const bidiClass = s.useRtlContent ? "" : "bidi-ltr";
 
   return (
     <div
@@ -154,14 +156,18 @@ export function ScholarshipDetailPanel({
           </div>
         </div>
 
-        <div className="bg-white px-4 pb-4 pt-8 sm:px-7">
+        <div className="bg-white px-4 pb-4 pt-8 sm:px-7" dir={textDir}>
           <h2
             id="sch-detail-title"
-            className="serif mb-1 text-[19px] font-bold leading-tight text-[var(--text)] break-words sm:text-[22px]"
+            className={clsx(
+              "serif mb-1 text-[19px] font-bold leading-tight text-[var(--text)] break-words sm:text-[22px]",
+              bidiClass,
+            )}
+            dir={textDir}
           >
             {s.name}
           </h2>
-          <div className="mb-2.5 flex items-center gap-1.5 text-[14px] text-[var(--text-light)]">
+          <div className={clsx("mb-2.5 flex items-center gap-1.5 text-[14px] text-[var(--text-light)]", bidiClass)} dir={textDir}>
             <span className="text-base" aria-hidden>
               {s.flag}
             </span>
@@ -193,8 +199,8 @@ export function ScholarshipDetailPanel({
           ))}
         </div>
 
-        <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:gap-4">
-          <div className="min-w-0 flex-1 space-y-3.5">
+        <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:gap-4" dir={textDir}>
+          <div className={clsx("min-w-0 flex-1 space-y-3.5", bidiClass)}>
             <DetailCard id="d-overview" title={t.overview} icon={<InfoIcon />}>
               <p className="mb-1 text-[13.5px] leading-relaxed text-[var(--text-mid)]">
                 {s.shortSummary}

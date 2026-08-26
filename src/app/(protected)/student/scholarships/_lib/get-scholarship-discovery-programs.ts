@@ -1,5 +1,8 @@
 import "server-only";
 
+import { applyScholarshipLocalization } from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
+import type { Locale } from "@/lib/i18n/config";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import type { Scholarship } from "../_components/types";
@@ -162,7 +165,7 @@ function overlayTooltipFromColumn(
   return { ...scholarship, tooltip: scholarship.tooltip?.trim() ?? "" };
 }
 
-function mapDiscoveryRow(row: ScholarshipDiscoveryRow): Scholarship | null {
+function mapDiscoveryRow(row: ScholarshipDiscoveryRow, locale: Locale): Scholarship | null {
   let scholarship: Scholarship | null = null;
   if (row.discovery_payload && typeof row.discovery_payload === "object") {
     scholarship = scholarshipFromPayloadRow({
@@ -175,10 +178,11 @@ function mapDiscoveryRow(row: ScholarshipDiscoveryRow): Scholarship | null {
   }
   if (!scholarship) return null;
   const merged = overlayScholarshipCoreRequirementFields(scholarship, row);
-  return overlayTooltipFromColumn(
+  const withOverlays = overlayTooltipFromColumn(
     overlayApplicationUrlFromColumn(merged, row.application_url),
     row.tooltip,
   );
+  return applyScholarshipLocalization(locale, withOverlays, row.content_ar ?? null);
 }
 
 function parseRpcPayload(raw: unknown): RpcDiscoveryPage | null {
@@ -223,6 +227,7 @@ async function loadBucketSlice(
   page: number,
   homeAlpha2: string | null,
   savedIds: string[] | null,
+  locale: Locale,
 ): Promise<ScholarshipDiscoveryTabSlice & { catalog_total: number }> {
   let p = Math.max(1, page);
   let rpc = await fetchDiscoveryBucketRpc(query, bucket, p, homeAlpha2, savedIds);
@@ -268,7 +273,7 @@ async function loadBucketSlice(
 
   const scholarships: Scholarship[] = [];
   for (const row of rpc.rows) {
-    const s = mapDiscoveryRow(row as unknown as ScholarshipDiscoveryRow);
+    const s = mapDiscoveryRow(row as unknown as ScholarshipDiscoveryRow, locale);
     if (s) scholarships.push(s);
   }
 
@@ -283,6 +288,7 @@ async function loadBucketSlice(
 
 async function fetchScholarshipByDetailId(
   detailId: string,
+  locale: Locale,
 ): Promise<Scholarship | null> {
   const supabase = await createSupabaseServerClient();
 
@@ -294,7 +300,7 @@ async function fetchScholarshipByDetailId(
       .maybeSingle();
     if (bySlug.error?.message?.toLowerCase().includes("column")) continue;
     if (bySlug.data) {
-      return mapDiscoveryRow(bySlug.data as unknown as ScholarshipDiscoveryRow);
+      return mapDiscoveryRow(bySlug.data as unknown as ScholarshipDiscoveryRow, locale);
     }
 
     const byPayloadId = await supabase
@@ -304,7 +310,7 @@ async function fetchScholarshipByDetailId(
       .maybeSingle();
     if (byPayloadId.error?.message?.toLowerCase().includes("column")) continue;
     if (byPayloadId.data) {
-      return mapDiscoveryRow(byPayloadId.data as unknown as ScholarshipDiscoveryRow);
+      return mapDiscoveryRow(byPayloadId.data as unknown as ScholarshipDiscoveryRow, locale);
     }
 
     break;
@@ -320,7 +326,7 @@ async function fetchScholarshipByDetailId(
         .eq("id", detailId)
         .maybeSingle();
       if (error?.message?.toLowerCase().includes("column")) continue;
-      if (data) return mapDiscoveryRow(data as unknown as ScholarshipDiscoveryRow);
+      if (data) return mapDiscoveryRow(data as unknown as ScholarshipDiscoveryRow, locale);
       break;
     }
   }
@@ -464,6 +470,7 @@ export type ScholarshipDiscoveryPageData = {
 export async function getScholarshipDiscoveryPageData(
   query: ScholarshipDiscoveryResolvedQuery,
 ): Promise<ScholarshipDiscoveryPageData> {
+  const locale = await getServerLocale();
   const filters = {
     q: query.q,
     nat: query.nationality,
@@ -490,8 +497,8 @@ export async function getScholarshipDiscoveryPageData(
     : null;
 
   const [govLoaded, otherLoaded] = await Promise.all([
-    loadBucketSlice(queryBase, "government", query.governmentPage, homeAlpha2, savedIdsFilter),
-    loadBucketSlice(queryBase, "other", query.otherPage, homeAlpha2, savedIdsFilter),
+    loadBucketSlice(queryBase, "government", query.governmentPage, homeAlpha2, savedIdsFilter, locale),
+    loadBucketSlice(queryBase, "other", query.otherPage, homeAlpha2, savedIdsFilter, locale),
   ]);
 
   const totalCatalog = Math.max(govLoaded.catalog_total, otherLoaded.catalog_total);
@@ -536,14 +543,14 @@ export async function getScholarshipDiscoveryPageData(
       filters,
       detailId: query.detail,
       detailScholarship: query.detail
-        ? await fetchScholarshipByDetailId(query.detail)
+        ? await fetchScholarshipByDetailId(query.detail, locale)
         : null,
       ...activityIds,
     };
   }
 
   const detailScholarship = query.detail
-    ? await fetchScholarshipByDetailId(query.detail)
+    ? await fetchScholarshipByDetailId(query.detail, locale)
     : null;
 
   return {

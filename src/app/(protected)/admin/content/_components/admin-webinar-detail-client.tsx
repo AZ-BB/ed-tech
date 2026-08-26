@@ -10,10 +10,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { WebinarTags } from "@/app/(protected)/student/webinars/_components/webinar-tag-badge";
-import type { AdminWebinarEnrollmentRow } from "../_lib/fetch-admin-webinar-detail";
-import type { AdminWebinarTableRow } from "../_lib/fetch-admin-webinars-page";
+import type {
+  AdminWebinarDetailPayload,
+  AdminWebinarEnrollmentRow,
+} from "../_lib/fetch-admin-webinar-detail";
 import { AdminEditWebinarDialog } from "./admin-edit-webinar-dialog";
 import { AdminStartWebinarSessionDialog } from "./admin-start-webinar-session-dialog";
+import { AdminWebinarTranslatePanel } from "../webinars/[id]/_components/admin-webinar-translate-panel";
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
@@ -22,7 +25,7 @@ function formatDateTime(iso: string | null): string {
   return format(d, "MMM d, yyyy h:mm a");
 }
 
-function isActiveWebinarStatus(status: AdminWebinarTableRow["status"]) {
+function isActiveWebinarStatus(status: AdminWebinarDetailPayload["status"]) {
   return status === "upcoming" || status === "live";
 }
 
@@ -38,7 +41,7 @@ function buildPublicWebinarUrl(webinarId: number): string {
 }
 
 type AdminWebinarDetailClientProps = {
-  webinar: AdminWebinarTableRow;
+  webinar: AdminWebinarDetailPayload;
   enrollments: AdminWebinarEnrollmentRow[];
 };
 
@@ -305,6 +308,8 @@ export function AdminWebinarDetailClient({
           </div>
         ) : null}
       </div>
+
+      <AdminWebinarTranslatePanel payload={webinar} />
 
       <div className="overflow-hidden rounded-[12px] border border-[#ece9e4] bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ece9e4] px-5 py-4">

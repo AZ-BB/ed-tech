@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import {
+  fetchDiscoveryModuleContentArMap,
+  fetchDiscoverySettings,
   loadDiscoveryConfig,
 } from "@/lib/discovery/discovery-repository";
 import { getStudentDiscoveryModules } from "@/lib/discovery/discovery-student-modules";
+import {
+  applyDiscoveryModuleLocalization,
+  applyDiscoveryScalesLocalization,
+} from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
@@ -15,36 +22,53 @@ export async function GET() {
   }
 
   try {
+    const locale = await getServerLocale();
     const service = await createSupabaseSecretClient();
-    const [config, attempts] = await Promise.all([
+    const [config, attempts, contentArMap, settings] = await Promise.all([
       loadDiscoveryConfig(service),
       service
         .from("student_discovery_attempts")
         .select("module_id, completed_at")
         .eq("student_id", auth.studentId),
+      fetchDiscoveryModuleContentArMap(service),
+      fetchDiscoverySettings(service),
     ]);
 
     if (attempts.error) throw attempts.error;
 
     const completedSet = new Set((attempts.data ?? []).map((a) => a.module_id));
 
-    const modules = getStudentDiscoveryModules(config).map((module) => ({
-      id: module.moduleId,
-      title: module.title,
-      number: module.number,
-      subtitle: module.subtitle,
-      description: module.description,
-      answerFormat: module.answerFormat,
-      numItems: module.questions.length,
-      sortOrder: module.sortOrder,
-      categories: module.categories,
-      questions: module.questions,
-      profiles: module.profiles,
-      completed: completedSet.has(module.moduleId),
-    }));
+    const modules = getStudentDiscoveryModules(config).map((module) => {
+      const localized = applyDiscoveryModuleLocalization(
+        locale,
+        module,
+        (contentArMap[module.moduleId] ?? null) as never,
+      );
+      return {
+        id: module.moduleId,
+        title: localized.title,
+        number: module.number,
+        subtitle: localized.subtitle,
+        description: localized.description,
+        answerFormat: module.answerFormat,
+        numItems: module.questions.length,
+        sortOrder: module.sortOrder,
+        categories: localized.categories,
+        questions: localized.questions,
+        profiles: localized.profiles,
+        completed: completedSet.has(module.moduleId),
+        useRtlContent: localized.useRtlContent,
+      };
+    });
+
+    const scales = applyDiscoveryScalesLocalization(
+      locale,
+      config.scales,
+      settings.content_ar ?? null,
+    );
 
     return NextResponse.json({
-      scales: config.scales,
+      scales,
       modules,
       version: config.version,
     });

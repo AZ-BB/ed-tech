@@ -36,4 +36,6 @@ export type Internship = {
   howToApply: string;
   logoColor: string;
   initials: string;
+  /** When true, card/detail should render Arabic content RTL. */
+  useRtlContent?: boolean;
 };
