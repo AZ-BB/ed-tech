@@ -2,16 +2,19 @@ import "server-only";
 
 import {
   CUSTOM_WITH_FORM_LANDING_PAGE_PATH,
+  DIANA_LANDING_PAGE_PATH,
   getPageVisitCount,
   INFLUENCER_LANDING_PAGE_PATH,
 } from "@/lib/page-visits";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export const MILAD_SIGNUP_SOURCE = "custom-signup" as const;
+export const DIANA_SIGNUP_SOURCE = "diana-signup" as const;
 export const CUSTOM_WITH_FORM_SIGNUP_SOURCE = "custom-with-form-signup" as const;
 
 export type FunnelSignupSource =
   | typeof MILAD_SIGNUP_SOURCE
+  | typeof DIANA_SIGNUP_SOURCE
   | typeof CUSTOM_WITH_FORM_SIGNUP_SOURCE;
 
 export type FunnelStats = {
@@ -44,6 +47,19 @@ export async function getMiladFunnelStats(): Promise<FunnelStats> {
 
   return {
     landingPath: INFLUENCER_LANDING_PAGE_PATH,
+    visits,
+    signups,
+  };
+}
+
+export async function getDianaFunnelStats(): Promise<FunnelStats> {
+  const [visits, signups] = await Promise.all([
+    getPageVisitCount(DIANA_LANDING_PAGE_PATH),
+    getFunnelSignupCount(DIANA_SIGNUP_SOURCE),
+  ]);
+
+  return {
+    landingPath: DIANA_LANDING_PAGE_PATH,
     visits,
     signups,
   };

@@ -462,7 +462,7 @@ export async function individualStudentSignUp(
 
 async function signUpCustomStudent(
     formData: FormData,
-    source: "custom-signup" | "custom-with-form-signup",
+    source: "custom-signup" | "diana-signup" | "custom-with-form-signup",
 ): Promise<GeneralResponse<boolean>> {
     const isFormFunnel = source === "custom-with-form-signup";
     const firstName = String(formData.get("firstName") ?? "").trim();
@@ -565,6 +565,12 @@ export async function customStudentSignUp(
     formData: FormData,
 ): Promise<GeneralResponse<boolean>> {
     return signUpCustomStudent(formData, "custom-signup");
+}
+
+export async function dianaStudentSignUp(
+    formData: FormData,
+): Promise<GeneralResponse<boolean>> {
+    return signUpCustomStudent(formData, "diana-signup");
 }
 
 export async function customWithFormStudentSignUp(
