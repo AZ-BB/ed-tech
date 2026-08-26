@@ -21,6 +21,8 @@
     "db:migrate:university-logos:dry-run": "node scripts/migrate-university-logos.mjs --dry-run",
     "db:backfill:admin-permissions": "node scripts/backfill-admin-permissions.mjs",
     "db:backfill:admin-permissions:dry-run": "node scripts/backfill-admin-permissions.mjs --dry-run",
+    "db:translate:universities": "npx tsx scripts/translate-all-universities.ts",
+    "db:translate:universities:dry-run": "npx tsx scripts/translate-all-universities.ts --dry-run",
     "stripe": "npx stripe listen --forward-to localhost:3000/api/webhooks/stripe"
   },
   "dependencies": {

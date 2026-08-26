@@ -1,5 +1,5 @@
 /**
- * Estimates Agrid translation token usage for admin content entities.
+ * Estimates OpenAI translation token usage for admin content entities.
  * Run: node scripts/estimate-translation-tokens.mjs
  */
 import { createClient } from "@supabase/supabase-js";
@@ -429,7 +429,7 @@ async function main() {
   );
 
   if (unis.actualLoggedTokens > 0) {
-    console.log("\n--- Universities: actual Agrid usage (from translation_responses) ---");
+    console.log("\n--- Universities: actual OpenAI usage (from translation_responses) ---");
     console.log(`Logged API calls: ${unis.actualLoggedCalls}`);
     console.log(`Logged total tokens: ${unis.actualLoggedTokens.toLocaleString()}`);
     console.log(`Avg tokens per call: ${unis.avgTokensPerCall}`);
@@ -444,7 +444,7 @@ async function main() {
 
   console.log("\nNotes:");
   console.log("- Universities already have translation; other entities do not.");
-  console.log("- Estimates assume 1 Agrid API call per text field (same as university flow).");
+  console.log("- Estimates assume 1 OpenAI API call per text field (same as university flow).");
   console.log("- intakes/city/country for universities use rule-based lookup (no API tokens).");
   console.log("- Est. tokens = input + output + ~150 overhead per API call.\n");
 
