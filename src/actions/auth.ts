@@ -464,7 +464,8 @@ async function signUpCustomStudent(
     formData: FormData,
     source: "custom-signup" | "diana-signup" | "custom-with-form-signup",
 ): Promise<GeneralResponse<boolean>> {
-    const isFormFunnel = source === "custom-with-form-signup";
+    const isFormFunnel =
+        source === "custom-with-form-signup" || source === "diana-signup";
     const firstName = String(formData.get("firstName") ?? "").trim();
     const lastName = String(formData.get("lastName") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
