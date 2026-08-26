@@ -3894,7 +3894,11 @@ export type Database = {
           field_key: string | null
           http_status: number | null
           id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
           request_body: Json
+          request_id: string | null
           requested_by: string | null
           response_body: Json | null
           source_lang: string
@@ -3914,7 +3918,11 @@ export type Database = {
           field_key?: string | null
           http_status?: number | null
           id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
           request_body: Json
+          request_id?: string | null
           requested_by?: string | null
           response_body?: Json | null
           source_lang?: string
@@ -3934,7 +3942,11 @@ export type Database = {
           field_key?: string | null
           http_status?: number | null
           id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
           request_body?: Json
+          request_id?: string | null
           requested_by?: string | null
           response_body?: Json | null
           source_lang?: string

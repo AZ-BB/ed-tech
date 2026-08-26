@@ -251,6 +251,22 @@ export const adminNavSections: readonly AdminNavSection[] = [
           />
         ),
       },
+      {
+        href: `${ADMIN_HOME}/translation-history`,
+        label: "Translation History",
+        icon: (
+          <NavSvg
+            paths={
+              <>
+                <path d="M5 8l6 6" />
+                <path d="M4 14l6-6 2 2 6-6" />
+                <path d="M14 4h6v6" />
+                <path d="M10 20H4v-6" />
+              </>
+            }
+          />
+        ),
+      },
     ],
   },
   {
@@ -302,6 +318,7 @@ export const ADMIN_PAGE_TITLE_BY_PATH: Record<string, string> = {
   [`${ADMIN_HOME}/funnels`]: "Funnels",
   [`${ADMIN_HOME}/reports`]: "Reports",
   [`${ADMIN_HOME}/activity-log`]: "Activity Log",
+  [`${ADMIN_HOME}/translation-history`]: "Translation History",
   [`${ADMIN_HOME}/contact-us`]: "Contact Us",
   [`${ADMIN_HOME}/settings`]: "Settings",
   [`${ADMIN_HOME}/universities/import`]: "Import Universities",

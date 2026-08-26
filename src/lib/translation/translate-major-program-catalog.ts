@@ -1,10 +1,11 @@
 import type { Locale } from "@/lib/i18n/config";
 import { pickLocalizedField } from "@/lib/content-localization";
-import { translateTextEnToAr } from "@/lib/translation/agrid-api";
+import { translateCatalogNamesEnToAr } from "@/lib/translation/openai-translation";
 import type { TranslationLogContext } from "@/lib/translation/log-translation-response";
-import type { createSupabaseSecretClient } from "@/utils/supabase-server";
+import type { Database } from "@/database.types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-type SupabaseClient = Awaited<ReturnType<typeof createSupabaseSecretClient>>;
+type DbClient = SupabaseClient<Database>;
 
 type CatalogMajorRow = {
   id: number;
@@ -34,7 +35,7 @@ export function pickCatalogName(
 }
 
 export async function translateUniversityMajorProgramCatalog(
-  supabase: SupabaseClient,
+  supabase: DbClient,
   universityId: string,
   logContext: TranslationLogContext,
 ): Promise<{ translatedCount: number; errors: string[] }> {
@@ -75,55 +76,81 @@ export async function translateUniversityMajorProgramCatalog(
   const errors: string[] = [];
   let translatedCount = 0;
 
-  for (const [majorId, name] of majorsToTranslate) {
+  if (majorsToTranslate.size > 0) {
     try {
-      const nameAr = await translateTextEnToAr(name, {
+      const majorItems = [...majorsToTranslate.entries()].map(([id, name]) => ({
+        id: String(id),
+        name,
+      }));
+      const translated = await translateCatalogNamesEnToAr("major", majorItems, {
         ...logContext,
-        entityType: "major",
-        entityId: String(majorId),
-        fieldKey: "name",
+        // entityType / entityId set inside translateCatalogNamesEnToAr
+        // (entityId = comma-separated major ids)
+        fieldKey: "names",
       });
 
-      const { error: updateError } = await supabase
-        .from("majors")
-        .update({ name_ar: nameAr })
-        .eq("id", majorId);
+      for (const [majorId] of majorsToTranslate) {
+        const nameAr = translated.namesById[String(majorId)]?.trim();
+        if (!nameAr) {
+          errors.push(`major:${majorId}: Missing Arabic translation.`);
+          continue;
+        }
 
-      if (updateError) {
-        throw new Error(updateError.message);
+        const { error: updateError } = await supabase
+          .from("majors")
+          .update({ name_ar: nameAr })
+          .eq("id", majorId);
+
+        if (updateError) {
+          errors.push(`major:${majorId}: ${updateError.message}`);
+          console.error(`[major-program-translation] major ${majorId}`, updateError);
+          continue;
+        }
+
+        translatedCount += 1;
       }
-
-      translatedCount += 1;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown translation error";
-      errors.push(`major:${majorId}: ${message}`);
-      console.error(`[major-program-translation] major ${majorId}`, err);
+      errors.push(`majors: ${message}`);
+      console.error("[major-program-translation] majors batch", err);
     }
   }
 
-  for (const [programId, name] of programsToTranslate) {
+  if (programsToTranslate.size > 0) {
     try {
-      const nameAr = await translateTextEnToAr(name, {
+      const programItems = [...programsToTranslate.entries()].map(([id, name]) => ({
+        id: String(id),
+        name,
+      }));
+      const translated = await translateCatalogNamesEnToAr("program", programItems, {
         ...logContext,
-        entityType: "program",
-        entityId: String(programId),
-        fieldKey: "name",
+        fieldKey: "names",
       });
 
-      const { error: updateError } = await supabase
-        .from("programs")
-        .update({ name_ar: nameAr })
-        .eq("id", programId);
+      for (const [programId] of programsToTranslate) {
+        const nameAr = translated.namesById[String(programId)]?.trim();
+        if (!nameAr) {
+          errors.push(`program:${programId}: Missing Arabic translation.`);
+          continue;
+        }
 
-      if (updateError) {
-        throw new Error(updateError.message);
+        const { error: updateError } = await supabase
+          .from("programs")
+          .update({ name_ar: nameAr })
+          .eq("id", programId);
+
+        if (updateError) {
+          errors.push(`program:${programId}: ${updateError.message}`);
+          console.error(`[major-program-translation] program ${programId}`, updateError);
+          continue;
+        }
+
+        translatedCount += 1;
       }
-
-      translatedCount += 1;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown translation error";
-      errors.push(`program:${programId}: ${message}`);
-      console.error(`[major-program-translation] program ${programId}`, err);
+      errors.push(`programs: ${message}`);
+      console.error("[major-program-translation] programs batch", err);
     }
   }
 
