@@ -46,6 +46,16 @@ import {
   type UniversityContentAr,
   type UniversitySourceRow,
 } from "@/lib/university-translatable-fields";
+import type { DiscoveryProgram } from "@/app/(protected)/student/programs/_lib/program-row-to-program";
+import type { ProgramUniversityOffering } from "@/app/(protected)/student/programs/_lib/get-program-university-offerings";
+import {
+  parseProgramDiscoveryContentAr,
+  type ProgramDiscoveryContentAr,
+} from "@/lib/program-discovery-translatable-fields";
+import {
+  parseUniversityProgramContentAr,
+  type UniversityProgramContentAr,
+} from "@/lib/university-program-translatable-fields";
 import type { Json } from "@/database.types";
 import {
   livingCostLabel,
@@ -621,5 +631,127 @@ export function localizeModuleResult(
       : result.topProfiles,
     topCategories: localizeCategoryScores(result.topCategories),
     allScores: localizeCategoryScores(result.allScores),
+  };
+}
+
+function hasArabicProgramDiscoveryContent(
+  contentAr: ProgramDiscoveryContentAr,
+): boolean {
+  return Object.entries(contentAr).some(([, value]) => {
+    if (typeof value === "string") return value.trim().length > 0;
+    if (Array.isArray(value)) return value.length > 0;
+    return false;
+  });
+}
+
+function pickLocalizedJsonSection<T>(
+  locale: Locale,
+  enSection: T[],
+  arSection: T[] | undefined,
+): T[] {
+  if (locale === "ar" && arSection && arSection.length > 0) return arSection;
+  return enSection;
+}
+
+export function applyProgramDiscoveryLocalization(
+  locale: Locale,
+  program: DiscoveryProgram,
+  contentArRaw: Json | null | undefined,
+): DiscoveryProgram {
+  const contentAr = parseProgramDiscoveryContentAr(contentArRaw);
+  if (locale !== "ar" || !hasArabicProgramDiscoveryContent(contentAr)) {
+    return program;
+  }
+
+  return {
+    ...program,
+    title: pickLocalizedField(locale, program.title, contentAr.title),
+    category: pickLocalizedField(locale, program.category, contentAr.category),
+    shortDescription: pickLocalizedField(
+      locale,
+      program.shortDescription,
+      contentAr.short_description,
+    ),
+    description: pickLocalizedField(locale, program.description, contentAr.description),
+    tags: pickLocalizedStringList(locale, program.tags, contentAr.tags),
+    salaryPotential: pickLocalizedField(
+      locale,
+      program.salaryPotential,
+      contentAr.salary_potential,
+    ),
+    demandLevel: pickLocalizedField(locale, program.demandLevel, contentAr.demand_level),
+    mathIntensity: pickLocalizedField(locale, program.mathIntensity, contentAr.math_intensity),
+    aiResilience: pickLocalizedField(locale, program.aiResilience, contentAr.ai_resilience),
+    careerPaths: pickLocalizedJsonSection(
+      locale,
+      program.careerPaths,
+      contentAr.career_paths,
+    ),
+    coreSkills: pickLocalizedJsonSection(locale, program.coreSkills, contentAr.core_skills),
+    studyPlan: pickLocalizedJsonSection(locale, program.studyPlan, contentAr.study_plan),
+    dayInLife: pickLocalizedJsonSection(locale, program.dayInLife, contentAr.day_in_life),
+    salaryRegions: pickLocalizedJsonSection(
+      locale,
+      program.salaryRegions,
+      contentAr.salary_regions,
+    ),
+    careerExamples: pickLocalizedJsonSection(
+      locale,
+      program.careerExamples,
+      contentAr.career_examples,
+    ),
+    employers: pickLocalizedJsonSection(locale, program.employers, contentAr.employers),
+    videos: program.videos.map((video, index) => {
+      const arVideo = contentAr.videos?.[index];
+      if (!arVideo) return video;
+      return {
+        ...video,
+        category: pickLocalizedField(locale, video.category, arVideo.category),
+        title: pickLocalizedField(locale, video.title, arVideo.title),
+        channel: pickLocalizedField(locale, video.channel, arVideo.channel),
+      };
+    }),
+  };
+}
+
+export function applyUniversityProgramOfferingLocalization(
+  locale: Locale,
+  offering: ProgramUniversityOffering,
+  contentArRaw: Json | null | undefined,
+): ProgramUniversityOffering {
+  const contentAr = parseUniversityProgramContentAr(contentArRaw);
+  if (locale !== "ar") return offering;
+
+  return {
+    ...offering,
+    rankingNote: pickLocalizedField(locale, offering.rankingNote, contentAr.ranking_note),
+    tuitionNote: pickLocalizedField(locale, offering.tuitionNote, contentAr.tuition_note),
+    shortDescription: pickLocalizedField(
+      locale,
+      offering.shortDescription,
+      contentAr.short_description,
+    ),
+    programSchoolNote: pickLocalizedField(
+      locale,
+      offering.programSchoolNote,
+      contentAr.program_school_note,
+    ),
+  };
+}
+
+export function applyRelatedProgramSummaryLocalization(
+  locale: Locale,
+  summary: { slug: string; title: string; category: string },
+  contentArRaw: Json | null | undefined,
+): { slug: string; title: string; category: string } {
+  const contentAr = parseProgramDiscoveryContentAr(contentArRaw);
+  if (locale !== "ar" || !hasArabicProgramDiscoveryContent(contentAr)) {
+    return summary;
+  }
+
+  return {
+    slug: summary.slug,
+    title: pickLocalizedField(locale, summary.title, contentAr.title),
+    category: pickLocalizedField(locale, summary.category, contentAr.category),
   };
 }

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { fetchAdminProgramDiscoveryDetail } from "../../_lib/fetch-admin-programs-discovery-page";
+import { fetchAdminProgramDiscoveryDetailWithTranslation } from "@/actions/admin-program-discovery-translation";
 import { AdminProgramViewClient } from "./_components/admin-program-view-client";
 
 export default async function AdminProgramDiscoveryDetailPage({
@@ -9,7 +9,7 @@ export default async function AdminProgramDiscoveryDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const program = await fetchAdminProgramDiscoveryDetail(id);
+  const program = await fetchAdminProgramDiscoveryDetailWithTranslation(id);
 
   if (!program) {
     notFound();

@@ -83,6 +83,8 @@ export type ProgramsDiscoveryRow = {
   career_examples: ProgramCareerExample[] | null;
   employers: ProgramEmployer[] | null;
   videos: ProgramVideo[] | null;
+  content_ar?: Json | null;
+  content_ar_meta?: Json | null;
   created_at: string | null;
   updated_at: string | null;
 };
