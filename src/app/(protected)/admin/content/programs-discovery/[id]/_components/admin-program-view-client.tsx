@@ -1,5 +1,6 @@
 "use client";
 
+import type { AdminProgramDiscoveryDetailWithTranslation } from "@/actions/admin-program-discovery-translation";
 import {
   deleteAdminProgramDiscovery,
   setAdminProgramDiscoveryActive,
@@ -10,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { stringifyProgramJsonSections } from "../../../_lib/admin-program-form-json";
-import type { ProgramsDiscoveryRow } from "@/lib/programs-discovery-types";
 import {
   AdminEditProgramDialog,
 } from "../../../_components/admin-edit-program-dialog";
@@ -18,9 +18,10 @@ import {
   programRowToFormValues,
 } from "../../../_components/admin-program-form-fields";
 import { AdminProgramJsonSectionsView } from "./admin-program-json-sections-view";
+import { AdminProgramTranslatePanel } from "./admin-program-translate-panel";
 
 type AdminProgramViewClientProps = {
-  program: ProgramsDiscoveryRow;
+  program: AdminProgramDiscoveryDetailWithTranslation;
 };
 
 export function AdminProgramViewClient({ program }: AdminProgramViewClientProps) {
@@ -122,6 +123,8 @@ export function AdminProgramViewClient({ program }: AdminProgramViewClientProps)
         {statusError ? (
           <p className="text-[13px] text-red-600">{statusError}</p>
         ) : null}
+
+        <AdminProgramTranslatePanel program={program} />
 
         <div className="grid gap-4 lg:grid-cols-2">
           <SectionCard title="Overview">

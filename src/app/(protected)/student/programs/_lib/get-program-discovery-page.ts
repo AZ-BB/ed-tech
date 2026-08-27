@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { ProgramsDiscoveryRow } from "@/lib/programs-discovery-types";
+import { applyProgramDiscoveryLocalization } from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import {
@@ -13,6 +15,7 @@ import {
   PROGRAM_DISCOVERY_PAGE_SIZE,
   type ProgramDiscoveryResolvedQuery,
 } from "./parse-program-discovery-search-params";
+import { programDiscoverySearchOrFilter } from "./program-discovery-search";
 
 export {
   parseProgramDiscoverySearchParams,
@@ -44,6 +47,7 @@ export type ProgramDiscoveryPageData = {
 export async function getProgramDiscoveryPage(
   query: ProgramDiscoveryResolvedQuery,
 ): Promise<ProgramDiscoveryPageData> {
+  const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
 
   let dbQuery = supabase
@@ -55,9 +59,7 @@ export async function getProgramDiscoveryPage(
     .order("title");
 
   if (query.q) {
-    dbQuery = dbQuery.or(
-      `title.ilike.%${query.q}%,slug.ilike.%${query.q}%,category.ilike.%${query.q}%,short_description.ilike.%${query.q}%`,
-    );
+    dbQuery = dbQuery.or(programDiscoverySearchOrFilter(query.q));
   }
 
   if (query.category) {
@@ -93,8 +95,12 @@ export async function getProgramDiscoveryPage(
     console.error("[program-discovery] list", error);
   }
 
-  const programs = ((data ?? []) as ProgramsDiscoveryRow[]).map(
-    programRowToDiscoveryProgram,
+  const programs = ((data ?? []) as ProgramsDiscoveryRow[]).map((row) =>
+    applyProgramDiscoveryLocalization(
+      locale,
+      programRowToDiscoveryProgram(row),
+      row.content_ar ?? null,
+    ),
   );
 
   const grouped = new Map<string, DiscoveryProgram[]>();
@@ -135,7 +141,11 @@ export async function getProgramDiscoveryPage(
     categoryOptions,
     detailProgram: detailResult.data
       ? await withValidProgramVideos(
-          programRowToDiscoveryProgram(detailResult.data as ProgramsDiscoveryRow),
+          applyProgramDiscoveryLocalization(
+            locale,
+            programRowToDiscoveryProgram(detailResult.data as ProgramsDiscoveryRow),
+            (detailResult.data as ProgramsDiscoveryRow).content_ar ?? null,
+          ),
         )
       : null,
   };

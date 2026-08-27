@@ -1,5 +1,8 @@
 import "server-only";
 
+import type { Json } from "@/database.types";
+import { applyUniversityProgramOfferingLocalization } from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import {
@@ -52,6 +55,7 @@ type UniversityProgramListRow = {
   short_description: string | null;
   program_school_note: string | null;
   featured: boolean;
+  content_ar: unknown;
   universities: UniversityRelation | UniversityRelation[] | null;
 };
 
@@ -86,6 +90,7 @@ function tuitionLabel(
 export async function getProgramUniversityOfferings(
   programSlug: string,
 ): Promise<ProgramUniversityOffering[]> {
+  const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
 
   const { data: program, error: programError } = await supabase
@@ -111,6 +116,7 @@ export async function getProgramUniversityOfferings(
       short_description,
       program_school_note,
       featured,
+      content_ar,
       universities (
         id,
         name,
@@ -143,29 +149,35 @@ export async function getProgramUniversityOfferings(
 
     const countryCode = university.country_code.trim().toUpperCase();
 
-    offerings.push({
-      linkId: row.id,
-      universityId: university.id,
-      name: university.name.trim(),
-      city: university.city.trim(),
-      countryCode,
-      countryCodeLabel: countryCodeDisplayLabel(countryCode),
-      countryName: getCountryDisplayName(countryCode),
-      region: getUniversityProgramRegion(countryCode),
-      rankingNote: rankingLabel(row.ranking_note, university.ranking),
-      tuitionNote: tuitionLabel(row.tuition_note, university.tuition_display),
-      shortDescription:
-        row.short_description?.trim() ||
-        university.description?.trim() ||
-        "",
-      programSchoolNote: row.program_school_note?.trim() || "",
-      featured: row.featured ?? false,
-      email: university.email,
-      phone: university.phone,
-      websiteUrl: university.website_url,
-      admissionsPageUrl: university.admission_page_url,
-      detailHref: `/student/universities/${university.id}`,
-    });
+    offerings.push(
+      applyUniversityProgramOfferingLocalization(
+        locale,
+        {
+          linkId: row.id,
+          universityId: university.id,
+          name: university.name.trim(),
+          city: university.city.trim(),
+          countryCode,
+          countryCodeLabel: countryCodeDisplayLabel(countryCode),
+          countryName: getCountryDisplayName(countryCode),
+          region: getUniversityProgramRegion(countryCode),
+          rankingNote: rankingLabel(row.ranking_note, university.ranking),
+          tuitionNote: tuitionLabel(row.tuition_note, university.tuition_display),
+          shortDescription:
+            row.short_description?.trim() ||
+            university.description?.trim() ||
+            "",
+          programSchoolNote: row.program_school_note?.trim() || "",
+          featured: row.featured ?? false,
+          email: university.email,
+          phone: university.phone,
+          websiteUrl: university.website_url,
+          admissionsPageUrl: university.admission_page_url,
+          detailHref: `/student/universities/${university.id}`,
+        },
+        row.content_ar as Json | null,
+      ),
+    );
   }
 
   offerings.sort((a, b) => {

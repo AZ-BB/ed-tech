@@ -2306,6 +2306,8 @@ export type Database = {
           career_paths: Json | null
           category: string
           characteristic_ids: string[] | null
+          content_ar: Json | null
+          content_ar_meta: Json | null
           core_skills: Json | null
           created_at: string | null
           day_in_life: Json | null
@@ -2332,6 +2334,8 @@ export type Database = {
           career_paths?: Json | null
           category: string
           characteristic_ids?: string[] | null
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           core_skills?: Json | null
           created_at?: string | null
           day_in_life?: Json | null
@@ -2358,6 +2362,8 @@ export type Database = {
           career_paths?: Json | null
           category?: string
           characteristic_ids?: string[] | null
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           core_skills?: Json | null
           created_at?: string | null
           day_in_life?: Json | null
@@ -4339,6 +4345,8 @@ export type Database = {
       }
       university_programs: {
         Row: {
+          content_ar: Json | null
+          content_ar_meta: Json | null
           created_at: string
           featured: boolean
           id: string
@@ -4351,6 +4359,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           created_at?: string
           featured?: boolean
           id?: string
@@ -4363,6 +4373,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          content_ar?: Json | null
+          content_ar_meta?: Json | null
           created_at?: string
           featured?: boolean
           id?: string

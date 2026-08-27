@@ -1,6 +1,11 @@
 import "server-only";
 
 import type { ProgramsDiscoveryRow } from "@/lib/programs-discovery-types";
+import {
+  applyProgramDiscoveryLocalization,
+  applyRelatedProgramSummaryLocalization,
+} from "@/lib/content-localization";
+import { getServerLocale } from "@/lib/i18n/get-server-locale";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 
 import {
@@ -12,6 +17,7 @@ import {
   type DiscoveryProgram,
 } from "./program-row-to-program";
 import { withValidProgramVideos } from "./with-valid-program-videos";
+import { programDiscoverySearchOrFilter } from "./program-discovery-search";
 
 export type ProgramExplorerPageData = {
   programs: DiscoveryProgram[];
@@ -26,6 +32,7 @@ export async function getProgramExplorerPage(options: {
   q?: string;
   interest?: string | null;
 }): Promise<ProgramExplorerPageData> {
+  const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
 
   let query = supabase
@@ -37,9 +44,7 @@ export async function getProgramExplorerPage(options: {
 
   const q = options.q?.trim();
   if (q) {
-    query = query.or(
-      `title.ilike.%${q}%,slug.ilike.%${q}%,category.ilike.%${q}%,short_description.ilike.%${q}%`,
-    );
+    query = query.or(programDiscoverySearchOrFilter(q));
   }
 
   const { data, error } = await query;
@@ -48,8 +53,12 @@ export async function getProgramExplorerPage(options: {
     console.error("[program-explorer] list", error);
   }
 
-  const programs = ((data ?? []) as ProgramsDiscoveryRow[]).map(
-    programRowToDiscoveryProgram,
+  const programs = ((data ?? []) as ProgramsDiscoveryRow[]).map((row) =>
+    applyProgramDiscoveryLocalization(
+      locale,
+      programRowToDiscoveryProgram(row),
+      row.content_ar ?? null,
+    ),
   );
 
   const interestTiles = PROGRAM_INTEREST_TILES.map((tile) => ({
@@ -84,6 +93,7 @@ export async function getProgramExplorerPage(options: {
 export async function getProgramDetailBySlug(
   slug: string,
 ): Promise<DiscoveryProgram | null> {
+  const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("programs_discovery")
@@ -98,9 +108,12 @@ export async function getProgramDetailBySlug(
   }
 
   if (!data) return null;
-  return withValidProgramVideos(
+  const program = applyProgramDiscoveryLocalization(
+    locale,
     programRowToDiscoveryProgram(data as ProgramsDiscoveryRow),
+    (data as ProgramsDiscoveryRow).content_ar ?? null,
   );
+  return withValidProgramVideos(program);
 }
 
 export type RelatedProgramSummary = {
@@ -113,10 +126,11 @@ export async function getRelatedPrograms(
   program: DiscoveryProgram,
   limit = 6,
 ): Promise<RelatedProgramSummary[]> {
+  const locale = await getServerLocale();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("programs_discovery")
-    .select("slug, title, category, characteristic_ids")
+    .select("slug, title, category, characteristic_ids, content_ar")
     .eq("active", true)
     .neq("slug", program.slug)
     .order("featured", { ascending: false })
@@ -130,7 +144,7 @@ export async function getRelatedPrograms(
 
   const rows = (data ?? []) as Pick<
     ProgramsDiscoveryRow,
-    "slug" | "title" | "category" | "characteristic_ids"
+    "slug" | "title" | "category" | "characteristic_ids" | "content_ar"
   >[];
 
   const scored = rows.map((row) => {
@@ -149,5 +163,12 @@ export async function getRelatedPrograms(
   return scored
     .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
     .slice(0, limit)
-    .map(({ slug, title, category }) => ({ slug, title, category }));
+    .map(({ slug, title, category }) => {
+      const row = rows.find((item) => item.slug === slug);
+      return applyRelatedProgramSummaryLocalization(
+        locale,
+        { slug, title, category },
+        row?.content_ar ?? null,
+      );
+    });
 }
