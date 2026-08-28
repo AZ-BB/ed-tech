@@ -4,12 +4,12 @@ import {
   CUSTOM_WITH_FORM_SIGNUP_SOURCE,
   DIANA_SIGNUP_SOURCE,
   MILAD_SIGNUP_SOURCE,
-  TAREQ_SIGNUP_SOURCE,
+  TARIQ_SIGNUP_SOURCE,
   type FunnelSignupSource,
 } from "@/lib/funnel-stats";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
-export type AdminFunnelKey = "milad" | "diana" | "tareq" | "custom-with-form";
+export type AdminFunnelKey = "milad" | "diana" | "tariq" | "custom-with-form";
 
 export type AdminFunnelStudentRow = {
   id: string;
@@ -28,7 +28,7 @@ export type AdminFunnelStudentsListResult = {
 const FUNNEL_SOURCE_BY_KEY: Record<AdminFunnelKey, FunnelSignupSource> = {
   milad: MILAD_SIGNUP_SOURCE,
   diana: DIANA_SIGNUP_SOURCE,
-  tareq: TAREQ_SIGNUP_SOURCE,
+  tariq: TARIQ_SIGNUP_SOURCE,
   "custom-with-form": CUSTOM_WITH_FORM_SIGNUP_SOURCE,
 };
 

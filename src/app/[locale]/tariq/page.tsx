@@ -6,11 +6,11 @@ import { LandingStickyCta } from "@/components/landing/landing-sticky-cta";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
-import { TAREQ_LANDING_PAGE_PATH, incrementPageVisit } from "@/lib/page-visits";
+import { TARIQ_LANDING_PAGE_PATH, incrementPageVisit } from "@/lib/page-visits";
 import { LandingPageJsonLd } from "@/lib/seo/landing-page-json-ld";
 
-const CUSTOM_LANDING_PATH = "/tareq";
-const CUSTOM_SIGNUP_HREF = "/tareq/signup";
+const CUSTOM_LANDING_PATH = "/tariq";
+const CUSTOM_SIGNUP_HREF = "/tariq/signup";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale } = await params;
   const dict = await getDictionary(locale);
   const baseUrl = await getPublicSiteBaseUrl();
-  const canonical = `${baseUrl}/${locale}/tareq`;
+  const canonical = `${baseUrl}/${locale}/tariq`;
 
   return {
     title: dict.home.metadataTitle,
@@ -30,9 +30,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical,
       languages: {
-        en: `${baseUrl}/en/tareq`,
-        ar: `${baseUrl}/ar/tareq`,
-        "x-default": `${baseUrl}/en/tareq`,
+        en: `${baseUrl}/en/tariq`,
+        ar: `${baseUrl}/ar/tariq`,
+        "x-default": `${baseUrl}/en/tariq`,
       },
     },
     openGraph: {
@@ -55,10 +55,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function TareqLandingPage({ params }: PageProps) {
+export default async function TariqLandingPage({ params }: PageProps) {
   const { locale } = await params;
   if (locale === "ar") {
-    await incrementPageVisit(TAREQ_LANDING_PAGE_PATH);
+    await incrementPageVisit(TARIQ_LANDING_PAGE_PATH);
   }
   const dict = await getDictionary(locale);
   const baseUrl = await getPublicSiteBaseUrl();

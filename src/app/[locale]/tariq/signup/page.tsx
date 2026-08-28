@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { CustomWithFormSignupForm } from "@/components/auth/custom-with-form-signup-form";
-import { tareqStudentSignUp } from "@/actions/auth";
+import { tariqStudentSignUp } from "@/actions/auth";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 
@@ -23,12 +23,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default function TareqSignupPage() {
+export default function TariqSignupPage() {
   return (
     <CustomWithFormSignupForm
       fontClassName={cairo.className}
-      landingHref="/tareq"
-      signUp={tareqStudentSignUp}
+      landingHref="/tariq"
+      signUp={tariqStudentSignUp}
     />
   );
 }

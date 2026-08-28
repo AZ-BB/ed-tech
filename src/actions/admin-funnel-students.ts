@@ -56,7 +56,7 @@ export async function loadFunnelStudentsList(
     return { ok: false, error: access.error };
   }
 
-  const validKeys: AdminFunnelKey[] = ["milad", "diana", "tareq", "custom-with-form"];
+  const validKeys: AdminFunnelKey[] = ["milad", "diana", "tariq", "custom-with-form"];
   if (!validKeys.includes(funnelKey)) {
     return { ok: false, error: "Unknown funnel." };
   }
