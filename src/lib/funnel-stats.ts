@@ -5,19 +5,19 @@ import {
   DIANA_LANDING_PAGE_PATH,
   getPageVisitCount,
   INFLUENCER_LANDING_PAGE_PATH,
-  TAREQ_LANDING_PAGE_PATH,
+  TARIQ_LANDING_PAGE_PATH,
 } from "@/lib/page-visits";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export const MILAD_SIGNUP_SOURCE = "custom-signup" as const;
 export const DIANA_SIGNUP_SOURCE = "diana-signup" as const;
-export const TAREQ_SIGNUP_SOURCE = "tareq-signup" as const;
+export const TARIQ_SIGNUP_SOURCE = "tariq-signup" as const;
 export const CUSTOM_WITH_FORM_SIGNUP_SOURCE = "custom-with-form-signup" as const;
 
 export type FunnelSignupSource =
   | typeof MILAD_SIGNUP_SOURCE
   | typeof DIANA_SIGNUP_SOURCE
-  | typeof TAREQ_SIGNUP_SOURCE
+  | typeof TARIQ_SIGNUP_SOURCE
   | typeof CUSTOM_WITH_FORM_SIGNUP_SOURCE;
 
 export type FunnelStats = {
@@ -68,14 +68,14 @@ export async function getDianaFunnelStats(): Promise<FunnelStats> {
   };
 }
 
-export async function getTareqFunnelStats(): Promise<FunnelStats> {
+export async function getTariqFunnelStats(): Promise<FunnelStats> {
   const [visits, signups] = await Promise.all([
-    getPageVisitCount(TAREQ_LANDING_PAGE_PATH),
-    getFunnelSignupCount(TAREQ_SIGNUP_SOURCE),
+    getPageVisitCount(TARIQ_LANDING_PAGE_PATH),
+    getFunnelSignupCount(TARIQ_SIGNUP_SOURCE),
   ]);
 
   return {
-    landingPath: TAREQ_LANDING_PAGE_PATH,
+    landingPath: TARIQ_LANDING_PAGE_PATH,
     visits,
     signups,
   };

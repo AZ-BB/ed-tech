@@ -4,7 +4,7 @@ import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export const INFLUENCER_LANDING_PAGE_PATH = "/ar/milad";
 export const DIANA_LANDING_PAGE_PATH = "/ar/diana";
-export const TAREQ_LANDING_PAGE_PATH = "/ar/tareq";
+export const TARIQ_LANDING_PAGE_PATH = "/ar/tariq";
 export const CUSTOM_WITH_FORM_LANDING_PAGE_PATH = "/ar/custom-with-form";
 
 export async function incrementPageVisit(path: string): Promise<void> {

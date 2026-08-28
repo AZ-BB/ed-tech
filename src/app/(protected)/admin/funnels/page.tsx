@@ -3,7 +3,7 @@ import {
   getCustomWithFormFunnelStats,
   getDianaFunnelStats,
   getMiladFunnelStats,
-  getTareqFunnelStats,
+  getTariqFunnelStats,
 } from "@/lib/funnel-stats";
 import type { Metadata } from "next";
 
@@ -14,10 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminFunnelsPage() {
-  const [miladStats, dianaStats, tareqStats, customWithFormStats] = await Promise.all([
+  const [miladStats, dianaStats, tariqStats, customWithFormStats] = await Promise.all([
     getMiladFunnelStats(),
     getDianaFunnelStats(),
-    getTareqFunnelStats(),
+    getTariqFunnelStats(),
     getCustomWithFormFunnelStats(),
   ]);
 
@@ -37,9 +37,9 @@ export default async function AdminFunnelsPage() {
           color: "#9B59B6",
         },
         {
-          key: "tareq",
-          title: "Tareq",
-          stats: tareqStats,
+          key: "tariq",
+          title: "Tariq",
+          stats: tariqStats,
           color: "#E67E22",
         },
         {
