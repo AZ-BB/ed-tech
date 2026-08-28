@@ -53,6 +53,8 @@ export const localizedPublicPaths = [
   "/milad/signup",
   "/diana",
   "/diana/signup",
+  "/tareq",
+  "/tareq/signup",
   "/custom-with-form",
   "/custom-with-form/signup",
   "/auth/reset-password",
