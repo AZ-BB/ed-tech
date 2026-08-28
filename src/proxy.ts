@@ -142,6 +142,7 @@ export async function proxy(request: NextRequest) {
     "/blog",
     "/milad",
     "/diana",
+    "/tareq",
     "/custom-with-form",
   ];
   const isPublicGuestOnlyRoute = publicGuestOnlyRoutes.some((route) =>
@@ -157,7 +158,8 @@ export async function proxy(request: NextRequest) {
     pathMatches(pathname, "/auth/reset-password");
   const isFormFunnelSignup =
     pathMatches(pathname, "/custom-with-form/signup") ||
-    pathMatches(pathname, "/diana/signup");
+    pathMatches(pathname, "/diana/signup") ||
+    pathMatches(pathname, "/tareq/signup");
 
   if (!user && !isPublicForGuests) {
     const redirectUrl = new URL(loginPath(request), request.url);

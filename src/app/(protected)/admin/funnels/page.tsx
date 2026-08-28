@@ -3,6 +3,7 @@ import {
   getCustomWithFormFunnelStats,
   getDianaFunnelStats,
   getMiladFunnelStats,
+  getTareqFunnelStats,
 } from "@/lib/funnel-stats";
 import type { Metadata } from "next";
 
@@ -13,9 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminFunnelsPage() {
-  const [miladStats, dianaStats, customWithFormStats] = await Promise.all([
+  const [miladStats, dianaStats, tareqStats, customWithFormStats] = await Promise.all([
     getMiladFunnelStats(),
     getDianaFunnelStats(),
+    getTareqFunnelStats(),
     getCustomWithFormFunnelStats(),
   ]);
 
@@ -33,6 +35,12 @@ export default async function AdminFunnelsPage() {
           title: "Diana",
           stats: dianaStats,
           color: "#9B59B6",
+        },
+        {
+          key: "tareq",
+          title: "Tareq",
+          stats: tareqStats,
+          color: "#E67E22",
         },
         {
           key: "custom-with-form",
