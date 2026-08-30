@@ -4,13 +4,13 @@ import { customWithFormStudentSignUp } from "@/actions/auth";
 import { CalendlyInlineEmbed } from "@/components/calendly-inline-embed";
 import { COUNTRIES, getLocalizedCountryName } from "@/lib/countries";
 import {
-  CUSTOM_WITH_FORM_CALENDLY_URL,
   CUSTOM_WITH_FORM_FEATURE,
   CUSTOM_WITH_FORM_PHONE_COUNTRIES,
   CUSTOM_WITH_FORM_TZ_TO_COUNTRY,
   CUSTOM_WITH_FORM_WEBHOOK_URL,
   flagEmojiFromIso2,
 } from "@/lib/custom-with-form";
+import { CALENDLY_INFLUENCER_ADVISOR_URL } from "@/lib/calendly-scheduling";
 import { LocalizedLink } from "@/lib/i18n/localized-link";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { GeneralResponse } from "@/utils/response";
@@ -271,7 +271,7 @@ export function CustomWithFormSignupForm({
               <p className={styles.lede}>{copy.bookingLede}</p>
               <div className={styles.cal}>
                 <CalendlyInlineEmbed
-                  url={CUSTOM_WITH_FORM_CALENDLY_URL}
+                  url={CALENDLY_INFLUENCER_ADVISOR_URL}
                   title={copy.calendlyTitle}
                   prefill={{
                     name: `${firstName.trim()} ${lastName.trim()}`.trim(),

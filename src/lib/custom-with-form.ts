@@ -1,9 +1,5 @@
 export const CUSTOM_WITH_FORM_FEATURE = "Scholarships";
 
-export const CUSTOM_WITH_FORM_CALENDLY_URL =
-  process.env.NEXT_PUBLIC_CALENDLY_CUSTOM_WITH_FORM_URL?.trim() ||
-  "https://calendly.com/ghassan-univeera/free-advisory-session-clone?hide_event_type_details=1&hide_gdpr_banner=1";
-
 export const CUSTOM_WITH_FORM_WEBHOOK_URL =
   process.env.NEXT_PUBLIC_CUSTOM_WITH_FORM_WEBHOOK_URL?.trim() ||
   "https://hooks.zapier.com/hooks/catch/14521668/4trpfut/";
