@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { StudentSpinner } from "@/app/(protected)/student/_components/student-spinner";
 
@@ -14,7 +14,18 @@ type Props = {
   prefill?: CalendlyPrefill;
   title?: string;
   className?: string;
+  onEventScheduled?: () => void;
 };
+
+function isCalendlyMessageEvent(data: unknown): data is { event: string } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "event" in data &&
+    typeof (data as { event: unknown }).event === "string" &&
+    (data as { event: string }).event.startsWith("calendly.")
+  );
+}
 
 /** Calendly inline iframe — avoids widget.js timing issues; matches application-support embed behavior. */
 export function CalendlyInlineEmbed({
@@ -22,8 +33,28 @@ export function CalendlyInlineEmbed({
   prefill,
   title = "Book your session — Calendly",
   className = "min-h-[780px] w-full min-w-[320px] rounded-none border-0 bg-white",
+  onEventScheduled,
 }: Props) {
   const [iframeSrc, setIframeSrc] = useState("");
+  const onEventScheduledRef = useRef(onEventScheduled);
+
+  useEffect(() => {
+    onEventScheduledRef.current = onEventScheduled;
+  }, [onEventScheduled]);
+
+  useEffect(() => {
+    if (!onEventScheduled) return;
+
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== "https://calendly.com") return;
+      if (!isCalendlyMessageEvent(event.data)) return;
+      if (event.data.event !== "calendly.event_scheduled") return;
+      onEventScheduledRef.current?.();
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [onEventScheduled]);
 
   useEffect(() => {
     try {

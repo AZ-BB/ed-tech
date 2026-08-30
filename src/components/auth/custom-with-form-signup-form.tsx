@@ -11,11 +11,12 @@ import {
   flagEmojiFromIso2,
 } from "@/lib/custom-with-form";
 import { CALENDLY_INFLUENCER_ADVISOR_URL } from "@/lib/calendly-scheduling";
+import { localizePath } from "@/lib/i18n/config";
 import { LocalizedLink } from "@/lib/i18n/localized-link";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { GeneralResponse } from "@/utils/response";
-import { unstable_rethrow } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { unstable_rethrow, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "./custom-with-form-signup.module.css";
 
@@ -59,8 +60,13 @@ export function CustomWithFormSignupForm({
   signUp?: (formData: FormData) => Promise<GeneralResponse<boolean>>;
 }) {
   const { dict, locale } = useLocale();
+  const router = useRouter();
   const copy = dict.customWithFormSignup;
   const isLtr = locale !== "ar";
+
+  const handleCalendlyScheduled = useCallback(() => {
+    router.push(localizePath("/student", locale));
+  }, [locale, router]);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -278,6 +284,7 @@ export function CustomWithFormSignupForm({
                     email: email.trim(),
                   }}
                   className="h-full min-h-[700px] w-full border-0 bg-white"
+                  onEventScheduled={handleCalendlyScheduled}
                 />
               </div>
               <a href="/student" className={styles.portalLink}>
