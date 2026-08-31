@@ -120,6 +120,7 @@ export async function proxy(request: NextRequest) {
   const publicOpenRoutes = [
     "/application-support",
     "/api/webhooks",
+    "/api/cron",
     "/api/students/independent",
     "/recommendation",
     "/webinars",

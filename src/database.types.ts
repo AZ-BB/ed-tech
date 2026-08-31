@@ -295,8 +295,10 @@ export type Database = {
           destination_country_code: string
           help_with: string | null
           id: number
+          invitee_timezone: string | null
           lead_qualification: string | null
           lead_qualified_at: string | null
+          meeting_link: string | null
           specific_uni: string | null
           status: Database["public"]["Enums"]["advisor_session_status"] | null
           student_email: string | null
@@ -304,6 +306,7 @@ export type Database = {
           student_name: string | null
           student_phone: string | null
           updated_at: string | null
+          whatsapp_reminder_sent_at: string | null
         }
         Insert: {
           advisor_id: string
@@ -314,8 +317,10 @@ export type Database = {
           destination_country_code: string
           help_with?: string | null
           id?: number
+          invitee_timezone?: string | null
           lead_qualification?: string | null
           lead_qualified_at?: string | null
+          meeting_link?: string | null
           specific_uni?: string | null
           status?: Database["public"]["Enums"]["advisor_session_status"] | null
           student_email?: string | null
@@ -323,6 +328,7 @@ export type Database = {
           student_name?: string | null
           student_phone?: string | null
           updated_at?: string | null
+          whatsapp_reminder_sent_at?: string | null
         }
         Update: {
           advisor_id?: string
@@ -333,8 +339,10 @@ export type Database = {
           destination_country_code?: string
           help_with?: string | null
           id?: number
+          invitee_timezone?: string | null
           lead_qualification?: string | null
           lead_qualified_at?: string | null
+          meeting_link?: string | null
           specific_uni?: string | null
           status?: Database["public"]["Enums"]["advisor_session_status"] | null
           student_email?: string | null
@@ -342,6 +350,7 @@ export type Database = {
           student_name?: string | null
           student_phone?: string | null
           updated_at?: string | null
+          whatsapp_reminder_sent_at?: string | null
         }
         Relationships: [
           {
@@ -2126,8 +2135,10 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: number
+          invitee_timezone: string | null
           lead_qualification: string | null
           lead_qualified_at: string | null
+          meeting_link: string | null
           payment_completed_at: string | null
           payment_in_progress_at: string | null
           scheduled_at: string | null
@@ -2141,6 +2152,7 @@ export type Database = {
           student_id: string
           student_name: string | null
           updated_at: string
+          whatsapp_reminder_sent_at: string | null
         }
         Insert: {
           assigned_at?: string | null
@@ -2149,8 +2161,10 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: number
+          invitee_timezone?: string | null
           lead_qualification?: string | null
           lead_qualified_at?: string | null
+          meeting_link?: string | null
           payment_completed_at?: string | null
           payment_in_progress_at?: string | null
           scheduled_at?: string | null
@@ -2164,6 +2178,7 @@ export type Database = {
           student_id: string
           student_name?: string | null
           updated_at?: string
+          whatsapp_reminder_sent_at?: string | null
         }
         Update: {
           assigned_at?: string | null
@@ -2172,8 +2187,10 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: number
+          invitee_timezone?: string | null
           lead_qualification?: string | null
           lead_qualified_at?: string | null
+          meeting_link?: string | null
           payment_completed_at?: string | null
           payment_in_progress_at?: string | null
           scheduled_at?: string | null
@@ -2187,6 +2204,7 @@ export type Database = {
           student_id?: string
           student_name?: string | null
           updated_at?: string
+          whatsapp_reminder_sent_at?: string | null
         }
         Relationships: [
           {

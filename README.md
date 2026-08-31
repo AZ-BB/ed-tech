@@ -35,6 +35,27 @@ External partner docs for creating independent students and auto sign-in:
 
 [docs/independent-student-provision-api.md](docs/independent-student-provision-api.md)
 
+## Stripe payments (application & post-admission support)
+
+Payment request emails link to `/application-support/pay/{token}` or `/post-admission-support/pay/{token}`. Those pages embed a Stripe Payment Element on your site (no redirect to Stripe hosted checkout).
+
+### Environment
+
+```bash
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Optional — local webhook testing via `npm run stripe`
+STRIPE_CLI_WEBHOOK_SECRET=whsec_...
+```
+
+Local webhook forwarding:
+
+```bash
+npm run stripe
+```
+
 ## Calendly integration
 
 ### Advisor OAuth (per-advisor scheduling)
@@ -90,6 +111,74 @@ NEXT_PUBLIC_CALENDLY_APPLICATION_SUPPORT_URL=https://calendly.com/admin-univeera
 4. Local testing: expose the dev server with ngrok or Cloudflare Tunnel to `http://localhost:3000/api/webhooks/calendly`.
 
 Advisor bookings pass `utm_content=advisor_session:<id>` in the embed URL so the webhook can match the row. Application-support Calendly flows without that prefix are ignored.
+
+## WhatsApp Cloud API (day-before session reminders)
+
+Sends one-way WhatsApp template reminders the day before Calendly-booked **advisor sessions** and **post-admission support sessions**. Email confirmations via Resend are unchanged.
+
+Official docs: [Get Started](https://developers.facebook.com/docs/whatsapp/cloud-api/get-started/), [Access Tokens](https://developers.facebook.com/docs/whatsapp/business-management-api/access-tokens/), [Message Templates](https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates/), [Send Templates](https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-message-templates/), [Webhooks](https://developers.facebook.com/docs/whatsapp/cloud-api/guides/set-up-webhooks/).
+
+### Environment
+
+```bash
+WHATSAPP_ENABLED=1
+WHATSAPP_ACCESS_TOKEN=your_system_user_permanent_token
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+WHATSAPP_API_VERSION=v22.0
+WHATSAPP_TEMPLATE_SESSION_REMINDER=session_day_before_reminder
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_random_verify_token
+
+# Required for the daily cron job (shared with webinar reminders)
+CRON_SECRET=your_cron_secret
+```
+
+Apply migration `20260831120000_whatsapp_session_reminders.sql` before enabling.
+
+### Meta Business setup (one-time)
+
+1. **Business Portfolio** — [business.facebook.com](https://business.facebook.com) → create or use an existing portfolio; complete **Business verification** in Security Center.
+2. **Developer account** — [developers.facebook.com](https://developers.facebook.com) → register as a developer.
+3. **Meta app** — My Apps → Create App → **Business** type → connect to your portfolio.
+4. **WhatsApp product** — App Dashboard → Add Product → WhatsApp → Set up → connect or create a **WhatsApp Business Account (WABA)**. Record **WABA ID**, **Phone Number ID**, and **App ID** from API Setup.
+5. **Test recipients** (Development mode) — API Setup → add and verify your personal WhatsApp number.
+6. **First test message** — Generate a temporary token on API Setup and send the pre-approved `hello_world` template.
+7. **Production phone number** — WhatsApp Manager → Phone numbers → add and verify a business number; set display name (e.g. Univeera).
+8. **Permanent token** — Business Settings → System users → create user → Assign assets (App + WABA, full control) → Generate token with permissions: `whatsapp_business_messaging`, `whatsapp_business_management`, `business_management`. Store in `WHATSAPP_ACCESS_TOKEN`.
+9. **Message template** — WhatsApp Manager → Message templates → Create → Category **Utility** → name `session_day_before_reminder` → language **English** → body:
+
+   ```
+   Hi {{1}}, this is a reminder that your {{2}} session with {{3}} is tomorrow ({{4}}). Meeting link: {{5}}. Reply here if you need help.
+   ```
+
+   Submit and wait for **APPROVED** status before production use.
+
+10. **Webhook (optional, recommended)** — App Dashboard → WhatsApp → Configuration:
+    - Callback URL: `https://<your-domain>/api/webhooks/whatsapp`
+    - Verify token: same as `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
+    - Subscribe to `messages`
+
+    If inbound events do not arrive, force-subscribe via Graph API:
+
+    ```bash
+    curl -X POST "https://graph.facebook.com/v22.0/WABA_ID/subscribed_apps" \
+      -H "Authorization: Bearer SYSTEM_USER_TOKEN" \
+      -d "subscribed_fields=messages"
+    ```
+
+11. **Live mode** — Switch app to Live after business verification; add a payment method for WhatsApp conversation billing.
+
+### Cron schedule
+
+Vercel runs `/api/cron/session-reminders` daily at **05:00 UTC** (~08:00 GST). It queries sessions scheduled for the next UTC calendar day and sends WhatsApp reminders to students with a phone on file.
+
+Manual trigger:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  https://<your-domain>/api/cron/session-reminders
+```
+
+When Calendly books a session, the webhook stores `invitee_timezone` and `meeting_link` on the session row for use in the reminder.
 
 ## Arabic content translation (OpenAI)
 
