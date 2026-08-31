@@ -1,5 +1,6 @@
 import { confirmCustomSubscriptionFromSession } from "@/lib/stripe/confirm-custom-subscription-from-session";
 import { confirmPaymentFromSession } from "@/lib/stripe/confirm-application-payment-from-session";
+import { confirmStandalonePaymentFromSession } from "@/lib/stripe/confirm-standalone-payment-from-session";
 import { confirmFunnelSubscriptionFromSession } from "@/lib/stripe/confirm-funnel-subscription-from-session";
 import { confirmIndividualSignupPaymentFromSession } from "@/lib/stripe/confirm-individual-signup-payment-from-session";
 import {
@@ -48,6 +49,15 @@ async function handleCheckoutSessionCompleted(
     const result = await confirmIndividualSignupPaymentFromSession(sessionId);
     if (!result.ok) {
       console.error("[stripe webhook] individual signup payment confirm failed", result.error);
+      throw new Error(result.error);
+    }
+    return;
+  }
+
+  if (session.metadata?.kind === "standalone_payment") {
+    const result = await confirmStandalonePaymentFromSession(sessionId);
+    if (!result.ok) {
+      console.error("[stripe webhook] standalone payment confirm failed", result.error);
       throw new Error(result.error);
     }
     return;

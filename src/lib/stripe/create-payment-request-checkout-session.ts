@@ -6,7 +6,7 @@ import { getStripeClient } from "@/lib/stripe/config";
 
 export type CreatePaymentRequestCheckoutSessionInput = {
   paymentId: number;
-  customerEmail: string;
+  customerEmail?: string;
   amountAed: number;
   productName: string;
   productDescription: string;
@@ -62,11 +62,12 @@ export async function createPaymentRequestCheckoutSession(
   const amountFils = aedToFils(input.amountAed);
 
   try {
+    const customerEmail = input.customerEmail?.trim();
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       ui_mode: "elements",
       currency: "aed",
-      customer_email: input.customerEmail,
+      ...(customerEmail ? { customer_email: customerEmail } : {}),
       line_items: [
         {
           quantity: 1,
