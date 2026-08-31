@@ -1,61 +1,33 @@
 import "server-only";
 
-import { getRequestCountryCode } from "@/lib/geo/get-request-country-code";
+import { resolvePricingForRequest } from "@/lib/stripe/stripe-student-pricing";
+import type { SupportedCurrency } from "@/lib/stripe/stripe-student-pricing-shared";
 
-export const INDIVIDUAL_SIGNUP_CURRENCIES = [
-  "AED",
-  "BHD",
-  "EGP",
-  "JOD",
-  "KWD",
-  "OMR",
-  "QAR",
-  "USD",
-] as const;
-
-export type IndividualSignupCurrency = (typeof INDIVIDUAL_SIGNUP_CURRENCIES)[number];
+export {
+  SUPPORTED_CURRENCIES as INDIVIDUAL_SIGNUP_CURRENCIES,
+  type SupportedCurrency as IndividualSignupCurrency,
+} from "@/lib/stripe/stripe-student-pricing-shared";
 
 export type IndividualSignupPricing = {
-  currency: IndividualSignupCurrency;
+  currency: SupportedCurrency;
   displayPrice: string;
   countryCode: string | null;
 };
 
-/** Static display prices matching the Stripe product currency options. */
-const DISPLAY_PRICES: Record<IndividualSignupCurrency, string> = {
-  AED: "AED 99",
-  BHD: "BHD 10",
-  EGP: "EGP 1,380",
-  JOD: "JOD 19",
-  KWD: "KWD 8.30",
-  OMR: "OMR 10",
-  QAR: "QAR 100",
-  USD: "$27",
-};
-
-const COUNTRY_TO_CURRENCY: Record<string, IndividualSignupCurrency> = {
-  BH: "BHD",
-  EG: "EGP",
-  JO: "JOD",
-  KW: "KWD",
-  OM: "OMR",
-  QA: "QAR",
-  US: "USD",
-  AE: "AED",
-};
-
-function resolveCurrencyForCountry(countryCode: string | null): IndividualSignupCurrency {
-  const code = countryCode?.trim().toUpperCase() ?? "";
-  return COUNTRY_TO_CURRENCY[code] ?? "AED";
-}
-
+/** Resolve localized signup fee pricing from admin-managed Stripe product config. */
 export async function getIndividualSignupPricingForRequest(): Promise<IndividualSignupPricing> {
-  const countryCode = await getRequestCountryCode();
-  const currency = resolveCurrencyForCountry(countryCode);
+  const resolved = await resolvePricingForRequest("individual_signup");
+  if ("error" in resolved) {
+    return {
+      currency: "AED",
+      displayPrice: "AED —",
+      countryCode: null,
+    };
+  }
 
   return {
-    currency,
-    displayPrice: DISPLAY_PRICES[currency],
-    countryCode,
+    currency: resolved.currency,
+    displayPrice: resolved.displayPrice,
+    countryCode: resolved.countryCode,
   };
 }

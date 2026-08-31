@@ -5,6 +5,7 @@ import { LOCALE_COOKIE } from "@/lib/i18n/locale-cookie";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
 import { requiresFunnelSubscription, requiresIndividualSignupPayment } from "@/lib/student-subscription";
 import { getIndividualSignupPricingForRequest } from "@/lib/stripe/individual-signup-pricing";
+import { resolvePricingForRequest } from "@/lib/stripe/stripe-student-pricing";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -37,6 +38,14 @@ export default async function StudentLayout({
   const showFunnelSubscribeCta = requiresFunnelSubscription(auth);
   const requiresSignupPayment = requiresIndividualSignupPayment(auth);
 
+  const funnelSubscriptionPricing = showFunnelSubscribeCta
+    ? await resolvePricingForRequest("funnel_subscription")
+    : null;
+  const funnelSubscriptionDisplayPrice =
+    funnelSubscriptionPricing && !("error" in funnelSubscriptionPricing)
+      ? funnelSubscriptionPricing.displayPrice
+      : null;
+
   if (requiresSignupPayment) {
     const pricing = await getIndividualSignupPricingForRequest();
     const displayPrice = pricing.displayPrice;
@@ -57,6 +66,7 @@ export default async function StudentLayout({
         hasSchoolLinked={auth.hasSchoolLinked}
         featureAccess={auth.featureAccess}
         showFunnelSubscribeCta={showFunnelSubscribeCta}
+        funnelSubscriptionDisplayPrice={funnelSubscriptionDisplayPrice}
         isCustomStudent={auth.studentType === "custom"}
       >
         {children}

@@ -466,6 +466,7 @@ export function StudentLayoutShell({
   hasSchoolLinked = true,
   featureAccess = defaultStudentFeatureAccess(true),
   showFunnelSubscribeCta = false,
+  funnelSubscriptionDisplayPrice = null,
   isCustomStudent = false,
 }: {
   children: React.ReactNode;
@@ -474,6 +475,7 @@ export function StudentLayoutShell({
   hasSchoolLinked?: boolean;
   featureAccess?: StudentFeatureAccess;
   showFunnelSubscribeCta?: boolean;
+  funnelSubscriptionDisplayPrice?: string | null;
   isCustomStudent?: boolean;
 }) {
   /** Collapsible drawer from the right + dimmed overlay — same pattern as dashboard.html */
@@ -539,6 +541,7 @@ export function StudentLayoutShell({
     <StudentFeatureGateProvider
       featureAccess={featureAccess}
       showFunnelSubscribeCta={showFunnelSubscribeCta}
+      funnelSubscriptionDisplayPrice={funnelSubscriptionDisplayPrice}
       isCustomStudent={isCustomStudent}
     >
       <div

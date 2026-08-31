@@ -1,14 +1,15 @@
 import "server-only";
 
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
-import { getIndividualSignupPriceId, getStripeClient } from "@/lib/stripe/config";
-import type { IndividualSignupCurrency } from "@/lib/stripe/individual-signup-pricing";
+import { getStripeClient } from "@/lib/stripe/config";
+import type { SupportedCurrency } from "@/lib/stripe/stripe-student-pricing-shared";
 
 export type CreateIndividualSignupCheckoutInput = {
   studentId: string;
   customerEmail: string;
   stripeCustomerId?: string | null;
-  currency: IndividualSignupCurrency;
+  currency: SupportedCurrency;
+  stripePriceId: string;
 };
 
 export type CreateIndividualSignupCheckoutResult =
@@ -26,12 +27,12 @@ export async function createIndividualSignupCheckoutSession(
     };
   }
 
-  const priceId = getIndividualSignupPriceId();
+  const priceId = input.stripePriceId.trim();
   if (!priceId) {
     return {
       ok: false,
       error:
-        "Signup payment price is not configured. Set STRIPE_INDIVIDUAL_SIGNUP_PRICE_ID.",
+        "Signup payment price is not configured. Set STRIPE_INDIVIDUAL_SIGNUP_PRICE_ID or configure pricing in admin settings.",
     };
   }
 

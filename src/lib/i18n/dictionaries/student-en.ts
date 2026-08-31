@@ -1298,10 +1298,12 @@ export const studentEn = {
     },
   },
   subscription: {
-    subscribe: "Subscribe now",
+    subscribe: "Subscribe for {price}/month",
+    subscribeGeneric: "Subscribe now",
     subscribing: "Redirecting…",
     maybeLater: "Maybe later",
     checkoutFailed: "Could not start checkout. Try again.",
+    pricePerMonth: "per month",
     dashboardTitle: "Unlock full Univeera access",
     dashboardDesc:
       "Subscribe to a monthly plan to unlock all platform features — program discovery, advisors, application support, and more.",
@@ -1319,7 +1321,7 @@ export const studentEn = {
     modalVideoText:
       "Watch how Univeera helps you move from university discovery to application and admission.",
     modalVideoAria: "Video: how Univeera supports your university journey",
-    modalCta: "Get Full Univeera Access Now",
+    modalCta: "Subscribe for {price}/month",
     modalReassure: "Instant access to all Univeera platform features.",
     closeAria: "Close dialog",
     settingsTitle: "Subscription",
@@ -1408,7 +1410,7 @@ export const studentEn = {
       "Internships, events, and essay review.",
       "Application support and post-admission guidance.",
     ],
-    cta: "Subscribe now",
+    cta: "Subscribe for {price}/month",
     paying: "Redirecting…",
     checkoutFailed: "Could not start checkout. Try again.",
     canceledMessage: "Subscription checkout was canceled. You can try again when ready.",

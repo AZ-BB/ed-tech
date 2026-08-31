@@ -9,7 +9,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-export function StudentSubscriptionWall() {
+export function StudentSubscriptionWall({ displayPrice }: { displayPrice: string }) {
   const { dict } = useLocale();
   const copy = dict.student.customSubscription;
   const router = useRouter();
@@ -65,6 +65,7 @@ export function StudentSubscriptionWall() {
   }
 
   const isBusy = payPending || confirmPending || logoutPending || Boolean(sessionId);
+  const ctaLabel = copy.cta.replace("{price}", displayPrice);
 
   return (
     <div className="student-portal flex min-h-screen items-center justify-center bg-[var(--sand)] px-4 py-10 font-[family-name:var(--font-dm-sans)]">
@@ -92,6 +93,10 @@ export function StudentSubscriptionWall() {
         </h1>
         <p className="mb-[18px] text-[13.5px] leading-relaxed text-[var(--text-mid)]">
           {copy.body}
+        </p>
+
+        <p className="mb-[18px] font-[family-name:var(--font-dm-serif)] text-[36px] leading-none text-[var(--green-dark)]">
+          {displayPrice}
         </p>
 
         <ul className="mb-[22px] flex list-none flex-col gap-2.5 p-0">
@@ -134,7 +139,7 @@ export function StudentSubscriptionWall() {
           disabled={isBusy}
           onClick={handleSubscribe}
         >
-          {payPending || confirmPending ? copy.paying : copy.cta}
+          {payPending || confirmPending ? copy.paying : ctaLabel}
         </button>
 
         <button

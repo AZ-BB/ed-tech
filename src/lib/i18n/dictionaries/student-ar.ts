@@ -1313,10 +1313,12 @@ export const studentAr: {
     },
   },
   subscription: {
-    subscribe: "اشترك الآن",
+    subscribe: "اشترك مقابل {price}/شهر",
+    subscribeGeneric: "اشترك الآن",
     subscribing: "جارٍ التحويل…",
     maybeLater: "لاحقًا",
     checkoutFailed: "تعذّر بدء الدفع. حاول مرة أخرى.",
+    pricePerMonth: "شهريًا",
     dashboardTitle: "افتح الوصول الكامل إلى يونيفيرا",
     dashboardDesc:
       "اشترك في الخطة الشهرية لفتح جميع ميزات المنصة — اكتشاف البرامج، المستشارون، دعم التقديم، والمزيد.",
@@ -1334,7 +1336,7 @@ export const studentAr: {
     modalVideoText:
       "شاهد كيف يساعدك يونيفيرا من اكتشاف الجامعات إلى التقديم والقبول.",
     modalVideoAria: "فيديو: كيف يدعم يونيفيرا رحلتك الجامعية",
-    modalCta: "احصل على الوصول الكامل إلى يونيفيرا الآن",
+    modalCta: "اشترك مقابل {price}/شهر",
     modalReassure: "وصول فوري إلى جميع ميزات منصة يونيفيرا.",
     closeAria: "إغلاق النافذة",
     settingsTitle: "الاشتراك",
@@ -1419,7 +1421,7 @@ export const studentAr: {
       "التدريب والفعاليات ومراجعة المقالات.",
       "دعم التقديم وإرشاد ما بعد القبول.",
     ],
-    cta: "اشترك الآن",
+    cta: "اشترك مقابل {price}/شهر",
     paying: "جارٍ التحويل…",
     checkoutFailed: "تعذّر بدء الدفع. حاول مرة أخرى.",
     canceledMessage: "تم إلغاء الاشتراك. يمكنك المحاولة مرة أخرى عندما تكون جاهزًا.",

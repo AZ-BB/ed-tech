@@ -3879,6 +3879,65 @@ export type Database = {
           },
         ]
       }
+      stripe_student_product_currencies: {
+        Row: {
+          amount_minor: number
+          currency: string
+          id: number
+          product_key: string
+          updated_at: string
+        }
+        Insert: {
+          amount_minor: number
+          currency: string
+          id?: number
+          product_key: string
+          updated_at?: string
+        }
+        Update: {
+          amount_minor?: number
+          currency?: string
+          id?: number
+          product_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_student_product_currencies_product_key_fkey"
+            columns: ["product_key"]
+            isOneToOne: false
+            referencedRelation: "stripe_student_products"
+            referencedColumns: ["product_key"]
+          },
+        ]
+      }
+      stripe_student_products: {
+        Row: {
+          billing_mode: string
+          label: string
+          product_key: string
+          stripe_price_id: string | null
+          stripe_product_id: string
+          updated_at: string
+        }
+        Insert: {
+          billing_mode: string
+          label: string
+          product_key: string
+          stripe_price_id?: string | null
+          stripe_product_id: string
+          updated_at?: string
+        }
+        Update: {
+          billing_mode?: string
+          label?: string
+          product_key?: string
+          stripe_price_id?: string | null
+          stripe_product_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_story_topics: {
         Row: {
           created_at: string | null

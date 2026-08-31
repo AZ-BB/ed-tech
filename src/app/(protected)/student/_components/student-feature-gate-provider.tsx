@@ -72,11 +72,13 @@ export function StudentFeatureGateProvider({
   children,
   featureAccess = defaultStudentFeatureAccess(true),
   showFunnelSubscribeCta = false,
+  funnelSubscriptionDisplayPrice = null,
   isCustomStudent = false,
 }: {
   children: ReactNode;
   featureAccess?: StudentFeatureAccess;
   showFunnelSubscribeCta?: boolean;
+  funnelSubscriptionDisplayPrice?: string | null;
   isCustomStudent?: boolean;
 }) {
   const [disabledOpen, setDisabledOpen] = useState(false);
@@ -242,6 +244,7 @@ export function StudentFeatureGateProvider({
           open={subscriptionOpen}
           onClose={closeSubscriptionModal}
           featureKey={subscriptionFeature}
+          displayPrice={funnelSubscriptionDisplayPrice}
         />
       ) : null}
       <StudentAiDailyLimitModal

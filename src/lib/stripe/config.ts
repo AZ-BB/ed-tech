@@ -73,6 +73,24 @@ export function getIndividualSignupPriceId(): string | undefined {
   return priceId || undefined;
 }
 
+/** Individual signup Stripe Product ID (`STRIPE_INDIVIDUAL_SIGNUP_PRODUCT_ID`). */
+export function getIndividualSignupProductId(): string | undefined {
+  const productId = process.env.STRIPE_INDIVIDUAL_SIGNUP_PRODUCT_ID?.trim();
+  return productId || undefined;
+}
+
+/** Funnel subscription Stripe Product ID (`STRIPE_FUNNEL_SUBSCRIPTION_PRODUCT_ID`). */
+export function getFunnelSubscriptionProductId(): string | undefined {
+  const productId = process.env.STRIPE_FUNNEL_SUBSCRIPTION_PRODUCT_ID?.trim();
+  return productId || undefined;
+}
+
+/** Custom subscription Stripe Product ID (`STRIPE_CUSTOM_SUBSCRIPTION_PRODUCT_ID`). */
+export function getCustomSubscriptionProductId(): string | undefined {
+  const productId = process.env.STRIPE_CUSTOM_SUBSCRIPTION_PRODUCT_ID?.trim();
+  return productId || undefined;
+}
+
 export function isStripeConfigured(): boolean {
   return Boolean(getStripeSecretKey());
 }

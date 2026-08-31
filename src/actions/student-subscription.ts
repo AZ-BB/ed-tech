@@ -2,6 +2,7 @@
 
 import { createFunnelSubscriptionCheckoutSession } from "@/lib/stripe/create-funnel-subscription-checkout-session";
 import { getStripeClient } from "@/lib/stripe/config";
+import { resolvePricingForRequest } from "@/lib/stripe/stripe-student-pricing";
 import { syncStudentSubscriptionFromStripe } from "@/lib/stripe/sync-student-subscription";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import {
@@ -28,6 +29,11 @@ export async function createFunnelSubscriptionCheckoutAction(): Promise<
     return { data: null, error: "You already have an active subscription." };
   }
 
+  const pricing = await resolvePricingForRequest("funnel_subscription");
+  if ("error" in pricing) {
+    return { data: null, error: pricing.error };
+  }
+
   const service = await createSupabaseSecretClient();
   const { data: profile, error } = await service
     .from("student_profiles")
@@ -43,6 +49,8 @@ export async function createFunnelSubscriptionCheckoutAction(): Promise<
     studentId: auth.studentId,
     customerEmail: profile.email,
     stripeCustomerId: profile.stripe_customer_id,
+    currency: pricing.currency,
+    stripePriceId: pricing.stripePriceId,
   });
 
   if (!checkout.ok) {

@@ -22,12 +22,14 @@ type StudentSubscriptionModalProps = {
   open: boolean;
   onClose: () => void;
   featureKey?: StudentFeatureKey | null;
+  displayPrice?: string | null;
 };
 
 export function StudentSubscriptionModal({
   open,
   onClose,
   featureKey = null,
+  displayPrice = null,
 }: StudentSubscriptionModalProps) {
   const { dict } = useLocale();
   const copy = dict.student.subscription;
@@ -48,6 +50,10 @@ export function StudentSubscriptionModal({
   const benefits: readonly string[] = featureCopy?.benefits?.length
     ? featureCopy.benefits
     : copy.modalBenefits;
+  const modalCtaLabel =
+    displayPrice != null && displayPrice.length > 0
+      ? copy.modalCta.replace("{price}", displayPrice)
+      : copy.subscribe;
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -140,6 +146,15 @@ export function StudentSubscriptionModal({
           {body}
         </p>
 
+        {displayPrice ? (
+          <p className="mb-[18px] font-[family-name:var(--font-dm-serif)] text-[32px] leading-none text-[var(--green-dark)]">
+            {displayPrice}
+            <span className="ms-2 text-[13px] font-normal text-[var(--text-mid)]">
+              {copy.pricePerMonth}
+            </span>
+          </p>
+        ) : null}
+
         <ul className="mb-[22px] flex list-none flex-col gap-2.5 p-0">
           {benefits.map((benefit) => (
             <li
@@ -182,7 +197,7 @@ export function StudentSubscriptionModal({
 
         <StudentFunnelSubscribeButton
           className="w-full"
-          label={copy.modalCta}
+          label={modalCtaLabel}
           buttonClassName="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-[var(--green)] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--green-dark)] hover:shadow-[0_6px_18px_rgba(27,67,50,0.22)] disabled:cursor-not-allowed disabled:opacity-55 font-[family-name:var(--font-dm-sans)]"
         />
         <button

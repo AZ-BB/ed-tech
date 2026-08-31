@@ -9,6 +9,7 @@ export default async function AdminSettingsPage() {
       settings={data.settings}
       admins={data.admins}
       rolePermissions={data.rolePermissions}
+      stripeStudentProducts={data.stripeStudentProducts}
     />
   );
 }
