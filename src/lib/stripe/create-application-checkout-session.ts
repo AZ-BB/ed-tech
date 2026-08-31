@@ -1,8 +1,9 @@
 import "server-only";
 
-import { aedToFils } from "@/lib/application-support-payment";
-import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
-import { getStripeClient } from "@/lib/stripe/config";
+import {
+  buildPaymentRequestReturnUrl,
+  createPaymentRequestCheckoutSession,
+} from "@/lib/stripe/create-payment-request-checkout-session";
 
 export type CreateApplicationCheckoutSessionInput = {
   paymentId: number;
@@ -10,67 +11,32 @@ export type CreateApplicationCheckoutSessionInput = {
   customerEmail: string;
   packageLabel: string;
   amountAed: number;
+  existingSessionId?: string | null;
 };
 
 export type CreateApplicationCheckoutSessionResult =
-  | { ok: true; sessionId: string; url: string }
+  | { ok: true; sessionId: string; clientSecret: string; reused: boolean }
   | { ok: false; error: string };
 
 export async function createApplicationCheckoutSession(
   input: CreateApplicationCheckoutSessionInput,
 ): Promise<CreateApplicationCheckoutSessionResult> {
-  const stripe = getStripeClient();
-  if (!stripe) {
-    return {
-      ok: false,
-      error: "Stripe is not configured. Set STRIPE_SECRET_KEY.",
-    };
-  }
-
-  const baseUrl = await getPublicSiteBaseUrl();
-  const successUrl = `${baseUrl}/application-support/payment/success?application_id=${input.applicationId}&session_id={CHECKOUT_SESSION_ID}`;
-  const cancelUrl = `${baseUrl}/application-support/payment/cancel?application_id=${input.applicationId}`;
-
-  const amountFils = aedToFils(input.amountAed);
   const amountLabel = input.amountAed.toLocaleString();
+  const returnUrl = await buildPaymentRequestReturnUrl(
+    `/application-support/payment/success?application_id=${input.applicationId}`,
+  );
 
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      currency: "aed",
-      customer_email: input.customerEmail,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "aed",
-            unit_amount: amountFils,
-            product_data: {
-              name: "Application Support Payment",
-              description: `${amountLabel} AED application support payment${input.packageLabel ? ` — ${input.packageLabel}` : ""}`,
-            },
-          },
-        },
-      ],
-      metadata: {
-        payment_id: String(input.paymentId),
-        application_id: String(input.applicationId),
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
-
-    if (!session.url) {
-      return { ok: false, error: "Stripe did not return a checkout URL." };
-    }
-
-    return {
-      ok: true,
-      sessionId: session.id,
-      url: session.url,
-    };
-  } catch (error) {
-    console.error("[createApplicationCheckoutSession]", error);
-    return { ok: false, error: "Could not create Stripe checkout session." };
-  }
+  return createPaymentRequestCheckoutSession({
+    paymentId: input.paymentId,
+    customerEmail: input.customerEmail,
+    amountAed: input.amountAed,
+    productName: "Application Support Payment",
+    productDescription: `${amountLabel} AED application support payment${input.packageLabel ? ` — ${input.packageLabel}` : ""}`,
+    returnUrl,
+    metadata: {
+      payment_id: String(input.paymentId),
+      application_id: String(input.applicationId),
+    },
+    existingSessionId: input.existingSessionId,
+  });
 }

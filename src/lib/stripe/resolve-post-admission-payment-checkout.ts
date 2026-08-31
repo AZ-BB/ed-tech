@@ -30,7 +30,12 @@ function resolveStudentEmail(row: CaseEmbed): string {
 }
 
 export type ResolvePostAdmissionPaymentCheckoutResult =
-  | { type: "redirect"; url: string }
+  | {
+      type: "checkout";
+      clientSecret: string;
+      title: string;
+      description?: string;
+    }
   | { type: "redirect_success"; caseId: number }
   | { type: "error"; message: string };
 
@@ -53,6 +58,7 @@ export async function resolvePostAdmissionPaymentCheckout(
       status,
       amount,
       due_date,
+      stripe_checkout_session_id,
       post_admission_cases!inner (
         id,
         student_name,
@@ -118,23 +124,30 @@ export async function resolvePostAdmissionPaymentCheckout(
     caseId: caseRow.id,
     customerEmail,
     amountAed: payment.amount,
+    existingSessionId: payment.stripe_checkout_session_id,
   });
 
   if (!checkout.ok) {
     return { type: "error", message: checkout.error };
   }
 
-  const { error: updateErr } = await secret
-    .from("payments")
-    .update({
-      stripe_checkout_session_id: checkout.sessionId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", payment.id);
+  if (!checkout.reused) {
+    const { error: updateErr } = await secret
+      .from("payments")
+      .update({
+        stripe_checkout_session_id: checkout.sessionId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", payment.id);
 
-  if (updateErr) {
-    console.error("[resolvePostAdmissionPaymentCheckout] session save", updateErr);
+    if (updateErr) {
+      console.error("[resolvePostAdmissionPaymentCheckout] session save", updateErr);
+    }
   }
 
-  return { type: "redirect", url: checkout.url };
+  return {
+    type: "checkout",
+    clientSecret: checkout.clientSecret,
+    title: "Post-Admission Support Payment",
+  };
 }

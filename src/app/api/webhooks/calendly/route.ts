@@ -7,6 +7,8 @@ import {
 } from "@/lib/calendly-webhook";
 import { logCalendly, logCalendlyError, logCalendlyWarn } from "@/lib/calendly-log";
 import {
+  extractCalendlyInviteeTimezone,
+  extractCalendlyMeetingLink,
   sendAdvisorSessionBookedEmail,
   sendPostAdmissionSessionBookedEmail,
 } from "@/lib/send-session-booked-email";
@@ -122,6 +124,8 @@ async function handleAdvisorSessionInviteeCreated(
     .from("advisor_sessions")
     .update({
       booked_at: bookedAt.toISOString(),
+      invitee_timezone: extractCalendlyInviteeTimezone(envelope),
+      meeting_link: extractCalendlyMeetingLink(envelope),
       updated_at: new Date().toISOString(),
     })
     .eq("id", sessionId);
@@ -291,6 +295,8 @@ async function handlePostAdmissionInviteeCreated(
     .from("post_admission_cases")
     .update({
       scheduled_at: scheduledAt.toISOString(),
+      invitee_timezone: extractCalendlyInviteeTimezone(envelope),
+      meeting_link: extractCalendlyMeetingLink(envelope),
       updated_at: new Date().toISOString(),
     })
     .eq("id", caseId);

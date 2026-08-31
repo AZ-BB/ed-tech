@@ -11,8 +11,14 @@ export function getDirection(locale: Locale): "ltr" | "rtl" {
   return locale === "ar" ? "rtl" : "ltr";
 }
 
-/** Staff portals are English-only; never inherit RTL from the locale cookie. */
-export const ltrOnlyPathPrefixes = ["/school", "/admin", "/advisor"] as const;
+/** Staff portals and payment flows are English-only; never inherit RTL from the locale cookie. */
+export const ltrOnlyPathPrefixes = [
+  "/school",
+  "/admin",
+  "/advisor",
+  "/application-support",
+  "/post-admission-support",
+] as const;
 
 export function isLtrOnlyPath(pathname: string): boolean {
   const normalized =

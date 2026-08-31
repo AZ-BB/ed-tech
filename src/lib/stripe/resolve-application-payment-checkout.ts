@@ -46,7 +46,12 @@ function resolveStudentEmail(app: AppEmbed): string {
 }
 
 export type ResolveApplicationPaymentCheckoutResult =
-  | { type: "redirect"; url: string }
+  | {
+      type: "checkout";
+      clientSecret: string;
+      title: string;
+      description?: string;
+    }
   | { type: "redirect_success"; applicationId: number }
   | { type: "error"; message: string };
 
@@ -69,6 +74,7 @@ export async function resolveApplicationPaymentCheckout(
       status,
       amount,
       due_date,
+      stripe_checkout_session_id,
       applications!inner (
         id,
         student_name,
@@ -128,29 +134,38 @@ export async function resolveApplicationPaymentCheckout(
     };
   }
 
+  const packageLabel = resolvePackageLabel(app);
   const checkout = await createApplicationCheckoutSession({
     paymentId: payment.id,
     applicationId: app.id,
     customerEmail,
-    packageLabel: resolvePackageLabel(app),
+    packageLabel,
     amountAed: payment.amount,
+    existingSessionId: payment.stripe_checkout_session_id,
   });
 
   if (!checkout.ok) {
     return { type: "error", message: checkout.error };
   }
 
-  const { error: updateErr } = await secret
-    .from("payments")
-    .update({
-      stripe_checkout_session_id: checkout.sessionId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", payment.id);
+  if (!checkout.reused) {
+    const { error: updateErr } = await secret
+      .from("payments")
+      .update({
+        stripe_checkout_session_id: checkout.sessionId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", payment.id);
 
-  if (updateErr) {
-    console.error("[resolveApplicationPaymentCheckout] session save", updateErr);
+    if (updateErr) {
+      console.error("[resolveApplicationPaymentCheckout] session save", updateErr);
+    }
   }
 
-  return { type: "redirect", url: checkout.url };
+  return {
+    type: "checkout",
+    clientSecret: checkout.clientSecret,
+    title: "Application Support Payment",
+    description: packageLabel || undefined,
+  };
 }
