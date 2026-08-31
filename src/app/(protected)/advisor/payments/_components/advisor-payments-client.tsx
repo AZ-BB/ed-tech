@@ -5,6 +5,7 @@ import {
   recordAdvisorManualApplicationPayment,
   sendAdvisorLeadApplicationPaymentRequest,
 } from "@/actions/advisor-application-payments";
+import { createAdvisorStandalonePaymentLink } from "@/actions/advisor-standalone-payments";
 import { sendAdvisorPostAdmissionPaymentRequest } from "@/actions/advisor-post-admission-payments";
 import type {
   AdvisorPaymentRequestStatusFilter,
@@ -25,6 +26,8 @@ import type {
   LeadApplicationPaymentEmailInput,
   LeadApplicationPaymentLinkInput,
 } from "@/lib/lead-application-payment-types";
+import type { StandalonePaymentLinkInput } from "@/lib/standalone-payment-types";
+import { StandalonePaymentLinkDialog } from "@/components/payments/standalone-payment-link-dialog";
 import { Pagination } from "@/components/pagination";
 import { format } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -126,10 +129,13 @@ export function AdvisorPaymentsClient({
   const [requestPostAdmissionPaymentOpen, setRequestPostAdmissionPaymentOpen] =
     useState(false);
   const [manualPaymentOpen, setManualPaymentOpen] = useState(false);
+  const [standalonePaymentOpen, setStandalonePaymentOpen] = useState(false);
   const [requestPaymentError, setRequestPaymentError] = useState<string | null>(null);
+  const [standalonePaymentError, setStandalonePaymentError] = useState<string | null>(null);
   const [manualPaymentError, setManualPaymentError] = useState<string | null>(null);
   const [requestPaymentMessage, setRequestPaymentMessage] = useState<string | null>(null);
   const [generatedPayUrl, setGeneratedPayUrl] = useState<string | null>(null);
+  const [standalonePayUrl, setStandalonePayUrl] = useState<string | null>(null);
 
   const hasApplicationPaymentTargets = paymentRequestApplications.length > 0;
   const hasPostAdmissionPaymentTargets =
@@ -261,6 +267,12 @@ export function AdvisorPaymentsClient({
     setManualPaymentOpen(true);
   }
 
+  function handleOpenStandalonePayment() {
+    setStandalonePaymentError(null);
+    setStandalonePayUrl(null);
+    setStandalonePaymentOpen(true);
+  }
+
   function handleOpenPostAdmissionRequestPayment() {
     setRequestPaymentError(null);
     setRequestPostAdmissionPaymentOpen(true);
@@ -279,6 +291,21 @@ export function AdvisorPaymentsClient({
         `Manual payment of ${input.amountAed.toLocaleString()} AED recorded.`,
       );
       router.refresh();
+    });
+  }
+
+  function handleGenerateStandalonePaymentLink(input: StandalonePaymentLinkInput) {
+    setStandalonePaymentError(null);
+    startTransition(async () => {
+      const result = await createAdvisorStandalonePaymentLink(input);
+      if (!result.ok) {
+        setStandalonePaymentError(result.error);
+        return;
+      }
+      setStandalonePayUrl(result.payUrl);
+      setRequestPaymentMessage(
+        `Quick payment link generated for ${input.amountAed.toLocaleString()} AED.`,
+      );
     });
   }
 
@@ -426,6 +453,14 @@ export function AdvisorPaymentsClient({
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleOpenStandalonePayment}
+                disabled={isPending}
+                className="cursor-pointer rounded-[8px] border-[1.5px] border-[var(--border)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--text)] transition-colors hover:border-[var(--green)] hover:text-[var(--green-dark)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Quick payment link
+              </button>
               {hasManualPaymentTargets ? (
                 <button
                   type="button"
@@ -735,6 +770,21 @@ export function AdvisorPaymentsClient({
           </div>
         </div>
       )}
+
+      <StandalonePaymentLinkDialog
+        open={standalonePaymentOpen}
+        onClose={() => {
+          if (!isPending) {
+            setStandalonePaymentOpen(false);
+            setStandalonePayUrl(null);
+            setStandalonePaymentError(null);
+          }
+        }}
+        onGenerateLink={handleGenerateStandalonePaymentLink}
+        isSubmitting={isPending}
+        error={standalonePaymentError}
+        generatedPayUrl={standalonePayUrl}
+      />
 
       <LeadPaymentRequestDialog
         open={requestPaymentOpen}

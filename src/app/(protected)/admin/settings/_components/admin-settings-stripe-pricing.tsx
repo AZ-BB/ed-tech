@@ -27,6 +27,14 @@ const sectionClassName =
 
 const PRODUCT_DESCRIPTIONS = STRIPE_STUDENT_PRODUCT_DESCRIPTIONS;
 
+const PRODUCT_DISPLAY_LABELS: Partial<Record<StripeStudentProductKey, string>> = {
+  custom_subscription: "Influncer Monthly sub",
+};
+
+function productDisplayLabel(product: StripeStudentProductPricing): string {
+  return PRODUCT_DISPLAY_LABELS[product.productKey] ?? product.label;
+}
+
 function amountStep(currency: (typeof SUPPORTED_CURRENCIES)[number]): string {
   return amountInputStep(currency);
 }
@@ -64,7 +72,9 @@ function ProductPricingCard({ product }: { product: StripeStudentProductPricing 
       <input type="hidden" name="productKey" value={product.productKey} />
 
       <div>
-        <h3 className="text-[14px] font-bold text-[#1a1a1a]">{product.label}</h3>
+        <h3 className="text-[14px] font-bold text-[#1a1a1a]">
+          {productDisplayLabel(product)}
+        </h3>
         <p className="mt-1 text-[12px] text-[#888]">
           {PRODUCT_DESCRIPTIONS[product.productKey]}
         </p>

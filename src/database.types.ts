@@ -3879,6 +3879,53 @@ export type Database = {
           },
         ]
       }
+      standalone_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by_advisor_id: string
+          due_date: string | null
+          id: number
+          paid_at: string | null
+          payment_request_token: string
+          status: Database["public"]["Enums"]["payment_status"]
+          stripe_checkout_session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by_advisor_id: string
+          due_date?: string | null
+          id?: number
+          paid_at?: string | null
+          payment_request_token: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_checkout_session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by_advisor_id?: string
+          due_date?: string | null
+          id?: number
+          paid_at?: string | null
+          payment_request_token?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_checkout_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_payments_created_by_advisor_id_fkey"
+            columns: ["created_by_advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_student_product_currencies: {
         Row: {
           amount_minor: number
