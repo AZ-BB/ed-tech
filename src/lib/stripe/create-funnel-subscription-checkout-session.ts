@@ -1,12 +1,15 @@
 import "server-only";
 
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
-import { getFunnelSubscriptionPriceId, getStripeClient } from "@/lib/stripe/config";
+import { getStripeClient } from "@/lib/stripe/config";
+import type { SupportedCurrency } from "@/lib/stripe/stripe-student-pricing-shared";
 
 export type CreateFunnelSubscriptionCheckoutInput = {
   studentId: string;
   customerEmail: string;
   stripeCustomerId?: string | null;
+  currency: SupportedCurrency;
+  stripePriceId: string;
 };
 
 export type CreateFunnelSubscriptionCheckoutResult =
@@ -24,12 +27,12 @@ export async function createFunnelSubscriptionCheckoutSession(
     };
   }
 
-  const priceId = getFunnelSubscriptionPriceId();
+  const priceId = input.stripePriceId.trim();
   if (!priceId) {
     return {
       ok: false,
       error:
-        "Subscription price is not configured. Set STRIPE_FUNNEL_SUBSCRIPTION_PRICE_ID.",
+        "Subscription price is not configured. Set STRIPE_FUNNEL_SUBSCRIPTION_PRICE_ID or configure pricing in admin settings.",
     };
   }
 
@@ -42,6 +45,7 @@ export async function createFunnelSubscriptionCheckoutSession(
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      currency: input.currency.toLowerCase(),
       customer: existingCustomerId,
       customer_email: existingCustomerId ? undefined : input.customerEmail,
       line_items: [{ price: priceId, quantity: 1 }],

@@ -4,6 +4,7 @@ import {
   canManageCustomSubscription,
   isStudentSubscriptionActive,
 } from "@/lib/student-subscription";
+import { resolvePricingForRequest } from "@/lib/stripe/stripe-student-pricing";
 import { createSupabaseServerClient } from "@/utils/supabase-server";
 import { format } from "date-fns";
 import { notFound, redirect } from "next/navigation";
@@ -82,6 +83,13 @@ export default async function StudentSettingsPage() {
       ? (profile.countries as { name: string }).name.trim() || "—"
       : "—";
 
+  const showFunnelSubscription = canManageFunnelSubscription(auth);
+  const funnelPricing = showFunnelSubscription
+    ? await resolvePricingForRequest("funnel_subscription")
+    : null;
+  const subscriptionDisplayPrice =
+    funnelPricing && !("error" in funnelPricing) ? funnelPricing.displayPrice : null;
+
   return (
     <StudentSettingsClient
       authEmail={user?.email?.trim() ?? ""}
@@ -108,6 +116,7 @@ export default async function StudentSettingsPage() {
               }
             : null
       }
+      subscriptionDisplayPrice={subscriptionDisplayPrice}
       initial={{
         firstName: profile.first_name,
         lastName: profile.last_name,

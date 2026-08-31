@@ -20,7 +20,12 @@ import { useState } from "react";
 
 import type { AdminSettingsAdminRow } from "../_lib/fetch-admin-settings-page";
 import { AdminSettingsRolePermissions } from "./admin-settings-role-permissions";
+import { AdminSettingsStripePricing } from "./admin-settings-stripe-pricing";
 import type { AdminRolePermissionTemplates } from "@/lib/admin-role-permissions";
+import type {
+  StripeStudentProductKey,
+  StripeStudentProductPricing,
+} from "@/lib/stripe/stripe-student-pricing-shared";
 
 const inputClassName =
   "w-full rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C]";
@@ -43,6 +48,7 @@ type Props = {
   settings: PlatformSettings;
   admins: AdminSettingsAdminRow[];
   rolePermissions: AdminRolePermissionTemplates;
+  stripeStudentProducts: Record<StripeStudentProductKey, StripeStudentProductPricing>;
 };
 
 function SectionHeading({ title, description }: { title: string; description?: string }) {
@@ -69,7 +75,12 @@ function StatusBadge({ active }: { active: boolean }) {
   );
 }
 
-export function AdminSettingsClient({ settings, admins, rolePermissions }: Props) {
+export function AdminSettingsClient({
+  settings,
+  admins,
+  rolePermissions,
+  stripeStudentProducts,
+}: Props) {
   const router = useRouter();
   const [defaultsError, setDefaultsError] = useState<string | null>(null);
   const [defaultsSaving, setDefaultsSaving] = useState(false);
@@ -312,6 +323,8 @@ export function AdminSettingsClient({ settings, admins, rolePermissions }: Props
           </div>
         </section>
       </div>
+
+      <AdminSettingsStripePricing products={stripeStudentProducts} />
 
       <AdminSettingsRolePermissions rolePermissions={rolePermissions} />
     </div>

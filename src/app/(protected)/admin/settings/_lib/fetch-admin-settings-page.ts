@@ -3,6 +3,11 @@ import {
   fetchAdminRolePermissionTemplates,
   type AdminRolePermissionTemplates,
 } from "@/lib/admin-role-permissions";
+import {
+  fetchStripeStudentPricing,
+  type StripeStudentProductKey,
+  type StripeStudentProductPricing,
+} from "@/lib/stripe/stripe-student-pricing";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type AdminSettingsAdminRow = {
@@ -18,6 +23,7 @@ export type AdminSettingsPageData = {
   settings: PlatformSettings;
   admins: AdminSettingsAdminRow[];
   rolePermissions: AdminRolePermissionTemplates;
+  stripeStudentProducts: Record<StripeStudentProductKey, StripeStudentProductPricing>;
 };
 
 function formatAdminRole(role: string | null | undefined): string {
@@ -36,9 +42,10 @@ function formatAdminRole(role: string | null | undefined): string {
 export async function fetchAdminSettingsPage(): Promise<AdminSettingsPageData> {
   const service = await createSupabaseSecretClient();
 
-  const [settings, rolePermissions, adminsResult] = await Promise.all([
+  const [settings, rolePermissions, stripeStudentProducts, adminsResult] = await Promise.all([
     fetchPlatformSettings(),
     fetchAdminRolePermissionTemplates(),
+    fetchStripeStudentPricing(),
     service
       .from("admins")
       .select("id, first_name, last_name, email, role, is_active")
@@ -53,6 +60,7 @@ export async function fetchAdminSettingsPage(): Promise<AdminSettingsPageData> {
   return {
     settings,
     rolePermissions,
+    stripeStudentProducts,
     admins: (adminsResult.data ?? []).map((admin) => ({
       id: admin.id,
       firstName: admin.first_name?.trim() ?? "",

@@ -115,6 +115,7 @@ export function StudentSettingsClient({
   initial,
   hasSchoolLinked = true,
   subscription = null,
+  subscriptionDisplayPrice = null,
 }: {
   authEmail: string;
   lastSignInLabel: string;
@@ -122,6 +123,7 @@ export function StudentSettingsClient({
   initial: StudentSettingsInitial;
   hasSchoolLinked?: boolean;
   subscription?: StudentSettingsSubscription | null;
+  subscriptionDisplayPrice?: string | null;
 }) {
   const { dict } = useLocale();
   const s = dict.student.settings;
@@ -164,6 +166,11 @@ export function StudentSettingsClient({
     subscription?.currentPeriodEnd != null
       ? format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")
       : s.emptyValue;
+
+  const subscribeLabel =
+    subscriptionDisplayPrice && !subscription?.isActive
+      ? subscriptionCopy.subscribe.replace("{price}", subscriptionDisplayPrice)
+      : subscriptionCopy.subscribeGeneric;
 
   function handleSubscribe() {
     setSubscriptionMessage(null);
@@ -758,7 +765,7 @@ export function StudentSettingsClient({
                   disabled={subscriptionPending}
                   onClick={handleSubscribe}
                 >
-                  {subscriptionPending ? subscriptionCopy.subscribing : subscriptionCopy.subscribe}
+                  {subscriptionPending ? subscriptionCopy.subscribing : subscribeLabel}
                 </button>
               ) : null}
               {subscription.isActive && !subscription.cancelAtPeriodEnd ? (

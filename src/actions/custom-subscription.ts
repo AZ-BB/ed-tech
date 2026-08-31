@@ -3,6 +3,7 @@
 import { createCustomSubscriptionCheckoutSession } from "@/lib/stripe/create-custom-subscription-checkout-session";
 import { confirmCustomSubscriptionFromSession } from "@/lib/stripe/confirm-custom-subscription-from-session";
 import { getStripeClient } from "@/lib/stripe/config";
+import { resolvePricingForRequest } from "@/lib/stripe/stripe-student-pricing";
 import { syncStudentSubscriptionFromStripe } from "@/lib/stripe/sync-student-subscription";
 import { requireStudentSession } from "@/lib/student-ai-usage-log";
 import {
@@ -29,6 +30,11 @@ export async function createCustomSubscriptionCheckoutAction(): Promise<
     return { data: null, error: "You already have an active subscription." };
   }
 
+  const pricing = await resolvePricingForRequest("custom_subscription");
+  if ("error" in pricing) {
+    return { data: null, error: pricing.error };
+  }
+
   const service = await createSupabaseSecretClient();
   const { data: profile, error } = await service
     .from("student_profiles")
@@ -44,6 +50,8 @@ export async function createCustomSubscriptionCheckoutAction(): Promise<
     studentId: auth.studentId,
     customerEmail: profile.email,
     stripeCustomerId: profile.stripe_customer_id,
+    currency: pricing.currency,
+    stripePriceId: pricing.stripePriceId,
   });
 
   if (!checkout.ok) {
