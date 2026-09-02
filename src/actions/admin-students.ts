@@ -64,6 +64,11 @@ function parseAddPaymentFlag(formData: FormData): boolean {
   return raw === "1" || raw === "on" || raw === "true";
 }
 
+function parseBypassPaymentWallsFlag(formData: FormData): boolean {
+  const raw = formData.get("bypassPaymentWalls");
+  return raw === "1" || raw === "on" || raw === "true";
+}
+
 function parsePaymentAmountAed(formData: FormData): number | null {
   const raw = String(formData.get("paymentAmountAed") ?? "").trim();
   const amount = Number.parseFloat(raw);
@@ -137,6 +142,7 @@ export async function createAdminIndependentStudent(
   const password = String(formData.get("password") ?? "");
   const featureAccess = parseFeatureAccessFromFormData(formData);
   const addPayment = parseAddPaymentFlag(formData);
+  const bypassPaymentWalls = parseBypassPaymentWallsFlag(formData);
 
   let paymentAmountAed: number | null = null;
   let paymentUniversitiesCount: number | null = null;
@@ -176,6 +182,7 @@ export async function createAdminIndependentStudent(
     password,
     studentType: "individual",
     featureAccess,
+    bypassPaymentWalls,
   });
 
   if (!provisioned.ok) {

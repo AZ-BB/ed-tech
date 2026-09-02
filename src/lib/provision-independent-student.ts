@@ -29,6 +29,8 @@ export type ProvisionIndependentStudentInput = {
   studentType?: StudentType;
   featureAccess?: StudentFeatureAccess | Json | null;
   metaData?: Json | null;
+  /** Skip signup fee and subscription payment walls. */
+  bypassPaymentWalls?: boolean;
 };
 
 export type ProvisionIndependentStudentResult =
@@ -73,6 +75,7 @@ export async function provisionIndependentStudent(
         : parseStudentFeatureAccess(null, { studentType });
   const metaData =
     input.metaData === undefined ? null : (input.metaData as Json | null);
+  const bypassPaymentWalls = input.bypassPaymentWalls === true;
 
   if (!firstName || !lastName) {
     return {
@@ -188,6 +191,7 @@ export async function provisionIndependentStudent(
     feature_access: featureAccess,
     meta_data: metaData,
     student_type: studentType,
+    bypass_payment_walls: bypassPaymentWalls,
   });
 
   if (profileError) {

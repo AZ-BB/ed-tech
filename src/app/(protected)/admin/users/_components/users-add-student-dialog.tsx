@@ -382,6 +382,22 @@ export function UsersAddStudentDialog({
               </div>
               <StudentFeatureAccessFields />
 
+              <label className="flex items-start gap-2.5 rounded-[8px] border border-[#ece9e4] bg-[#faf9f7] px-3 py-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="bypassPaymentWalls"
+                  value="on"
+                  disabled={isSubmitting}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#2D6A4F]"
+                />
+                <span className="text-[13px] leading-snug text-[#1a1a1a]">
+                  <span className="font-medium">Bypass payment walls</span>
+                  <span className="mt-0.5 block text-[12px] text-[#888]">
+                    Skip the signup fee screen and subscription prompts for this student.
+                  </span>
+                </span>
+              </label>
+
               <div>
                 <button
                   type="button"

@@ -42,7 +42,7 @@ export async function submitInternshipSupportRequest(
   const secret = await createSupabaseSecretClient();
   const { data: studentRow, error: studentErr } = await secret
     .from("student_profiles")
-    .select("student_type, subscription_status")
+    .select("student_type, subscription_status, bypass_payment_walls")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -61,6 +61,7 @@ export async function submitInternshipSupportRequest(
     requiresFunnelSubscription({
       studentType: studentRow?.student_type ?? "school",
       subscriptionStatus: studentRow?.subscription_status ?? "none",
+      bypassPaymentWalls: studentRow?.bypass_payment_walls ?? false,
     })
   ) {
     return {

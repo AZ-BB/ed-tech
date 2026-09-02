@@ -184,7 +184,7 @@ export async function createAmbassadorSessionRequest(
 
   const { data: studentRow, error: studentErr } = await secret
     .from("student_profiles")
-    .select("school_id, ambassador_credit_limit, student_type, subscription_status")
+    .select("school_id, ambassador_credit_limit, student_type, subscription_status, bypass_payment_walls")
     .eq("id", actor.studentId)
     .maybeSingle();
 
@@ -197,6 +197,7 @@ export async function createAmbassadorSessionRequest(
     requiresFunnelSubscription({
       studentType: studentRow?.student_type ?? "school",
       subscriptionStatus: studentRow?.subscription_status ?? "none",
+      bypassPaymentWalls: studentRow?.bypass_payment_walls ?? false,
     })
   ) {
     return {
