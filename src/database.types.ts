@@ -3605,6 +3605,7 @@ export type Database = {
           advisor_credit_limit: number | null
           ambassador_credit_limit: number | null
           avatar_url: string | null
+          bypass_payment_walls: boolean
           created_at: string | null
           email: string
           feature_access: Json | null
@@ -3641,6 +3642,7 @@ export type Database = {
           advisor_credit_limit?: number | null
           ambassador_credit_limit?: number | null
           avatar_url?: string | null
+          bypass_payment_walls?: boolean
           created_at?: string | null
           email: string
           feature_access?: Json | null
@@ -3677,6 +3679,7 @@ export type Database = {
           advisor_credit_limit?: number | null
           ambassador_credit_limit?: number | null
           avatar_url?: string | null
+          bypass_payment_walls?: boolean
           created_at?: string | null
           email?: string
           feature_access?: Json | null

@@ -18,6 +18,7 @@ export type StudentSubscriptionSnapshot = {
   subscriptionCurrentPeriodEnd: string | null;
   subscriptionCancelAtPeriodEnd: boolean;
   stripeSubscriptionId: string | null;
+  bypassPaymentWalls: boolean;
 };
 
 const ACTIVE_STATUSES = new Set<StudentSubscriptionStatus>([
@@ -58,8 +59,11 @@ export function requiresFunnelSubscription(
   snapshot: Pick<
     StudentSubscriptionSnapshot,
     "studentType" | "subscriptionStatus"
-  >,
+  > & {
+    bypassPaymentWalls?: boolean;
+  },
 ): boolean {
+  if (snapshot.bypassPaymentWalls) return false;
   return (
     canManageFunnelSubscription(snapshot) &&
     !isStudentSubscriptionActive(snapshot.subscriptionStatus)
@@ -70,8 +74,10 @@ export function requiresFunnelSubscription(
 export function requiresIndividualSignupPayment(
   snapshot: Pick<StudentSubscriptionSnapshot, "studentType"> & {
     hasPaidSignupFee: boolean;
+    bypassPaymentWalls?: boolean;
   },
 ): boolean {
+  if (snapshot.bypassPaymentWalls) return false;
   return snapshot.studentType === "individual" && !snapshot.hasPaidSignupFee;
 }
 
