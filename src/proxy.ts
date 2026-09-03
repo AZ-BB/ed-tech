@@ -36,6 +36,8 @@ function shouldSkipLocale(pathname: string): boolean {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/advisor") ||
     pathname.startsWith("/application-support") ||
+    pathname.startsWith("/post-admission-support") ||
+    pathname.startsWith("/pay") ||
     pathname.startsWith("/recommendation") ||
     /\.[^/]+$/.test(pathname)
   );
@@ -119,6 +121,8 @@ export async function proxy(request: NextRequest) {
 
   const publicOpenRoutes = [
     "/application-support",
+    "/post-admission-support",
+    "/pay",
     "/api/webhooks",
     "/api/cron",
     "/api/students/independent",
