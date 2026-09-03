@@ -8,6 +8,10 @@ export const CALENDLY_INFLUENCER_ADVISOR_URL =
   process.env.NEXT_PUBLIC_CALENDLY_INFLUENCER_ADVISOR_URL?.trim() ||
   CALENDLY_SCHEDULING_BASE_URL;
 
+/** All advisor-session bookings use this advisor's Calendly when they have connected. */
+export const ADVISOR_SESSIONS_SHARED_CALENDLY_ADVISOR_ID =
+  "f170bd51-7422-47c5-ba6a-111e702ce768";
+
 /** UTM content value linking a Calendly booking back to an advisor session row. */
 export function advisorSessionUtmContent(sessionId: number): string {
   return `advisor_session:${sessionId}`;

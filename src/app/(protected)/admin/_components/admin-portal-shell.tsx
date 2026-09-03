@@ -25,8 +25,12 @@ import {
   isAdminWebinarDetailPath,
 } from "../content/_data/content-tabs-data";
 import { UsersHeaderActions } from "../users/_components/users-header-actions";
+import { AdminPaymentsHeaderActions } from "../payments/_components/admin-payments-header-actions";
 import { SchoolsHeaderActions } from "../schools/_components/admin-schools-header-actions";
-import { isAdminUserDetailPath, isAdminUsersPath } from "../users/_data/users-tabs-data";
+import {
+  isAdminUserDetailPath,
+  isAdminUsersPath,
+} from "../users/_data/users-tabs-data";
 import type { AdminPermission } from "@/lib/admin-permissions";
 import { AdminPermissionsProvider } from "./admin-permissions-provider";
 
@@ -47,6 +51,7 @@ function normalizePath(pathname: string) {
 }
 
 const ADMIN_SCHOOLS = `${ADMIN_HOME}/schools`;
+const ADMIN_PAYMENTS = `${ADMIN_HOME}/payments`;
 
 function isAdminSchoolsPath(pathname: string): boolean {
   const n = normalizePath(pathname);
@@ -56,6 +61,10 @@ function isAdminSchoolsPath(pathname: string): boolean {
 function isAdminSchoolDetailPath(pathname: string): boolean {
   const n = normalizePath(pathname);
   return /^\/admin\/schools\/[^/]+$/.test(n);
+}
+
+function isAdminPaymentsPath(pathname: string): boolean {
+  return normalizePath(pathname) === ADMIN_PAYMENTS;
 }
 
 function pageTitle(pathname: string): string {
@@ -120,6 +129,10 @@ export function AdminPortalShell({
   const applicationsSection = useMemo(() => {
     const n = pathname ?? ADMIN_HOME;
     return isAdminApplicationsListPath(n);
+  }, [pathname]);
+  const paymentsSection = useMemo(() => {
+    const n = pathname ?? ADMIN_HOME;
+    return isAdminPaymentsPath(n);
   }, [pathname]);
   const userDetailPage = useMemo(
     () => isAdminUserDetailPath(pathname ?? ADMIN_HOME),
@@ -240,9 +253,7 @@ export function AdminPortalShell({
                       prefetch={false}
                       onClick={closeSidebar}
                       className={`mx-2 my-px flex cursor-pointer items-center gap-[10px] rounded-[8px] px-4 py-[9px] text-[13px] font-medium text-white/55 transition-all duration-150 hover:bg-white/[0.06] hover:text-white/85 ${
-                        active
-                          ? "bg-white/10 font-semibold text-white"
-                          : ""
+                        active ? "bg-white/10 font-semibold text-white" : ""
                       }`}
                     >
                       {link.icon}
@@ -296,125 +307,128 @@ export function AdminPortalShell({
           <header
             className={`sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-[#ece9e4] bg-white px-4 py-4 max-[760px]:px-4 lg:gap-[10px] lg:px-7 ${detailPage ? "lg:hidden" : ""}`}
           >
-          <div className="flex min-w-0 flex-1 items-start gap-3 lg:gap-3">
-            <button
-              type="button"
-              className="-ml-0.5 flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-[1.5px] border-[#ece9e4] bg-[#faf9f4] transition-all duration-150 hover:border-[#40916C] hover:bg-[#f0f7f2] lg:hidden"
-              onClick={openSidebar}
-              aria-label="Open navigation menu"
-              aria-expanded={sidebarOpen}
-              aria-controls="admin-sidebar"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#4a4a4a"
-                strokeWidth="2"
+            <div className="flex min-w-0 flex-1 items-start gap-3 lg:gap-3">
+              <button
+                type="button"
+                className="-ml-0.5 flex h-[36px] w-[36px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-[1.5px] border-[#ece9e4] bg-[#faf9f4] transition-all duration-150 hover:border-[#40916C] hover:bg-[#f0f7f2] lg:hidden"
+                onClick={openSidebar}
+                aria-label="Open navigation menu"
+                aria-expanded={sidebarOpen}
+                aria-controls="admin-sidebar"
               >
-                <path d="M4 12h16M4 6h16M4 18h16" />
-              </svg>
-            </button>
-            {!detailPage ? (
-              <div className="flex min-w-0 flex-col gap-0.5 pt-0.5 lg:pt-0">
-                {usersSection ? (
-                  <>
-                    <h1
-                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
-                      style={{ fontFamily: fontSerif }}
-                    >
-                      {title}
-                    </h1>
-                    <p className="text-[12px] text-[#a0a0a0]">
-                      Manage all platform users
-                    </p>
-                  </>
-                ) : schoolsSection ? (
-                  <>
-                    <h1
-                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
-                      style={{ fontFamily: fontSerif }}
-                    >
-                      {title}
-                    </h1>
-                    <p className="text-[12px] text-[#a0a0a0]">
-                      Manage schools, codes, and billing
-                    </p>
-                  </>
-                ) : contentSection ? (
-                  <>
-                    <h1
-                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
-                      style={{ fontFamily: fontSerif }}
-                    >
-                      {title}
-                    </h1>
-                    <p className="text-[12px] text-[#a0a0a0]">
-                      Universities, scholarships, announcements
-                    </p>
-                  </>
-                ) : applicationsSection ? (
-                  <>
-                    <h1
-                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
-                      style={{ fontFamily: fontSerif }}
-                    >
-                      Application Support
-                    </h1>
-                    <p className="text-[12px] text-[#a0a0a0]">
-                      Case management and document tracking
-                    </p>
-                  </>
-                ) : dashboardHome ? (
-                  <>
-                    <h1
-                      className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
-                      style={{ fontFamily: fontSerif }}
-                    >
-                      Dashboard
-                    </h1>
-                    <p className="text-[12px] text-[#a0a0a0]">
-                      Platform overview - {dashboardMonthLabel}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-[11.5px] font-medium uppercase leading-none tracking-[0.06em] text-[#a0a0a0]">
-                      Platform Admin
-                    </div>
-                    <h1
-                      className="text-[24px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
-                      style={{ fontFamily: fontSerif }}
-                    >
-                      {title}
-                    </h1>
-                  </>
-                )}
-              </div>
-            ) : null}
-          </div>
-          {!detailPage ? (
-            <>
-              {schoolsSection ? <SchoolsHeaderActions /> : null}
-              {contentSection ? <ContentHeaderActions /> : null}
-              {applicationsSection ? <AdminApplicationsHeaderActions /> : null}
-              {usersSection &&
-              !dashboardHome &&
-              !schoolsSection &&
-              !contentSection &&
-              !applicationsSection ? (
-                <UsersHeaderActions />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#4a4a4a"
+                  strokeWidth="2"
+                >
+                  <path d="M4 12h16M4 6h16M4 18h16" />
+                </svg>
+              </button>
+              {!detailPage ? (
+                <div className="flex min-w-0 flex-col gap-0.5 pt-0.5 lg:pt-0">
+                  {usersSection ? (
+                    <>
+                      <h1
+                        className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                        style={{ fontFamily: fontSerif }}
+                      >
+                        {title}
+                      </h1>
+                      <p className="text-[12px] text-[#a0a0a0]">
+                        Manage all platform users
+                      </p>
+                    </>
+                  ) : schoolsSection ? (
+                    <>
+                      <h1
+                        className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                        style={{ fontFamily: fontSerif }}
+                      >
+                        {title}
+                      </h1>
+                      <p className="text-[12px] text-[#a0a0a0]">
+                        Manage schools, codes, and billing
+                      </p>
+                    </>
+                  ) : contentSection ? (
+                    <>
+                      <h1
+                        className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                        style={{ fontFamily: fontSerif }}
+                      >
+                        {title}
+                      </h1>
+                      <p className="text-[12px] text-[#a0a0a0]">
+                        Universities, scholarships, announcements
+                      </p>
+                    </>
+                  ) : applicationsSection ? (
+                    <>
+                      <h1
+                        className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                        style={{ fontFamily: fontSerif }}
+                      >
+                        Application Support
+                      </h1>
+                      <p className="text-[12px] text-[#a0a0a0]">
+                        Case management and document tracking
+                      </p>
+                    </>
+                  ) : dashboardHome ? (
+                    <>
+                      <h1
+                        className="text-[20px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                        style={{ fontFamily: fontSerif }}
+                      >
+                        Dashboard
+                      </h1>
+                      <p className="text-[12px] text-[#a0a0a0]">
+                        Platform overview - {dashboardMonthLabel}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-[11.5px] font-medium uppercase leading-none tracking-[0.06em] text-[#a0a0a0]">
+                        Platform Admin
+                      </div>
+                      <h1
+                        className="text-[24px] leading-[1.2] tracking-[-0.01em] text-[#1a1a1a]"
+                        style={{ fontFamily: fontSerif }}
+                      >
+                        {title}
+                      </h1>
+                    </>
+                  )}
+                </div>
               ) : null}
-            </>
-          ) : null}
-        </header>
+            </div>
+            {!detailPage ? (
+              <>
+                {schoolsSection ? <SchoolsHeaderActions /> : null}
+                {contentSection ? <ContentHeaderActions /> : null}
+                {applicationsSection ? (
+                  <AdminApplicationsHeaderActions />
+                ) : null}
+                {paymentsSection ? <AdminPaymentsHeaderActions /> : null}
+                {usersSection &&
+                !dashboardHome &&
+                !schoolsSection &&
+                !contentSection &&
+                !applicationsSection ? (
+                  <UsersHeaderActions />
+                ) : null}
+              </>
+            ) : null}
+          </header>
 
-        <main
-          className={`min-w-0 flex-1 overflow-x-hidden px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${detailPage ? "lg:px-6 lg:pt-4" : ""}`}
-        >
-          {children}
-        </main>
+          <main
+            className={`min-w-0 flex-1 overflow-x-hidden px-4 py-6 max-[760px]:px-4 max-[760px]:py-4 lg:px-[32px] lg:py-6 ${detailPage ? "lg:px-6 lg:pt-4" : ""}`}
+          >
+            {children}
+          </main>
         </AdminPermissionsProvider>
       </div>
 

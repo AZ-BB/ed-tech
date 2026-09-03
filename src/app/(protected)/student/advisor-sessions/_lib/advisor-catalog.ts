@@ -55,7 +55,13 @@ export type AdvisorQueryRow = {
   advisor_specializations_countries: { country_code: string }[] | null;
 };
 
-export function mapAdvisorRows(rows: AdvisorQueryRow[]): AdvisorCatalogAdvisor[] {
+export function mapAdvisorRows(
+  rows: AdvisorQueryRow[],
+  /** When set, all advisors share this Calendly availability (per-advisor URLs ignored). */
+  sharedCalendlyUrl?: string | null,
+): AdvisorCatalogAdvisor[] {
+  const hasSharedCalendly = Boolean(sharedCalendlyUrl?.trim());
+
   return rows.map((r) => {
     const tags =
       r.advisor_tags_joint
@@ -105,7 +111,7 @@ export function mapAdvisorRows(rows: AdvisorQueryRow[]): AdvisorCatalogAdvisor[]
       nationalityCode: r.nationality_country_code.toUpperCase(),
       helps,
       searchBlob,
-      hasCalendly: Boolean(r.calendly_scheduling_url?.trim()),
+      hasCalendly: hasSharedCalendly,
     };
   });
 }
