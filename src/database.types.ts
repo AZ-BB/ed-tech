@@ -3886,7 +3886,8 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
-          created_by_advisor_id: string
+          created_by_admin_id: string | null
+          created_by_advisor_id: string | null
           due_date: string | null
           id: number
           paid_at: string | null
@@ -3898,7 +3899,8 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
-          created_by_advisor_id: string
+          created_by_admin_id?: string | null
+          created_by_advisor_id?: string | null
           due_date?: string | null
           id?: number
           paid_at?: string | null
@@ -3910,7 +3912,8 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
-          created_by_advisor_id?: string
+          created_by_admin_id?: string | null
+          created_by_advisor_id?: string | null
           due_date?: string | null
           id?: number
           paid_at?: string | null
@@ -3920,6 +3923,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "standalone_payments_created_by_admin_id_fkey"
+            columns: ["created_by_admin_id"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "standalone_payments_created_by_advisor_id_fkey"
             columns: ["created_by_advisor_id"]

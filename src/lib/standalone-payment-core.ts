@@ -17,10 +17,15 @@ function validateAmount(amountAed: number): string | null {
   return null;
 }
 
-export async function createStandalonePaymentLinkCore(options: {
-  input: StandalonePaymentLinkInput;
-  createdByAdvisorId: string;
-}): Promise<StandalonePaymentLinkResult> {
+type StandalonePaymentCreator =
+  | { createdByAdvisorId: string; createdByAdminId?: never }
+  | { createdByAdminId: string; createdByAdvisorId?: never };
+
+export async function createStandalonePaymentLinkCore(
+  options: {
+    input: StandalonePaymentLinkInput;
+  } & StandalonePaymentCreator,
+): Promise<StandalonePaymentLinkResult> {
   const amountError = validateAmount(options.input.amountAed);
   if (amountError) {
     return { ok: false, error: amountError };
@@ -36,7 +41,8 @@ export async function createStandalonePaymentLinkCore(options: {
     amount: options.input.amountAed,
     status: "pending",
     due_date: dueDate,
-    created_by_advisor_id: options.createdByAdvisorId,
+    created_by_advisor_id: options.createdByAdvisorId ?? null,
+    created_by_admin_id: options.createdByAdminId ?? null,
     created_at: now,
     updated_at: now,
   });

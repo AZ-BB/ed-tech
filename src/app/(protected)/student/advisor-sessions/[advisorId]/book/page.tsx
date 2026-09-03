@@ -13,6 +13,7 @@ import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { StudentFeatureUnavailable } from "../../../_components/student-feature-unavailable";
+import { fetchAdvisorSessionsSharedCalendlyUrl } from "../../_lib/shared-calendly-advisor";
 import { BookAdvisorSessionClient } from "./_components/book-advisor-session-client";
 import { InfluencerAdvisorBookClient } from "./_components/influencer-advisor-book-client";
 
@@ -50,14 +51,15 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data }, profileDefaults] = await Promise.all([
+  const [{ data }, profileDefaults, sharedCalendlyUrl] = await Promise.all([
     secret
       .from("advisors")
-      .select("id, first_name, last_name, title, calendly_scheduling_url")
+      .select("id, first_name, last_name, title")
       .eq("id", advisorId)
       .eq("is_active", true)
       .maybeSingle(),
     loadStudentFormDefaults(auth.studentId, user?.email),
+    fetchAdvisorSessionsSharedCalendlyUrl(secret),
   ]);
 
   if (!data) {
@@ -81,8 +83,6 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
     );
   }
 
-  const calendlySchedulingUrl = data.calendly_scheduling_url?.trim() || null;
-
   return (
     <BookAdvisorSessionClient
       advisor={{
@@ -91,7 +91,7 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
         lastName: data.last_name,
         title: data.title,
       }}
-      calendlySchedulingUrl={calendlySchedulingUrl}
+      calendlySchedulingUrl={sharedCalendlyUrl}
       profileDefaults={profileDefaults}
     />
   );

@@ -14,6 +14,7 @@ import { redirect } from "next/navigation";
 import { StudentFeatureUnavailable } from "../_components/student-feature-unavailable";
 import { AdvisorSessionsClient } from "./_components/advisor-sessions-client";
 import { mapAdvisorRows, type AdvisorQueryRow } from "./_lib/advisor-catalog";
+import { fetchAdvisorSessionsSharedCalendlyUrl } from "./_lib/shared-calendly-advisor";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +38,12 @@ export default async function AdvisorSessionsPage() {
   const secret = await createSupabaseSecretClient();
   const isInfluencerFlow = auth.studentType === "custom";
 
-  const [{ data: rows }, { data: countryRows }, profileResult] = await Promise.all([
-    secret
-      .from("advisors")
-      .select(
-        `
+  const [{ data: rows }, { data: countryRows }, profileResult, sharedCalendlyUrl] =
+    await Promise.all([
+      secret
+        .from("advisors")
+        .select(
+          `
         id,
         first_name,
         last_name,
@@ -60,20 +62,21 @@ export default async function AdvisorSessionsPage() {
         advisor_tags_joint ( advisor_tags ( text ) ),
         advisor_specializations_countries ( country_code )
       `,
-      )
-      .eq("is_active", true)
-      .order("last_name"),
-    secret.from("countries").select("id, name").order("name"),
-    isInfluencerFlow
-      ? secret
-          .from("student_profiles")
-          .select("first_name, last_name, email")
-          .eq("id", auth.studentId)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
+        )
+        .eq("is_active", true)
+        .order("last_name"),
+      secret.from("countries").select("id, name").order("name"),
+      isInfluencerFlow
+        ? secret
+            .from("student_profiles")
+            .select("first_name, last_name, email")
+            .eq("id", auth.studentId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      fetchAdvisorSessionsSharedCalendlyUrl(secret),
+    ]);
 
-  const advisors = mapAdvisorRows((rows ?? []) as AdvisorQueryRow[]);
+  const advisors = mapAdvisorRows((rows ?? []) as AdvisorQueryRow[], sharedCalendlyUrl);
   const catalogCountries = (countryRows ?? []) as { id: string; name: string }[];
   const profile = profileResult.data;
   const influencerName = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim();
