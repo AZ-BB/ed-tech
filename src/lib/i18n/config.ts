@@ -18,6 +18,7 @@ export const ltrOnlyPathPrefixes = [
   "/advisor",
   "/application-support",
   "/post-admission-support",
+  "/pay",
 ] as const;
 
 export function isLtrOnlyPath(pathname: string): boolean {
