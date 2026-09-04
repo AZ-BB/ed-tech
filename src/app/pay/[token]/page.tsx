@@ -30,6 +30,7 @@ export default async function StandalonePayPage({ params }: PageProps) {
         clientSecret={result.clientSecret}
         title={result.title}
         description={result.description}
+        successReturnPath={result.successReturnPath}
       />
     </PaymentRequestCheckoutShell>
   );

@@ -2,7 +2,7 @@ import "server-only";
 
 import { aedToFils } from "@/lib/application-support-payment";
 import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
-import { getStripeClient } from "@/lib/stripe/config";
+import { getStripeClient, getStripeSecretKey } from "@/lib/stripe/config";
 
 export type CreatePaymentRequestCheckoutSessionInput = {
   paymentId: number;
@@ -24,6 +24,15 @@ async function tryReuseOpenSession(
 ): Promise<{ sessionId: string; clientSecret: string } | null> {
   const stripe = getStripeClient();
   if (!stripe) return null;
+
+  const secretKey = getStripeSecretKey();
+  if (secretKey) {
+    const sessionIsLive = existingSessionId.startsWith("cs_live_");
+    const keyIsLive = secretKey.startsWith("sk_live_");
+    if (sessionIsLive !== keyIsLive) {
+      return null;
+    }
+  }
 
   try {
     const session = await stripe.checkout.sessions.retrieve(existingSessionId);

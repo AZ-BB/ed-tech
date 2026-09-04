@@ -35,6 +35,7 @@ export type ResolvePostAdmissionPaymentCheckoutResult =
       clientSecret: string;
       title: string;
       description?: string;
+      successReturnPath: string;
     }
   | { type: "redirect_success"; caseId: number }
   | { type: "error"; message: string };
@@ -149,5 +150,6 @@ export async function resolvePostAdmissionPaymentCheckout(
     type: "checkout",
     clientSecret: checkout.clientSecret,
     title: "Post-Admission Support Payment",
+    successReturnPath: `/post-admission-support/payment/success?case_id=${caseRow.id}`,
   };
 }
