@@ -56,6 +56,25 @@ Local webhook forwarding:
 npm run stripe
 ```
 
+### Apple Pay (custom checkout)
+
+Apple Pay appears in the embedded Payment Element when all of the following are true:
+
+1. **Stripe Dashboard** — Apple Pay is enabled under [Payment methods](https://dashboard.stripe.com/settings/payment_methods).
+2. **Domain registration** — Register every production hostname that serves checkout (including `www` if used). Stripe handles Apple merchant validation for you:
+
+   ```bash
+   # Uses NEXT_PUBLIC_SITE_URL / NEXT_PUBLIC_APP_URL from .env.local
+   npm run stripe:register-domains
+   ```
+
+   Or register manually in [Payment method domains](https://dashboard.stripe.com/settings/payment_method_domains).
+
+3. **HTTPS** — Checkout must run on HTTPS in production (Apple Pay does not work on plain `localhost`).
+4. **Device/browser** — Test in Safari on macOS/iOS (or another Apple Pay–capable browser) with a card in Wallet.
+
+Use Stripe’s [Apple Pay test page](https://docs.stripe.com/apple-pay?platform=web#test-apple-pay) if the button does not appear.
+
 ## Calendly integration
 
 ### Advisor OAuth (per-advisor scheduling)

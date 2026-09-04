@@ -9,6 +9,8 @@ import {
 } from "@stripe/react-stripe-js/checkout";
 import { useMemo, useState } from "react";
 
+const WALLET_PAYMENT_METHODS = new Set(["apple_pay", "google_pay"]);
+
 const checkoutAppearance = {
   theme: "stripe" as const,
   variables: {
@@ -163,14 +165,25 @@ function PaymentRequestCheckoutForm({
           options={{
             layout: "tabs",
             ...(collectContactEmail
-              ? { fields: { billingDetails: { email: "never" } } }
+              ? {
+                  fields: { billingDetails: { email: "never" } },
+                  walletOptions: { emailRequired: true },
+                }
               : {}),
             wallets: {
               applePay: "auto",
               googlePay: "auto",
             },
           }}
-          onChange={(event) => setPaymentReady(event.complete)}
+          onChange={(event) => {
+            setPaymentReady(event.complete);
+            if (collectContactEmail && event.complete) {
+              const paymentMethodType = event.value.type;
+              if (WALLET_PAYMENT_METHODS.has(paymentMethodType)) {
+                setContactReady(true);
+              }
+            }
+          }}
         />
 
         {message ? (
