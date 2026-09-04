@@ -7,7 +7,7 @@ import {
   PaymentElement,
   useCheckoutElements,
 } from "@stripe/react-stripe-js/checkout";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const checkoutAppearance = {
   theme: "stripe" as const,
@@ -59,33 +59,6 @@ function PaymentRequestCheckoutForm({
   const [paymentReady, setPaymentReady] = useState(false);
   const [contactReady, setContactReady] = useState(!collectContactEmail);
 
-  useEffect(() => {
-    if (checkoutState.type !== "success") return;
-
-    // #region agent log
-    fetch("http://127.0.0.1:7644/ingest/9a593ad7-761a-48e6-bfd3-58f85d487e0c", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "907782",
-      },
-      body: JSON.stringify({
-        sessionId: "907782",
-        runId: "post-fix",
-        hypothesisId: "D",
-        location: "payment-request-checkout.tsx:checkoutLoaded",
-        message: "checkout elements ready",
-        data: {
-          collectContactEmail,
-          hasCheckoutEmail: Boolean(checkoutState.checkout.email?.trim()),
-          amountLabel: checkoutState.checkout.total.total.amount,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, [checkoutState, collectContactEmail]);
-
   if (checkoutState.type === "loading") {
     return (
       <div className="rounded-[14px] border border-[var(--border-light)] bg-white px-6 py-8 text-center">
@@ -130,56 +103,7 @@ function PaymentRequestCheckoutForm({
         }
       }
 
-      // #region agent log
-      fetch("http://127.0.0.1:7644/ingest/9a593ad7-761a-48e6-bfd3-58f85d487e0c", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "907782",
-        },
-        body: JSON.stringify({
-          sessionId: "907782",
-          runId: "post-fix",
-          hypothesisId: "A",
-          location: "payment-request-checkout.tsx:handleSubmit:preConfirm",
-          message: "confirm options before checkout.confirm",
-          data: {
-            collectContactEmail,
-            contactReady,
-            paymentReady,
-            hasCheckoutEmail: Boolean(checkout.email?.trim()),
-            passesEmailToConfirm: "email" in confirmOptions,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-
       const confirmResult = await checkout.confirm(confirmOptions);
-
-      // #region agent log
-      fetch("http://127.0.0.1:7644/ingest/9a593ad7-761a-48e6-bfd3-58f85d487e0c", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "907782",
-        },
-        body: JSON.stringify({
-          sessionId: "907782",
-          runId: "post-fix",
-          hypothesisId: "A",
-          location: "payment-request-checkout.tsx:handleSubmit:postConfirm",
-          message: "checkout.confirm result",
-          data: {
-            resultType: confirmResult.type,
-            sessionId: confirmResult.type === "success" ? confirmResult.session.id : null,
-            errorMessage:
-              confirmResult.type === "error" ? confirmResult.error.message : null,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
 
       if (confirmResult.type === "error") {
         setMessage(confirmResult.error.message);
@@ -198,24 +122,6 @@ function PaymentRequestCheckoutForm({
 
       window.location.assign(buildSuccessUrl(successReturnPath, sessionId));
     } catch (error) {
-      // #region agent log
-      fetch("http://127.0.0.1:7644/ingest/9a593ad7-761a-48e6-bfd3-58f85d487e0c", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "907782",
-        },
-        body: JSON.stringify({
-          sessionId: "907782",
-          runId: "post-fix",
-          hypothesisId: "A",
-          location: "payment-request-checkout.tsx:handleSubmit:catch",
-          message: "checkout.confirm threw",
-          data: { errorMessage: readErrorMessage(error) },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       console.error("[PaymentRequestCheckout] confirm failed", error);
       setMessage(
         readErrorMessage(error) ??
