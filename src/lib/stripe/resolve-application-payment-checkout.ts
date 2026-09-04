@@ -51,6 +51,7 @@ export type ResolveApplicationPaymentCheckoutResult =
       clientSecret: string;
       title: string;
       description?: string;
+      successReturnPath: string;
     }
   | { type: "redirect_success"; applicationId: number }
   | { type: "error"; message: string };
@@ -167,5 +168,6 @@ export async function resolveApplicationPaymentCheckout(
     clientSecret: checkout.clientSecret,
     title: "Application Support Payment",
     description: packageLabel || undefined,
+    successReturnPath: `/application-support/payment/success?application_id=${app.id}`,
   };
 }

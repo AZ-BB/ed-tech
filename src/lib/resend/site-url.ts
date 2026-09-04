@@ -4,14 +4,25 @@ import { headers } from "next/headers";
 
 /** Absolute site origin for links in transactional email. */
 export async function getPublicSiteBaseUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const isLocalHost =
+    host.startsWith("localhost") ||
+    host.startsWith("127.0.0.1") ||
+    host.endsWith(".local");
+
+  // Prefer the active request origin during local dev so Stripe return URLs stay on localhost.
+  if (isLocalHost) {
+    const proto = h.get("x-forwarded-proto") ?? "http";
+    return `${proto}://${host}`;
+  }
+
   const fromSite = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (fromSite) return fromSite;
 
   const fromApp = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
   if (fromApp) return fromApp;
 
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto =
     h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
   return `${proto}://${host}`;

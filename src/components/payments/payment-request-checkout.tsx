@@ -1,7 +1,6 @@
 "use client";
 
-import { getStripePublishableKey } from "@/lib/stripe/publishable-key";
-import { loadStripe } from "@stripe/stripe-js";
+import { getStripePromise } from "@/lib/stripe/stripe-promise";
 import {
   CheckoutElementsProvider,
   PaymentElement,
@@ -21,14 +20,21 @@ const checkoutAppearance = {
   },
 };
 
+function buildSuccessUrl(successReturnPath: string, sessionId: string): string {
+  const separator = successReturnPath.includes("?") ? "&" : "?";
+  return `${successReturnPath}${separator}session_id=${encodeURIComponent(sessionId)}`;
+}
+
 type PaymentRequestCheckoutFormProps = {
   title: string;
   description?: string;
+  successReturnPath: string;
 };
 
 function PaymentRequestCheckoutForm({
   title,
   description,
+  successReturnPath,
 }: PaymentRequestCheckoutFormProps) {
   const checkoutState = useCheckoutElements();
   const [message, setMessage] = useState<string | null>(null);
@@ -64,10 +70,21 @@ function PaymentRequestCheckoutForm({
     setIsSubmitting(true);
     setMessage(null);
 
-    const confirmResult = await checkout.confirm();
+    try {
+      const confirmResult = await checkout.confirm({ redirect: "always" });
 
-    if (confirmResult.type === "error") {
-      setMessage(confirmResult.error.message);
+      if (confirmResult.type === "error") {
+        setMessage(confirmResult.error.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Fallback when Stripe resolves without navigating (common on localhost).
+      window.location.assign(
+        buildSuccessUrl(successReturnPath, confirmResult.session.id),
+      );
+    } catch {
+      setMessage("Something went wrong while processing your payment. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -95,10 +112,11 @@ function PaymentRequestCheckoutForm({
       <form onSubmit={handleSubmit} className="space-y-5">
         <PaymentElement
           options={{
-            layout: "tabs", wallets: {
-              applePay: 'auto',
-              googlePay: 'auto'
-            }
+            layout: "tabs",
+            wallets: {
+              applePay: "auto",
+              googlePay: "auto",
+            },
           }}
           onChange={(event) => setPaymentReady(event.complete)}
         />
@@ -129,20 +147,25 @@ export type PaymentRequestCheckoutProps = {
   clientSecret: string;
   title: string;
   description?: string;
+  successReturnPath: string;
 };
 
 export function PaymentRequestCheckout({
   clientSecret,
   title,
   description,
+  successReturnPath,
 }: PaymentRequestCheckoutProps) {
-  const publishableKey = getStripePublishableKey();
-  const stripePromise = useMemo(
-    () => (publishableKey ? loadStripe(publishableKey) : null),
-    [publishableKey],
+  const stripePromise = getStripePromise();
+  const checkoutOptions = useMemo(
+    () => ({
+      clientSecret,
+      elementsOptions: { appearance: checkoutAppearance },
+    }),
+    [clientSecret],
   );
 
-  if (!publishableKey || !stripePromise) {
+  if (!stripePromise) {
     return (
       <div className="rounded-[14px] border border-[var(--border-light)] bg-white px-6 py-8 text-center">
         <h1 className="text-lg font-semibold tracking-tight text-[var(--text)]">
@@ -156,14 +179,12 @@ export function PaymentRequestCheckout({
   }
 
   return (
-    <CheckoutElementsProvider
-      stripe={stripePromise}
-      options={{
-        clientSecret,
-        elementsOptions: { appearance: checkoutAppearance },
-      }}
-    >
-      <PaymentRequestCheckoutForm title={title} description={description} />
+    <CheckoutElementsProvider stripe={stripePromise} options={checkoutOptions}>
+      <PaymentRequestCheckoutForm
+        title={title}
+        description={description}
+        successReturnPath={successReturnPath}
+      />
     </CheckoutElementsProvider>
   );
 }

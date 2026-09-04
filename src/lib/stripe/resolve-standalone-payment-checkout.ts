@@ -10,6 +10,7 @@ export type ResolveStandalonePaymentCheckoutResult =
       clientSecret: string;
       title: string;
       description?: string;
+      successReturnPath: string;
     }
   | { type: "redirect_success" }
   | { type: "error"; message: string };
@@ -103,5 +104,6 @@ export async function resolveStandalonePaymentCheckout(
     clientSecret: checkout.clientSecret,
     title: "Univeera Payment",
     description: `${amountLabel} AED`,
+    successReturnPath: "/pay/success",
   };
 }
