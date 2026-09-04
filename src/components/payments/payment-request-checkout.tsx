@@ -4,6 +4,7 @@ import { getStripePublishableKey } from "@/lib/stripe/publishable-key";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   CheckoutElementsProvider,
+  ContactDetailsElement,
   PaymentElement,
   useCheckoutElements,
 } from "@stripe/react-stripe-js/checkout";
@@ -92,6 +93,7 @@ function PaymentRequestCheckoutForm({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {!checkout.email ? <ContactDetailsElement /> : null}
         <PaymentElement options={{ layout: "tabs" }} />
 
         {message ? (
