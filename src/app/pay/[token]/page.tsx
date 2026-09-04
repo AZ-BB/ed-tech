@@ -31,6 +31,7 @@ export default async function StandalonePayPage({ params }: PageProps) {
         title={result.title}
         description={result.description}
         successReturnPath={result.successReturnPath}
+        collectContactEmail
       />
     </PaymentRequestCheckoutShell>
   );

@@ -19,8 +19,13 @@ export type CreatePaymentRequestCheckoutSessionResult =
   | { ok: true; sessionId: string; clientSecret: string; reused: boolean }
   | { ok: false; error: string };
 
+function normalizeReturnUrl(url: string): string {
+  return url.replace("{CHECKOUT_SESSION_ID}", "");
+}
+
 async function tryReuseOpenSession(
   existingSessionId: string,
+  expectedReturnUrl: string,
 ): Promise<{ sessionId: string; clientSecret: string } | null> {
   const stripe = getStripeClient();
   if (!stripe) return null;
@@ -37,6 +42,12 @@ async function tryReuseOpenSession(
   try {
     const session = await stripe.checkout.sessions.retrieve(existingSessionId);
     if (session.status !== "open" || !session.client_secret) {
+      return null;
+    }
+    if (
+      session.return_url &&
+      normalizeReturnUrl(session.return_url) !== normalizeReturnUrl(expectedReturnUrl)
+    ) {
       return null;
     }
     return {
@@ -62,7 +73,7 @@ export async function createPaymentRequestCheckoutSession(
 
   const existingSessionId = input.existingSessionId?.trim();
   if (existingSessionId) {
-    const reused = await tryReuseOpenSession(existingSessionId);
+    const reused = await tryReuseOpenSession(existingSessionId, input.returnUrl);
     if (reused) {
       return { ok: true, ...reused, reused: true };
     }

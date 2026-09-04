@@ -3,6 +3,7 @@
 import { getStripePromise } from "@/lib/stripe/stripe-promise";
 import {
   CheckoutElementsProvider,
+  ContactDetailsElement,
   PaymentElement,
   useCheckoutElements,
 } from "@stripe/react-stripe-js/checkout";
@@ -25,21 +26,38 @@ function buildSuccessUrl(successReturnPath: string, sessionId: string): string {
   return `${successReturnPath}${separator}session_id=${encodeURIComponent(sessionId)}`;
 }
 
+function readErrorMessage(error: unknown): string | null {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    if (typeof message === "string" && message.trim()) {
+      return message;
+    }
+  }
+  return null;
+}
+
 type PaymentRequestCheckoutFormProps = {
   title: string;
   description?: string;
   successReturnPath: string;
+  /** When true, collect session email via ContactDetailsElement (standalone links). */
+  collectContactEmail: boolean;
 };
 
 function PaymentRequestCheckoutForm({
   title,
   description,
   successReturnPath,
+  collectContactEmail,
 }: PaymentRequestCheckoutFormProps) {
   const checkoutState = useCheckoutElements();
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentReady, setPaymentReady] = useState(false);
+  const [contactReady, setContactReady] = useState(!collectContactEmail);
 
   if (checkoutState.type === "loading") {
     return (
@@ -64,6 +82,7 @@ function PaymentRequestCheckoutForm({
 
   const { checkout } = checkoutState;
   const amountLabel = checkout.total.total.amount;
+  const canPay = paymentReady && contactReady;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,7 +90,20 @@ function PaymentRequestCheckoutForm({
     setMessage(null);
 
     try {
-      const confirmResult = await checkout.confirm({ redirect: "always" });
+      // return_url is set server-side when the Checkout Session is created.
+      // When ContactDetailsElement is mounted, Stripe reads email from that element —
+      // passing `email` to confirm() throws IntegrationError.
+      const confirmOptions: Parameters<typeof checkout.confirm>[0] = {
+        redirect: "if_required",
+      };
+      if (!collectContactEmail) {
+        const email = checkout.email?.trim();
+        if (email) {
+          confirmOptions.email = email;
+        }
+      }
+
+      const confirmResult = await checkout.confirm(confirmOptions);
 
       if (confirmResult.type === "error") {
         setMessage(confirmResult.error.message);
@@ -79,12 +111,22 @@ function PaymentRequestCheckoutForm({
         return;
       }
 
-      // Fallback when Stripe resolves without navigating (common on localhost).
-      window.location.assign(
-        buildSuccessUrl(successReturnPath, confirmResult.session.id),
+      const sessionId = confirmResult.session.id?.trim();
+      if (!sessionId) {
+        setMessage(
+          "Payment completed but we could not verify the session. Please contact support.",
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      window.location.assign(buildSuccessUrl(successReturnPath, sessionId));
+    } catch (error) {
+      console.error("[PaymentRequestCheckout] confirm failed", error);
+      setMessage(
+        readErrorMessage(error) ??
+          "Something went wrong while processing your payment. Please try again.",
       );
-    } catch {
-      setMessage("Something went wrong while processing your payment. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -110,9 +152,19 @@ function PaymentRequestCheckoutForm({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {collectContactEmail ? (
+          <ContactDetailsElement
+            onChange={(event) => {
+              setContactReady(event.complete);
+            }}
+          />
+        ) : null}
         <PaymentElement
           options={{
             layout: "tabs",
+            ...(collectContactEmail
+              ? { fields: { billingDetails: { email: "never" } } }
+              : {}),
             wallets: {
               applePay: "auto",
               googlePay: "auto",
@@ -129,7 +181,7 @@ function PaymentRequestCheckoutForm({
 
         <button
           type="submit"
-          disabled={isSubmitting || !paymentReady}
+          disabled={isSubmitting || !canPay}
           className="inline-flex w-full items-center justify-center rounded-[8px] bg-[#2D6A4F] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? "Processing…" : `Pay ${amountLabel} securely`}
@@ -148,6 +200,7 @@ export type PaymentRequestCheckoutProps = {
   title: string;
   description?: string;
   successReturnPath: string;
+  collectContactEmail?: boolean;
 };
 
 export function PaymentRequestCheckout({
@@ -155,6 +208,7 @@ export function PaymentRequestCheckout({
   title,
   description,
   successReturnPath,
+  collectContactEmail = false,
 }: PaymentRequestCheckoutProps) {
   const stripePromise = getStripePromise();
   const checkoutOptions = useMemo(
@@ -184,6 +238,7 @@ export function PaymentRequestCheckout({
         title={title}
         description={description}
         successReturnPath={successReturnPath}
+        collectContactEmail={collectContactEmail}
       />
     </CheckoutElementsProvider>
   );
