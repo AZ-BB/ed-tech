@@ -27,7 +27,8 @@
     "db:translate:discovery-journey:dry-run": "npx tsx scripts/translate-all-discovery-journey.ts --dry-run",
     "db:translate:programs-discovery": "npx tsx scripts/translate-all-programs-discovery.ts",
     "db:translate:programs-discovery:dry-run": "npx tsx scripts/translate-all-programs-discovery.ts --dry-run",
-    "stripe": "npx stripe listen --forward-to localhost:3000/api/webhooks/stripe"
+    "stripe": "npx stripe listen --forward-to localhost:3000/api/webhooks/stripe",
+    "stripe:register-domains": "node scripts/register-stripe-payment-method-domains.mjs"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^6.8.2",
