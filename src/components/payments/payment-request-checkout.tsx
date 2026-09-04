@@ -4,7 +4,6 @@ import { getStripePublishableKey } from "@/lib/stripe/publishable-key";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   CheckoutElementsProvider,
-  ContactDetailsElement,
   PaymentElement,
   useCheckoutElements,
 } from "@stripe/react-stripe-js/checkout";
@@ -34,6 +33,7 @@ function PaymentRequestCheckoutForm({
   const checkoutState = useCheckoutElements();
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentReady, setPaymentReady] = useState(false);
 
   if (checkoutState.type === "loading") {
     return (
@@ -93,8 +93,15 @@ function PaymentRequestCheckoutForm({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {!checkout.email ? <ContactDetailsElement /> : null}
-        <PaymentElement options={{ layout: "tabs" }} />
+        <PaymentElement
+          options={{
+            layout: "tabs", wallets: {
+              applePay: 'auto',
+              googlePay: 'auto'
+            }
+          }}
+          onChange={(event) => setPaymentReady(event.complete)}
+        />
 
         {message ? (
           <p className="text-sm text-[#b42318]" role="alert">
@@ -104,7 +111,7 @@ function PaymentRequestCheckoutForm({
 
         <button
           type="submit"
-          disabled={isSubmitting || !checkout.canConfirm}
+          disabled={isSubmitting || !paymentReady}
           className="inline-flex w-full items-center justify-center rounded-[8px] bg-[#2D6A4F] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? "Processing…" : `Pay ${amountLabel} securely`}
