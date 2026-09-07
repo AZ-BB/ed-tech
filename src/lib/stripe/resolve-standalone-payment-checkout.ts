@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { StandaloneCheckoutMode } from "@/lib/standalone-payment-types";
 import { isPaymentOverdue } from "@/lib/payment-request-utils";
 import { createStandaloneCheckoutSession } from "@/lib/stripe/create-standalone-checkout-session";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
@@ -12,8 +13,13 @@ export type ResolveStandalonePaymentCheckoutResult =
       description?: string;
       successReturnPath: string;
     }
+  | { type: "redirect_hosted"; url: string }
   | { type: "redirect_success" }
   | { type: "error"; message: string };
+
+function normalizeCheckoutMode(value: string | null | undefined): StandaloneCheckoutMode {
+  return value === "hosted" ? "hosted" : "custom";
+}
 
 export async function resolveStandalonePaymentCheckout(
   token: string,
@@ -27,7 +33,9 @@ export async function resolveStandalonePaymentCheckout(
 
   const { data: payment, error } = await secret
     .from("standalone_payments")
-    .select("id, status, amount, due_date, stripe_checkout_session_id")
+    .select(
+      "id, status, amount, due_date, stripe_checkout_session_id, checkout_mode",
+    )
     .eq("payment_request_token", trimmed)
     .maybeSingle();
 
@@ -73,9 +81,12 @@ export async function resolveStandalonePaymentCheckout(
   }
 
   const amountAed = Number(payment.amount);
+  const checkoutMode = normalizeCheckoutMode(payment.checkout_mode);
   const checkout = await createStandaloneCheckoutSession({
     standalonePaymentId: payment.id,
     amountAed,
+    paymentToken: trimmed,
+    checkoutMode,
     existingSessionId: payment.stripe_checkout_session_id,
   });
 
@@ -95,6 +106,10 @@ export async function resolveStandalonePaymentCheckout(
     if (updateErr) {
       console.error("[resolveStandalonePaymentCheckout] session save", updateErr);
     }
+  }
+
+  if (checkout.checkoutMode === "hosted") {
+    return { type: "redirect_hosted", url: checkout.url };
   }
 
   const amountLabel = amountAed.toLocaleString();

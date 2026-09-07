@@ -1,6 +1,9 @@
 "use client";
 
-import type { StandalonePaymentLinkInput } from "@/lib/standalone-payment-types";
+import type {
+  StandaloneCheckoutMode,
+  StandalonePaymentLinkInput,
+} from "@/lib/standalone-payment-types";
 import { preventNumberInputWheelScroll } from "@/lib/prevent-number-input-wheel";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -11,6 +14,23 @@ const inputClassName =
   "w-full rounded-[8px] border border-[#e0deda] bg-white px-3 py-2 text-[13px] text-[#1a1a1a] outline-none transition-colors focus:border-[#40916C] disabled:cursor-not-allowed disabled:opacity-60";
 
 const labelClassName = "mb-1.5 block text-[12px] font-semibold text-[#4a4a4a]";
+
+const CHECKOUT_MODE_OPTIONS: Array<{
+  value: StandaloneCheckoutMode;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "custom",
+    label: "Custom page",
+    description: "Payer stays on your Univeera checkout page.",
+  },
+  {
+    value: "hosted",
+    label: "Stripe Checkout",
+    description: "Payer is redirected to Stripe’s secure checkout (Univeera-branded).",
+  },
+];
 
 export type StandalonePaymentLinkDialogProps = {
   open: boolean;
@@ -30,14 +50,20 @@ export function StandalonePaymentLinkDialog({
   onGenerateLink,
 }: StandalonePaymentLinkDialogProps) {
   const [amount, setAmount] = useState("");
+  const [checkoutMode, setCheckoutMode] =
+    useState<StandaloneCheckoutMode>("custom");
   const [copied, setCopied] = useState(false);
 
   const parsedAmount = Number.parseFloat(amount.trim());
   const amountValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
+  const selectedModeOption =
+    CHECKOUT_MODE_OPTIONS.find((option) => option.value === checkoutMode) ??
+    CHECKOUT_MODE_OPTIONS[0];
 
   useEffect(() => {
     if (!open) return;
     setAmount("");
+    setCheckoutMode("custom");
     setCopied(false);
   }, [open]);
 
@@ -57,7 +83,7 @@ export function StandalonePaymentLinkDialog({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!amountValid || isSubmitting) return;
-    onGenerateLink({ amountAed: parsedAmount });
+    onGenerateLink({ amountAed: parsedAmount, checkoutMode });
   }
 
   return (
@@ -93,8 +119,10 @@ export function StandalonePaymentLinkDialog({
           {generatedPayUrl ? (
             <div className="space-y-3.5">
               <p className="text-[13px] text-[#4a4a4a]">
-                Payment link created. Share it with the payer. They can pay on
-                your custom checkout page.
+                Payment link created. Share it with the payer.
+                {checkoutMode === "hosted"
+                  ? " They will be redirected to Stripe Checkout to pay."
+                  : " They can pay on your custom Univeera checkout page."}
               </p>
               <div>
                 <label htmlFor="standalone-pay-url" className={labelClassName}>
@@ -139,6 +167,44 @@ export function StandalonePaymentLinkDialog({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3.5">
+              <div>
+                <span className={labelClassName}>Checkout experience</span>
+                <div
+                  className="grid grid-cols-2 gap-2"
+                  role="radiogroup"
+                  aria-label="Checkout experience"
+                >
+                  {CHECKOUT_MODE_OPTIONS.map((option) => {
+                    const selected = checkoutMode === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        disabled={isSubmitting}
+                        onClick={() => setCheckoutMode(option.value)}
+                        className={`cursor-pointer rounded-[8px] border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                          selected
+                            ? "border-[#2D6A4F] bg-[#f0f7f2]"
+                            : "border-[#e0deda] bg-white hover:border-[#40916C]"
+                        }`}
+                      >
+                        <span className="block text-[12.5px] font-semibold text-[#1a1a1a]">
+                          {option.label}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] leading-snug text-[#6a6a6a]">
+                          {option.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#6a6a6a]">
+                  {selectedModeOption.description}
+                </p>
+              </div>
+
               <div>
                 <label htmlFor="standalone-link-amount" className={labelClassName}>
                   Amount (AED)

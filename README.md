@@ -75,6 +75,17 @@ Apple Pay appears in the embedded Payment Element when all of the following are 
 
 Use Stripe’s [Apple Pay test page](https://docs.stripe.com/apple-pay?platform=web#test-apple-pay) if the button does not appear.
 
+### Quick payment links (admin / advisor)
+
+**Quick payment link** in the payments UI generates standalone links at `/pay/{token}`. When creating a link, choose:
+
+- **Custom page** — embedded Payment Element on your site (Univeera green theme).
+- **Stripe Checkout** — payer is redirected to Stripe’s hosted checkout page, branded via session `branding_settings` (logo, green button `#2D6A4F`, background `#faf9f7`).
+
+Brand assets for hosted checkout live in `public/brand/`. Logo URLs are built from `NEXT_PUBLIC_SITE_URL`, so hosted branding works best on HTTPS production. You can also mirror colors/logo in [Stripe Dashboard → Branding](https://dashboard.stripe.com/settings/branding).
+
+Apply the migration `20260907120000_standalone_payments_checkout_mode.sql` before using the toggle in production.
+
 ## Calendly integration
 
 ### Advisor OAuth (per-advisor scheduling)

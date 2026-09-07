@@ -36,11 +36,14 @@ export async function createStandalonePaymentLinkCore(
   const now = new Date().toISOString();
   const dueDate = defaultPaymentDueDateString();
 
+  const checkoutMode = options.input.checkoutMode ?? "custom";
+
   const { error: insertErr } = await secret.from("standalone_payments").insert({
     payment_request_token: token,
     amount: options.input.amountAed,
     status: "pending",
     due_date: dueDate,
+    checkout_mode: checkoutMode,
     created_by_advisor_id: options.createdByAdvisorId ?? null,
     created_by_admin_id: options.createdByAdminId ?? null,
     created_at: now,
