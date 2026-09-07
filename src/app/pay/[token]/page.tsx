@@ -20,6 +20,10 @@ export default async function StandalonePayPage({ params }: PageProps) {
     redirect("/pay/success");
   }
 
+  if (result.type === "redirect_hosted") {
+    redirect(result.url);
+  }
+
   if (result.type === "error") {
     return <PaymentRequestCheckoutError message={result.message} />;
   }

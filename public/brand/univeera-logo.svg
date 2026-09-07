@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="64" viewBox="0 0 320 64" fill="none">
+  <rect x="0" y="8" width="48" height="48" rx="14" fill="#2D6A4F"/>
+  <path d="M24 22L12 28l12 6 12-6-12-6z" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 40l12 6 12-6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 34l12 6 12-6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="64" y="42" font-family="Georgia, serif" font-size="28" font-weight="400" fill="#1a1a1a">Univeera</text>
+</svg>

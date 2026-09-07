@@ -3885,6 +3885,7 @@ export type Database = {
       standalone_payments: {
         Row: {
           amount: number
+          checkout_mode: string
           created_at: string
           created_by_admin_id: string | null
           created_by_advisor_id: string | null
@@ -3898,6 +3899,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          checkout_mode?: string
           created_at?: string
           created_by_admin_id?: string | null
           created_by_advisor_id?: string | null
@@ -3911,6 +3913,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          checkout_mode?: string
           created_at?: string
           created_by_admin_id?: string | null
           created_by_advisor_id?: string | null
