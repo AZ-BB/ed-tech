@@ -8,7 +8,15 @@ export const metadata: Metadata = {
     "Create your Univeera account — personalized guidance for your university journey.",
 };
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const rawCode = sp.code;
+  const initialSchoolCode =
+    typeof rawCode === "string" ? rawCode.trim() : "";
 
-  return <SignupWizard />;
+  return <SignupWizard initialSchoolCode={initialSchoolCode} />;
 }

@@ -82,7 +82,7 @@ export async function sendInviteEmailAfterSchoolStudentCreated(opts: {
     schoolName = "Your school";
   }
 
-  const signupUrl = await buildSignupPageUrl();
+  const signupUrl = await buildSignupPageUrl({ code: schoolCode });
   const studentFirstName = resolveStudentFirstName(
     opts.studentEmail,
     opts.studentFirstName,

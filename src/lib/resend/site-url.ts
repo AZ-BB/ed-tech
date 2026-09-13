@@ -28,8 +28,13 @@ export async function getPublicSiteBaseUrl(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-export async function buildSignupPageUrl(): Promise<string> {
-  return `${await getPublicSiteBaseUrl()}/signup`;
+export async function buildSignupPageUrl(options?: {
+  code?: string;
+}): Promise<string> {
+  const base = `${await getPublicSiteBaseUrl()}/signup`;
+  const code = options?.code?.trim();
+  if (!code) return base;
+  return `${base}?code=${encodeURIComponent(code)}`;
 }
 
 export async function buildLoginPageUrl(): Promise<string> {

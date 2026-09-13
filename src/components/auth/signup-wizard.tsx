@@ -175,12 +175,19 @@ function LegalModalBody({ doc }: { doc: LegalDoc }) {
   );
 }
 
-export function SignupWizard() {
+type SignupWizardProps = {
+  initialSchoolCode?: string;
+};
+
+export function SignupWizard({ initialSchoolCode = "" }: SignupWizardProps) {
   const uid = useId();
   const { dict } = useLocale();
   const a = dict.auth;
   const s = dict.signup;
   const strengthLabel = strengthLabels(s);
+  const invitedSchoolCode = initialSchoolCode.trim();
+  const isSchoolInviteFlow =
+    invitedSchoolCode.length >= MIN_SCHOOL_CODE_LENGTH;
   const [step, setStep] = useState<Step>("details");
 
   const [firstName, setFirstName] = useState("");
@@ -196,8 +203,12 @@ export function SignupWizard() {
   const [showPw, setShowPw] = useState(false);
   const [showCpw, setShowCpw] = useState(false);
 
-  const [schoolChoice, setSchoolChoice] = useState<"" | "yes" | "no">("");
-  const [schoolCode, setSchoolCode] = useState("");
+  const [schoolChoice, setSchoolChoice] = useState<"" | "yes" | "no">(
+    isSchoolInviteFlow ? "yes" : "",
+  );
+  const [schoolCode, setSchoolCode] = useState(
+    isSchoolInviteFlow ? invitedSchoolCode : "",
+  );
 
   const [legal, setLegal] = useState<"terms" | "privacy" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -308,7 +319,7 @@ export function SignupWizard() {
     return individualStudentSignUp(fd);
   }, [buildIndividualSignUpFormData, s.errMissingData]);
 
-  async function handleSchoolNext() {
+  async function submitSignupChoice() {
     if (schoolChoice === "") return;
     if (schoolChoice === "yes") {
       const code = schoolCode.trim().toUpperCase();
@@ -329,6 +340,17 @@ export function SignupWizard() {
       setSe({ c: s.errCreateAccount });
       setIsSubmitting(false);
     }
+  }
+
+  async function handleDetailsNext() {
+    if (!validateDetails()) return;
+
+    if (isSchoolInviteFlow) {
+      await submitSignupChoice();
+      return;
+    }
+
+    setStep("school");
   }
 
   const detailsLeft = (
@@ -594,6 +616,9 @@ export function SignupWizard() {
               {errors.t ? <p className="mt-1 text-[11px] text-red-600">{errors.t}</p> : null}
             </div>
           </div>
+          {isSchoolInviteFlow && se.c ? (
+            <p className="mt-4 text-[11px] text-red-600">{se.c}</p>
+          ) : null}
           <div className="mt-6 flex items-center justify-between">
             <LocalizedLink href="/login" className={btnBack}>
               {s.back}
@@ -601,12 +626,30 @@ export function SignupWizard() {
             <button
               type="button"
               className={btnPrimary}
-              onClick={() => {
-                if (validateDetails()) setStep("school");
+              disabled={isSubmitting}
+              onClick={async () => {
+                await handleDetailsNext();
               }}
             >
-              {s.next}
-              <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} />
+              {isSubmitting ? (
+                <>
+                  <span
+                    className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                    aria-hidden
+                  />
+                  {s.saving}
+                </>
+              ) : isSchoolInviteFlow ? (
+                <>
+                  {s.continue}
+                  <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} />
+                </>
+              ) : (
+                <>
+                  {s.next}
+                  <ArrowRight className="icon-directional size-3.5" strokeWidth={2.5} />
+                </>
+              )}
             </button>
           </div>
         </>
@@ -716,7 +759,7 @@ export function SignupWizard() {
                 (schoolChoice === "yes" && !schoolCodeLongEnough)
               }
               onClick={async () => {
-                await handleSchoolNext();
+                await submitSignupChoice();
               }}
             >
               {isSubmitting ? (
