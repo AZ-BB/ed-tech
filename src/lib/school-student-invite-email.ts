@@ -105,3 +105,66 @@ export async function sendInviteEmailAfterSchoolStudentCreated(opts: {
 
   return { ok: true };
 }
+
+export async function sendSchoolStudentInviteReminderEmail(opts: {
+  supabase: SupabaseSecretClient;
+  schoolId: string;
+  studentEmail: string;
+  schoolCode?: string;
+  schoolName?: string | null;
+  studentFirstName?: string | null;
+}): Promise<{ ok: true } | { error: string }> {
+  if (!isResendConfigured()) {
+    return {
+      error:
+        "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    };
+  }
+
+  let schoolCode = opts.schoolCode?.trim();
+  let schoolName = opts.schoolName?.trim() ?? "";
+
+  if (!schoolCode || !schoolName) {
+    const { data: school, error: schoolError } = await opts.supabase
+      .from("schools")
+      .select("code, name")
+      .eq("id", opts.schoolId)
+      .maybeSingle();
+
+    if (schoolError || !school?.code?.trim()) {
+      return { error: "Could not load the school access code for the reminder email." };
+    }
+
+    schoolCode = school.code.trim();
+    if (!schoolName) {
+      schoolName = school.name?.trim() ?? "";
+    }
+  }
+
+  if (!schoolName) {
+    schoolName = "Your school";
+  }
+
+  const signupUrl = await buildSignupPageUrl({ code: schoolCode });
+  const studentFirstName = resolveStudentFirstName(
+    opts.studentEmail,
+    opts.studentFirstName,
+  );
+
+  const result = await sendStudentSchoolInviteEmail({
+    to: opts.studentEmail,
+    studentFirstName,
+    schoolName,
+    schoolCode,
+    signupUrl,
+    variant: "reminder",
+  });
+
+  if ("error" in result) {
+    return {
+      error: result.error || "Reminder email could not be sent.",
+    };
+  }
+
+  return { ok: true };
+}

@@ -1,7 +1,12 @@
 "use server";
 
+import {
+  fetchPendingInvitesForSchool,
+  type PendingInviteRow,
+} from "@/app/(protected)/school/students/_lib/fetch-pending-invites-page";
 import { importStudentsFromRecords } from "@/lib/admin-student-import";
 import { isResendConfigured } from "@/lib/resend/config";
+import { sendSchoolStudentInviteReminderEmail } from "@/lib/school-student-invite-email";
 import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
 import { sendStaffCredentialsEmailOrRollback } from "@/lib/staff-credentials-email";
 import { fetchSchoolTeacherOptions } from "@/lib/fetch-school-teacher-options";
@@ -871,4 +876,185 @@ export async function activateAdminStudent(
   revalidatePath("/admin/users/students");
   revalidatePath(`/admin/users/students/${id}`);
   return { ok: true };
+}
+
+export async function getAdminSchoolPendingInvites(
+  schoolId: string,
+  filters: { q: string; page: number; limit: number },
+): Promise<{ rows: PendingInviteRow[]; totalRows: number; error?: string }> {
+  const access = await assertAdminAccess();
+  if (!access.ok) {
+    return { rows: [], totalRows: 0, error: access.error };
+  }
+
+  const trimmedSchoolId = schoolId.trim();
+  if (!trimmedSchoolId || !UUID_RE.test(trimmedSchoolId)) {
+    return { rows: [], totalRows: 0, error: "Invalid school." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: school, error: schoolError } = await secret
+    .from("schools")
+    .select("id")
+    .eq("id", trimmedSchoolId)
+    .maybeSingle();
+
+  if (schoolError) {
+    console.error("[getAdminSchoolPendingInvites] schools", schoolError);
+    return { rows: [], totalRows: 0, error: "Could not verify the selected school." };
+  }
+
+  if (!school) {
+    return { rows: [], totalRows: 0, error: "Selected school was not found." };
+  }
+
+  return fetchPendingInvitesForSchool(secret, trimmedSchoolId, filters);
+}
+
+export async function deleteAdminSchoolStudentInvite(
+  schoolId: string,
+  inviteId: string,
+): Promise<GeneralResponse<null>> {
+  const access = await assertAdminAccess();
+  if (!access.ok) {
+    return { data: null, error: access.error };
+  }
+
+  const trimmedSchoolId = schoolId.trim();
+  const id = inviteId.trim();
+  if (!trimmedSchoolId || !UUID_RE.test(trimmedSchoolId)) {
+    return { data: null, error: "Invalid school." };
+  }
+  if (!id || !UUID_RE.test(id)) {
+    return { data: null, error: "Invalid invitation." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: removed, error: deleteError } = await secret
+    .from("school_students")
+    .delete()
+    .eq("id", id)
+    .eq("school_id", trimmedSchoolId)
+    .eq("signed_up", false)
+    .select("id");
+
+  if (deleteError) {
+    console.error("[deleteAdminSchoolStudentInvite]", deleteError);
+    return { data: null, error: deleteError.message };
+  }
+
+  if (!removed?.length) {
+    return {
+      data: null,
+      error:
+        "That invitation was not found, already removed, or the student has already signed up.",
+    };
+  }
+
+  revalidatePath("/admin/schools");
+  revalidatePath(`/admin/schools/${trimmedSchoolId}`);
+  return { data: null, error: null };
+}
+
+export type AdminSchoolInvitationReminderSummary = {
+  sent: number;
+  failed: number;
+  errors: string[];
+};
+
+export async function sendAdminSchoolInvitationReminders(
+  schoolId: string,
+): Promise<AdminSchoolInvitationReminderSummary & { error?: string }> {
+  const access = await assertAdminAccess();
+  if (!access.ok) {
+    return { sent: 0, failed: 0, errors: [], error: access.error };
+  }
+
+  if (!isResendConfigured()) {
+    return {
+      sent: 0,
+      failed: 0,
+      errors: [],
+      error: "Email is not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.",
+    };
+  }
+
+  const trimmedSchoolId = schoolId.trim();
+  if (!trimmedSchoolId || !UUID_RE.test(trimmedSchoolId)) {
+    return { sent: 0, failed: 0, errors: [], error: "Invalid school." };
+  }
+
+  const secret = await createSupabaseSecretClient();
+  const { data: school, error: schoolError } = await secret
+    .from("schools")
+    .select("id, code, name")
+    .eq("id", trimmedSchoolId)
+    .maybeSingle();
+
+  if (schoolError) {
+    console.error("[sendAdminSchoolInvitationReminders] schools", schoolError);
+    return {
+      sent: 0,
+      failed: 0,
+      errors: [],
+      error: "Could not verify the selected school.",
+    };
+  }
+
+  if (!school) {
+    return { sent: 0, failed: 0, errors: [], error: "Selected school was not found." };
+  }
+
+  const { data: invites, error: invitesError } = await secret
+    .from("school_students")
+    .select("email")
+    .eq("school_id", trimmedSchoolId)
+    .eq("signed_up", false)
+    .order("created_at", { ascending: false });
+
+  if (invitesError) {
+    console.error("[sendAdminSchoolInvitationReminders] school_students", invitesError);
+    return {
+      sent: 0,
+      failed: 0,
+      errors: [],
+      error: "Could not load pending invitations.",
+    };
+  }
+
+  const summary: AdminSchoolInvitationReminderSummary = {
+    sent: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  const schoolCode = school.code?.trim() ?? "";
+  const schoolName = school.name?.trim() ?? null;
+
+  for (const invite of invites ?? []) {
+    const email = invite.email?.trim().toLowerCase() ?? "";
+    if (!email) {
+      summary.failed += 1;
+      summary.errors.push("Skipped an invitation with a missing email.");
+      continue;
+    }
+
+    const result = await sendSchoolStudentInviteReminderEmail({
+      supabase: secret,
+      schoolId: trimmedSchoolId,
+      studentEmail: email,
+      schoolCode,
+      schoolName,
+    });
+
+    if ("error" in result) {
+      summary.failed += 1;
+      summary.errors.push(`${email}: ${result.error}`);
+      continue;
+    }
+
+    summary.sent += 1;
+  }
+
+  return summary;
 }

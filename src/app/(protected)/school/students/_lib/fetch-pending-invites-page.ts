@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
 
 import { createSupabaseServerClient } from "@/utils/supabase-server";
+import type { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 export type PendingInviteRow = {
   id: string;
@@ -15,30 +16,21 @@ export type PendingInvitesPageFilters = {
   limit: number;
 };
 
+type SchoolStudentsClient =
+  | Awaited<ReturnType<typeof createSupabaseServerClient>>
+  | Awaited<ReturnType<typeof createSupabaseSecretClient>>;
+
 function escapeIlike(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
-export async function fetchPendingInvitesPage(
+export async function fetchPendingInvitesForSchool(
+  supabase: SchoolStudentsClient,
+  schoolId: string,
   filters: PendingInvitesPageFilters,
 ): Promise<{ rows: PendingInviteRow[]; totalRows: number }> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.id) {
-    return { rows: [], totalRows: 0 };
-  }
-
-  const { data: sap } = await supabase
-    .from("school_admin_profiles")
-    .select("school_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const schoolId = sap?.school_id;
-  if (!schoolId) {
+  const trimmedSchoolId = schoolId.trim();
+  if (!trimmedSchoolId) {
     return { rows: [], totalRows: 0 };
   }
 
@@ -51,7 +43,7 @@ export async function fetchPendingInvitesPage(
     .select("id, email, grade, created_at", {
       count: "exact",
     })
-    .eq("school_id", schoolId)
+    .eq("school_id", trimmedSchoolId)
     .eq("signed_up", false)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -91,4 +83,30 @@ export async function fetchPendingInvitesPage(
   });
 
   return { rows, totalRows };
+}
+
+export async function fetchPendingInvitesPage(
+  filters: PendingInvitesPageFilters,
+): Promise<{ rows: PendingInviteRow[]; totalRows: number }> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { rows: [], totalRows: 0 };
+  }
+
+  const { data: sap } = await supabase
+    .from("school_admin_profiles")
+    .select("school_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const schoolId = sap?.school_id;
+  if (!schoolId) {
+    return { rows: [], totalRows: 0 };
+  }
+
+  return fetchPendingInvitesForSchool(supabase, schoolId, filters);
 }
