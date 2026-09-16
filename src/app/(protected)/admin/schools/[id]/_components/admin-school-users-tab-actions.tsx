@@ -12,11 +12,21 @@ import { UsersAddTeacherDialog } from "@/app/(protected)/admin/users/_components
 import { UsersStudentImportDialog } from "@/app/(protected)/admin/users/_components/users-student-import-dialog";
 import type { UsersTabId } from "@/app/(protected)/admin/users/_data/users-tabs-data";
 
+import { AdminSchoolInvitationsDialog } from "./admin-school-invitations-dialog";
+
 function HeaderActionIcon({
   icon,
 }: {
-  icon: "export" | "import" | "add" | "download";
+  icon: "export" | "import" | "add" | "download" | "invitations";
 }) {
+  if (icon === "invitations") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M4 4h16v16H4z" />
+        <path d="M4 7l8 6 8-6" />
+      </svg>
+    );
+  }
   if (icon === "export") {
     return (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -59,6 +69,7 @@ export function AdminSchoolUsersTabActions({
   const searchParams = useSearchParams();
   const [isExportPending, startExportTransition] = useTransition();
   const [importOpen, setImportOpen] = useState(false);
+  const [invitationsOpen, setInvitationsOpen] = useState(false);
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [addTeacherOpen, setAddTeacherOpen] = useState(false);
 
@@ -102,6 +113,7 @@ export function AdminSchoolUsersTabActions({
 
   const studentActions = [
     { id: "export", label: "Export", variant: "default" as const, icon: "export" as const },
+    { id: "invitations", label: "Invitations", variant: "default" as const, icon: "invitations" as const },
     { id: "download-sample", label: "Download Sample", variant: "default" as const, icon: "download" as const },
     { id: "bulk-import", label: "Bulk Import", variant: "default" as const, icon: "import" as const },
     { id: "add-student", label: "Add Student", variant: "primary" as const, icon: "add" as const },
@@ -117,6 +129,10 @@ export function AdminSchoolUsersTabActions({
   function handleActionClick(actionId: string) {
     if (actionId === "export") {
       handleExport();
+      return;
+    }
+    if (actionId === "invitations") {
+      setInvitationsOpen(true);
       return;
     }
     if (actionId === "download-sample") {
@@ -159,6 +175,12 @@ export function AdminSchoolUsersTabActions({
 
       {tabId === "students" ? (
         <>
+          <AdminSchoolInvitationsDialog
+            open={invitationsOpen}
+            onClose={() => setInvitationsOpen(false)}
+            schoolId={schoolId}
+            schoolName={schoolName}
+          />
           <UsersStudentImportDialog
             open={importOpen}
             onClose={() => setImportOpen(false)}

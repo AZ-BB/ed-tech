@@ -11,6 +11,7 @@ export type SendStudentSchoolInviteEmailInput = {
   schoolName: string;
   schoolCode: string;
   signupUrl: string;
+  variant?: "invite" | "reminder";
 };
 
 function escapeHtml(value: string): string {
@@ -21,15 +22,22 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function inviteHeading(variant: SendStudentSchoolInviteEmailInput["variant"]): string {
+  return variant === "reminder"
+    ? "Reminder: You're invited to join Univeera"
+    : "You're invited to join Univeera";
+}
+
 function buildStudentSchoolInviteHtml(input: SendStudentSchoolInviteEmailInput): string {
   const studentFirstName = escapeHtml(input.studentFirstName);
   const schoolName = escapeHtml(input.schoolName);
   const code = escapeHtml(input.schoolCode);
   const signupUrl = escapeHtml(input.signupUrl);
+  const heading = escapeHtml(inviteHeading(input.variant));
 
   return wrapEmailHtml({
     bodyHtml: `<p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#2d6a4f;">Univeera</p>
-          <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#1a2e22;">You're invited to join Univeera</h1>
+          <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#1a2e22;">${heading}</h1>
           <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#3d4f44;">Hi ${studentFirstName},</p>
           <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#3d4f44;"><strong>${schoolName}</strong> has invited you to join Univeera.</p>
           <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#3d4f44;">Univeera is here to support you as you explore majors, universities, scholarships, essays, conduct advisor sessions, and enable your next steps after high school. You will also be able to speak to students who were in your shoes not too long ago and learn from their experiences.</p>
@@ -48,7 +56,7 @@ function buildStudentSchoolInviteHtml(input: SendStudentSchoolInviteEmailInput):
 }
 
 function buildStudentSchoolInviteText(input: SendStudentSchoolInviteEmailInput): string {
-  return `You're invited to join Univeera
+  return `${inviteHeading(input.variant)}
 
 Hi ${input.studentFirstName},
 ${input.schoolName} has invited you to join Univeera.
@@ -67,11 +75,20 @@ The Univeera Team
 export async function sendStudentSchoolInviteEmail(
   input: SendStudentSchoolInviteEmailInput,
 ) {
+  const heading = inviteHeading(input.variant);
   return sendResendEmail({
     to: input.to,
-    subject: "You're invited to join Univeera",
+    subject: heading,
     html: buildStudentSchoolInviteHtml(input),
     text: buildStudentSchoolInviteText(input),
-    tags: [{ name: "category", value: "student_school_invite" }],
+    tags: [
+      {
+        name: "category",
+        value:
+          input.variant === "reminder"
+            ? "student_school_invite_reminder"
+            : "student_school_invite",
+      },
+    ],
   });
 }
