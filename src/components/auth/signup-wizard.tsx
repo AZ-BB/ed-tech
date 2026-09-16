@@ -355,9 +355,11 @@ export function SignupWizard({ initialSchoolCode = "" }: SignupWizardProps) {
 
   const detailsLeft = (
     <>
-      <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
-        {s.step1of2}
-      </p>
+      {!isSchoolInviteFlow ? (
+        <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-[var(--green-bright)] uppercase sm:mb-3 sm:text-[11px]">
+          {s.step1of2}
+        </p>
+      ) : null}
       <h1 className="serif mb-2 text-[1.35rem] leading-snug sm:text-2xl lg:text-[28px]">
         {s.individualLeftTitle}
       </h1>
