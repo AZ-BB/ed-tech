@@ -543,6 +543,7 @@ export function StudentLayoutShell({
       showFunnelSubscribeCta={showFunnelSubscribeCta}
       funnelSubscriptionDisplayPrice={funnelSubscriptionDisplayPrice}
       isCustomStudent={isCustomStudent}
+      hasSchoolLinked={hasSchoolLinked}
     >
       <div
         className={`student-portal min-h-screen ${useGreenPageBackground ? "bg-[var(--green-pale)]" : "bg-[var(--sand)]"}`}

@@ -5,8 +5,8 @@ import {
   deactivateAdminSchool,
 } from "@/actions/admin-schools";
 import {
-  buildSignupPageAbsoluteUrl,
-  buildSignupPagePath,
+  buildPublicSchoolSignupAbsoluteUrl,
+  buildPublicSchoolSignupPath,
 } from "@/lib/signup-page-url";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -28,9 +28,7 @@ function PublicSignupLinkBlock({
   useEffect(() => {
     const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
     const origin = fromEnv || window.location.origin;
-    setPublicSignupUrl(
-      buildSignupPageAbsoluteUrl(origin, { code: schoolCode, public: true }),
-    );
+    setPublicSignupUrl(buildPublicSchoolSignupAbsoluteUrl(origin, schoolCode));
   }, [schoolCode]);
 
   useEffect(() => {
@@ -41,7 +39,7 @@ function PublicSignupLinkBlock({
 
   if (!isActive) return null;
 
-  const pathOnly = buildSignupPagePath({ code: schoolCode, public: true });
+  const pathOnly = buildPublicSchoolSignupPath(schoolCode);
 
   async function copyLink() {
     const text = publicSignupUrl || pathOnly;

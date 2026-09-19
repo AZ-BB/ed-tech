@@ -1244,6 +1244,20 @@ export const studentEn = {
           ],
         },
       },
+      schoolLinkedItems: {
+        advisorSessions: {
+          title:
+            "This Feature is Locked: Speak with your school advisor to access personalised university guidance through Univeera.",
+          description:
+            "Your school advisor can help you explore suitable universities, understand your options, and plan your next steps based on your academic profile, goals, and preferred destinations.",
+          benefits: [
+            "Receive guidance tailored to your goals.",
+            "Get support with university choices, scholarships, and applications.",
+            "Leave with clear and practical next steps.",
+          ],
+          footer: "Please speak with your school advisor to get started.",
+        },
+      },
     },
     quickActionsOnboarding: {
       skip: "Skip tour",

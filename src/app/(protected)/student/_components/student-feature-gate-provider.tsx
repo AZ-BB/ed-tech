@@ -74,12 +74,14 @@ export function StudentFeatureGateProvider({
   showFunnelSubscribeCta = false,
   funnelSubscriptionDisplayPrice = null,
   isCustomStudent = false,
+  hasSchoolLinked = false,
 }: {
   children: ReactNode;
   featureAccess?: StudentFeatureAccess;
   showFunnelSubscribeCta?: boolean;
   funnelSubscriptionDisplayPrice?: string | null;
   isCustomStudent?: boolean;
+  hasSchoolLinked?: boolean;
 }) {
   const [disabledOpen, setDisabledOpen] = useState(false);
   const [highlightedFeature, setHighlightedFeature] =
@@ -238,6 +240,7 @@ export function StudentFeatureGateProvider({
         featureAccess={featureAccess}
         highlightedFeature={highlightedFeature}
         showFunnelSubscribeCta={showFunnelSubscribeCta}
+        hasSchoolLinked={hasSchoolLinked}
       />
       {showFunnelSubscribeCta ? (
         <StudentSubscriptionModal

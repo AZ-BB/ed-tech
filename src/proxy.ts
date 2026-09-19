@@ -149,6 +149,7 @@ export async function proxy(request: NextRequest) {
     "/diana",
     "/tariq",
     "/custom-with-form",
+    "/code",
   ];
   const isPublicGuestOnlyRoute = publicGuestOnlyRoutes.some((route) =>
     pathMatches(pathname, route),

@@ -16,12 +16,20 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { StudentFunnelSubscribeButton } from "./student-funnel-subscribe-button";
 
+type DisabledFeatureModalItem = {
+  title: string;
+  description: string;
+  benefits?: string[];
+  footer?: string;
+};
+
 type StudentDisabledFeaturesModalProps = {
   open: boolean;
   onClose: () => void;
   featureAccess: StudentFeatureAccess;
   highlightedFeature?: StudentFeatureKey | null;
   showFunnelSubscribeCta?: boolean;
+  hasSchoolLinked?: boolean;
 };
 
 function FeatureIcon({
@@ -61,18 +69,23 @@ export function StudentDisabledFeaturesModal({
   featureAccess,
   highlightedFeature,
   showFunnelSubscribeCta = false,
+  hasSchoolLinked = false,
 }: StudentDisabledFeaturesModalProps) {
   const { dict } = useLocale();
   const copy = dict.student.dashboard.disabledFeaturesModal;
   const subscriptionCopy = dict.student.subscription;
+  const modalItems = copy.items as Record<
+    QuickActionDictKey,
+    DisabledFeatureModalItem
+  >;
+  const schoolLinkedItems = (copy as { schoolLinkedItems?: Record<
+    QuickActionDictKey,
+    DisabledFeatureModalItem
+  > }).schoolLinkedItems;
   const disabledFeatures = useMemo(
     () => getDisabledStudentFeatures(featureAccess),
     [featureAccess],
   );
-  const modalItems = copy.items as Record<
-    QuickActionDictKey,
-    { title: string; description: string; benefits?: string[] }
-  >;
   const [activeFeature, setActiveFeature] = useState<StudentFeatureKey | null>(
     null,
   );
@@ -102,7 +115,13 @@ export function StudentDisabledFeaturesModal({
   const activeIndex = disabledFeatures.indexOf(activeFeature);
   const activeDictKey =
     FEATURE_TO_QUICK_ACTION_DICT_KEY[activeFeature] as QuickActionDictKey;
-  const activeItem = modalItems[activeDictKey];
+  const schoolAdvisorCopy =
+    hasSchoolLinked &&
+    activeFeature === "advisor_sessions" &&
+    schoolLinkedItems?.advisorSessions
+      ? schoolLinkedItems.advisorSessions
+      : null;
+  const activeItem = schoolAdvisorCopy ?? modalItems[activeDictKey];
   const hasPrevious = activeIndex > 0;
   const hasNext = activeIndex < disabledFeatures.length - 1;
 
@@ -202,6 +221,12 @@ export function StudentDisabledFeaturesModal({
           ) : (
             <div className="flex-1" />
           )}
+
+          {activeItem.footer ? (
+            <p className="mt-5 text-[14px] font-semibold leading-snug text-[var(--text-mid)]">
+              {activeItem.footer}
+            </p>
+          ) : null}
 
           {disabledFeatures.length > 1 ? (
             <div className="mt-6 flex items-center gap-2 border-t border-[var(--border-light)] pt-4">
