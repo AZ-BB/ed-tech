@@ -50,6 +50,8 @@ export const signupAr = {
   schoolAccessCodePlaceholder: "رمز وصول مدرستك",
   schoolEmailHint:
     "استخدم البريد الإلكتروني نفسه الذي أضافته مدرستك إلى قائمة الطلاب المعتمدين.",
+  publicSchoolSignupBanner:
+    "أنت تنضم عبر رابط التسجيل المفتوح لمدرستك. استخدم أي بريد إلكتروني يمكنك الوصول إليه — لا يلزم دعوة مسبقة.",
   saving: "جارٍ الحفظ…",
   continue: "متابعة",
   close: "إغلاق",

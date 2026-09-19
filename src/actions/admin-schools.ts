@@ -8,6 +8,7 @@ import {
   createSupabaseServerClient,
 } from "@/utils/supabase-server";
 import { revalidatePath } from "next/cache";
+import { parseFeatureAccessFromFormData } from "@/lib/student-feature-access";
 
 type SchoolSubscriptionStatus = Database["public"]["Enums"]["school_subscription_status"];
 
@@ -98,6 +99,7 @@ export async function updateAdminSchool(formData: FormData): Promise<AdminSchool
   );
   const renewalDateRaw = String(formData.get("renewalDate") ?? "").trim();
   const renewalDate = renewalDateRaw.length > 0 ? renewalDateRaw : null;
+  const featureAccess = parseFeatureAccessFromFormData(formData);
 
   if (!name) return { ok: false, error: "School name is required." };
   if (!code) return { ok: false, error: "School code is required." };
@@ -132,6 +134,7 @@ export async function updateAdminSchool(formData: FormData): Promise<AdminSchool
 
   const previousPool = existing.credit_pool ?? 0;
   const newPool = creditPoolRaw ?? 0;
+  const now = new Date().toISOString();
 
   const { error: updateError } = await service
     .from("schools")
@@ -147,14 +150,30 @@ export async function updateAdminSchool(formData: FormData): Promise<AdminSchool
       yearly_credit_plan: yearlyCreditPlan,
       default_advisor_credit_limit: defaultAdvisorCreditLimit,
       default_ambasador_credit_limit: defaultAmbassadorCreditLimit,
+      default_feature_access: featureAccess,
       renewal_date: renewalDate,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
     .eq("id", schoolId);
 
   if (updateError) {
     console.error("[admin-schools] update", updateError);
     return { ok: false, error: "Could not update school." };
+  }
+
+  const { error: studentsUpdateError } = await service
+    .from("student_profiles")
+    .update({ feature_access: featureAccess, updated_at: now })
+    .eq("school_id", schoolId);
+
+  if (studentsUpdateError) {
+    console.error("[admin-schools] bulk student feature access", studentsUpdateError);
+    return {
+      ok: false,
+      error:
+        studentsUpdateError.message ||
+        "School saved but could not update student feature access. Try saving again.",
+    };
   }
 
   if (newPool > previousPool) {
@@ -172,6 +191,8 @@ export async function updateAdminSchool(formData: FormData): Promise<AdminSchool
 
   revalidatePath("/admin/schools");
   revalidatePath(`/admin/schools/${schoolId}`);
+  revalidatePath("/admin/users/students");
+  revalidatePath("/student", "layout");
 
   return { ok: true };
 }

@@ -10,6 +10,7 @@ import {
 import { defaultStudentFeatureAccess } from "@/lib/student-feature-access";
 import { GeneralResponse } from "@/utils/response";
 import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
+import { isPublicSignupFormFlag } from "@/lib/signup-page-url";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -219,6 +220,7 @@ export async function studentSignUp(
     const password = String(formData.get("password") ?? "");
     const schoolAccessCode = String(formData.get("schoolAccessCode") ?? "").trim();
     const grade = String(formData.get("grade") ?? "").trim();
+    const publicSignup = isPublicSignupFormFlag(formData.get("publicSignup"));
 
     if (!firstName || !lastName || !email || !nationalityCountryCode || !residenceCountryCode || !phoneNumber || !password || !schoolAccessCode || !grade) {
         return {
@@ -240,7 +242,7 @@ export async function studentSignUp(
     const { data: school, error: schoolError } = await supabase
         .from("schools")
         .select(
-            "id, students_limit, default_advisor_credit_limit, default_ambasador_credit_limit, is_active",
+            "id, students_limit, default_advisor_credit_limit, default_ambasador_credit_limit, default_feature_access, is_active",
         )
         .eq("code", schoolAccessCode)
         .maybeSingle();
@@ -275,18 +277,49 @@ export async function studentSignUp(
         };
     }
 
-    if (!schoolStudent) {
+    if (schoolStudent?.signed_up) {
+        return {
+            data: false,
+            error: "This email has already completed registration for this school."
+        };
+    }
+
+    if (!publicSignup && !schoolStudent) {
         return {
             data: false,
             error: "This email is not on the approved list for this school."
         };
     }
 
-    if (schoolStudent.signed_up) {
-        return {
-            data: false,
-            error: "This email has already completed registration for this school."
-        };
+    if (publicSignup && school.students_limit != null) {
+        const limit = school.students_limit;
+        if (limit <= 0) {
+            return {
+                data: false,
+                error: "This school has no student capacity configured.",
+            };
+        }
+
+        const { count: enrolledCount, error: enrolledCountError } = await supabase
+            .from("student_profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("school_id", school.id);
+
+        if (enrolledCountError) {
+            console.error(enrolledCountError);
+            return {
+                data: false,
+                error: "Could not verify school enrollment capacity.",
+            };
+        }
+
+        if ((enrolledCount ?? 0) >= limit) {
+            return {
+                data: false,
+                error:
+                    "This school has reached its student limit. Contact your school or try again later.",
+            };
+        }
     }
 
     const { data: student, error: studentError } = await supabase
@@ -335,6 +368,7 @@ export async function studentSignUp(
             signup_advisor_credit_limit: school.default_advisor_credit_limit ?? null,
             signup_ambassador_credit_limit: school.default_ambasador_credit_limit ?? null,
             student_type: "school",
+            feature_access: school.default_feature_access ?? null,
         });
 
     if (studentProfileError) {
@@ -345,21 +379,43 @@ export async function studentSignUp(
         };
     }
 
-    const { error: markSignedUpError } = await supabase
-        .from("school_students")
-        .update({
-            signed_up: true,
-            grade,
-            updated_at: new Date().toISOString(),
-        })
-        .eq("id", schoolStudent.id);
+    const schoolStudentPayload = {
+        signed_up: true,
+        grade,
+        updated_at: new Date().toISOString(),
+    };
 
-    if (markSignedUpError) {
-        await supabase.auth.admin.deleteUser(data.user.id);
-        return {
-            data: false,
-            error: markSignedUpError.message
-        };
+    if (schoolStudent) {
+        const { error: markSignedUpError } = await supabase
+            .from("school_students")
+            .update(schoolStudentPayload)
+            .eq("id", schoolStudent.id);
+
+        if (markSignedUpError) {
+            await supabase.auth.admin.deleteUser(data.user.id);
+            await supabase.from("student_profiles").delete().eq("id", data.user.id);
+            return {
+                data: false,
+                error: markSignedUpError.message,
+            };
+        }
+    } else if (publicSignup) {
+        const { error: insertSchoolStudentError } = await supabase
+            .from("school_students")
+            .insert({
+                school_id: school.id,
+                email: emailNormalized,
+                ...schoolStudentPayload,
+            });
+
+        if (insertSchoolStudentError) {
+            await supabase.auth.admin.deleteUser(data.user.id);
+            await supabase.from("student_profiles").delete().eq("id", data.user.id);
+            return {
+                data: false,
+                error: insertSchoolStudentError.message,
+            };
+        }
     }
 
     const supabaseClient = await createSupabaseServerClient();

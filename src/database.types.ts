@@ -2802,6 +2802,7 @@ export type Database = {
           credit_pool: number | null
           default_advisor_credit_limit: number | null
           default_ambasador_credit_limit: number | null
+          default_feature_access: Json | null
           id: string
           is_active: boolean
           name: string
@@ -2820,6 +2821,7 @@ export type Database = {
           credit_pool?: number | null
           default_advisor_credit_limit?: number | null
           default_ambasador_credit_limit?: number | null
+          default_feature_access?: Json | null
           id?: string
           is_active?: boolean
           name: string
@@ -2838,6 +2840,7 @@ export type Database = {
           credit_pool?: number | null
           default_advisor_credit_limit?: number | null
           default_ambasador_credit_limit?: number | null
+          default_feature_access?: Json | null
           id?: string
           is_active?: boolean
           name?: string

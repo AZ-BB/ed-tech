@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SignupWizard } from "@/components/auth/signup-wizard";
-import { createSupabaseSecretClient } from "@/utils/supabase-server";
+import { isPublicSignupSearchParam } from "@/lib/signup-page-url";
 
 export const metadata: Metadata = {
   title: "Get started | Univeera",
@@ -17,6 +17,12 @@ export default async function SignupPage({
   const rawCode = sp.code;
   const initialSchoolCode =
     typeof rawCode === "string" ? rawCode.trim() : "";
+  const initialPublicSignup = isPublicSignupSearchParam(sp.public);
 
-  return <SignupWizard initialSchoolCode={initialSchoolCode} />;
+  return (
+    <SignupWizard
+      initialSchoolCode={initialSchoolCode}
+      initialPublicSignup={initialPublicSignup}
+    />
+  );
 }

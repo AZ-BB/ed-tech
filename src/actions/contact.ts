@@ -1,5 +1,8 @@
 "use server";
 
+import { sendContactSubmissionAdminEmail } from "@/lib/resend/contact-submission-admin-email";
+import { isResendConfigured } from "@/lib/resend/config";
+import { getPublicSiteBaseUrl } from "@/lib/resend/site-url";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 type SubmitContactFormResult = { ok: true } | { ok: false; error: string };
@@ -34,13 +37,17 @@ export async function submitContactForm(
   }
 
   const secret = await createSupabaseSecretClient();
-  const { error } = await secret.from("contact_submissions").insert({
-    name,
-    email,
-    subject: subjectRaw || null,
-    message,
-    status: "new",
-  });
+  const { data, error } = await secret
+    .from("contact_submissions")
+    .insert({
+      name,
+      email,
+      subject: subjectRaw || null,
+      message,
+      status: "new",
+    })
+    .select("id, created_at")
+    .single();
 
   if (error) {
     console.error("[submitContactForm]", error);
@@ -48,6 +55,23 @@ export async function submitContactForm(
       ok: false,
       error: "Could not send your message. Please try again later.",
     };
+  }
+
+  if (isResendConfigured() && data) {
+    const baseUrl = await getPublicSiteBaseUrl();
+    const emailResult = await sendContactSubmissionAdminEmail({
+      name,
+      email,
+      subject: subjectRaw || null,
+      message,
+      submissionId: data.id,
+      submittedAtIso: data.created_at,
+      adminSubmissionsUrl: `${baseUrl}/admin/contact-us`,
+    });
+
+    if ("error" in emailResult) {
+      console.error("[submitContactForm] admin email", emailResult.error);
+    }
   }
 
   return { ok: true };
