@@ -19,7 +19,7 @@ import { StudentFunnelSubscribeButton } from "./student-funnel-subscribe-button"
 type DisabledFeatureModalItem = {
   title: string;
   description: string;
-  benefits?: string[];
+  benefits?: readonly string[];
   footer?: string;
 };
 
@@ -78,10 +78,13 @@ export function StudentDisabledFeaturesModal({
     QuickActionDictKey,
     DisabledFeatureModalItem
   >;
-  const schoolLinkedItems = (copy as { schoolLinkedItems?: Record<
-    QuickActionDictKey,
-    DisabledFeatureModalItem
-  > }).schoolLinkedItems;
+  const schoolLinkedItems = (
+    copy as unknown as {
+      schoolLinkedItems?: Partial<
+        Record<QuickActionDictKey, DisabledFeatureModalItem>
+      >;
+    }
+  ).schoolLinkedItems;
   const disabledFeatures = useMemo(
     () => getDisabledStudentFeatures(featureAccess),
     [featureAccess],
