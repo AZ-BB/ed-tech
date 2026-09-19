@@ -1,5 +1,9 @@
 import { formatCreditAssignerName } from "@/lib/student-credit-assignment-log";
 import { getCountryNameByAlpha2 } from "@/lib/countries";
+import {
+  parseStudentFeatureAccess,
+  type StudentFeatureAccess,
+} from "@/lib/student-feature-access";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
 import { buildStudentAllocations } from "@/app/(protected)/school/settings/_lib/build-student-allocations";
@@ -29,6 +33,7 @@ export type AdminSchoolDetailPayload = {
     renewalDate: string | null;
     renewalLabel: string;
     subscriptionStatus: string;
+    defaultFeatureAccess: StudentFeatureAccess;
   };
   credits: SchoolCreditsSummary;
   rechargeHistory: RechargeHistoryRow[];
@@ -74,7 +79,7 @@ export async function fetchAdminSchoolDetail(
   const { data: school, error: schoolError } = await supabase
     .from("schools")
     .select(
-      "id, name, code, contact_email, city, country_code, is_active, students_limit, credit_pool, yearly_credit_plan, renewal_date, subscription_status, default_advisor_credit_limit, default_ambasador_credit_limit",
+      "id, name, code, contact_email, city, country_code, is_active, students_limit, credit_pool, yearly_credit_plan, renewal_date, subscription_status, default_advisor_credit_limit, default_ambasador_credit_limit, default_feature_access",
     )
     .eq("id", schoolId)
     .maybeSingle();
@@ -239,6 +244,9 @@ export async function fetchAdminSchoolDetail(
       renewalDate: school.renewal_date,
       renewalLabel: formatRenewal(school.renewal_date),
       subscriptionStatus: String(school.subscription_status ?? "ACTIVE"),
+      defaultFeatureAccess: parseStudentFeatureAccess(school.default_feature_access, {
+        studentType: "school",
+      }),
     },
     credits: {
       usedThisYear: creditsUsedThisYear,

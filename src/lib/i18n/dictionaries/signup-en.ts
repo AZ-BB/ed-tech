@@ -49,6 +49,8 @@ export const signupEn = {
   schoolAccessCode: "School access code",
   schoolAccessCodePlaceholder: "Your school access code",
   schoolEmailHint: "Use the same email address your school added to their approved student list.",
+  publicSchoolSignupBanner:
+    "You're joining through your school's open signup link. Use any email you can access — no prior invite required.",
   saving: "Saving…",
   continue: "Continue",
   close: "Close",

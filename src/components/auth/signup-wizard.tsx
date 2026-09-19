@@ -177,9 +177,13 @@ function LegalModalBody({ doc }: { doc: LegalDoc }) {
 
 type SignupWizardProps = {
   initialSchoolCode?: string;
+  initialPublicSignup?: boolean;
 };
 
-export function SignupWizard({ initialSchoolCode = "" }: SignupWizardProps) {
+export function SignupWizard({
+  initialSchoolCode = "",
+  initialPublicSignup = false,
+}: SignupWizardProps) {
   const uid = useId();
   const { dict } = useLocale();
   const a = dict.auth;
@@ -188,6 +192,8 @@ export function SignupWizard({ initialSchoolCode = "" }: SignupWizardProps) {
   const invitedSchoolCode = initialSchoolCode.trim();
   const isSchoolInviteFlow =
     invitedSchoolCode.length >= MIN_SCHOOL_CODE_LENGTH;
+  const isPublicSchoolSignupFlow =
+    isSchoolInviteFlow && initialPublicSignup;
   const [step, setStep] = useState<Step>("details");
 
   const [firstName, setFirstName] = useState("");
@@ -272,6 +278,9 @@ export function SignupWizard({ initialSchoolCode = "" }: SignupWizardProps) {
     fd.append("phoneNumber", phone.trim());
     fd.append("password", password);
     fd.append("schoolAccessCode", schoolCode.trim());
+    if (isPublicSchoolSignupFlow) {
+      fd.append("publicSignup", "1");
+    }
     return fd;
   }, [
     firstName,
@@ -282,6 +291,7 @@ export function SignupWizard({ initialSchoolCode = "" }: SignupWizardProps) {
     phone,
     password,
     schoolCode,
+    isPublicSchoolSignupFlow,
   ]);
 
   const submitSignUp = useCallback(async (): Promise<GeneralResponse<boolean>> => {
@@ -413,6 +423,11 @@ export function SignupWizard({ initialSchoolCode = "" }: SignupWizardProps) {
         <>
           <h2 className="serif text-xl text-[var(--text)] sm:text-2xl">{s.individualFormTitle}</h2>
           <p className="mb-5 text-sm text-[var(--text-light)]">{s.individualFormSub}</p>
+          {isPublicSchoolSignupFlow ? (
+            <p className="-mt-3 mb-5 rounded-xl border border-[#c8e6d4] bg-[#f0f7f2] px-4 py-3 text-[13px] leading-snug text-[var(--text-mid)]">
+              {s.publicSchoolSignupBanner}
+            </p>
+          ) : null}
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>

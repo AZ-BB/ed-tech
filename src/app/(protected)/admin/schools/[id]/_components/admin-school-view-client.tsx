@@ -4,12 +4,84 @@ import {
   activateAdminSchool,
   deactivateAdminSchool,
 } from "@/actions/admin-schools";
+import {
+  buildSignupPageAbsoluteUrl,
+  buildSignupPagePath,
+} from "@/lib/signup-page-url";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 
 import type { AdminSchoolDetailPayload } from "../_lib/fetch-admin-school-detail";
 import type { AdminSchoolDetailTab } from "../_lib/parse-admin-school-detail-search-params";
+
+function PublicSignupLinkBlock({
+  schoolCode,
+  isActive,
+}: {
+  schoolCode: string;
+  isActive: boolean;
+}) {
+  const [publicSignupUrl, setPublicSignupUrl] = useState("");
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+
+  useEffect(() => {
+    const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    const origin = fromEnv || window.location.origin;
+    setPublicSignupUrl(
+      buildSignupPageAbsoluteUrl(origin, { code: schoolCode, public: true }),
+    );
+  }, [schoolCode]);
+
+  useEffect(() => {
+    if (copyState !== "copied") return;
+    const t = window.setTimeout(() => setCopyState("idle"), 2000);
+    return () => window.clearTimeout(t);
+  }, [copyState]);
+
+  if (!isActive) return null;
+
+  const pathOnly = buildSignupPagePath({ code: schoolCode, public: true });
+
+  async function copyLink() {
+    const text = publicSignupUrl || pathOnly;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyState("copied");
+    } catch {
+      setCopyState("error");
+    }
+  }
+
+  return (
+    <div className="rounded-[10px] border border-[var(--border-light)] bg-[var(--sand)] p-3 text-left">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-light)]">
+        Public signup link
+      </div>
+      <p className="mt-1.5 text-[11.5px] leading-snug text-[var(--text-mid)]">
+        Share this link so students can join without an email invite. Anyone with the link can
+        register while the school is active.
+      </p>
+      <code className="mt-2 block break-all rounded-[6px] bg-white px-2 py-1.5 text-[10.5px] text-[var(--text)]">
+        {publicSignupUrl || pathOnly}
+      </code>
+      <button
+        type="button"
+        onClick={() => void copyLink()}
+        className={`${actionBtnClass} mt-2.5 border-[var(--green)] bg-white text-[var(--green-dark)] hover:bg-[var(--green-pale)]`}
+      >
+        {copyState === "copied"
+          ? "Copied"
+          : copyState === "error"
+            ? "Could not copy"
+            : "Copy public signup link"}
+      </button>
+    </div>
+  );
+}
+
+const actionBtnClass =
+  "inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] px-2.5 py-1.5 text-[11.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-55";
 
 const TAB_DEFS: { id: AdminSchoolDetailTab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -94,9 +166,6 @@ export function AdminSchoolViewClient({
     });
   }
 
-  const actionBtnClass =
-    "mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border-[1.5px] px-2.5 py-1.5 text-[11.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-55";
-
   return (
     <div className="w-full">
       <Link
@@ -149,6 +218,8 @@ export function AdminSchoolViewClient({
             </div>
           ))}
 
+          <PublicSignupLinkBlock schoolCode={school.code} isActive={school.isActive} />
+
           {statusError ? (
             <p className="text-[11.5px] text-red-600" role="alert">
               {statusError}
@@ -159,7 +230,7 @@ export function AdminSchoolViewClient({
             type="button"
             disabled={isPending}
             onClick={toggleSchoolActive}
-            className={`${actionBtnClass} ${
+            className={`${actionBtnClass} mt-2 ${
               school.isActive
                 ? "border-[rgba(231,76,60,.35)] bg-white text-[#8c2d22] hover:bg-[rgba(231,76,60,.08)]"
                 : "border-[var(--green)] bg-[var(--green)] text-white hover:opacity-90"

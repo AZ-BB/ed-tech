@@ -1,6 +1,7 @@
 "use client";
 
 import { updateAdminSchool } from "@/actions/admin-schools";
+import { StudentFeatureAccessFields } from "@/app/(protected)/admin/users/_components/student-feature-access-fields";
 import type { AdminSchoolDetailPayload } from "../_lib/fetch-admin-school-detail";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -248,6 +249,21 @@ export function AdminEditSchoolDialog({
                 />
               </div>
             </div>
+          </div>
+
+          <div>
+            <h3 className="mb-3 text-[13px] font-bold uppercase tracking-[0.06em] text-[#a0a0a0]">
+              Student features
+            </h3>
+            <p className="mb-3 text-[12px] leading-snug text-[#888]">
+              Saving applies these settings to all current students at this school and to new
+              students when they sign up.
+            </p>
+            <StudentFeatureAccessFields
+              key={`${school.id}-${open ? "open" : "closed"}`}
+              defaults={school.defaultFeatureAccess}
+              disabled={isSubmitting}
+            />
           </div>
 
           {error ? <p className="text-[13px] text-red-600">{error}</p> : null}

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { headers } from "next/headers";
+import { buildSignupPagePath } from "@/lib/signup-page-url";
 
 /** Absolute site origin for links in transactional email. */
 export async function getPublicSiteBaseUrl(): Promise<string> {
@@ -30,11 +31,10 @@ export async function getPublicSiteBaseUrl(): Promise<string> {
 
 export async function buildSignupPageUrl(options?: {
   code?: string;
+  public?: boolean;
 }): Promise<string> {
-  const base = `${await getPublicSiteBaseUrl()}/signup`;
-  const code = options?.code?.trim();
-  if (!code) return base;
-  return `${base}?code=${encodeURIComponent(code)}`;
+  const base = await getPublicSiteBaseUrl();
+  return `${base.replace(/\/$/, "")}${buildSignupPagePath(options)}`;
 }
 
 export async function buildLoginPageUrl(): Promise<string> {

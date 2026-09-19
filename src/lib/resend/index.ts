@@ -39,6 +39,11 @@ export {
   type SendAmbassadorSpecificRequestAdminEmailInput,
 } from "@/lib/resend/ambassador-specific-request-admin-email";
 export {
+  CONTACT_ADMIN_EMAIL,
+  sendContactSubmissionAdminEmail,
+  type SendContactSubmissionAdminEmailInput,
+} from "@/lib/resend/contact-submission-admin-email";
+export {
   sendStaffCredentialsEmail,
   type SendStaffCredentialsEmailInput,
 } from "@/lib/resend/staff-credentials-email";
