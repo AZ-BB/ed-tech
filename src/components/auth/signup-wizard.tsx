@@ -361,6 +361,8 @@ export function SignupWizard({
     }
 
     setStep("school");
+
+    
   }
 
   const detailsLeft = (
