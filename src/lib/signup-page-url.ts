@@ -35,3 +35,18 @@ export function buildSignupPageAbsoluteUrl(
   const base = origin.replace(/\/$/, "");
   return `${base}${buildSignupPagePath(options)}`;
 }
+
+/** Shareable public school signup URL: `/code/{schoolCode}` → redirects to signup with `code` + `public`. */
+export function buildPublicSchoolSignupPath(schoolCode: string): string {
+  const code = schoolCode.trim();
+  if (!code) return buildSignupPagePath({ public: true });
+  return `/code/${encodeURIComponent(code)}`;
+}
+
+export function buildPublicSchoolSignupAbsoluteUrl(
+  origin: string,
+  schoolCode: string,
+): string {
+  const base = origin.replace(/\/$/, "");
+  return `${base}${buildPublicSchoolSignupPath(schoolCode)}`;
+}
