@@ -7,9 +7,21 @@ import {
   TARIQ_SIGNUP_SOURCE,
   type FunnelSignupSource,
 } from "@/lib/funnel-stats";
+import {
+  slugFromDynamicFunnelKey,
+  type AdminFunnelKey,
+  type StaticAdminFunnelKey,
+} from "@/app/(protected)/admin/funnels/_lib/admin-funnel-keys";
+import { INFLUENCER_FUNNEL_SIGNUP_SOURCE } from "@/lib/influencer-funnel-constants";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 
-export type AdminFunnelKey = "milad" | "diana" | "tariq" | "custom-with-form";
+export type { AdminFunnelKey, StaticAdminFunnelKey };
+export {
+  dynamicFunnelKey,
+  isDynamicFunnelKey,
+  isKnownAdminFunnelKey,
+  slugFromDynamicFunnelKey,
+} from "@/app/(protected)/admin/funnels/_lib/admin-funnel-keys";
 
 export type AdminFunnelStudentRow = {
   id: string;
@@ -25,7 +37,7 @@ export type AdminFunnelStudentsListResult = {
   totalRows: number;
 };
 
-const FUNNEL_SOURCE_BY_KEY: Record<AdminFunnelKey, FunnelSignupSource> = {
+const FUNNEL_SOURCE_BY_KEY: Record<StaticAdminFunnelKey, FunnelSignupSource> = {
   milad: MILAD_SIGNUP_SOURCE,
   diana: DIANA_SIGNUP_SOURCE,
   tariq: TARIQ_SIGNUP_SOURCE,
@@ -58,7 +70,7 @@ function formatWhen(iso: string | null | undefined): string {
   }
 }
 
-export function getFunnelSignupSource(funnelKey: AdminFunnelKey): FunnelSignupSource {
+export function getFunnelSignupSource(funnelKey: StaticAdminFunnelKey): FunnelSignupSource {
   return FUNNEL_SOURCE_BY_KEY[funnelKey];
 }
 
@@ -68,14 +80,25 @@ export async function fetchFunnelStudentsList(
   limit: number,
 ): Promise<AdminFunnelStudentsListResult> {
   const supabase = await createSupabaseSecretClient();
-  const source = getFunnelSignupSource(funnelKey);
   const { from, to } = paginationRange(page, limit);
 
-  const { data, count, error } = await supabase
+  const dynamicSlug = slugFromDynamicFunnelKey(funnelKey);
+
+  let query = supabase
     .from("student_profiles")
     .select("id, first_name, last_name, email, grade, created_at", { count: "exact" })
-    .eq("student_type", "custom")
-    .filter("meta_data->>source", "eq", source)
+    .eq("student_type", "custom");
+
+  if (dynamicSlug) {
+    query = query
+      .filter("meta_data->>source", "eq", INFLUENCER_FUNNEL_SIGNUP_SOURCE)
+      .filter("meta_data->>influencerFunnelSlug", "eq", dynamicSlug);
+  } else {
+    const source = getFunnelSignupSource(funnelKey as StaticAdminFunnelKey);
+    query = query.filter("meta_data->>source", "eq", source);
+  }
+
+  const { data, count, error } = await query
     .order("created_at", { ascending: false })
     .range(from, to);
 

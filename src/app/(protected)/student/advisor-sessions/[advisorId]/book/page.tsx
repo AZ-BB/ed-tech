@@ -5,10 +5,8 @@ import {
   isPlatformFeatureEnabled,
   PLATFORM_FEATURE_LABELS,
 } from "@/lib/platform-settings";
-import {
-  buildCalendlySchedulingPageUrl,
-  CALENDLY_INFLUENCER_ADVISOR_URL,
-} from "@/lib/calendly-scheduling";
+import { buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
+import { resolveCustomStudentInfluencerCalendlyBase } from "@/lib/influencer-funnel-calendly";
 import { createSupabaseSecretClient, createSupabaseServerClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -51,16 +49,24 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data }, profileDefaults, sharedCalendlyUrl] = await Promise.all([
-    secret
-      .from("advisors")
-      .select("id, first_name, last_name, title")
-      .eq("id", advisorId)
-      .eq("is_active", true)
-      .maybeSingle(),
-    loadStudentFormDefaults(auth.studentId, user?.email),
-    fetchAdvisorSessionsSharedCalendlyUrl(secret),
-  ]);
+  const [{ data }, profileDefaults, sharedCalendlyUrl, { data: studentProfile }] =
+    await Promise.all([
+      secret
+        .from("advisors")
+        .select("id, first_name, last_name, title")
+        .eq("id", advisorId)
+        .eq("is_active", true)
+        .maybeSingle(),
+      loadStudentFormDefaults(auth.studentId, user?.email),
+      fetchAdvisorSessionsSharedCalendlyUrl(secret),
+      auth.studentType === "custom"
+        ? secret
+            .from("student_profiles")
+            .select("meta_data")
+            .eq("id", auth.studentId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
   if (!data) {
     notFound();
@@ -69,11 +75,14 @@ export default async function BookAdvisorSessionPage({ params }: PageProps) {
   if (auth.studentType === "custom") {
     const name = profileDefaults.fullName.trim();
     const email = profileDefaults.email.trim();
+    const calendlyBase = await resolveCustomStudentInfluencerCalendlyBase(
+      studentProfile?.meta_data ?? null,
+    );
     return (
       <InfluencerAdvisorBookClient
         advisorName={`${data.first_name} ${data.last_name}`.trim()}
         calendlyUrl={buildCalendlySchedulingPageUrl({
-          base: CALENDLY_INFLUENCER_ADVISOR_URL,
+          base: calendlyBase,
           name,
           email,
           ctxParts: [],

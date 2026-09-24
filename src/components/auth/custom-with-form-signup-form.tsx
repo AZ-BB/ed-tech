@@ -54,11 +54,17 @@ export function CustomWithFormSignupForm({
   fontClassName,
   landingHref = "/custom-with-form",
   signUp = customWithFormStudentSignUp,
+  calendlyUrl,
+  influencerFunnelSlug,
 }: {
   fontClassName?: string;
   landingHref?: string;
   signUp?: (formData: FormData) => Promise<GeneralResponse<boolean>>;
+  /** Overrides default influencer Calendly URL (dynamic admin funnels). */
+  calendlyUrl?: string;
+  influencerFunnelSlug?: string;
 }) {
+  const resolvedCalendlyUrl = calendlyUrl?.trim() || CALENDLY_INFLUENCER_ADVISOR_URL;
   const { dict, locale } = useLocale();
   const router = useRouter();
   const copy = dict.customWithFormSignup;
@@ -224,6 +230,9 @@ export function CustomWithFormSignupForm({
       fd.append("password", password);
       fd.append("grade", grade);
       fd.append("advisory", advisory);
+      if (influencerFunnelSlug?.trim()) {
+        fd.append("influencerFunnelSlug", influencerFunnelSlug.trim());
+      }
 
       const result = await signUp(fd);
       if (result.error) {
@@ -277,7 +286,7 @@ export function CustomWithFormSignupForm({
               <p className={styles.lede}>{copy.bookingLede}</p>
               <div className={styles.cal}>
                 <CalendlyInlineEmbed
-                  url={CALENDLY_INFLUENCER_ADVISOR_URL}
+                  url={resolvedCalendlyUrl}
                   title={copy.calendlyTitle}
                   prefill={{
                     name: `${firstName.trim()} ${lastName.trim()}`.trim(),

@@ -7,6 +7,8 @@ import {
     CUSTOM_WITH_FORM_FEATURE,
     mapCustomWithFormGrade,
 } from "@/lib/custom-with-form";
+import { INFLUENCER_FUNNEL_SIGNUP_SOURCE } from "@/lib/influencer-funnel-constants";
+import { getActiveInfluencerFunnelBySlug } from "@/lib/influencer-funnels";
 import { defaultStudentFeatureAccess } from "@/lib/student-feature-access";
 import { GeneralResponse } from "@/utils/response";
 import { buildPasswordResetRedirectUrl } from "@/lib/resend/site-url";
@@ -642,4 +644,107 @@ export async function customWithFormStudentSignUp(
     formData: FormData,
 ): Promise<GeneralResponse<boolean>> {
     return signUpCustomStudent(formData, "custom-with-form-signup");
+}
+
+export async function dynamicInfluencerStudentSignUp(
+    formData: FormData,
+): Promise<GeneralResponse<boolean>> {
+    const slug = String(formData.get("influencerFunnelSlug") ?? "").trim().toLowerCase();
+    if (!slug) {
+        return { data: false, error: "Invalid influencer funnel." };
+    }
+
+    const funnel = await getActiveInfluencerFunnelBySlug(slug);
+    if (!funnel) {
+        return { data: false, error: "This signup link is no longer available." };
+    }
+
+    const firstName = String(formData.get("firstName") ?? "").trim();
+    const lastName = String(formData.get("lastName") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const nationalityCountryCode = String(formData.get("nationalityCountryCode") ?? "").trim();
+    const phoneNumber = String(formData.get("phoneNumber") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const gradeRaw = String(formData.get("grade") ?? "").trim();
+    const advisory = String(formData.get("advisory") ?? "").trim();
+    const grade = mapCustomWithFormGrade(gradeRaw) ?? gradeRaw;
+
+    if (
+        !firstName ||
+        !lastName ||
+        !email ||
+        !nationalityCountryCode ||
+        !phoneNumber ||
+        !password ||
+        !grade
+    ) {
+        return {
+            data: false,
+            error: "Missing required profile data.",
+        };
+    }
+
+    if (advisory !== "yes" && advisory !== "no") {
+        return {
+            data: false,
+            error: "Please choose whether you want an advisory session.",
+        };
+    }
+
+    if (!GRADE_ALLOWED.has(grade)) {
+        return {
+            data: false,
+            error: "Please select a valid grade (Grade 9 through Grade 12).",
+        };
+    }
+
+    if (password.length < 8) {
+        return {
+            data: false,
+            error: "Password must be at least 8 characters.",
+        };
+    }
+
+    const provisioned = await provisionIndependentStudent({
+        firstName,
+        lastName,
+        email,
+        grade,
+        nationalityCountryCode,
+        password,
+        studentType: "custom",
+        metaData: {
+            source: INFLUENCER_FUNNEL_SIGNUP_SOURCE,
+            influencerFunnelSlug: funnel.slug,
+            influencerFunnelId: funnel.id,
+            advisory,
+            gradeValue: gradeRaw,
+            feature: CUSTOM_WITH_FORM_FEATURE,
+        },
+    });
+
+    if (!provisioned.ok) {
+        return {
+            data: false,
+            error: provisioned.error,
+        };
+    }
+
+    const supabase = await createSupabaseSecretClient();
+    const { error: phoneError } = await supabase
+        .from("student_profiles")
+        .update({ phone: phoneNumber })
+        .eq("id", provisioned.studentId);
+
+    if (phoneError) {
+        console.error("[dynamicInfluencerStudentSignUp] phone update", phoneError);
+    }
+
+    const supabaseClient = await createSupabaseServerClient();
+    await supabaseClient.auth.signInWithPassword({
+        email: provisioned.email,
+        password,
+    });
+
+    return { data: true, error: null };
 }

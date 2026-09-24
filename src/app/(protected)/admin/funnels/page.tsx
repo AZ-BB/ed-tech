@@ -2,9 +2,11 @@ import { AdminFunnelsClient } from "@/app/(protected)/admin/funnels/_components/
 import {
   getCustomWithFormFunnelStats,
   getDianaFunnelStats,
+  getDynamicInfluencerFunnelStats,
   getMiladFunnelStats,
   getTariqFunnelStats,
 } from "@/lib/funnel-stats";
+import { listInfluencerFunnelsForAdmin } from "@/lib/influencer-funnels";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -14,15 +16,29 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminFunnelsPage() {
-  const [miladStats, dianaStats, tariqStats, customWithFormStats] = await Promise.all([
-    getMiladFunnelStats(),
-    getDianaFunnelStats(),
-    getTariqFunnelStats(),
-    getCustomWithFormFunnelStats(),
-  ]);
+  const [miladStats, dianaStats, tariqStats, customWithFormStats, influencerFunnelRows] =
+    await Promise.all([
+      getMiladFunnelStats(),
+      getDianaFunnelStats(),
+      getTariqFunnelStats(),
+      getCustomWithFormFunnelStats(),
+      listInfluencerFunnelsForAdmin(),
+    ]);
+
+  const dynamicInfluencerFunnels = await Promise.all(
+    influencerFunnelRows.map(async (row) => ({
+      id: row.id,
+      displayName: row.display_name,
+      slug: row.slug,
+      calendlySchedulingUrl: row.calendly_scheduling_url,
+      isActive: row.is_active,
+      stats: await getDynamicInfluencerFunnelStats(row.slug),
+    })),
+  );
 
   return (
     <AdminFunnelsClient
+      dynamicInfluencerFunnels={dynamicInfluencerFunnels}
       funnels={[
         {
           key: "milad",
