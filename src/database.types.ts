@@ -2053,6 +2053,36 @@ export type Database = {
           },
         ]
       }
+      influencer_funnels: {
+        Row: {
+          calendly_scheduling_url: string
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          calendly_scheduling_url: string
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          calendly_scheduling_url?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_visits: {
         Row: {
           path: string

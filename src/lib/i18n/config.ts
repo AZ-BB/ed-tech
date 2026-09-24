@@ -1,3 +1,5 @@
+import { isDynamicInfluencerPublicPath } from "@/lib/influencer-funnel-slugs";
+
 export const locales = ["en", "ar"] as const;
 export type Locale = (typeof locales)[number];
 
@@ -82,6 +84,10 @@ export function isLocalizedPublicPath(pathname: string): boolean {
   if (normalized.startsWith("/webinars/")) {
     const rest = normalized.slice("/webinars/".length);
     return rest.length > 0 && !rest.includes("/");
+  }
+
+  if (isDynamicInfluencerPublicPath(normalized)) {
+    return true;
   }
 
   return false;

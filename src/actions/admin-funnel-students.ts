@@ -1,8 +1,8 @@
 "use server";
 
+import { isKnownAdminFunnelKey, type AdminFunnelKey } from "@/app/(protected)/admin/funnels/_lib/admin-funnel-keys";
 import {
   fetchFunnelStudentsList,
-  type AdminFunnelKey,
   type AdminFunnelStudentRow,
 } from "@/app/(protected)/admin/funnels/_lib/fetch-funnel-students-list";
 import {
@@ -56,8 +56,7 @@ export async function loadFunnelStudentsList(
     return { ok: false, error: access.error };
   }
 
-  const validKeys: AdminFunnelKey[] = ["milad", "diana", "tariq", "custom-with-form"];
-  if (!validKeys.includes(funnelKey)) {
+  if (!isKnownAdminFunnelKey(funnelKey)) {
     return { ok: false, error: "Unknown funnel." };
   }
 

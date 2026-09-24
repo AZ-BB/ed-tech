@@ -1,5 +1,7 @@
 import "server-only";
 
+import { INFLUENCER_FUNNEL_SIGNUP_SOURCE } from "@/lib/influencer-funnel-constants";
+import { influencerFunnelLandingVisitPath } from "@/lib/influencer-funnel-slugs";
 import {
   CUSTOM_WITH_FORM_LANDING_PAGE_PATH,
   DIANA_LANDING_PAGE_PATH,
@@ -20,11 +22,8 @@ export type FunnelSignupSource =
   | typeof TARIQ_SIGNUP_SOURCE
   | typeof CUSTOM_WITH_FORM_SIGNUP_SOURCE;
 
-export type FunnelStats = {
-  landingPath: string;
-  visits: number;
-  signups: number;
-};
+export type { FunnelStats } from "@/lib/funnel-stats-types";
+import type { FunnelStats } from "@/lib/funnel-stats-types";
 
 export async function getFunnelSignupCount(source: FunnelSignupSource): Promise<number> {
   const supabase = await createSupabaseSecretClient();
@@ -89,6 +88,38 @@ export async function getCustomWithFormFunnelStats(): Promise<FunnelStats> {
 
   return {
     landingPath: CUSTOM_WITH_FORM_LANDING_PAGE_PATH,
+    visits,
+    signups,
+  };
+}
+
+export async function getDynamicInfluencerFunnelSignupCount(slug: string): Promise<number> {
+  const normalized = slug.trim().toLowerCase();
+  const supabase = await createSupabaseSecretClient();
+  const { count, error } = await supabase
+    .from("student_profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("student_type", "custom")
+    .filter("meta_data->>source", "eq", INFLUENCER_FUNNEL_SIGNUP_SOURCE)
+    .filter("meta_data->>influencerFunnelSlug", "eq", normalized);
+
+  if (error) {
+    console.error("[getDynamicInfluencerFunnelSignupCount]", error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+export async function getDynamicInfluencerFunnelStats(slug: string): Promise<FunnelStats> {
+  const landingPath = influencerFunnelLandingVisitPath(slug);
+  const [visits, signups] = await Promise.all([
+    getPageVisitCount(landingPath),
+    getDynamicInfluencerFunnelSignupCount(slug),
+  ]);
+
+  return {
+    landingPath,
     visits,
     signups,
   };

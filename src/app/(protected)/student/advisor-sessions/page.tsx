@@ -4,10 +4,8 @@ import {
   isPlatformFeatureEnabled,
   PLATFORM_FEATURE_LABELS,
 } from "@/lib/platform-settings";
-import {
-  buildCalendlySchedulingPageUrl,
-  CALENDLY_INFLUENCER_ADVISOR_URL,
-} from "@/lib/calendly-scheduling";
+import { buildCalendlySchedulingPageUrl } from "@/lib/calendly-scheduling";
+import { resolveCustomStudentInfluencerCalendlyBase } from "@/lib/influencer-funnel-calendly";
 import { createSupabaseSecretClient } from "@/utils/supabase-server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -69,7 +67,7 @@ export default async function AdvisorSessionsPage() {
       isInfluencerFlow
         ? secret
             .from("student_profiles")
-            .select("first_name, last_name, email")
+            .select("first_name, last_name, email, meta_data")
             .eq("id", auth.studentId)
             .maybeSingle()
         : Promise.resolve({ data: null }),
@@ -81,17 +79,21 @@ export default async function AdvisorSessionsPage() {
   const profile = profileResult.data;
   const influencerName = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim();
   const influencerEmail = profile?.email?.trim() ?? "";
-  const influencerCalendly = isInfluencerFlow
-    ? {
-        url: buildCalendlySchedulingPageUrl({
-          base: CALENDLY_INFLUENCER_ADVISOR_URL,
-          name: influencerName,
-          email: influencerEmail,
-          ctxParts: [],
-        }),
-        prefill: { name: influencerName, email: influencerEmail },
-      }
+  const influencerCalendlyBase = isInfluencerFlow
+    ? await resolveCustomStudentInfluencerCalendlyBase(profile?.meta_data ?? null)
     : null;
+  const influencerCalendly =
+    isInfluencerFlow && influencerCalendlyBase
+      ? {
+          url: buildCalendlySchedulingPageUrl({
+            base: influencerCalendlyBase,
+            name: influencerName,
+            email: influencerEmail,
+            ctxParts: [],
+          }),
+          prefill: { name: influencerName, email: influencerEmail },
+        }
+      : null;
 
   return (
     <AdvisorSessionsClient

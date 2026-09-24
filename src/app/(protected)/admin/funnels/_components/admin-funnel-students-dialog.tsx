@@ -4,10 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { loadFunnelStudentsList } from "@/actions/admin-funnel-students";
-import type {
-  AdminFunnelKey,
-  AdminFunnelStudentRow,
-} from "@/app/(protected)/admin/funnels/_lib/fetch-funnel-students-list";
+import type { AdminFunnelKey } from "@/app/(protected)/admin/funnels/_lib/admin-funnel-keys";
+import type { AdminFunnelStudentRow } from "@/app/(protected)/admin/funnels/_lib/fetch-funnel-students-list";
 import { Pagination } from "@/components/pagination";
 
 const LIMIT_OPTIONS = [10, 20, 50] as const;

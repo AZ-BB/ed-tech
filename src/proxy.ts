@@ -7,6 +7,10 @@ import {
   locales,
   stripLocaleFromPath,
 } from "@/lib/i18n/config";
+import {
+  isDynamicInfluencerPublicPath,
+  isDynamicInfluencerSignupPath,
+} from "@/lib/influencer-funnel-slugs";
 
 const LOCALE_COOKIE = "NEXT_LOCALE";
 
@@ -155,8 +159,13 @@ export async function proxy(request: NextRequest) {
     pathMatches(pathname, route),
   );
 
+  const isDynamicInfluencerRoute = isDynamicInfluencerPublicPath(pathnameWithoutLocale);
+
   const isPublicForGuests =
-    pathnameWithoutLocale === "/" || isPublicOpenRoute || isPublicGuestOnlyRoute;
+    pathnameWithoutLocale === "/" ||
+    isPublicOpenRoute ||
+    isPublicGuestOnlyRoute ||
+    isDynamicInfluencerRoute;
 
   const isAuthFlowRoute =
     pathMatches(pathname, "/auth/callback") ||
@@ -165,7 +174,8 @@ export async function proxy(request: NextRequest) {
   const isFormFunnelSignup =
     pathMatches(pathname, "/custom-with-form/signup") ||
     pathMatches(pathname, "/diana/signup") ||
-    pathMatches(pathname, "/tariq/signup");
+    pathMatches(pathname, "/tariq/signup") ||
+    isDynamicInfluencerSignupPath(pathnameWithoutLocale);
 
   if (!user && !isPublicForGuests) {
     const redirectUrl = new URL(loginPath(request), request.url);
@@ -177,7 +187,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(authedHome, request.url));
   }
 
-  if (user && isPublicGuestOnlyRoute && !isAuthFlowRoute && !isFormFunnelSignup) {
+  if (
+    user &&
+    (isPublicGuestOnlyRoute || isDynamicInfluencerRoute) &&
+    !isAuthFlowRoute &&
+    !isFormFunnelSignup
+  ) {
     const dest = authedHome ?? (locale ? `/${locale}` : `/${defaultLocale}`);
     return NextResponse.redirect(new URL(dest, request.url));
   }

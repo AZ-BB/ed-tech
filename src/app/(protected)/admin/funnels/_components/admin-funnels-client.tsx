@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 
-import type { AdminFunnelKey } from "@/app/(protected)/admin/funnels/_lib/fetch-funnel-students-list";
-import type { FunnelStats } from "@/lib/funnel-stats";
+import type { AdminFunnelKey } from "@/app/(protected)/admin/funnels/_lib/admin-funnel-keys";
+import type { FunnelStats } from "@/lib/funnel-stats-types";
 
+import {
+  AdminDynamicInfluencerFunnelsSection,
+  type DynamicInfluencerFunnelAdminRow,
+} from "./admin-dynamic-influencer-funnels-section";
 import { AdminFunnelStudentsDialog } from "./admin-funnel-students-dialog";
 
 const fontSerif = '"DM Serif Display", Georgia, serif' as const;
@@ -18,6 +22,7 @@ type FunnelCardConfig = {
 
 type AdminFunnelsClientProps = {
   funnels: FunnelCardConfig[];
+  dynamicInfluencerFunnels: DynamicInfluencerFunnelAdminRow[];
 };
 
 function FunnelCard({
@@ -73,7 +78,10 @@ function FunnelCard({
   );
 }
 
-export function AdminFunnelsClient({ funnels }: AdminFunnelsClientProps) {
+export function AdminFunnelsClient({
+  funnels,
+  dynamicInfluencerFunnels,
+}: AdminFunnelsClientProps) {
   const [openFunnel, setOpenFunnel] = useState<{
     key: AdminFunnelKey;
     label: string;
@@ -94,6 +102,11 @@ export function AdminFunnelsClient({ funnels }: AdminFunnelsClientProps) {
           />
         ))}
       </div>
+
+      <AdminDynamicInfluencerFunnelsSection
+        funnels={dynamicInfluencerFunnels}
+        onViewStudents={(key, label) => setOpenFunnel({ key, label })}
+      />
 
       <AdminFunnelStudentsDialog
         openFunnel={openFunnel}
