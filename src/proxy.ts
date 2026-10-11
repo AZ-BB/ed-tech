@@ -31,9 +31,15 @@ function authedHomePath(type: unknown): string | null {
   }
 }
 
+const GOOGLE_SITE_VERIFICATION_HTML = "/googlecdf650161745039f.html";
+
 /** Crawlers and Search Console must reach these without auth. */
 function isPublicMetadataPath(pathname: string): boolean {
-  return pathname === "/sitemap.xml" || pathname === "/robots.txt";
+  return (
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === GOOGLE_SITE_VERIFICATION_HTML
+  );
 }
 
 function shouldSkipLocale(pathname: string): boolean {
@@ -212,6 +218,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|googlecdf650161745039f\\.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
