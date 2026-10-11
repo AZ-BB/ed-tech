@@ -2120,6 +2120,16 @@ html[dir="rtl"] .nav-drawer--open {
   font-size: 12px;
 }
 
+.footer-bottom a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footer-bottom a:hover {
+  color: var(--green-bright);
+}
+
 @media (max-width: 900px) {
   .hero {
     padding: 100px 24px 64px;

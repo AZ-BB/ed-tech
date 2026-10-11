@@ -64,6 +64,16 @@ export function LandingFooter({ dict: dictProp, locale: localeProp }: LandingFoo
       </div>
       <div className="footer-bottom">
         <div>{dict.footer.copyright}</div>
+        <div>
+          {dict.footer.poweredBy}{" "}
+          <a
+            href="https://www.buildex.ltd/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Buildex LTD
+          </a>
+        </div>
       </div>
     </footer>
   );
