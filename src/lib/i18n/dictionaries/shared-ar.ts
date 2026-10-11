@@ -32,6 +32,7 @@ export const footerAr = {
   privacy: "الخصوصية",
   terms: "الشروط",
   copyright: "© 2026 يونيفيرا. جميع الحقوق محفوظة.",
+  poweredBy: "مدعوم من:",
 } as const;
 
 export const contactAr = {

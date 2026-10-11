@@ -32,6 +32,7 @@ export const footerEn = {
   privacy: "Privacy",
   terms: "Terms",
   copyright: "© 2026 Univeera. All rights reserved.",
+  poweredBy: "Powered by:",
 } as const;
 
 export const contactEn = {

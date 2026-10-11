@@ -31,8 +31,14 @@ function authedHomePath(type: unknown): string | null {
   }
 }
 
+/** Crawlers and Search Console must reach these without auth. */
+function isPublicMetadataPath(pathname: string): boolean {
+  return pathname === "/sitemap.xml" || pathname === "/robots.txt";
+}
+
 function shouldSkipLocale(pathname: string): boolean {
   return (
+    isPublicMetadataPath(pathname) ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/student") ||
@@ -87,6 +93,10 @@ function pathMatches(pathname: string, route: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isPublicMetadataPath(pathname)) {
+    return nextWithPathname(request);
+  }
 
   const localeRedirectResponse = localeRedirect(request, pathname);
   if (localeRedirectResponse) return localeRedirectResponse;
@@ -202,6 +212,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
